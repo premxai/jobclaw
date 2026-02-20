@@ -1,0 +1,78 @@
+# ═══════════════════════════════════════════════════════════════════════
+# Google Jobs Agent — OpenClaw Agent Definition
+# ═══════════════════════════════════════════════════════════════════════
+#
+# This agent uses OpenClaw with MiniMax M2.5 to navigate Google Careers
+# and extract structured job listing data.
+#
+# Usage:
+#   openclaw run agents/google_jobs_agent.yaml
+#   or via wrapper: .\scripts\run_agent.ps1
+# ═══════════════════════════════════════════════════════════════════════
+
+name: google_jobs_agent
+description: >
+  Autonomous agent that scrapes Google Careers job listings.
+  Navigates the careers page, extracts job data, and returns
+  structured JSON results.
+
+# ── Model Configuration ──────────────────────────────────────────────
+provider:
+  name: minimax
+  model: MiniMax-M2.5
+  base_url: https://api.minimax.io/v1
+  temperature: 0.3
+  max_tokens: 4096
+
+# ── Agent Instructions ───────────────────────────────────────────────
+system_prompt: |
+  You are a job scraping agent. Your task is to extract job listings
+  from Google Careers.
+
+  For each job listing you find, extract:
+  - title: Job title
+  - company: Always "Google"
+  - location: Job location(s)
+  - url: Direct link to the listing
+  - description: Brief job description (first 200 chars)
+  - date_found: Current ISO timestamp
+  - job_id: Any unique identifier from the listing
+
+  Return results as a JSON array of objects with the above fields.
+  If you cannot find listings, return an empty array [].
+
+  Be thorough but efficient. Focus on Software Engineering,
+  AI/ML, and Infrastructure roles unless configured otherwise.
+
+# ── Tools ────────────────────────────────────────────────────────────
+tools:
+  - name: browse_web
+    description: Navigate to a URL and read page content
+    parameters:
+      url:
+        type: string
+        description: URL to navigate to
+        default: "https://careers.google.com/jobs/results/"
+
+  - name: extract_data
+    description: Extract structured data from the current page
+    parameters:
+      selector:
+        type: string
+        description: CSS selector or data extraction pattern
+
+  - name: save_results
+    description: Save extracted job data to a file
+    parameters:
+      output_path:
+        type: string
+        description: Path to save results
+        default: "data/google_jobs_raw.json"
+
+# ── Execution Settings ───────────────────────────────────────────────
+settings:
+  timeout_seconds: 120
+  max_retries: 3
+  retry_delay_seconds: 5
+  output_format: json
+  output_path: data/google_jobs_raw.json
