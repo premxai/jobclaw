@@ -1,0 +1,504 @@
+{
+    "companies": [
+        {
+            "company": "Stripe",
+            "ats": "greenhouse",
+            "slug": "stripe"
+        },
+        {
+            "company": "Airbnb",
+            "ats": "greenhouse",
+            "slug": "airbnb"
+        },
+        {
+            "company": "Notion",
+            "ats": "greenhouse",
+            "slug": "notion"
+        },
+        {
+            "company": "Figma",
+            "ats": "greenhouse",
+            "slug": "figma"
+        },
+        {
+            "company": "Discord",
+            "ats": "greenhouse",
+            "slug": "discord"
+        },
+        {
+            "company": "Ramp",
+            "ats": "greenhouse",
+            "slug": "ramp"
+        },
+        {
+            "company": "Brex",
+            "ats": "greenhouse",
+            "slug": "brex"
+        },
+        {
+            "company": "Scale AI",
+            "ats": "greenhouse",
+            "slug": "scaleai"
+        },
+        {
+            "company": "Anthropic",
+            "ats": "greenhouse",
+            "slug": "anthropic"
+        },
+        {
+            "company": "OpenAI",
+            "ats": "greenhouse",
+            "slug": "openai"
+        },
+        {
+            "company": "Databricks",
+            "ats": "greenhouse",
+            "slug": "databricks"
+        },
+        {
+            "company": "Plaid",
+            "ats": "greenhouse",
+            "slug": "plaid"
+        },
+        {
+            "company": "Airtable",
+            "ats": "greenhouse",
+            "slug": "airtable"
+        },
+        {
+            "company": "Coinbase",
+            "ats": "greenhouse",
+            "slug": "coinbase"
+        },
+        {
+            "company": "Instacart",
+            "ats": "greenhouse",
+            "slug": "instacart"
+        },
+        {
+            "company": "DoorDash",
+            "ats": "greenhouse",
+            "slug": "doordash"
+        },
+        {
+            "company": "Palantir",
+            "ats": "greenhouse",
+            "slug": "palantir"
+        },
+        {
+            "company": "Anduril",
+            "ats": "greenhouse",
+            "slug": "anduril"
+        },
+        {
+            "company": "Verkada",
+            "ats": "greenhouse",
+            "slug": "verkada"
+        },
+        {
+            "company": "Rippling",
+            "ats": "greenhouse",
+            "slug": "rippling"
+        },
+        {
+            "company": "Retool",
+            "ats": "greenhouse",
+            "slug": "retool"
+        },
+        {
+            "company": "Vercel",
+            "ats": "greenhouse",
+            "slug": "vercel"
+        },
+        {
+            "company": "HashiCorp",
+            "ats": "greenhouse",
+            "slug": "hashicorp"
+        },
+        {
+            "company": "Confluent",
+            "ats": "greenhouse",
+            "slug": "confluent"
+        },
+        {
+            "company": "GitLab",
+            "ats": "greenhouse",
+            "slug": "gitlab"
+        },
+        {
+            "company": "Navan",
+            "ats": "greenhouse",
+            "slug": "navan"
+        },
+        {
+            "company": "Grammarly",
+            "ats": "greenhouse",
+            "slug": "grammarly"
+        },
+        {
+            "company": "Snyk",
+            "ats": "greenhouse",
+            "slug": "snyk"
+        },
+        {
+            "company": "MongoDB",
+            "ats": "greenhouse",
+            "slug": "mongodb"
+        },
+        {
+            "company": "Elastic",
+            "ats": "greenhouse",
+            "slug": "elastic"
+        },
+        {
+            "company": "Cloudflare",
+            "ats": "greenhouse",
+            "slug": "cloudflare"
+        },
+        {
+            "company": "Reddit",
+            "ats": "greenhouse",
+            "slug": "reddit"
+        },
+        {
+            "company": "Pinterest",
+            "ats": "greenhouse",
+            "slug": "pinterest"
+        },
+        {
+            "company": "Lyft",
+            "ats": "greenhouse",
+            "slug": "lyft"
+        },
+        {
+            "company": "Cruise",
+            "ats": "greenhouse",
+            "slug": "cruise"
+        },
+        {
+            "company": "Waymo",
+            "ats": "greenhouse",
+            "slug": "waymo"
+        },
+        {
+            "company": "Nuro",
+            "ats": "greenhouse",
+            "slug": "nuro"
+        },
+        {
+            "company": "Aurora",
+            "ats": "greenhouse",
+            "slug": "aurora"
+        },
+        {
+            "company": "Flexport",
+            "ats": "greenhouse",
+            "slug": "flexport"
+        },
+        {
+            "company": "Gusto",
+            "ats": "greenhouse",
+            "slug": "gusto"
+        },
+        {
+            "company": "Linear",
+            "ats": "greenhouse",
+            "slug": "linear"
+        },
+        {
+            "company": "Vanta",
+            "ats": "greenhouse",
+            "slug": "vanta"
+        },
+        {
+            "company": "Wiz",
+            "ats": "greenhouse",
+            "slug": "wiz"
+        },
+        {
+            "company": "Axiom",
+            "ats": "greenhouse",
+            "slug": "axiom"
+        },
+        {
+            "company": "Weights & Biases",
+            "ats": "greenhouse",
+            "slug": "wandb"
+        },
+        {
+            "company": "Hugging Face",
+            "ats": "greenhouse",
+            "slug": "huggingface"
+        },
+        {
+            "company": "Cohere",
+            "ats": "greenhouse",
+            "slug": "cohere"
+        },
+        {
+            "company": "DeepMind",
+            "ats": "greenhouse",
+            "slug": "deepmind"
+        },
+        {
+            "company": "Mistral AI",
+            "ats": "greenhouse",
+            "slug": "mistral"
+        },
+        {
+            "company": "Perplexity",
+            "ats": "greenhouse",
+            "slug": "perplexityai"
+        },
+        {
+            "company": "Netflix",
+            "ats": "lever",
+            "slug": "netflix"
+        },
+        {
+            "company": "Spotify",
+            "ats": "lever",
+            "slug": "spotify"
+        },
+        {
+            "company": "Twitch",
+            "ats": "lever",
+            "slug": "twitch"
+        },
+        {
+            "company": "Unity",
+            "ats": "lever",
+            "slug": "unity3d"
+        },
+        {
+            "company": "CrowdStrike",
+            "ats": "lever",
+            "slug": "crowdstrike"
+        },
+        {
+            "company": "Miro",
+            "ats": "lever",
+            "slug": "miro"
+        },
+        {
+            "company": "Postman",
+            "ats": "lever",
+            "slug": "postman"
+        },
+        {
+            "company": "ClickUp",
+            "ats": "lever",
+            "slug": "clickup"
+        },
+        {
+            "company": "Neon",
+            "ats": "lever",
+            "slug": "neon-inc"
+        },
+        {
+            "company": "Supabase",
+            "ats": "lever",
+            "slug": "supabase"
+        },
+        {
+            "company": "Sourcegraph",
+            "ats": "lever",
+            "slug": "sourcegraph"
+        },
+        {
+            "company": "Kong",
+            "ats": "lever",
+            "slug": "kong"
+        },
+        {
+            "company": "LaunchDarkly",
+            "ats": "lever",
+            "slug": "launchdarkly"
+        },
+        {
+            "company": "dbt Labs",
+            "ats": "lever",
+            "slug": "daboratoiresbt"
+        },
+        {
+            "company": "PlanetScale",
+            "ats": "lever",
+            "slug": "planetscale"
+        },
+        {
+            "company": "Temporal",
+            "ats": "lever",
+            "slug": "temporal"
+        },
+        {
+            "company": "Cribl",
+            "ats": "lever",
+            "slug": "cribl"
+        },
+        {
+            "company": "Monte Carlo",
+            "ats": "lever",
+            "slug": "montecarlodata"
+        },
+        {
+            "company": "Drata",
+            "ats": "lever",
+            "slug": "drata"
+        },
+        {
+            "company": "Writer",
+            "ats": "lever",
+            "slug": "writer"
+        },
+        {
+            "company": "Jasper",
+            "ats": "lever",
+            "slug": "jasper"
+        },
+        {
+            "company": "Runway",
+            "ats": "lever",
+            "slug": "runwayml"
+        },
+        {
+            "company": "Replit",
+            "ats": "lever",
+            "slug": "replit"
+        },
+        {
+            "company": "Coda",
+            "ats": "lever",
+            "slug": "coda"
+        },
+        {
+            "company": "Loom",
+            "ats": "lever",
+            "slug": "useloom"
+        },
+        {
+            "company": "Ramp",
+            "ats": "ashby",
+            "slug": "ramp"
+        },
+        {
+            "company": "Linear",
+            "ats": "ashby",
+            "slug": "linear"
+        },
+        {
+            "company": "Vanta",
+            "ats": "ashby",
+            "slug": "vanta"
+        },
+        {
+            "company": "Deel",
+            "ats": "ashby",
+            "slug": "deel"
+        },
+        {
+            "company": "Stytch",
+            "ats": "ashby",
+            "slug": "stytch"
+        },
+        {
+            "company": "Fly.io",
+            "ats": "ashby",
+            "slug": "fly"
+        },
+        {
+            "company": "Railway",
+            "ats": "ashby",
+            "slug": "railway"
+        },
+        {
+            "company": "Resend",
+            "ats": "ashby",
+            "slug": "resend"
+        },
+        {
+            "company": "Graphite",
+            "ats": "ashby",
+            "slug": "graphite"
+        },
+        {
+            "company": "Cursor",
+            "ats": "ashby",
+            "slug": "cursor"
+        },
+        {
+            "company": "LangChain",
+            "ats": "ashby",
+            "slug": "langchain"
+        },
+        {
+            "company": "Pinecone",
+            "ats": "ashby",
+            "slug": "pinecone"
+        },
+        {
+            "company": "Modal",
+            "ats": "ashby",
+            "slug": "modal"
+        },
+        {
+            "company": "Warp",
+            "ats": "ashby",
+            "slug": "warp"
+        },
+        {
+            "company": "Liveblocks",
+            "ats": "ashby",
+            "slug": "liveblocks"
+        },
+        {
+            "company": "Visa",
+            "ats": "smartrecruiters",
+            "slug": "visa"
+        },
+        {
+            "company": "Bosch",
+            "ats": "smartrecruiters",
+            "slug": "bosch"
+        },
+        {
+            "company": "IKEA",
+            "ats": "smartrecruiters",
+            "slug": "ikea"
+        },
+        {
+            "company": "Sanofi",
+            "ats": "smartrecruiters",
+            "slug": "sanofi"
+        },
+        {
+            "company": "McDonald's",
+            "ats": "smartrecruiters",
+            "slug": "mcdonalds"
+        },
+        {
+            "company": "Zapier",
+            "ats": "bamboohr",
+            "slug": "zapier"
+        },
+        {
+            "company": "Buffer",
+            "ats": "bamboohr",
+            "slug": "buffer"
+        },
+        {
+            "company": "Basecamp",
+            "ats": "bamboohr",
+            "slug": "basecamp"
+        },
+        {
+            "company": "InVision",
+            "ats": "bamboohr",
+            "slug": "invision"
+        },
+        {
+            "company": "Ghost",
+            "ats": "bamboohr",
+            "slug": "ghost"
+        }
+    ]
+}
