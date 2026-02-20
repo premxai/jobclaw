@@ -91,26 +91,30 @@ def scrape_jobs_via_openclaw() -> list[dict]:
     log("Running OpenClaw agent to scrape Google Careers...")
 
     try:
-        cmd = (
-            'openclaw agent --agent main --local --message '
-            '"Search Google Careers at https://careers.google.com/jobs/results/?q=software+engineer '
-            'and return 10 job listings as a JSON array. Each object must have fields: '
-            'title, location, url. Return ONLY the raw JSON array, no markdown fences, no explanation."'
+        prompt = (
+            "Search Google Careers at https://careers.google.com/jobs/results/?q=software+engineer "
+            "and find jobs posted within the LAST 24 HOURS only. "
+            "Return up to 15 job listings as a JSON array. Each object must have fields: "
+            "title, location, url, date_posted (the date/time the job was posted, "
+            "e.g. 2026-02-20 or 3 hours ago or today). "
+            "Return ONLY the raw JSON array, no markdown fences, no explanation."
         )
         result = subprocess.run(
-            cmd,
+            ["openclaw.cmd", "agent", "--agent", "main", "--local", "--message", prompt],
             capture_output=True,
             text=True,
             timeout=120,
             cwd=str(PROJECT_ROOT),
-            shell=True,
         )
 
-        output = result.stdout.strip()
+        # OpenClaw may write to stdout OR stderr — check both
+        stdout = result.stdout.strip()
+        stderr = result.stderr.strip()
+        output = stdout if stdout else stderr
         if not output:
-            output = result.stderr.strip()
+            output = stdout + "\n" + stderr  # Merge both
 
-        log(f"Agent returned {len(output)} chars")
+        log(f"Agent stdout: {len(stdout)} chars, stderr: {len(stderr)} chars")
 
         # Try to extract JSON array from output
         # Remove markdown code fences if present
@@ -128,7 +132,8 @@ def scrape_jobs_via_openclaw() -> list[dict]:
                 log(f"Parsed {len(jobs)} job listings")
                 return jobs
 
-        log("Could not parse JSON from agent output", "WARN")
+        # Log what we got so we can debug
+        log(f"Could not parse JSON. Raw output (first 500 chars): {output[:500]}", "WARN")
         return []
 
     except subprocess.TimeoutExpired:
@@ -141,15 +146,17 @@ def scrape_jobs_via_openclaw() -> list[dict]:
 
 def build_embed(job: dict, index: int, total: int) -> discord.Embed:
     """Create a rich Discord embed for a job listing."""
+    date_posted = job.get("date_posted", "Unknown")
     embed = discord.Embed(
         title=f"💼 {job.get('title', 'Unknown Position')}",
         url=job.get("url", ""),
+        description=f"🕐 **Posted:** {date_posted}",
         color=0x4285F4,  # Google blue
         timestamp=datetime.now(timezone.utc),
     )
     embed.add_field(name="📍 Location", value=job.get("location", "Not specified"), inline=True)
     embed.add_field(name="🏢 Company", value="Google", inline=True)
-    embed.set_footer(text=f"JobClaw Agent • Listing {index}/{total}")
+    embed.set_footer(text=f"JobClaw Agent • Listing {index}/{total} • Last 24hrs only")
     return embed
 
 
@@ -187,8 +194,10 @@ async def scrape_and_post():
     log(f"Posting {len(new_jobs)} new job(s) to Discord...")
 
     # Header message
+    scan_time = datetime.now().strftime("%I:%M %p")
     await channel.send(
-        f"🚀 **{len(new_jobs)} New Google Job Listing{'s' if len(new_jobs) != 1 else ''} Found!**\n"
+        f"🚀 **{len(new_jobs)} New Google Job Listing{'s' if len(new_jobs) != 1 else ''} Found!** (scanned at {scan_time})\n"
+        f"📅 Showing jobs posted in the **last 24 hours** only\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
@@ -254,8 +263,10 @@ async def on_message(message: discord.Message):
             await message.channel.send("✅ No new listings — all previously posted.")
             return
 
+        scan_time = datetime.now().strftime("%I:%M %p")
         await message.channel.send(
-            f"🚀 **{len(new_jobs)} New Listing{'s' if len(new_jobs) != 1 else ''} Found!**\n"
+            f"🚀 **{len(new_jobs)} New Listing{'s' if len(new_jobs) != 1 else ''} Found!** (scanned at {scan_time})\n"
+            f"📅 Last 24 hours only\n"
             f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         )
         for i, job in enumerate(new_jobs, 1):
