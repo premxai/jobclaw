@@ -72,8 +72,9 @@ CAREER_SITES = [
         "color": 0x00A4EF,
         "emoji": "🟦",
         "prompt": (
-            "Search Microsoft Careers at https://careers.microsoft.com/global/en/search?q=software+engineer "
-            "and find jobs posted within the LAST 24 HOURS only. "
+            "Find Microsoft software engineer job listings posted in the last 24 hours. "
+            "Search LinkedIn at https://www.linkedin.com/jobs/search/?keywords=software+engineer&f_C=1035 "
+            "where f_C=1035 is the Microsoft company filter. "
             "Return up to 15 job listings as a JSON array. Each object must have: "
             "title, location, url, date_posted (when posted, e.g. '3 hours ago' or 'today'), "
             "company (always 'Microsoft'). "
