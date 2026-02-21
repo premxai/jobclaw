@@ -1,18 +1,5 @@
 {
   "jobs": {
-    "1660ab1325fdbbae": {
-      "title": "Software Engineer, New Grad",
-      "company": "Stripe",
-      "location": "Toronto",
-      "url": "https://stripe.com/jobs/search?gh_jid=7206505",
-      "date_posted": "2026-02-20T17:10:59-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7206505",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
     "e2582ecdb0937f38": {
       "title": "Solutions Architect, Platforms",
       "company": "Stripe",
@@ -21,35 +8,9 @@
       "date_posted": "2026-02-20T12:02:55-05:00",
       "source_ats": "greenhouse",
       "job_id": "7396509",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
-      ]
-    },
-    "ab33d51307660d64": {
-      "title": "Staff Software Engineer, Billing and Subscriptions",
-      "company": "Stripe",
-      "location": "Toronto, Canada, Canada Remote",
-      "url": "https://stripe.com/jobs/search?gh_jid=5846766",
-      "date_posted": "2026-02-20T15:12:23-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5846766",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "08bedac1cfd83252": {
-      "title": "Staff Software Engineer, Stream Infrastructure",
-      "company": "Stripe",
-      "location": "Toronto",
-      "url": "https://stripe.com/jobs/search?gh_jid=7637683",
-      "date_posted": "2026-02-20T15:31:52-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7637683",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
       ]
     },
     "d2094ccc2c886bbd": {
@@ -60,22 +21,9 @@
       "date_posted": "2026-02-20T18:01:34-05:00",
       "source_ats": "greenhouse",
       "job_id": "7404437",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
-      ]
-    },
-    "01ca94dff57c547c": {
-      "title": "Senior Data Engineer, BizTech",
-      "company": "Airbnb",
-      "location": "Bangalore, India",
-      "url": "https://careers.airbnb.com/positions/7640881?gh_jid=7640881",
-      "date_posted": "2026-02-20T04:59:16-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7640881",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
       ]
     },
     "9df2e123087d4886": {
@@ -86,7 +34,7 @@
       "date_posted": "2026-02-20T18:19:42-05:00",
       "source_ats": "greenhouse",
       "job_id": "7643974",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -99,7 +47,7 @@
       "date_posted": "2026-02-20T11:33:09-05:00",
       "source_ats": "greenhouse",
       "job_id": "7639355",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -112,7 +60,7 @@
       "date_posted": "2026-02-20T19:45:24-05:00",
       "source_ats": "greenhouse",
       "job_id": "8371252002",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -125,7 +73,7 @@
       "date_posted": "2026-02-20T17:26:28-05:00",
       "source_ats": "greenhouse",
       "job_id": "8373431002",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -138,7 +86,7 @@
       "date_posted": "2026-02-20T11:34:26-05:00",
       "source_ats": "greenhouse",
       "job_id": "4529529005",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -151,7 +99,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4956672008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -164,7 +112,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5125387008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -177,7 +125,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4502508008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -190,7 +138,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4562813008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -203,7 +151,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5068226008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -216,7 +164,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5057647008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -229,7 +177,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5111942008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -242,20 +190,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5073277008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "AI/ML"
-      ]
-    },
-    "aec75eb7c5bb9c6a": {
-      "title": "Applied AI Engineer (Startups)",
-      "company": "Anthropic",
-      "location": "London, UK",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5116274008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5116274008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -268,7 +203,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5062955008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -282,7 +217,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5066977008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -295,7 +230,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5098499008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Science"
       ]
@@ -308,21 +243,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4990535008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Research",
-        "Data Engineering"
-      ]
-    },
-    "e0feed602b694b5a": {
-      "title": "[Expression of Interest] Research Engineer, Production Model Post Training",
-      "company": "Anthropic",
-      "location": "London, UK",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/4980460008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "4980460008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -336,7 +257,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4520279008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -349,7 +270,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4532887008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -362,7 +283,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5098984008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -375,7 +296,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5030680008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -388,7 +309,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4887952008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -401,10 +322,10 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4952079008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
-        "AI/ML",
-        "SWE"
+        "SWE",
+        "AI/ML"
       ]
     },
     "fd1de24c993a6f0d": {
@@ -415,36 +336,10 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4952051008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
-        "AI/ML",
-        "SWE"
-      ]
-    },
-    "c8fe4f6103e17d6a": {
-      "title": "Manager of Solutions Architecture, Applied AI (Industries)",
-      "company": "Anthropic",
-      "location": "London, UK",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5115884008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5115884008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "3021713a31710b8d": {
-      "title": "Manager of Solutions Architecture, Applied AI (Industries)",
-      "company": "Anthropic",
-      "location": "Munich, Germany",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5117652008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5117652008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
+        "SWE",
+        "AI/ML"
       ]
     },
     "71c22950959b0f6e": {
@@ -455,20 +350,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4964610008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "572461c6ba805701": {
-      "title": "Manager of Solutions Architecture, Applied AI (Industries)",
-      "company": "Anthropic",
-      "location": "Paris, France",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5054600008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5054600008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -481,7 +363,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5064817008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -494,7 +376,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4778843008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -507,7 +389,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4949336008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -521,22 +403,9 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5098025008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
-      ]
-    },
-    "53992b06dd8a29dc": {
-      "title": "Partner Solutions Architect, Applied AI",
-      "company": "Anthropic",
-      "location": "Paris, France",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5112486008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5112486008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
       ]
     },
     "75d0a585b7307572": {
@@ -547,20 +416,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4950664008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "f06942fd79efb6fd": {
-      "title": "Partner Solutions Architect, Applied AI",
-      "company": "Anthropic",
-      "location": "Munich, Germany",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5112493008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5112493008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -573,7 +429,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5098973008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -586,7 +442,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4929693008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -599,7 +455,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4949108008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -613,7 +469,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5107121008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -626,7 +482,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4886415008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -639,7 +495,7 @@
       "date_posted": "2026-02-20T18:55:26-05:00",
       "source_ats": "greenhouse",
       "job_id": "5125083008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -653,7 +509,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5025624008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -667,7 +523,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4669581008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -681,7 +537,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4951064008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -695,7 +551,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5067100008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -709,7 +565,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5067098008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -723,25 +579,10 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4980430008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
-      ]
-    },
-    "ed5dfe723eccf82d": {
-      "title": "Research Engineer, Machine Learning (Reinforcement Learning)",
-      "company": "Anthropic",
-      "location": "London, UK",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5115935008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5115935008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Research",
-        "Data Engineering",
-        "AI/ML"
       ]
     },
     "f3f3ce236330c190": {
@@ -752,25 +593,11 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4613568008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering",
         "AI/ML"
-      ]
-    },
-    "72d5f361e2d3669d": {
-      "title": "Research Engineer - Pretraining",
-      "company": "Anthropic",
-      "location": "London, UK",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5119713008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5119713008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Research",
-        "Data Engineering"
       ]
     },
     "d1f3d63d50ba2a3c": {
@@ -781,7 +608,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4616971008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -795,21 +622,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4938432008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Research",
-        "Data Engineering"
-      ]
-    },
-    "576c8318ca7dc18c": {
-      "title": "Research Engineer, Pretraining Scaling (London)",
-      "company": "Anthropic",
-      "location": "London, UK",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/4938436008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "4938436008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -823,7 +636,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4613592008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -837,7 +650,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5112018008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -851,7 +664,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5074815008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering",
@@ -866,7 +679,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4924308008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering",
@@ -881,7 +694,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4799425008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering",
@@ -896,7 +709,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5074217008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering",
@@ -911,7 +724,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5024831008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -925,21 +738,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4631822008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Research",
-        "Data Engineering"
-      ]
-    },
-    "e7f23688b89061c9": {
-      "title": "Research Engineer / Scientist, Alignment Science, London",
-      "company": "Anthropic",
-      "location": "London, UK",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/4610158008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "4610158008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -953,7 +752,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5076477008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -967,7 +766,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5076606008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -981,7 +780,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5061517008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -995,7 +794,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5103788008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -1008,7 +807,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4980427008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -1021,7 +820,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5076616008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -1034,7 +833,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4982193008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1047,7 +846,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5105509008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1060,7 +859,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4595463008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1073,7 +872,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5098565008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1086,7 +885,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5024835008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -1099,7 +898,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5068288008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1112,7 +911,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5068313008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1125,7 +924,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5108521008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1138,7 +937,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5120227008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1151,7 +950,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5120180008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1164,20 +963,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5120144008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "05e542405af6b439": {
-      "title": "Senior Software Engineer, Inference",
-      "company": "Anthropic",
-      "location": "Dublin, IE",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/4641822008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "4641822008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1190,33 +976,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4981828008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "c09f46ef0c94b8c0": {
-      "title": "Senior Software Engineer, Systems",
-      "company": "Anthropic",
-      "location": "London, UK",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/4915842008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "4915842008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "9ee65e0fc49212e4": {
-      "title": "Senior Software Security Engineer",
-      "company": "Anthropic",
-      "location": "London, UK",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5022845008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5022845008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1229,7 +989,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4887959008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1242,20 +1002,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5065894008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "048629eaf0d676d6": {
-      "title": "Senior & Staff Software Engineer, Continuous Integration",
-      "company": "Anthropic",
-      "location": "London, UK",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5073998008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5073998008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1268,7 +1015,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4943668008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1281,7 +1028,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5126691008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1294,7 +1041,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4899511008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1307,7 +1054,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4942024008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1320,7 +1067,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4982198008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1333,7 +1080,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4816198008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1346,7 +1093,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5108982008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1359,7 +1106,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5063007008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1372,7 +1119,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4980420008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1385,7 +1132,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5110474008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1398,7 +1145,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4667572008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1411,7 +1158,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5042025008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1424,7 +1171,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5109273008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1437,7 +1184,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5111745008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1450,7 +1197,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4572744008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1463,7 +1210,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4926242008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1476,7 +1223,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5119468008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1489,7 +1236,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4955107008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1502,7 +1249,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4902636008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1515,20 +1262,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4951844008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "458330ef4547c55e": {
-      "title": "Software Engineer, Safeguards Infrastructure ",
-      "company": "Anthropic",
-      "location": "London, UK",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5074908008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5074908008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1541,7 +1275,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5083039008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1554,7 +1288,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5025591008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1567,7 +1301,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4673416008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1580,48 +1314,9 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5098506008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
-      ]
-    },
-    "b8f86918f23f694a": {
-      "title": "Solutions Architect, Applied AI",
-      "company": "Anthropic",
-      "location": "Sydney, Australia",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5117589008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5117589008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "1daed34aed1592e6": {
-      "title": "Solutions Architect, Applied AI",
-      "company": "Anthropic",
-      "location": "Bangalore, India",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5117581008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5117581008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "65106196e5ce8899": {
-      "title": "Solutions Architect, Applied AI",
-      "company": "Anthropic",
-      "location": "Tokyo, Japan",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5076109008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5076109008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
       ]
     },
     "fa1b076b79c13bc0": {
@@ -1632,7 +1327,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5062712008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -1645,7 +1340,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5124533008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -1658,7 +1353,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5065835008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -1671,33 +1366,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5079540008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "169cc317f00bce89": {
-      "title": " Solutions Architect, Applied AI (Industries)",
-      "company": "Anthropic",
-      "location": "Munich, Germany",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/4977624008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "4977624008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "c14b6e8945b8c581": {
-      "title": " Solutions Architect, Applied AI (Industries)",
-      "company": "Anthropic",
-      "location": "Paris, France",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/4977626008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "4977626008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -1710,20 +1379,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4461444008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "c31cda91afa5b576": {
-      "title": "Solutions Architect, Applied AI (Industries)",
-      "company": "Anthropic",
-      "location": "London, UK",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5031670008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5031670008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -1736,20 +1392,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5079511008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "d902d609fb54c037": {
-      "title": "Solutions Architect, Applied AI (Startups)",
-      "company": "Anthropic",
-      "location": "London, UK",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/4968059008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "4968059008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -1762,7 +1405,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5057258008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -1775,7 +1418,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5126080008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -1788,7 +1431,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4946308008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -1801,7 +1444,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4593216008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Research",
         "Data Engineering"
@@ -1815,7 +1458,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5113224008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1828,7 +1471,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5107466008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1841,33 +1484,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4951696008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "27d22d4181ca95cc": {
-      "title": "Staff Software Engineer, AI Reliability Engineering",
-      "company": "Anthropic",
-      "location": "Dublin, IE",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5101169008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5101169008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "ec1c09cd10c03706": {
-      "title": "Staff Software Engineer, AI Reliability Engineering",
-      "company": "Anthropic",
-      "location": "London, UK",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5101173008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5101173008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1880,7 +1497,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4988878008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1893,7 +1510,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "4561282008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1906,7 +1523,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5120228008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1919,7 +1536,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5114768008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1932,46 +1549,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5110511008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "3861b6e86225ec36": {
-      "title": "Staff Software Engineer, Inference",
-      "company": "Anthropic",
-      "location": "Dublin, IE",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/4979237008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "4979237008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "10fe3dfe6e38a46c": {
-      "title": "Staff Software Engineer, Inference",
-      "company": "Anthropic",
-      "location": "London, UK",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5097742008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5097742008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "8f10de3a7822fc8d": {
-      "title": "Staff+ Software Engineer, Observability",
-      "company": "Anthropic",
-      "location": "London, UK",
-      "url": "https://job-boards.greenhouse.io/anthropic/jobs/5102440008",
-      "date_posted": "2026-02-20T18:33:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5102440008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1984,7 +1562,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5023089008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -1997,7 +1575,7 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5120512008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2010,74 +1588,9 @@
       "date_posted": "2026-02-20T18:33:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5126702008",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
-      ]
-    },
-    "76863d7ae7737566": {
-      "title": "Data & AI Solutions Architect (Professional Services)",
-      "company": "Databricks",
-      "location": "London, United Kingdom",
-      "url": "https://databricks.com/company/careers/open-positions/job?gh_jid=8187465002",
-      "date_posted": "2026-02-20T04:35:04-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "8187465002",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "d7755e917dba827e": {
-      "title": "Scale Solutions Engineer",
-      "company": "Databricks",
-      "location": "Sao Paulo, Brazil",
-      "url": "https://databricks.com/company/careers/open-positions/job?gh_jid=8391865002",
-      "date_posted": "2026-02-20T16:35:38-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "8391865002",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "674135151f274d2f": {
-      "title": "Senior Staff Software Engineer (Backend)",
-      "company": "Databricks",
-      "location": "Bengaluru, India",
-      "url": "https://databricks.com/company/careers/open-positions/job?gh_jid=7651326002",
-      "date_posted": "2026-02-20T08:11:40-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7651326002",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "bd9738112988214c": {
-      "title": "Sr Staff Software Engineer (Backend)",
-      "company": "Databricks",
-      "location": "Bengaluru, India",
-      "url": "https://databricks.com/company/careers/open-positions/job?gh_jid=7630152002",
-      "date_posted": "2026-02-20T08:11:41-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7630152002",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "ad45f5f4a458023c": {
-      "title": "Data Scientist II - Product Analytics",
-      "company": "Coinbase",
-      "location": "Remote - UK",
-      "url": "https://www.coinbase.com/careers/positions/7644362?gh_jid=7644362",
-      "date_posted": "2026-02-20T17:54:21-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7644362",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Science"
       ]
     },
     "17034a03be9f4121": {
@@ -2088,7 +1601,7 @@
       "date_posted": "2026-02-20T17:19:17-05:00",
       "source_ats": "greenhouse",
       "job_id": "7583638",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Science"
       ]
@@ -2101,10 +1614,10 @@
       "date_posted": "2026-02-20T14:54:04-05:00",
       "source_ats": "greenhouse",
       "job_id": "7604203",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
-        "AI/ML",
-        "SWE"
+        "SWE",
+        "AI/ML"
       ]
     },
     "12859e5391d8a071": {
@@ -2115,7 +1628,7 @@
       "date_posted": "2026-02-20T18:49:01-05:00",
       "source_ats": "greenhouse",
       "job_id": "7312521",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2128,7 +1641,7 @@
       "date_posted": "2026-02-20T09:47:08-05:00",
       "source_ats": "greenhouse",
       "job_id": "7476676",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2141,7 +1654,7 @@
       "date_posted": "2026-02-20T13:43:38-05:00",
       "source_ats": "greenhouse",
       "job_id": "7558031",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2154,20 +1667,7 @@
       "date_posted": "2026-02-20T19:47:38-05:00",
       "source_ats": "greenhouse",
       "job_id": "7591861",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "7a87166b68efad97": {
-      "title": "Software Engineer, Backend - Platform (FinHub - Transfers)",
-      "company": "Coinbase",
-      "location": "Remote - Canada",
-      "url": "https://www.coinbase.com/careers/positions/7640718?gh_jid=7640718",
-      "date_posted": "2026-02-20T15:18:49-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7640718",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2180,7 +1680,7 @@
       "date_posted": "2026-02-20T10:57:36-05:00",
       "source_ats": "greenhouse",
       "job_id": "7629141",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2193,22 +1693,9 @@
       "date_posted": "2026-02-20T18:13:43-05:00",
       "source_ats": "greenhouse",
       "job_id": "7644719",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
-      ]
-    },
-    "2a3cf75809109844": {
-      "title": "Senior Tax Technology Analyst",
-      "company": "Instacart",
-      "location": "Canada - Remote",
-      "url": "https://instacart.careers/job/?gh_jid=7644475",
-      "date_posted": "2026-02-20T19:00:28-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7644475",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "New Grad"
       ]
     },
     "fb9ccef59f76ea23": {
@@ -2219,7 +1706,7 @@
       "date_posted": "2026-02-20T19:00:27-05:00",
       "source_ats": "greenhouse",
       "job_id": "7644431",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "New Grad"
       ]
@@ -2232,7 +1719,7 @@
       "date_posted": "2026-02-20T16:52:22-05:00",
       "source_ats": "greenhouse",
       "job_id": "4087164007",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2245,7 +1732,7 @@
       "date_posted": "2026-02-20T16:04:41-05:00",
       "source_ats": "greenhouse",
       "job_id": "5798406004",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2258,22 +1745,9 @@
       "date_posted": "2026-02-20T22:24:18-05:00",
       "source_ats": "greenhouse",
       "job_id": "5806749004",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
-      ]
-    },
-    "4fdd810e5acf6f25": {
-      "title": "Software Engineer, Full-Stack ",
-      "company": "Grammarly",
-      "location": "Berlin; Hybrid",
-      "url": "https://job-boards.greenhouse.io/grammarly/jobs/7641282",
-      "date_posted": "2026-02-20T10:09:07-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7641282",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
       ]
     },
     "91d489e533cee2e0": {
@@ -2284,20 +1758,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7292751",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "4fe417b75e859337": {
-      "title": "2026 - Software Engineering Intern, Dublin",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=6918894",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "6918894",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2310,22 +1771,9 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7027409",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
-      ]
-    },
-    "1458da637b0ab891": {
-      "title": "Lead Software Engineer, Atlas Clusters",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7597269",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7597269",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
       ]
     },
     "a636e43efa1f502f": {
@@ -2336,7 +1784,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7572007",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -2349,7 +1797,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7458644",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -2362,35 +1810,9 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "6819978",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
-      ]
-    },
-    "22d82769c1396b9a": {
-      "title": "SDET Engineer, Query",
-      "company": "MongoDB",
-      "location": "Dublin; Ireland",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7571255",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7571255",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "f0ad581b2025af26": {
-      "title": "Security Software Engineer,  Infrastructure Security (Staff or Senior)",
-      "company": "MongoDB",
-      "location": "Ireland",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7536053",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7536053",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
       ]
     },
     "4738708e2750d9cd": {
@@ -2401,20 +1823,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "6982487",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "22f93229d853ca60": {
-      "title": "Security Software Engineer,  Infrastructure Security (Staff or Senior)",
-      "company": "MongoDB",
-      "location": "British Columbia; Montreal; Ontario; Quebec; Toronto; Vancouver",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=6982489",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "6982489",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2427,22 +1836,9 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "6970051",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
-      ]
-    },
-    "83cc8eb2616c7706": {
-      "title": "Senior Application Security Engineer",
-      "company": "MongoDB",
-      "location": "Atlanta; Austin; Baltimore; Boston; Charlotte; Chicago; Cincinnati; Cleveland; Columbus; Conshohocken; Dallas; Detroit; Grand Rapids; Hartford; Houston; Indianapolis; Jacksonville; Kansas City; Key West; Miami; Milwaukee; Minneapolis; Monterrey; Nashville; New York City; Orlando; Philadelphia; Pittsburgh; Princeton; Providence; Raleigh; Royal Oaks; St. Louis; Tampa; Tampa Bay; Tysons",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7491537",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7491537",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
       ]
     },
     "5607e315f9ac5505": {
@@ -2453,7 +1849,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "6841436",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Analyst"
       ]
@@ -2466,7 +1862,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7553861",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Analyst"
       ]
@@ -2479,7 +1875,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7532424",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Analyst"
       ]
@@ -2492,20 +1888,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7093030",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "4af78fc8aeca87a2": {
-      "title": "Senior Java Software Engineer, Client Libraries",
-      "company": "MongoDB",
-      "location": "Toronto; Vancouver",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7194687",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7194687",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2518,7 +1901,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7379372",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -2531,7 +1914,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7370553",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -2544,33 +1927,7 @@
       "date_posted": "2026-02-20T15:59:51-05:00",
       "source_ats": "greenhouse",
       "job_id": "7637033",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "18454d756054bae2": {
-      "title": " Senior Pre-Sales Solutions Architect",
-      "company": "MongoDB",
-      "location": "Mexico City",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7547415",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7547415",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "fe0525b2d086ce2e": {
-      "title": "Senior Pre-Sales Solutions Architect",
-      "company": "MongoDB",
-      "location": "S\u00e3o Paulo",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=6895320",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "6895320",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -2583,7 +1940,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7411098",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -2596,7 +1953,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7409331",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -2609,7 +1966,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7411100",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -2622,7 +1979,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "6975884",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -2635,20 +1992,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7586680",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "0bce9b022ebcfff5": {
-      "title": "Senior Product Security Engineer, Server",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7484912",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7484912",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2661,35 +2005,9 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7365646",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
-      ]
-    },
-    "56d37b16b1c4b51a": {
-      "title": "Senior SDET Engineer, Query",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7571473",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7571473",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "a5ae741f0421e2e6": {
-      "title": "Senior Site Reliability Engineer, Deployments",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7555496",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7555496",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
       ]
     },
     "cf556ad9605dfaab": {
@@ -2700,20 +2018,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "6982691",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "29808acdb388cd09": {
-      "title": "Senior Software Engineer",
-      "company": "MongoDB",
-      "location": "Sydney",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=6929125",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "6929125",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2726,7 +2031,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7590644",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2739,20 +2044,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7593676",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "266d32ede4906a4b": {
-      "title": "Senior Software Engineer, Atlas Clusters",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7588895",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7588895",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2765,33 +2057,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7254433",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "8401c6df62082be4": {
-      "title": "Senior Software Engineer, Atlas Growth",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7411433",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7411433",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "3ae23044e8df8900": {
-      "title": "Senior Software Engineer, Atlas Growth",
-      "company": "MongoDB",
-      "location": "Ireland",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7590739",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7590739",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2804,59 +2070,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7488010",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "0bae35c9e3dc75de": {
-      "title": "Senior Software Engineer, C2C Services",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7378959",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7378959",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "fbae30af473536af": {
-      "title": "Senior Software Engineer, C2C Tooling",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7380085",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7380085",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "85caf8c5addb8e23": {
-      "title": "Senior Software Engineer, C2C Tooling",
-      "company": "MongoDB",
-      "location": "Ireland",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7590737",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7590737",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "96ec52e6cca6be61": {
-      "title": "Senior Software Engineer, Data Migration & Code Generation",
-      "company": "MongoDB",
-      "location": "California; Colorado; Montana; Nevada; New Mexico; Oregon; Utah; Washington",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7449128",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7449128",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2869,100 +2083,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7449831",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "193a66e627bef702": {
-      "title": "Senior Software Engineer, DevTools",
-      "company": "MongoDB",
-      "location": "Ireland",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7597874",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7597874",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "1fc153ea99ddac0d": {
-      "title": "Senior Software Engineer, DevTools",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7541590",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7541590",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "c8da3321e7031d44": {
-      "title": "Senior Software Engineer, Education AI",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7388640",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7388640",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "9c421cb22ca19b85": {
-      "title": "Senior Software Engineer, Education AI",
-      "company": "MongoDB",
-      "location": "Ireland",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7427702",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7427702",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "3c893d922a3665a5": {
-      "title": "Senior Software Engineer, Forward Deployed AI Engineer",
-      "company": "MongoDB",
-      "location": "Ireland",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7590735",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7590735",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "AI/ML",
-        "SWE"
-      ]
-    },
-    "f7e90951b4587067": {
-      "title": "Senior Software Engineer, Forward Deployed AI Engineer",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7392902",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7392902",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "AI/ML",
-        "SWE"
-      ]
-    },
-    "225f96635c289c8f": {
-      "title": "Senior Software Engineer, Identity and Access Management",
-      "company": "MongoDB",
-      "location": "Toronto",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7059646",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7059646",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -2975,59 +2096,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7467701",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "c3928caa3ae1e8d0": {
-      "title": "Senior Software Engineer, Private Cloud Backup",
-      "company": "MongoDB",
-      "location": "Dublin; Ireland",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7578651",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7578651",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "3680046ebdb38636": {
-      "title": "Senior Software Engineer, Query Execution",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7484657",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7484657",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "5a79c8f9d2caec9b": {
-      "title": "Senior Software Engineer, Search Systems",
-      "company": "MongoDB",
-      "location": "Toronto",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7345260",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7345260",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "0a9333e76b23b41c": {
-      "title": "Senior Software Engineer, Storage Engines",
-      "company": "MongoDB",
-      "location": "Sydney",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7253410",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7253410",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3040,7 +2109,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7076858",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3053,7 +2122,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7076867",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3066,7 +2135,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7245716",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3079,7 +2148,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7372171",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3092,7 +2161,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7566235",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3105,7 +2174,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7591841",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3118,7 +2187,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7076856",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3131,7 +2200,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7076851",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3144,7 +2213,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "6606599",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3157,20 +2226,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7366448",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "10058dc385421d0b": {
-      "title": "Senior Solutions Architect",
-      "company": "MongoDB",
-      "location": "Dublin; Ireland",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7595025",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7595025",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3183,59 +2239,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7076857",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "ac567458ee202cfb": {
-      "title": "Senior Solutions Architect",
-      "company": "MongoDB",
-      "location": "Paris",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7359280",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7359280",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "f7622c770bd32a86": {
-      "title": "Senior Solutions Architect",
-      "company": "MongoDB",
-      "location": "Berlin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7076812",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7076812",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "ff7599b02265baff": {
-      "title": "Senior Solutions Architect",
-      "company": "MongoDB",
-      "location": "Amsterdam",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7560436",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7560436",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "30da9179abe8e125": {
-      "title": "Senior Solutions Architect - Partners",
-      "company": "MongoDB",
-      "location": "Singapore",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7518792",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7518792",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3248,20 +2252,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7368165",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "755370e1bbbde545": {
-      "title": "Senior Solutions Architect (Thai Speaking)",
-      "company": "MongoDB",
-      "location": "Singapore",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7196053",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7196053",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3274,7 +2265,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7145126",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3287,7 +2278,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "6984809",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3300,7 +2291,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "6987335",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3313,20 +2304,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "6987333",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "6f61b46e52dd6f05": {
-      "title": "Site Reliability Engineer (Senior or Staff), Infrastructure Security",
-      "company": "MongoDB",
-      "location": "Ireland",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=6865004",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "6865004",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3339,7 +2317,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "6601882",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3352,20 +2330,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "6864997",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "541bc0c6629bf316": {
-      "title": "Site Reliability Engineer (Senior or Staff), Observability",
-      "company": "MongoDB",
-      "location": "Ireland",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7192648",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7192648",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3378,7 +2343,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "6711349",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3391,33 +2356,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7588634",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "665cb7f6712f0193": {
-      "title": "Software Engineer 2",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7613695",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7613695",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "ace030e4542e11ec": {
-      "title": "Software Engineer 3",
-      "company": "MongoDB",
-      "location": "Toronto",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7522856",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7522856",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3430,7 +2369,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7523911",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3443,7 +2382,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7597723",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3456,7 +2395,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7593785",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3469,7 +2408,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7551186",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3482,7 +2421,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7585487",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3495,7 +2434,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7571347",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3508,33 +2447,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7543827",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "29bf1a4bc09a605d": {
-      "title": "Software Engineer 3, Private Cloud Backup",
-      "company": "MongoDB",
-      "location": "Dublin; Ireland",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7581867",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7581867",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "737949a64acecb9f": {
-      "title": "Software Engineer 3, Query Execution",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7533978",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7533978",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3547,7 +2460,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7527309",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3560,7 +2473,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7527311",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3573,59 +2486,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7235322",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "a0169c698e02ac74": {
-      "title": "Software Engineer 3, Storage Engines",
-      "company": "MongoDB",
-      "location": "Sydney",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7253772",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7253772",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "3887ebbd82400918": {
-      "title": "Software Engineer, Atlas Clusters",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7579042",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7579042",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "9e1d345347bcc06f": {
-      "title": "Software Engineer, Catalog and Routing",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=6677731",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "6677731",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "bd99676075bf420b": {
-      "title": "Software Engineer, Data Migration & Code Generation",
-      "company": "MongoDB",
-      "location": "California; Colorado; Montana; Nevada; New Mexico; Oregon; Utah; Washington",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7311666",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7311666",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3638,22 +2499,9 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7311708",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
-      ]
-    },
-    "a5e6a70afeac20b6": {
-      "title": "Solutions Architect",
-      "company": "MongoDB",
-      "location": "Bengaluru; Gurugram; Mumbai",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7578893",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7578893",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
       ]
     },
     "636c5b880de9865b": {
@@ -3664,20 +2512,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7078383",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "3e0c1680b77c253a": {
-      "title": "Solutions Architect",
-      "company": "MongoDB",
-      "location": "Berlin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7078334",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7078334",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3690,7 +2525,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7078645",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3703,7 +2538,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7078647",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3716,7 +2551,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7078654",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3729,33 +2564,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7078662",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "b622e4ce5fb55275": {
-      "title": "Solutions Architect",
-      "company": "MongoDB",
-      "location": "Singapore",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7592310",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7592310",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "59f8b6c105e1940a": {
-      "title": "Solutions Architect",
-      "company": "MongoDB",
-      "location": "India",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7597852",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7597852",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3768,7 +2577,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7455000",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3781,20 +2590,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7610086",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "d02714d27ff4a233": {
-      "title": "Solutions Architect, German or French Speaker",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7448861",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7448861",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3807,7 +2603,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7557618",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -3820,22 +2616,9 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7280132",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
-      ]
-    },
-    "35205b4bf0781069": {
-      "title": "Staff Software Engineer, Atlas Growth",
-      "company": "MongoDB",
-      "location": "Dublin",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7411430",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7411430",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
       ]
     },
     "502617152bf673f2": {
@@ -3846,7 +2629,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7264736",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3859,7 +2642,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7264738",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3872,20 +2655,7 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7221902",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "a14bc347c529b73b": {
-      "title": "Staff Software Engineer, Query",
-      "company": "MongoDB",
-      "location": "Calgary; Edmonton; Montreal; Ontario; Toronto; Vancouver",
-      "url": "https://www.mongodb.com/careers/job/?gh_jid=7221904",
-      "date_posted": "2026-02-20T14:44:54-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7221904",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3898,48 +2668,9 @@
       "date_posted": "2026-02-20T14:44:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7602834",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
-      ]
-    },
-    "5a85445ae38af1d9": {
-      "title": "Principal Software Developer I - Distributed Systems - Elasticsearch",
-      "company": "Elastic",
-      "location": "Canada",
-      "url": "https://jobs.elastic.co/jobs?gh_jid=7366826&gh_jid=7366826",
-      "date_posted": "2026-02-20T10:37:07-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7366826",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "04cf578f822fe1f8": {
-      "title": "Principal Solutions Architect, Security ",
-      "company": "Elastic",
-      "location": "Mumbai, India",
-      "url": "https://jobs.elastic.co/jobs?gh_jid=7546811&gh_jid=7546811",
-      "date_posted": "2026-02-20T03:08:18-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7546811",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
-      ]
-    },
-    "67241e2b30a56fea": {
-      "title": "Principal Solutions Architect, Security, Delhi",
-      "company": "Elastic",
-      "location": "Delhi, India",
-      "url": "https://jobs.elastic.co/jobs?gh_jid=7621743&gh_jid=7621743",
-      "date_posted": "2026-02-20T02:45:46-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7621743",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Engineering"
       ]
     },
     "86227b97b7f7b97a": {
@@ -3950,7 +2681,7 @@
       "date_posted": "2026-02-20T10:33:23-05:00",
       "source_ats": "greenhouse",
       "job_id": "7593695",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3963,7 +2694,7 @@
       "date_posted": "2026-02-20T13:10:05-05:00",
       "source_ats": "greenhouse",
       "job_id": "7621572",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Analyst"
       ]
@@ -3976,7 +2707,7 @@
       "date_posted": "2026-02-20T17:57:44-05:00",
       "source_ats": "greenhouse",
       "job_id": "6962299",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -3989,7 +2720,7 @@
       "date_posted": "2026-02-20T13:27:42-05:00",
       "source_ats": "greenhouse",
       "job_id": "7521014",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4002,7 +2733,7 @@
       "date_posted": "2026-02-20T11:03:54-05:00",
       "source_ats": "greenhouse",
       "job_id": "7434052",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4015,7 +2746,7 @@
       "date_posted": "2026-02-20T14:50:02-05:00",
       "source_ats": "greenhouse",
       "job_id": "7088208",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4028,72 +2759,7 @@
       "date_posted": "2026-02-20T12:35:31-05:00",
       "source_ats": "greenhouse",
       "job_id": "7053411",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "62677fb096b5b95b": {
-      "title": "Machine Learning Intern Fall 2026 (Toronto)",
-      "company": "Pinterest",
-      "location": "Toronto, ON, CA",
-      "url": "https://www.pinterestcareers.com/jobs/?gh_jid=7268778",
-      "date_posted": "2026-02-20T18:17:51-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7268778",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "AI/ML"
-      ]
-    },
-    "230ddd3491ff5b32": {
-      "title": "Master's Machine Learning Internship Summer Term 2026 (Toronto)",
-      "company": "Pinterest",
-      "location": "Toronto, ON, CA",
-      "url": "https://www.pinterestcareers.com/jobs/?gh_jid=7268767",
-      "date_posted": "2026-02-20T18:17:12-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "7268767",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "AI/ML"
-      ]
-    },
-    "bc739dd5fd958a1e": {
-      "title": "Software Engineer II, Backend",
-      "company": "Pinterest",
-      "location": "Toronto, ON, CA",
-      "url": "https://www.pinterestcareers.com/jobs/?gh_jid=5132899",
-      "date_posted": "2026-02-20T17:22:44-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "5132899",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "f10ed1c1b3396c4a": {
-      "title": "Machine Learning Engineer, Recommendations",
-      "company": "Lyft",
-      "location": "Toronto, Canada",
-      "url": "https://app.careerpuck.com/job-board/lyft/job/8378390002?gh_jid=8378390002",
-      "date_posted": "2026-02-20T03:22:15-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "8378390002",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "AI/ML"
-      ]
-    },
-    "dfefeed0948e6bef": {
-      "title": "Senior C++ Software Engineer ",
-      "company": "Lyft",
-      "location": "Toronto, Canada",
-      "url": "https://app.careerpuck.com/job-board/lyft/job/8284350002?gh_jid=8284350002",
-      "date_posted": "2026-02-20T03:23:06-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "8284350002",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4106,20 +2772,7 @@
       "date_posted": "2026-02-20T15:55:27-05:00",
       "source_ats": "greenhouse",
       "job_id": "8430552002",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "ff344d4b40c69024": {
-      "title": "Software Engineer, CorpSec",
-      "company": "Lyft",
-      "location": "Mexico City, Mexico",
-      "url": "https://app.careerpuck.com/job-board/lyft/job/8421525002?gh_jid=8421525002",
-      "date_posted": "2026-02-20T09:15:32-05:00",
-      "source_ats": "greenhouse",
-      "job_id": "8421525002",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4132,7 +2785,7 @@
       "date_posted": "2026-02-20T16:48:58-05:00",
       "source_ats": "greenhouse",
       "job_id": "7467839",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -4145,7 +2798,7 @@
       "date_posted": "2026-02-20T14:56:39-05:00",
       "source_ats": "greenhouse",
       "job_id": "7446320",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -4158,7 +2811,7 @@
       "date_posted": "2026-02-20T15:39:42-05:00",
       "source_ats": "greenhouse",
       "job_id": "7446301",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -4171,7 +2824,7 @@
       "date_posted": "2026-02-20T15:39:55-05:00",
       "source_ats": "greenhouse",
       "job_id": "7446322",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -4184,7 +2837,7 @@
       "date_posted": "2026-02-20T16:58:33-05:00",
       "source_ats": "greenhouse",
       "job_id": "7463326",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -4197,7 +2850,7 @@
       "date_posted": "2026-02-20T14:35:35-05:00",
       "source_ats": "greenhouse",
       "job_id": "7455962",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4210,7 +2863,7 @@
       "date_posted": "2026-02-20T17:11:16-05:00",
       "source_ats": "greenhouse",
       "job_id": "7483979",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4223,7 +2876,7 @@
       "date_posted": "2026-02-20T15:42:34-05:00",
       "source_ats": "greenhouse",
       "job_id": "7450706",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -4236,20 +2889,7 @@
       "date_posted": "2026-02-20T15:06:44-05:00",
       "source_ats": "greenhouse",
       "job_id": "7545185",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "050579d891640db9": {
-      "title": "Senior Fullstack Software Engineer, Collaboration",
-      "company": "Vanta",
-      "location": "Remote - Canada",
-      "url": "https://jobs.ashbyhq.com/vanta/a10488ee-5b31-4a10-bf99-3c18dfe8f733",
-      "date_posted": "2026-02-21T00:10:47.524+00:00",
-      "source_ats": "ashby",
-      "job_id": "a10488ee-5b31-4a10-bf99-3c18dfe8f733",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4262,7 +2902,7 @@
       "date_posted": "2026-02-21T00:10:53.960+00:00",
       "source_ats": "ashby",
       "job_id": "ffd3894e-8d69-4259-80ea-f192e94f4843",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4275,7 +2915,7 @@
       "date_posted": "2026-02-20T11:09:38.540+00:00",
       "source_ats": "ashby",
       "job_id": "11c4c3a7-54d2-4145-ab99-80f69f98bffd",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4288,7 +2928,7 @@
       "date_posted": "2026-02-20T11:36:34.590+00:00",
       "source_ats": "ashby",
       "job_id": "c6492fda-ddca-4ea1-b13a-1195ec6b2658",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4301,7 +2941,7 @@
       "date_posted": "2026-02-20T16:52:39.238+00:00",
       "source_ats": "ashby",
       "job_id": "2f5d046a-bd5f-44bb-a606-98bf13577c69",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Engineering"
       ]
@@ -4314,7 +2954,7 @@
       "date_posted": "2026-02-20T21:20:08.270Z",
       "source_ats": "smartrecruiters",
       "job_id": "744000110474153",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4327,20 +2967,7 @@
       "date_posted": "2026-02-20T20:00:06.490Z",
       "source_ats": "smartrecruiters",
       "job_id": "744000110461915",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "9b7b098cc4641367": {
-      "title": "Tech Lead Software Engineer",
-      "company": "Visa",
-      "location": "S\u00e3o Paulo, SP, br",
-      "url": "https://api.smartrecruiters.com/v1/companies/visa/postings/744000110457805",
-      "date_posted": "2026-02-20T19:32:17.261Z",
-      "source_ats": "smartrecruiters",
-      "job_id": "744000110457805",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4353,7 +2980,7 @@
       "date_posted": "2026-02-20T18:15:20.496Z",
       "source_ats": "smartrecruiters",
       "job_id": "744000110446805",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4366,7 +2993,7 @@
       "date_posted": "2026-02-20T18:14:48.201Z",
       "source_ats": "smartrecruiters",
       "job_id": "744000110446597",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4379,7 +3006,7 @@
       "date_posted": "2026-02-20T17:53:58.083Z",
       "source_ats": "smartrecruiters",
       "job_id": "744000110442946",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4392,7 +3019,7 @@
       "date_posted": "2026-02-20T17:41:19.571Z",
       "source_ats": "smartrecruiters",
       "job_id": "744000110441615",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4405,7 +3032,7 @@
       "date_posted": "2026-02-20T15:59:13.226Z",
       "source_ats": "smartrecruiters",
       "job_id": "744000110420326",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4418,7 +3045,7 @@
       "date_posted": "2026-02-20T15:39:38.751Z",
       "source_ats": "smartrecruiters",
       "job_id": "744000110415345",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4431,20 +3058,7 @@
       "date_posted": "2026-02-20T14:56:22.306Z",
       "source_ats": "smartrecruiters",
       "job_id": "744000110401081",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "0ab45241c1c3858f": {
-      "title": "Software Engineer",
-      "company": "Visa",
-      "location": "Reading, UNITED KINGDOM, gb",
-      "url": "https://api.smartrecruiters.com/v1/companies/visa/postings/744000110390591",
-      "date_posted": "2026-02-20T14:18:08.859Z",
-      "source_ats": "smartrecruiters",
-      "job_id": "744000110390591",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4457,61 +3071,9 @@
       "date_posted": "2026-02-20T13:30:07.836Z",
       "source_ats": "smartrecruiters",
       "job_id": "744000110382072",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
-      ]
-    },
-    "70731d3e884b522c": {
-      "title": "Director, Software Engineering",
-      "company": "Visa",
-      "location": "Bengaluru, INDIA, in",
-      "url": "https://api.smartrecruiters.com/v1/companies/visa/postings/744000110358701",
-      "date_posted": "2026-02-20T11:27:28.467Z",
-      "source_ats": "smartrecruiters",
-      "job_id": "744000110358701",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "992fac08621fa0db": {
-      "title": "Senior Consultant / Senior Software Engineer UK",
-      "company": "Visa",
-      "location": "London, England, gb",
-      "url": "https://api.smartrecruiters.com/v1/companies/visa/postings/744000110316776",
-      "date_posted": "2026-02-20T07:17:54.433Z",
-      "source_ats": "smartrecruiters",
-      "job_id": "744000110316776",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "SWE"
-      ]
-    },
-    "ca571ae31b2666ad": {
-      "title": "Sr. SW Engineer (Full-stack Developer, Java, Angular / React & GenAI Engineer-4+yrs of experience)",
-      "company": "Visa",
-      "location": "Bengaluru, INDIA, in",
-      "url": "https://api.smartrecruiters.com/v1/companies/visa/postings/744000110308275",
-      "date_posted": "2026-02-20T05:37:25.210Z",
-      "source_ats": "smartrecruiters",
-      "job_id": "744000110308275",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "AI/ML"
-      ]
-    },
-    "056a527ead444b07": {
-      "title": "Senior Data Scientist",
-      "company": "Visa",
-      "location": "Mumbai, INDIA, in",
-      "url": "https://api.smartrecruiters.com/v1/companies/visa/postings/744000110308075",
-      "date_posted": "2026-02-20T05:34:50.496Z",
-      "source_ats": "smartrecruiters",
-      "job_id": "744000110308075",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
-      "keywords_matched": [
-        "Data Science"
       ]
     },
     "c57840738a287356": {
@@ -4522,7 +3084,7 @@
       "date_posted": "Posted 2 Days Ago",
       "source_ats": "workday",
       "job_id": "/job/Noida/Machine-Learning-Engineer_R162627-1",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -4535,7 +3097,7 @@
       "date_posted": "Posted 7 Days Ago",
       "source_ats": "workday",
       "job_id": "/job/Noida/Machine-Learning-Engineer-2_R165280",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -4548,7 +3110,7 @@
       "date_posted": "Posted 8 Days Ago",
       "source_ats": "workday",
       "job_id": "/job/San-Jose/Machine-Learning-Engineer---Infra_R165019-1",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -4561,7 +3123,7 @@
       "date_posted": "Posted 10 Days Ago",
       "source_ats": "workday",
       "job_id": "/job/Bucharest/Sr-Big-Data-Engineer--Profile-Streaming-Ingestion_R164847-1",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -4574,7 +3136,7 @@
       "date_posted": "Posted 11 Days Ago",
       "source_ats": "workday",
       "job_id": "/job/San-Jose/Senior-ML-AI-Engineering-Manager--GenAI-Experiences_R165204",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -4587,7 +3149,7 @@
       "date_posted": "Posted 13 Days Ago",
       "source_ats": "workday",
       "job_id": "/job/San-Jose/Machine-Learning-Architect---GenAI-Experiences_R165213",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
@@ -4600,7 +3162,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-Arizona-Phoenix/Senior-Physical-Design-Application-Engineer_JR0280535",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4613,7 +3175,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-Arizona-Phoenix/IP-Enablement-Application-Engineer_JR0279356",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4626,7 +3188,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-Arizona-Phoenix/Memory-Design-Application-Engineer_JR0279355",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4639,7 +3201,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-Arizona-Phoenix/Senior-Physical-Verification-Application-Engineer_JR0279354",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4652,7 +3214,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-Arizona-Phoenix/DFT-Application-Engineer_JR0279352",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4665,7 +3227,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-Arizona-Phoenix/Senior-Analog---Mixed-Signal-Application-Engineer_JR0279353",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4678,7 +3240,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-Arizona-Phoenix/Senior-Silicon-Application-Engineer--Packaging-Design-_JR0279351",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4691,7 +3253,7 @@
       "date_posted": "Posted 30+ Days Ago",
       "source_ats": "workday",
       "job_id": "/job/US-Arizona-Phoenix/Sr-Infrastructure-Engineer---Linux-OS_JR0277458",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4704,7 +3266,7 @@
       "date_posted": "Posted 30+ Days Ago",
       "source_ats": "workday",
       "job_id": "/job/US-Arizona-Phoenix/Sr-Infrastructure-Engineer---Storage_JR0277455",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4717,7 +3279,7 @@
       "date_posted": "Posted 30+ Days Ago",
       "source_ats": "workday",
       "job_id": "/job/US-Arizona-Phoenix/Sr-Infrastructure-Engineer---Virtualization-and-Cloud-Platforms_JR0277457",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4730,7 +3292,7 @@
       "date_posted": "Posted 30+ Days Ago",
       "source_ats": "workday",
       "job_id": "/job/US-Arizona-Phoenix/Sr-Infrastructure-Engineer---Windows-OS_JR0277459",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4743,7 +3305,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-Oregon-Hillsboro/EDA-Tools-Software-Engineer_JR0280882",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4756,7 +3318,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-Arizona-Phoenix/SPTD-Quality-Engineer--PCS-_JR0278714",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Data Science"
       ]
@@ -4769,7 +3331,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-Oregon-Hillsboro/Government-Information-Security-Engineer_JR0276257",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4782,7 +3344,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-CA-Santa-Clara/Senior-Technical-Product-Manager---GPU-Direct-Storage_JR2001089",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "Product"
       ]
@@ -4795,7 +3357,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-CA-Santa-Clara/Senior-Software-Engineer--AI-Web-Products_JR2013475",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4808,7 +3370,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-CA-Santa-Clara/AI-Developer-Technology-Engineer--Financial-Sector---New-College-Grad-2026_JR2013803",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "New Grad"
       ]
@@ -4821,7 +3383,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-CA-Santa-Clara/Senior-Software-Engineer--Data-Infrastructure-for-Robotics-Research_JR2004938",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4834,7 +3396,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-CA-Santa-Clara/Senior-System-Level-Test-Engineer_JR2013156",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4847,7 +3409,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-CA-Santa-Clara/System-Software-Engineer---GPU_JR2013295",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4860,7 +3422,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-CA-Santa-Clara/Senior-Software-Engineer--Robotics---Isaac-Lab_JR2013747",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4873,7 +3435,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-CA-Santa-Clara/Senior-Software-Engineer---Storage_JR2013608",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4886,7 +3448,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-CA-Santa-Clara/Notebook-Hardware-Application-Engineer_JR2013587",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4899,7 +3461,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-CA-Santa-Clara/Senior-Software-Engineer---AI-Research-Clusters_JR2013615",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4912,7 +3474,7 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/US-CA-Santa-Clara/Senior-Software-Engineer---BaseOS_JR2012266",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "SWE"
       ]
@@ -4925,22 +3487,22 @@
       "date_posted": "Posted Today",
       "source_ats": "workday",
       "job_id": "/job/UK-Remote/Training-Operations-Manager--Deep-Learning-Institute---EMEA_JR2009997",
-      "first_seen": "2026-02-21T04:37:55.887691+00:00",
+      "first_seen": "2026-02-21T05:01:27.985687+00:00",
       "keywords_matched": [
         "AI/ML"
       ]
     }
   },
-  "last_updated": "2026-02-21T04:37:55.887691+00:00",
+  "last_updated": "2026-02-21T05:01:27.985687+00:00",
   "run_history": [
     {
-      "timestamp": "2026-02-21T04:37:55.887691+00:00",
+      "timestamp": "2026-02-21T05:01:27.985687+00:00",
       "fetched": 7328,
-      "filtered": 2401,
-      "new": 376,
+      "filtered": 2400,
+      "new": 266,
       "succeeded": 120,
       "failed": 0,
-      "duration_s": 17.8
+      "duration_s": 23.7
     }
   ]
 }

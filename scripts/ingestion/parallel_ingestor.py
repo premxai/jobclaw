@@ -29,6 +29,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.ingestion.ats_adapters import fetch_company_jobs, NormalizedJob
 from scripts.ingestion.role_filter import matches_target_role
+from scripts.ingestion.us_filter import is_us_location
 CONFIG_DIR = PROJECT_ROOT / "config"
 DATA_DIR = PROJECT_ROOT / "data"
 LOGS_DIR = PROJECT_ROOT / "logs"
@@ -108,15 +109,18 @@ def dedup_jobs(
 # 24HR TIME FILTER
 # ═══════════════════════════════════════════════════════════════════════
 
-def is_within_24h(date_str: str) -> bool:
-    """Check if a date string is within the last 24 hours.
+def is_within_window(date_str: str, window_hours: int = 24) -> bool:
+    """Check if a date string is within the specified time window.
 
-    Handles ISO dates, Unix timestamps, and relative dates.
+    Args:
+        date_str: Date string (ISO, Unix timestamp, or relative).
+        window_hours: Number of hours to look back (default 24).
+
     Returns True if date is unparseable (include rather than exclude).
     """
     if not date_str:
         return True
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=window_hours)
 
     # Try ISO format
     for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ",
@@ -174,26 +178,22 @@ async def _fetch_with_retry(
     return (name, [], "Max retries exceeded")
 
 
-async def run_cycle() -> dict[str, Any]:
+async def run_cycle(window_hours: int = 24) -> dict[str, Any]:
     """Execute one full ingestion cycle.
 
     1. Load registry
     2. Fetch all companies in parallel
     3. Filter by role keywords
-    4. Filter by 24hr time window
-    5. Dedup against known jobs
-    6. Store results
+    4. Filter by US location
+    5. Filter by time window
+    6. Dedup against known jobs
+    7. Store results
+
+    Args:
+        window_hours: How far back to look (24 for midnight sweep, 1 for regular).
 
     Returns:
-        Dict with cycle results:
-          - new_jobs: list of NormalizedJob dicts
-          - total_fetched: int
-          - total_filtered: int
-          - total_new: int
-          - companies_succeeded: int
-          - companies_failed: int
-          - errors: list of error strings
-          - duration_seconds: float
+        Dict with cycle results.
     """
     start = datetime.now()
     _log("========== INGESTION CYCLE START ==========")
@@ -252,9 +252,13 @@ async def run_cycle() -> dict[str, Any]:
     total_filtered = len(filtered)
     _log(f"Role filter: {total_filtered}/{total_fetched} jobs match target keywords")
 
-    # 4. Filter by 24hr time window
-    recent = [j for j in filtered if is_within_24h(j.date_posted)]
-    _log(f"24hr filter: {len(recent)}/{total_filtered} jobs within window")
+    # 4. Filter by US location
+    us_jobs = [j for j in filtered if is_us_location(j.location)]
+    _log(f"US filter: {len(us_jobs)}/{total_filtered} jobs in United States")
+
+    # 5. Filter by time window
+    recent = [j for j in us_jobs if is_within_window(j.date_posted, window_hours)]
+    _log(f"{window_hours}hr filter: {len(recent)}/{len(us_jobs)} jobs within window")
 
     # 5. Dedup
     db = load_known_jobs()

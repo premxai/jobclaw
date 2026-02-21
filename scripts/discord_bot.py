@@ -1,8 +1,9 @@
 """
 Discord Job Bot — ATS Ingestion Edition.
 
-Posts new AI/ML/SWE/Data jobs every 30 minutes by querying ATS platforms
-(Greenhouse, Lever, Ashby, SmartRecruiters, BambooHR) in parallel.
+Posts new AI/ML/SWE/Data jobs to Discord with smart scheduling:
+  - First run (midnight): 24hr sweep
+  - Every 30 min after: 1hr window only
 
 Usage:
     python scripts/discord_bot.py
@@ -66,7 +67,11 @@ ATS_EMOJIS = {
     "ashby": "🟢",
     "smartrecruiters": "📋",
     "bamboohr": "🎋",
+    "workday": "🔶",
 }
+
+# ── Smart scheduling state ────────────────────────────────────────────
+_first_run = True  # First cycle = 24hr sweep, subsequent = 1hr
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -106,11 +111,11 @@ def build_embed(job: dict, index: int, total: int) -> discord.Embed:
     if categories:
         embed.add_field(name="🏷️ Category", value=" • ".join(categories), inline=True)
 
-    embed.set_footer(text=f"JobClaw • {index}/{total} • Last 24hrs")
+    embed.set_footer(text=f"JobClaw • {index}/{total} • US Only")
     return embed
 
 
-async def post_jobs_to_channel(channel, new_jobs: list[dict], scan_time: str) -> None:
+async def post_jobs_to_channel(channel, new_jobs: list[dict], scan_time: str, window_hours: int = 24) -> None:
     """Post all new jobs to Discord, grouped by company."""
     if not new_jobs:
         return
@@ -127,10 +132,12 @@ async def post_jobs_to_channel(channel, new_jobs: list[dict], scan_time: str) ->
             cat_counts[cat] += 1
     cat_breakdown = " • ".join(f"**{count}** {cat}" for cat, count in sorted(cat_counts.items()))
 
+    window_label = "24 hours" if window_hours >= 24 else f"{window_hours} hour"
+
     # Header
     await channel.send(
         f"🚀 **{len(new_jobs)} New Job{'s' if len(new_jobs) != 1 else ''} Found!** (scanned at {scan_time})\n"
-        f"📅 Last 24 hours • {len(by_company)} companies • {cat_breakdown}\n"
+        f"📅 Last {window_label} • {len(by_company)} companies • 🇺🇸 US Only • {cat_breakdown}\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
@@ -146,7 +153,7 @@ async def post_jobs_to_channel(channel, new_jobs: list[dict], scan_time: str) ->
             await channel.send(embed=embed)
             await asyncio.sleep(0.5)  # Rate limit safety
 
-    await channel.send(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n✅ **Scan complete.** Next scan in 30 minutes.")
+    await channel.send(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n✅ **Scan complete.** Next scan in 30 minutes (1hr window).")
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -155,6 +162,7 @@ async def post_jobs_to_channel(channel, new_jobs: list[dict], scan_time: str) ->
 
 @tasks.loop(minutes=30)
 async def ingest_and_post():
+    global _first_run
     log("========== INGESTION CYCLE START ==========")
 
     channel = client.get_channel(CHANNEL_ID)
@@ -162,22 +170,28 @@ async def ingest_and_post():
         log(f"Channel {CHANNEL_ID} not found!", "ERROR")
         return
 
-    # Run ingestion cycle in executor (it uses asyncio internally)
+    # Smart scheduling: first run = 24hr sweep, subsequent = 1hr
+    window_hours = 24 if _first_run else 1
+    window_label = "24hr sweep" if _first_run else "1hr scan"
+    log(f"Running {window_label} (window={window_hours}h)")
+
     try:
-        result = await run_cycle()
+        result = await run_cycle(window_hours=window_hours)
     except Exception as e:
         log(f"Ingestion cycle failed: {e}", "ERROR")
         await channel.send(f"❌ **Ingestion error:** {str(e)[:200]}")
         return
+    finally:
+        _first_run = False  # All subsequent runs use 1hr window
 
     new_jobs = result.get("new_jobs", [])
     scan_time = datetime.now().strftime("%I:%M %p")
 
     # Stats message
     stats = (
-        f"📊 **Cycle Stats:** "
+        f"📊 **Cycle Stats ({window_label}):** "
         f"{result['companies_succeeded']} companies queried • "
-        f"{result['total_fetched']} jobs fetched • "
+        f"{result['total_fetched']} fetched • "
         f"{result['total_filtered']} matched roles • "
         f"{result['total_new']} new • "
         f"{result['duration_seconds']}s"
@@ -186,17 +200,17 @@ async def ingest_and_post():
     if not new_jobs:
         log("No new jobs this cycle.")
         await channel.send(
-            f"🔄 **Scan complete** — no new listings this cycle ({scan_time})\n{stats}"
+            f"🔄 **Scan complete ({window_label})** — no new listings ({scan_time})\n{stats}"
         )
         return
 
     log(f"Posting {len(new_jobs)} new jobs to Discord...")
     await channel.send(stats)
-    await post_jobs_to_channel(channel, new_jobs, scan_time)
+    await post_jobs_to_channel(channel, new_jobs, scan_time, window_hours)
 
     if result.get("errors"):
         error_count = len(result["errors"])
-        await channel.send(f"⚠️ {error_count} company fetch{'es' if error_count != 1 else ''} failed. Check logs for details.")
+        await channel.send(f"⚠️ {error_count} company fetch{'es' if error_count != 1 else ''} failed. Check logs.")
 
     log(f"Posted {len(new_jobs)} jobs. Cycle complete.")
     log("========== INGESTION CYCLE COMPLETE ==========")
@@ -226,8 +240,9 @@ async def on_ready():
         await channel.send(
             f"🦞 **JobClaw Bot v2 is online!**\n"
             f"📡 Monitoring **{len(registry)}** companies ({ats_summary})\n"
-            f"🎯 Targeting: AI/ML, SWE, Data Science roles\n"
-            f"⏰ Scanning every **30 minutes** (last 24hrs only)\n"
+            f"🎯 Targeting: AI/ML, SWE, Data, Product, Research roles\n"
+            f"🇺🇸 US-only jobs (+ Remote)\n"
+            f"⏰ **Smart Schedule:** First run = 24hr sweep, then every 30min = 1hr scan\n"
             f"Commands: `!scan` `!status` `!companies`"
         )
         ingest_and_post.start()
@@ -243,9 +258,9 @@ async def on_message(message: discord.Message):
     cmd = message.content.strip().lower()
 
     if cmd == "!scan":
-        await message.channel.send("🔍 **Starting manual ingestion cycle...** This may take 10-30 seconds.")
+        await message.channel.send("🔍 **Starting manual 24hr sweep...** This may take 10-30 seconds.")
         try:
-            result = await run_cycle()
+            result = await run_cycle(window_hours=24)
             new_jobs = result.get("new_jobs", [])
             scan_time = datetime.now().strftime("%I:%M %p")
 
@@ -259,7 +274,7 @@ async def on_message(message: discord.Message):
             await message.channel.send(stats)
 
             if new_jobs:
-                await post_jobs_to_channel(message.channel, new_jobs, scan_time)
+                await post_jobs_to_channel(message.channel, new_jobs, scan_time, 24)
             else:
                 await message.channel.send("✅ No new listings — all previously ingested.")
         except Exception as e:
