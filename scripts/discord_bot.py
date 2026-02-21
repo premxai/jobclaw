@@ -73,6 +73,10 @@ ATS_EMOJIS = {
     "weworkremotely": "💻",
     "dice": "🎲",
     "hackernews": "🟠",
+    "github-new-grad": "🎓",
+    "github-internship": "📚",
+    "github-ai-newgrad": "🤖",
+    "github-swe-newgrad": "💻",
 }
 
 # ── Smart scheduling state ────────────────────────────────────────────
