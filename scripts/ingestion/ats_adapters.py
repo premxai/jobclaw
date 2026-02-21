@@ -5,11 +5,12 @@ Each adapter knows how to call a specific ATS platform's public job board API
 and normalize the response into a common NormalizedJob format.
 
 Supported platforms:
-  - Greenhouse   (boards-api.greenhouse.io)
-  - Lever        (api.lever.co)
-  - Ashby        (api.ashbyhq.com)
+  - Greenhouse      (boards-api.greenhouse.io)
+  - Lever           (api.lever.co)
+  - Ashby           (api.ashbyhq.com)
   - SmartRecruiters (api.smartrecruiters.com)
-  - BambooHR     ({slug}.bamboohr.com)
+  - BambooHR        ({slug}.bamboohr.com)
+  - Workday         ({tenant}.wd{shard}.myworkdayjobs.com)
 """
 
 import hashlib
@@ -273,6 +274,98 @@ class BambooHRAdapter:
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# WORKDAY ADAPTER
+# ═══════════════════════════════════════════════════════════════════════
+
+class WorkdayAdapter:
+    """Workday CXS API: {tenant}.wd{shard}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs
+
+    Slug format: "tenant:shard:site"
+    Example: "microsoft:5:Microsoft" → microsoft.wd5.myworkdayjobs.com/wday/cxs/microsoft/Microsoft/jobs
+    """
+
+    @staticmethod
+    async def fetch(session: aiohttp.ClientSession, slug: str, company: str) -> list[NormalizedJob]:
+        # Parse slug: "tenant:shard:site"
+        parts = slug.split(":")
+        if len(parts) != 3:
+            return []
+        tenant, shard, site = parts
+
+        base_url = f"https://{tenant}.wd{shard}.myworkdayjobs.com"
+        api_url = f"{base_url}/wday/cxs/{tenant}/{site}/jobs"
+
+        # Workday uses POST with JSON body for search
+        payload = {
+            "appliedFacets": {},
+            "limit": 20,
+            "offset": 0,
+            "searchText": "",
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+
+        try:
+            all_jobs = []
+            offset = 0
+            max_pages = 10  # Safety limit: 200 jobs max
+
+            while offset < max_pages * 20:
+                payload["offset"] = offset
+                async with session.post(
+                    api_url, json=payload, headers=headers,
+                    timeout=aiohttp.ClientTimeout(total=30)
+                ) as resp:
+                    if resp.status != 200:
+                        break
+                    data = await resp.json()
+
+                job_postings = data.get("jobPostings", [])
+                if not job_postings:
+                    break
+
+                for j in job_postings:
+                    title = j.get("title", "")
+                    loc_parts = []
+                    if j.get("locationsText"):
+                        loc_parts.append(j["locationsText"])
+                    location = ", ".join(loc_parts) if loc_parts else "Unknown"
+
+                    posted = j.get("postedOn", "")
+                    bullet_fields = j.get("bulletFields", [])
+                    if not posted and bullet_fields:
+                        # Sometimes date is in bulletFields
+                        for bf in bullet_fields:
+                            if "posted" in str(bf).lower() or "20" in str(bf):
+                                posted = str(bf)
+                                break
+
+                    external_path = j.get("externalPath", "")
+                    job_url = f"{base_url}/en-US{external_path}" if external_path else ""
+
+                    all_jobs.append(NormalizedJob(
+                        title=title,
+                        company=company,
+                        location=location,
+                        url=job_url,
+                        date_posted=posted,
+                        source_ats="workday",
+                        job_id=external_path or title,
+                    ))
+
+                total = data.get("total", 0)
+                offset += 20
+                if offset >= total:
+                    break
+
+            return all_jobs
+        except Exception:
+            return []
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # ADAPTER REGISTRY
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -282,6 +375,7 @@ ADAPTERS = {
     "ashby": AshbyAdapter,
     "smartrecruiters": SmartRecruitersAdapter,
     "bamboohr": BambooHRAdapter,
+    "workday": WorkdayAdapter,
 }
 
 

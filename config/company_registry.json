@@ -499,6 +499,106 @@
             "company": "Ghost",
             "ats": "bamboohr",
             "slug": "ghost"
+        },
+        {
+            "company": "Microsoft",
+            "ats": "workday",
+            "slug": "microsoft:5:Microsoft"
+        },
+        {
+            "company": "Amazon",
+            "ats": "workday",
+            "slug": "amazon:5:AmazonNew"
+        },
+        {
+            "company": "Adobe",
+            "ats": "workday",
+            "slug": "adobe:5:external_experienced"
+        },
+        {
+            "company": "Salesforce",
+            "ats": "workday",
+            "slug": "salesforce:5:External"
+        },
+        {
+            "company": "Cisco",
+            "ats": "workday",
+            "slug": "cisco:5:External"
+        },
+        {
+            "company": "Intel",
+            "ats": "workday",
+            "slug": "intel:1:External"
+        },
+        {
+            "company": "NVIDIA",
+            "ats": "workday",
+            "slug": "nvidia:5:NVIDIAExternalCareerSite"
+        },
+        {
+            "company": "Netflix",
+            "ats": "workday",
+            "slug": "netflix:5:External"
+        },
+        {
+            "company": "PayPal",
+            "ats": "workday",
+            "slug": "paypal:5:Jobs"
+        },
+        {
+            "company": "VMware",
+            "ats": "workday",
+            "slug": "vmware:5:External"
+        },
+        {
+            "company": "Uber",
+            "ats": "workday",
+            "slug": "uber:5:Uber"
+        },
+        {
+            "company": "Meta",
+            "ats": "workday",
+            "slug": "metacareers:5:External"
+        },
+        {
+            "company": "Apple",
+            "ats": "workday",
+            "slug": "apple:5:External"
+        },
+        {
+            "company": "Google",
+            "ats": "workday",
+            "slug": "google:5:Google"
+        },
+        {
+            "company": "JPMorgan Chase",
+            "ats": "workday",
+            "slug": "jpmc:5:External"
+        },
+        {
+            "company": "Goldman Sachs",
+            "ats": "workday",
+            "slug": "goldmansachs:5:External"
+        },
+        {
+            "company": "Morgan Stanley",
+            "ats": "workday",
+            "slug": "morganstanley:5:External"
+        },
+        {
+            "company": "IBM",
+            "ats": "workday",
+            "slug": "ibm:5:External"
+        },
+        {
+            "company": "Oracle",
+            "ats": "workday",
+            "slug": "oracle:5:External"
+        },
+        {
+            "company": "SAP",
+            "ats": "workday",
+            "slug": "sap:5:External"
         }
     ]
 }
