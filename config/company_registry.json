@@ -599,6 +599,611 @@
             "company": "SAP",
             "ats": "workday",
             "slug": "sap:5:External"
+        },
+        {
+            "company": "SpaceX",
+            "ats": "greenhouse",
+            "slug": "spacex"
+        },
+        {
+            "company": "Dropbox",
+            "ats": "greenhouse",
+            "slug": "dropbox"
+        },
+        {
+            "company": "HubSpot",
+            "ats": "greenhouse",
+            "slug": "hubspot"
+        },
+        {
+            "company": "Twilio",
+            "ats": "greenhouse",
+            "slug": "twilio"
+        },
+        {
+            "company": "Snap",
+            "ats": "greenhouse",
+            "slug": "snap"
+        },
+        {
+            "company": "Block (Square)",
+            "ats": "greenhouse",
+            "slug": "block"
+        },
+        {
+            "company": "Databricks",
+            "ats": "greenhouse",
+            "slug": "databricks"
+        },
+        {
+            "company": "Toast",
+            "ats": "greenhouse",
+            "slug": "toast"
+        },
+        {
+            "company": "Affirm",
+            "ats": "greenhouse",
+            "slug": "affirm"
+        },
+        {
+            "company": "Robinhood",
+            "ats": "greenhouse",
+            "slug": "robinhood"
+        },
+        {
+            "company": "DataDog",
+            "ats": "greenhouse",
+            "slug": "datadog"
+        },
+        {
+            "company": "Okta",
+            "ats": "greenhouse",
+            "slug": "okta"
+        },
+        {
+            "company": "Zscaler",
+            "ats": "greenhouse",
+            "slug": "zscaler"
+        },
+        {
+            "company": "SentinelOne",
+            "ats": "greenhouse",
+            "slug": "sentinelone"
+        },
+        {
+            "company": "Palo Alto Networks",
+            "ats": "greenhouse",
+            "slug": "paloaltonetworks"
+        },
+        {
+            "company": "Samsara",
+            "ats": "greenhouse",
+            "slug": "samsara"
+        },
+        {
+            "company": "Snowflake",
+            "ats": "greenhouse",
+            "slug": "snowflake"
+        },
+        {
+            "company": "Turo",
+            "ats": "greenhouse",
+            "slug": "turo"
+        },
+        {
+            "company": "Canva",
+            "ats": "greenhouse",
+            "slug": "canva"
+        },
+        {
+            "company": "Asana",
+            "ats": "greenhouse",
+            "slug": "asana"
+        },
+        {
+            "company": "Atlassian",
+            "ats": "greenhouse",
+            "slug": "atlassian"
+        },
+        {
+            "company": "Notion",
+            "ats": "greenhouse",
+            "slug": "notion"
+        },
+        {
+            "company": "Mux",
+            "ats": "greenhouse",
+            "slug": "mux"
+        },
+        {
+            "company": "Render",
+            "ats": "greenhouse",
+            "slug": "render"
+        },
+        {
+            "company": "Sumo Logic",
+            "ats": "greenhouse",
+            "slug": "sumologic"
+        },
+        {
+            "company": "Cockroach Labs",
+            "ats": "greenhouse",
+            "slug": "cockroachlabs"
+        },
+        {
+            "company": "Lacework",
+            "ats": "greenhouse",
+            "slug": "lacework"
+        },
+        {
+            "company": "Rubrik",
+            "ats": "greenhouse",
+            "slug": "rubrik"
+        },
+        {
+            "company": "Coupang",
+            "ats": "greenhouse",
+            "slug": "coupang"
+        },
+        {
+            "company": "Duolingo",
+            "ats": "greenhouse",
+            "slug": "duolingo"
+        },
+        {
+            "company": "Roblox",
+            "ats": "greenhouse",
+            "slug": "roblox"
+        },
+        {
+            "company": "Epic Games",
+            "ats": "greenhouse",
+            "slug": "epicgames"
+        },
+        {
+            "company": "Riot Games",
+            "ats": "greenhouse",
+            "slug": "riotgames"
+        },
+        {
+            "company": "Niantic",
+            "ats": "greenhouse",
+            "slug": "niantic"
+        },
+        {
+            "company": "SoFi",
+            "ats": "greenhouse",
+            "slug": "sofi"
+        },
+        {
+            "company": "Mercury",
+            "ats": "greenhouse",
+            "slug": "mercury"
+        },
+        {
+            "company": "Wealthfront",
+            "ats": "greenhouse",
+            "slug": "wealthfront"
+        },
+        {
+            "company": "Navan",
+            "ats": "greenhouse",
+            "slug": "navan"
+        },
+        {
+            "company": "C3 AI",
+            "ats": "greenhouse",
+            "slug": "c3ai"
+        },
+        {
+            "company": "Together AI",
+            "ats": "greenhouse",
+            "slug": "togetherai"
+        },
+        {
+            "company": "Stability AI",
+            "ats": "greenhouse",
+            "slug": "stabilityai"
+        },
+        {
+            "company": "Inflection AI",
+            "ats": "greenhouse",
+            "slug": "inflection"
+        },
+        {
+            "company": "Adept AI",
+            "ats": "greenhouse",
+            "slug": "adeptai"
+        },
+        {
+            "company": "Character AI",
+            "ats": "greenhouse",
+            "slug": "characterai"
+        },
+        {
+            "company": "xAI",
+            "ats": "greenhouse",
+            "slug": "xai"
+        },
+        {
+            "company": "Groq",
+            "ats": "greenhouse",
+            "slug": "groq"
+        },
+        {
+            "company": "Cerebras",
+            "ats": "greenhouse",
+            "slug": "cerebras"
+        },
+        {
+            "company": "Shield AI",
+            "ats": "lever",
+            "slug": "shieldai"
+        },
+        {
+            "company": "Zoox",
+            "ats": "lever",
+            "slug": "zoox"
+        },
+        {
+            "company": "Gong",
+            "ats": "lever",
+            "slug": "gong"
+        },
+        {
+            "company": "Outreach",
+            "ats": "lever",
+            "slug": "outreach"
+        },
+        {
+            "company": "OpenSea",
+            "ats": "lever",
+            "slug": "opensea"
+        },
+        {
+            "company": "The Browser Company",
+            "ats": "lever",
+            "slug": "thebrowsercompany"
+        },
+        {
+            "company": "WorkOS",
+            "ats": "lever",
+            "slug": "workos"
+        },
+        {
+            "company": "Metabase",
+            "ats": "lever",
+            "slug": "metabase"
+        },
+        {
+            "company": "Front",
+            "ats": "lever",
+            "slug": "frontapp"
+        },
+        {
+            "company": "Tome",
+            "ats": "lever",
+            "slug": "tome"
+        },
+        {
+            "company": "Figma",
+            "ats": "lever",
+            "slug": "figma"
+        },
+        {
+            "company": "Vercel",
+            "ats": "lever",
+            "slug": "vercel"
+        },
+        {
+            "company": "Tailscale",
+            "ats": "lever",
+            "slug": "tailscale"
+        },
+        {
+            "company": "Weights & Biases",
+            "ats": "lever",
+            "slug": "wandb"
+        },
+        {
+            "company": "Anyscale",
+            "ats": "lever",
+            "slug": "anyscale"
+        },
+        {
+            "company": "Anthropic",
+            "ats": "lever",
+            "slug": "anthropic"
+        },
+        {
+            "company": "Midjourney",
+            "ats": "lever",
+            "slug": "midjourney"
+        },
+        {
+            "company": "Alchemy",
+            "ats": "lever",
+            "slug": "alchemy"
+        },
+        {
+            "company": "Notion",
+            "ats": "lever",
+            "slug": "notion"
+        },
+        {
+            "company": "Airtable",
+            "ats": "lever",
+            "slug": "airtable"
+        },
+        {
+            "company": "CoreWeave",
+            "ats": "lever",
+            "slug": "coreweave"
+        },
+        {
+            "company": "Mistral AI",
+            "ats": "lever",
+            "slug": "mistralai"
+        },
+        {
+            "company": "Deel",
+            "ats": "ashby",
+            "slug": "deel"
+        },
+        {
+            "company": "Clerk",
+            "ats": "ashby",
+            "slug": "clerk"
+        },
+        {
+            "company": "Inngest",
+            "ats": "ashby",
+            "slug": "inngest"
+        },
+        {
+            "company": "Neon",
+            "ats": "ashby",
+            "slug": "neon"
+        },
+        {
+            "company": "Turso",
+            "ats": "ashby",
+            "slug": "turso"
+        },
+        {
+            "company": "Axiom",
+            "ats": "ashby",
+            "slug": "axiom"
+        },
+        {
+            "company": "Dopt",
+            "ats": "ashby",
+            "slug": "dopt"
+        },
+        {
+            "company": "Baseten",
+            "ats": "ashby",
+            "slug": "baseten"
+        },
+        {
+            "company": "Replicate",
+            "ats": "ashby",
+            "slug": "replicate"
+        },
+        {
+            "company": "Anduril",
+            "ats": "ashby",
+            "slug": "anduril"
+        },
+        {
+            "company": "Palantir",
+            "ats": "smartrecruiters",
+            "slug": "palantir"
+        },
+        {
+            "company": "Capgemini",
+            "ats": "smartrecruiters",
+            "slug": "capgemini"
+        },
+        {
+            "company": "Siemens",
+            "ats": "smartrecruiters",
+            "slug": "siemens"
+        },
+        {
+            "company": "Deloitte",
+            "ats": "smartrecruiters",
+            "slug": "deloitte"
+        },
+        {
+            "company": "Accenture",
+            "ats": "smartrecruiters",
+            "slug": "accenture"
+        },
+        {
+            "company": "Qualcomm",
+            "ats": "workday",
+            "slug": "qualcomm:5:External"
+        },
+        {
+            "company": "AMD",
+            "ats": "workday",
+            "slug": "amd:5:External"
+        },
+        {
+            "company": "Tesla",
+            "ats": "workday",
+            "slug": "tesla:5:External"
+        },
+        {
+            "company": "Boeing",
+            "ats": "workday",
+            "slug": "boeingexternal:5:External"
+        },
+        {
+            "company": "Raytheon",
+            "ats": "workday",
+            "slug": "rtx:5:External"
+        },
+        {
+            "company": "Lockheed Martin",
+            "ats": "workday",
+            "slug": "lockheedmartin:5:External"
+        },
+        {
+            "company": "Northrop Grumman",
+            "ats": "workday",
+            "slug": "northropgrumman:5:External"
+        },
+        {
+            "company": "General Electric",
+            "ats": "workday",
+            "slug": "ge:5:External"
+        },
+        {
+            "company": "Honeywell",
+            "ats": "workday",
+            "slug": "honeywell:5:External"
+        },
+        {
+            "company": "Capital One",
+            "ats": "workday",
+            "slug": "capitalone:5:External"
+        },
+        {
+            "company": "Visa",
+            "ats": "workday",
+            "slug": "visa:5:External"
+        },
+        {
+            "company": "Mastercard",
+            "ats": "workday",
+            "slug": "mastercard:5:External"
+        },
+        {
+            "company": "American Express",
+            "ats": "workday",
+            "slug": "americanexpress:5:External"
+        },
+        {
+            "company": "Bank of America",
+            "ats": "workday",
+            "slug": "bankofamerica:5:External"
+        },
+        {
+            "company": "Citigroup",
+            "ats": "workday",
+            "slug": "citi:5:External"
+        },
+        {
+            "company": "Wells Fargo",
+            "ats": "workday",
+            "slug": "wellsfargo:5:External"
+        },
+        {
+            "company": "Target",
+            "ats": "workday",
+            "slug": "target:5:External"
+        },
+        {
+            "company": "Walmart",
+            "ats": "workday",
+            "slug": "walmart:5:External"
+        },
+        {
+            "company": "UnitedHealth Group",
+            "ats": "workday",
+            "slug": "uhg:5:External"
+        },
+        {
+            "company": "Johnson & Johnson",
+            "ats": "workday",
+            "slug": "jj:5:External"
+        },
+        {
+            "company": "Pfizer",
+            "ats": "workday",
+            "slug": "pfizer:5:External"
+        },
+        {
+            "company": "Comcast",
+            "ats": "workday",
+            "slug": "comcast:5:External"
+        },
+        {
+            "company": "Walt Disney",
+            "ats": "workday",
+            "slug": "disney:5:External"
+        },
+        {
+            "company": "T-Mobile",
+            "ats": "workday",
+            "slug": "tmobile:5:External"
+        },
+        {
+            "company": "Verizon",
+            "ats": "workday",
+            "slug": "verizon:5:External"
+        },
+        {
+            "company": "AT&T",
+            "ats": "workday",
+            "slug": "att:5:External"
+        },
+        {
+            "company": "Dell",
+            "ats": "workday",
+            "slug": "dell:5:External"
+        },
+        {
+            "company": "HP",
+            "ats": "workday",
+            "slug": "hp:5:External"
+        },
+        {
+            "company": "Micron",
+            "ats": "workday",
+            "slug": "micron:5:External"
+        },
+        {
+            "company": "Applied Materials",
+            "ats": "workday",
+            "slug": "appliedmaterials:5:External"
+        },
+        {
+            "company": "ServiceNow",
+            "ats": "workday",
+            "slug": "servicenow:5:External"
+        },
+        {
+            "company": "Workday",
+            "ats": "workday",
+            "slug": "workday:5:External"
+        },
+        {
+            "company": "VMware (Broadcom)",
+            "ats": "workday",
+            "slug": "broadcom:5:External"
+        },
+        {
+            "company": "Intuit",
+            "ats": "workday",
+            "slug": "intuit:5:External"
+        },
+        {
+            "company": "Autodesk",
+            "ats": "workday",
+            "slug": "autodesk:5:External"
+        },
+        {
+            "company": "Splunk (Cisco)",
+            "ats": "workday",
+            "slug": "splunk:5:External"
+        },
+        {
+            "company": "Zoom",
+            "ats": "workday",
+            "slug": "zoom:5:External"
         }
     ]
 }
