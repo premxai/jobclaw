@@ -51,9 +51,14 @@ client = discord.Client(intents=intents)
 
 # ── Category colors ───────────────────────────────────────────────────
 CATEGORY_COLORS = {
-    "AI/ML": 0x7C3AED,    # Purple
-    "SWE": 0x2563EB,      # Blue
-    "Data": 0x059669,      # Green
+    "AI/ML": 0x7C3AED,          # Purple
+    "SWE": 0x2563EB,            # Blue
+    "Data Science": 0x059669,    # Green
+    "Data Engineering": 0x0891B2,# Teal
+    "Data Analyst": 0x65A30D,    # Lime
+    "New Grad": 0xF59E0B,       # Amber
+    "Product": 0xEC4899,         # Pink
+    "Research": 0x8B5CF6,        # Violet
 }
 ATS_EMOJIS = {
     "greenhouse": "🌿",
