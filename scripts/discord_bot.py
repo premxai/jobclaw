@@ -68,6 +68,11 @@ ATS_EMOJIS = {
     "smartrecruiters": "📋",
     "bamboohr": "🎋",
     "workday": "🔶",
+    "remoteok": "🌍",
+    "remotive": "🏠",
+    "weworkremotely": "💻",
+    "dice": "🎲",
+    "hackernews": "🟠",
 }
 
 # ── Smart scheduling state ────────────────────────────────────────────

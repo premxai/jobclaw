@@ -30,6 +30,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from scripts.ingestion.ats_adapters import fetch_company_jobs, NormalizedJob
 from scripts.ingestion.role_filter import matches_target_role
 from scripts.ingestion.us_filter import is_us_location
+from scripts.ingestion.job_board_adapters import fetch_all_job_boards
 CONFIG_DIR = PROJECT_ROOT / "config"
 DATA_DIR = PROJECT_ROOT / "data"
 LOGS_DIR = PROJECT_ROOT / "logs"
@@ -238,8 +239,15 @@ async def run_cycle(window_hours: int = 24) -> dict[str, Any]:
                 succeeded += 1
                 all_jobs.extend(jobs)
 
+        # 2b. Fetch from job board APIs
+        board_jobs, board_errors = await fetch_all_job_boards(session)
+        all_jobs.extend(board_jobs)
+        errors.extend(board_errors)
+        if board_jobs:
+            _log(f"Job boards: {len(board_jobs)} additional jobs from APIs/RSS")
+
     total_fetched = len(all_jobs)
-    _log(f"Fetched {total_fetched} jobs from {succeeded} companies ({failed} failed)")
+    _log(f"Fetched {total_fetched} jobs from {succeeded} companies + job boards ({failed} failed)")
 
     # 3. Filter by role keywords
     filtered = []
