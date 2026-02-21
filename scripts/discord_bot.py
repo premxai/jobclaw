@@ -77,6 +77,9 @@ ATS_EMOJIS = {
     "github-internship": "📚",
     "github-ai-newgrad": "🤖",
     "github-swe-newgrad": "💻",
+    "hiringcafe": "☕",
+    "jobright": "🎯",
+    "yc-startup": "🟧",
 }
 
 # ── Smart scheduling state ────────────────────────────────────────────

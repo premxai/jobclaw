@@ -32,6 +32,7 @@ from scripts.ingestion.role_filter import matches_target_role
 from scripts.ingestion.us_filter import is_us_location
 from scripts.ingestion.job_board_adapters import fetch_all_job_boards
 from scripts.ingestion.github_parser import fetch_all_github_repos
+from scripts.ingestion.aggregator_adapters import fetch_all_aggregators
 CONFIG_DIR = PROJECT_ROOT / "config"
 DATA_DIR = PROJECT_ROOT / "data"
 LOGS_DIR = PROJECT_ROOT / "logs"
@@ -253,6 +254,13 @@ async def run_cycle(window_hours: int = 24) -> dict[str, Any]:
         errors.extend(gh_errors)
         if gh_jobs:
             _log(f"GitHub repos: {len(gh_jobs)} additional jobs from repos")
+
+        # 2d. Fetch from aggregator sites
+        agg_jobs, agg_errors = await fetch_all_aggregators(session)
+        all_jobs.extend(agg_jobs)
+        errors.extend(agg_errors)
+        if agg_jobs:
+            _log(f"Aggregators: {len(agg_jobs)} additional jobs from sites")
 
     total_fetched = len(all_jobs)
     _log(f"Fetched {total_fetched} jobs from {succeeded} companies + job boards ({failed} failed)")
