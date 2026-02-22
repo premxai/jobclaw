@@ -129,7 +129,10 @@ def is_within_window(date_str: str, window_hours: int = 24) -> bool:
     # Try ISO format
     for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ",
                 "%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S.%f%z",
-                "%Y-%m-%d"):
+                "%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", 
+                "%a, %d %b %Y %H:%M:%S %z",
+                "%a, %d %b %Y %H:%M:%S %Z",
+                "%a, %d %b %Y %H:%M:%S GMT"):
         try:
             parsed = datetime.strptime(date_str, fmt)
             if parsed.tzinfo is None:
