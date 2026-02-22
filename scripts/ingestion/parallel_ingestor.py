@@ -21,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 import sys
+import re
 import aiohttp
 
 # Fix imports for both standalone and module usage
@@ -146,7 +147,20 @@ def is_within_window(date_str: str, window_hours: int = 24) -> bool:
     except (ValueError, OSError):
         pass
 
-    # Relative dates like "3 hours ago", "today" - include them
+    # Basic relative date parsing (e.g., "30+ Days Ago", "3 days ago")
+    date_str_lower = date_str.lower()
+    
+    # Anything with month/year is definitely out of the 24h window
+    if "month" in date_str_lower or "year" in date_str_lower:
+        return window_hours >= 720  # True only if window >= 30 days
+
+    # Extract days (handles "3 days", "30+ days", etc)
+    match = re.search(r'(\d+)\+?\s*day', date_str_lower)
+    if match:
+        days = int(match.group(1))
+        return (days * 24) <= window_hours
+
+    # Relative dates like "3 hours ago" or unparseable ones - include them
     return True
 
 
@@ -248,12 +262,12 @@ async def run_cycle(window_hours: int = 24) -> dict[str, Any]:
         if board_jobs:
             _log(f"Job boards: {len(board_jobs)} additional jobs from APIs/RSS")
 
-        # 2c. Fetch from GitHub repos
-        gh_jobs, gh_errors = await fetch_all_github_repos(session)
-        all_jobs.extend(gh_jobs)
-        errors.extend(gh_errors)
-        if gh_jobs:
-            _log(f"GitHub repos: {len(gh_jobs)} additional jobs from repos")
+        # 2c. Fetch from GitHub repos (temporarily disabled)
+        # gh_jobs, gh_errors = await fetch_all_github_repos(session)
+        # all_jobs.extend(gh_jobs)
+        # errors.extend(gh_errors)
+        # if gh_jobs:
+        #     _log(f"GitHub repos: {len(gh_jobs)} additional jobs from repos")
 
         # 2d. Fetch from aggregator sites
         agg_jobs, agg_errors = await fetch_all_aggregators(session)

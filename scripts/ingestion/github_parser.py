@@ -238,6 +238,10 @@ def _parse_markdown_table(markdown: str, label: str) -> list[NormalizedJob]:
                     job_url = url_match.group(2)
                     break
 
+        # Strip HTML tags
+        company = re.sub(r'<[^>]+>', '', company)
+        title = re.sub(r'<[^>]+>', '', title)
+
         # Clean markdown from company/title
         company = re.sub(r'\[([^\]]*)\]\([^)]+\)', r'\1', company).strip()
         title = re.sub(r'\[([^\]]*)\]\([^)]+\)', r'\1', title).strip()

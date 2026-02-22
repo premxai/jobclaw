@@ -87,7 +87,7 @@ class GreenhouseAdapter:
                     title=j.get("title", ""),
                     company=company,
                     location=location,
-                    url=j.get("absolute_url", ""),
+                    url=f"https://boards.greenhouse.io/{slug}/jobs/{j.get('id', '')}",
                     date_posted=updated_at,
                     source_ats="greenhouse",
                     job_id=str(j.get("id", "")),
@@ -221,7 +221,7 @@ class SmartRecruitersAdapter:
                     title=j.get("name", ""),
                     company=company,
                     location=location.strip(", "),
-                    url=j.get("ref", j.get("applyUrl", "")),
+                    url=f"https://jobs.smartrecruiters.com/{slug}/{j.get('id', '')}",
                     date_posted=released,
                     source_ats="smartrecruiters",
                     job_id=str(j.get("id", "")),
@@ -343,7 +343,7 @@ class WorkdayAdapter:
                                 break
 
                     external_path = j.get("externalPath", "")
-                    job_url = f"{base_url}/en-US{external_path}" if external_path else ""
+                    job_url = f"{base_url}/en-US/{site}{external_path}" if external_path else ""
 
                     all_jobs.append(NormalizedJob(
                         title=title,

@@ -108,11 +108,14 @@ def build_embed(job: dict, index: int, total: int) -> discord.Embed:
 
     embed = discord.Embed(
         title=f"💼 {job.get('title', 'Unknown')}",
-        url=job.get("url", ""),
-        description=f"🕐 **Posted:** {job.get('date_posted', 'Unknown')}",
+        description=f"🕐 **Posted:** {job.get('date_posted', '') or 'Unknown'}",
         color=color,
         timestamp=datetime.now(timezone.utc),
     )
+    url = job.get("url", "").strip()
+    if url and url.startswith("http"):
+        embed.url = url
+
     embed.add_field(name="🏢 Company", value=job.get("company", "Unknown"), inline=True)
     embed.add_field(name="📍 Location", value=job.get("location", "Unknown"), inline=True)
     embed.add_field(
