@@ -22,3 +22,13 @@ logs/*.log
 
 # Temp
 *.tmp
+
+# SQLite Database
+*.db
+*.db-wal
+*.db-shm
+
+# Datasets & Temp Extractions
+*.csv
+data/openclaw_*.json
+data/agent_*.yaml

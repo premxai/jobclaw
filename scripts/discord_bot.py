@@ -1,240 +1,146 @@
-"""
-Discord Job Bot — ATS Ingestion Edition.
-
-Posts new AI/ML/SWE/Data jobs to Discord with smart scheduling:
-  - First run (midnight): 24hr sweep
-  - Every 30 min after: 1hr window only
-
-Usage:
-    python scripts/discord_bot.py
-"""
-
-import asyncio
-import json
-import os
-import sys
-from datetime import datetime, timezone
-from pathlib import Path
-from collections import defaultdict
-
 import discord
 from discord.ext import tasks
+import os
+import asyncio
+from collections import defaultdict
+from datetime import datetime
+from pathlib import Path
 from dotenv import load_dotenv
 
-# ── Fix imports ───────────────────────────────────────────────────────
+# Path fixing
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+import sys
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.ingestion.parallel_ingestor import run_cycle, load_registry
-from scripts.ingestion.ats_adapters import NormalizedJob
+from scripts.utils.logger import _log
+from scripts.database.db_utils import get_connection, get_unposted_jobs, mark_jobs_posted
 
-# ── Project paths ─────────────────────────────────────────────────────
-DATA_DIR = PROJECT_ROOT / "data"
-LOGS_DIR = PROJECT_ROOT / "logs"
+def log(msg: str, level: str = "INFO"):
+    _log(msg, level, "discord_bot")
 
-# ── Load environment ──────────────────────────────────────────────────
 load_dotenv(PROJECT_ROOT / ".env")
+BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+CHANNEL_ID_STR = os.getenv("DISCORD_CHANNEL_ID")
 
-BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN", "")
-CHANNEL_ID = int(os.getenv("DISCORD_CHANNEL_ID", "0"))
-
-if not BOT_TOKEN:
-    print("ERROR: DISCORD_BOT_TOKEN not set in .env")
-    sys.exit(1)
-if not CHANNEL_ID:
-    print("ERROR: DISCORD_CHANNEL_ID not set in .env")
+if not BOT_TOKEN or not CHANNEL_ID_STR:
+    log("CRITICAL ERROR: Missing DISCORD_BOT_TOKEN or DISCORD_CHANNEL_ID in .env", "ERROR")
     sys.exit(1)
 
-# ── Bot setup ─────────────────────────────────────────────────────────
+CHANNEL_ID = int(CHANNEL_ID_STR)
+
 intents = discord.Intents.default()
 intents.message_content = True
 client = discord.Client(intents=intents)
 
-# ── Category colors ───────────────────────────────────────────────────
-CATEGORY_COLORS = {
-    "AI/ML": 0x7C3AED,          # Purple
-    "SWE": 0x2563EB,            # Blue
-    "Data Science": 0x059669,    # Green
-    "Data Engineering": 0x0891B2,# Teal
-    "Data Analyst": 0x65A30D,    # Lime
-    "New Grad": 0xF59E0B,       # Amber
-    "Product": 0xEC4899,         # Pink
-    "Research": 0x8B5CF6,        # Violet
-}
+# ═══════════════════════════════════════════════════════════════════════
+# UI HELPERS
+# ═══════════════════════════════════════════════════════════════════════
+
 ATS_EMOJIS = {
-    "greenhouse": "🌿",
-    "lever": "🔧",
-    "ashby": "🟢",
-    "smartrecruiters": "📋",
-    "bamboohr": "🎋",
-    "workday": "🔶",
+    "greenhouse": "🌲",
+    "lever": " اه",
+    "ashby": "🦄",
+    "workday": "🏢",
+    "bamboohr": "🐼",
+    "smartrecruiters": "🎓",
+    "github": "🐙",
+    "ycombinator": "🟠",
     "remoteok": "🌍",
-    "remotive": "🏠",
-    "weworkremotely": "💻",
-    "dice": "🎲",
-    "hackernews": "🟠",
-    "github-new-grad": "🎓",
-    "github-internship": "📚",
-    "github-ai-newgrad": "🤖",
-    "github-swe-newgrad": "💻",
-    "hiringcafe": "☕",
-    "jobright": "🎯",
-    "yc-startup": "🟧",
+    "builtin": "🏗️",
+    "wellfound": "✌️",
+    "unknown": "💼",
 }
-
-# ── Smart scheduling state ────────────────────────────────────────────
-_first_run = True  # First cycle = 24hr sweep, subsequent = 1hr
-
-
-# ═══════════════════════════════════════════════════════════════════════
-# HELPERS
-# ═══════════════════════════════════════════════════════════════════════
-
-def log(msg: str, level: str = "INFO") -> None:
-    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    entry = f"{ts} | {level} | [discord_bot] {msg}"
-    print(entry)
-    LOGS_DIR.mkdir(parents=True, exist_ok=True)
-    with open(LOGS_DIR / "system.log", "a", encoding="utf-8") as f:
-        f.write(entry + "\n")
-
 
 def build_embed(job: dict, index: int, total: int) -> discord.Embed:
-    """Build a Discord embed for a job listing."""
-    categories = job.get("keywords_matched", [])
-    primary_cat = categories[0] if categories else "SWE"
-    color = CATEGORY_COLORS.get(primary_cat, 0x6B7280)
-    ats_emoji = ATS_EMOJIS.get(job.get("source_ats", ""), "📌")
+    company = job.get("company", "Unknown")
+    title = job.get("title", "Unknown Role")
+    url = job.get("url", "")
+    ats = job.get("source_ats", "unknown")
+    ats_emoji = ATS_EMOJIS.get(ats, "📌")
 
     embed = discord.Embed(
-        title=f"💼 {job.get('title', 'Unknown')}",
-        description=f"🕐 **Posted:** {job.get('date_posted', '') or 'Unknown'}",
-        color=color,
-        timestamp=datetime.now(timezone.utc),
+        title=title,
+        url=url if url else None,
+        color=discord.Color.brand_green(),
     )
-    url = job.get("url", "").strip()
-    if url and url.startswith("http"):
-        embed.url = url
-
-    embed.add_field(name="🏢 Company", value=job.get("company", "Unknown"), inline=True)
+    embed.set_author(name=company)
     embed.add_field(name="📍 Location", value=job.get("location", "Unknown"), inline=True)
-    embed.add_field(
-        name=f"{ats_emoji} Source",
-        value=job.get("source_ats", "unknown").capitalize(),
-        inline=True,
-    )
+    embed.add_field(name=f"{ats_emoji} Source", value=ats.capitalize(), inline=True)
+    
+    categories = job.get("keywords_matched", [])
     if categories:
         embed.add_field(name="🏷️ Category", value=" • ".join(categories), inline=True)
 
-    embed.set_footer(text=f"JobClaw • {index}/{total} • US Only")
+    embed.set_footer(text=f"JobClaw Broadcaster • {index}/{total}")
     return embed
 
-
-async def post_jobs_to_channel(channel, new_jobs: list[dict], scan_time: str, window_hours: int = 24) -> None:
-    """Post all new jobs to Discord, grouped by company."""
-    if not new_jobs:
+async def post_jobs_to_channel(channel, unposted_jobs: list[dict]):
+    if not unposted_jobs:
         return
 
     # Group by company
     by_company = defaultdict(list)
-    for job in new_jobs:
+    for job in unposted_jobs:
         by_company[job.get("company", "Unknown")].append(job)
-
-    # Category breakdown
-    cat_counts = defaultdict(int)
-    for job in new_jobs:
-        for cat in job.get("keywords_matched", ["Other"]):
-            cat_counts[cat] += 1
-    cat_breakdown = " • ".join(f"**{count}** {cat}" for cat, count in sorted(cat_counts.items()))
-
-    window_label = "24 hours" if window_hours >= 24 else f"{window_hours} hour"
 
     # Header
     await channel.send(
-        f"🚀 **{len(new_jobs)} New Job{'s' if len(new_jobs) != 1 else ''} Found!** (scanned at {scan_time})\n"
-        f"📅 Last {window_label} • {len(by_company)} companies • 🇺🇸 US Only • {cat_breakdown}\n"
+        f"🚀 **{len(unposted_jobs)} New Roles Found!**\n"
+        f"📡 Queried deeply from OS Scrapers • 🇺🇸 US Only\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
-    # Post jobs grouped by company
     i = 0
+    hashes_to_mark = []
+    
     for company, jobs in sorted(by_company.items()):
         if len(by_company) > 1 and len(jobs) > 1:
             await channel.send(f"\n**── {company} ({len(jobs)} roles) ──**")
 
         for job in jobs:
             i += 1
-            embed = build_embed(job, i, len(new_jobs))
+            embed = build_embed(job, i, len(unposted_jobs))
             await channel.send(embed=embed)
+            hashes_to_mark.append(job["internal_hash"])
             await asyncio.sleep(0.5)  # Rate limit safety
 
-    await channel.send(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n✅ **Scan complete.** Next scan in 30 minutes (1hr window).")
-
+    await channel.send(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n✅ **Batch Broadcast Complete.**")
+    
+    # Safely mark them as posted in the database
+    conn = get_connection()
+    mark_jobs_posted(conn, hashes_to_mark)
+    conn.close()
+    log(f"Successfully posted {len(hashes_to_mark)} jobs.")
 
 # ═══════════════════════════════════════════════════════════════════════
-# SCHEDULED TASK — every 30 minutes
+# DAEMON LOGIC
 # ═══════════════════════════════════════════════════════════════════════
 
-@tasks.loop(minutes=30)
-async def ingest_and_post():
-    global _first_run
-    log("========== INGESTION CYCLE START ==========")
-
+@tasks.loop(minutes=15)
+async def broadcast_new_jobs():
+    """Wakes up every 15 minutes to check DB for anything new."""
     channel = client.get_channel(CHANNEL_ID)
     if not channel:
         log(f"Channel {CHANNEL_ID} not found!", "ERROR")
         return
 
-    # Smart scheduling: first run = 24hr sweep, subsequent = 1hr
-    window_hours = 24 if _first_run else 1
-    window_label = "24hr sweep" if _first_run else "1hr scan"
-    log(f"Running {window_label} (window={window_hours}h)")
-
+    log("Checking SQLite for unposted jobs...")
+    conn = get_connection()
     try:
-        result = await run_cycle(window_hours=window_hours)
+        jobs = get_unposted_jobs(conn)
+        if not jobs:
+            log("No unposted jobs. Going back to sleep.")
+            return
+            
+        await post_jobs_to_channel(channel, jobs)
     except Exception as e:
-        log(f"Ingestion cycle failed: {e}", "ERROR")
-        await channel.send(f"❌ **Ingestion error:** {str(e)[:200]}")
-        return
+        log(f"Broadcast failure: {e}", "ERROR")
     finally:
-        _first_run = False  # All subsequent runs use 1hr window
+        conn.close()
 
-    new_jobs = result.get("new_jobs", [])
-    scan_time = datetime.now().strftime("%I:%M %p")
-
-    # Stats message
-    stats = (
-        f"📊 **Cycle Stats ({window_label}):** "
-        f"{result['companies_succeeded']} companies queried • "
-        f"{result['total_fetched']} fetched • "
-        f"{result['total_filtered']} matched roles • "
-        f"{result['total_new']} new • "
-        f"{result['duration_seconds']}s"
-    )
-
-    if not new_jobs:
-        log("No new jobs this cycle.")
-        await channel.send(
-            f"🔄 **Scan complete ({window_label})** — no new listings ({scan_time})\n{stats}"
-        )
-        return
-
-    log(f"Posting {len(new_jobs)} new jobs to Discord...")
-    await channel.send(stats)
-    await post_jobs_to_channel(channel, new_jobs, scan_time, window_hours)
-
-    if result.get("errors"):
-        error_count = len(result["errors"])
-        await channel.send(f"⚠️ {error_count} company fetch{'es' if error_count != 1 else ''} failed. Check logs.")
-
-    log(f"Posted {len(new_jobs)} jobs. Cycle complete.")
-    log("========== INGESTION CYCLE COMPLETE ==========")
-
-
-@ingest_and_post.before_loop
-async def before_ingest():
+@broadcast_new_jobs.before_loop
+async def before_broadcast():
     await client.wait_until_ready()
-
 
 # ═══════════════════════════════════════════════════════════════════════
 # BOT EVENTS
@@ -242,28 +148,17 @@ async def before_ingest():
 
 @client.event
 async def on_ready():
-    log(f"Bot connected as {client.user} (ID: {client.user.id})")
-
-    registry = load_registry()
+    log(f"Broadcaster connected as {client.user} (ID: {client.user.id})")
     channel = client.get_channel(CHANNEL_ID)
     if channel:
-        ats_counts = defaultdict(int)
-        for c in registry:
-            ats_counts[c["ats"]] += 1
-        ats_summary = " • ".join(f"{count} {ats}" for ats, count in sorted(ats_counts.items()))
-
         await channel.send(
-            f"🦞 **JobClaw Bot v2 is online!**\n"
-            f"📡 Monitoring **{len(registry)}** companies ({ats_summary})\n"
-            f"🎯 Targeting: AI/ML, SWE, Data, Product, Research roles\n"
-            f"🇺🇸 US-only jobs (+ Remote)\n"
-            f"⏰ **Smart Schedule:** First run = 24hr sweep, then every 30min = 1hr scan\n"
-            f"Commands: `!scan` `!status` `!companies`"
+            f"🦞 **JobClaw Discord Broadcaster v3 is online!**\n"
+            f"📡 Listening to SQLite Database events...\n"
+            f"⚡ Micro-scrapers are handled via OS scheduling."
         )
-        ingest_and_post.start()
+        broadcast_new_jobs.start()
     else:
-        log(f"Could not find channel {CHANNEL_ID}!", "ERROR")
-
+        log(f"Could not find channel!", "ERROR")
 
 @client.event
 async def on_message(message: discord.Message):
@@ -272,71 +167,25 @@ async def on_message(message: discord.Message):
 
     cmd = message.content.strip().lower()
 
-    if cmd == "!scan":
-        await message.channel.send("🔍 **Starting manual 24hr sweep...** This may take 10-30 seconds.")
-        try:
-            result = await run_cycle(window_hours=24)
-            new_jobs = result.get("new_jobs", [])
-            scan_time = datetime.now().strftime("%I:%M %p")
-
-            stats = (
-                f"📊 {result['companies_succeeded']} companies • "
-                f"{result['total_fetched']} fetched • "
-                f"{result['total_filtered']} matched • "
-                f"{result['total_new']} new • "
-                f"{result['duration_seconds']}s"
-            )
-            await message.channel.send(stats)
-
-            if new_jobs:
-                await post_jobs_to_channel(message.channel, new_jobs, scan_time, 24)
-            else:
-                await message.channel.send("✅ No new listings — all previously ingested.")
-        except Exception as e:
-            await message.channel.send(f"❌ Error: {str(e)[:200]}")
-
-    elif cmd == "!status":
-        registry = load_registry()
-        jobs_db_file = DATA_DIR / "jobs.json"
-        total_jobs = 0
-        if jobs_db_file.exists():
-            try:
-                db = json.loads(jobs_db_file.read_text(encoding="utf-8"))
-                total_jobs = len(db.get("jobs", {}))
-            except Exception:
-                pass
+    if cmd == "!status":
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM jobs")
+        total_jobs = cursor.fetchone()[0]
+        cursor.execute("SELECT COUNT(*) FROM jobs WHERE status = 'unposted'")
+        unposted = cursor.fetchone()[0]
+        conn.close()
 
         await message.channel.send(
-            f"📊 **JobClaw Status**\n"
-            f"• Companies monitored: **{len(registry)}**\n"
-            f"• Total jobs tracked: **{total_jobs}**\n"
-            f"• Scan interval: **30 minutes**\n"
-            f"• Target roles: AI/ML, SWE, Data Science\n"
-            f"• Commands: `!scan`, `!status`, `!companies`"
+            f"📊 **JobClaw Headless Status**\n"
+            f"• Scraper Arch: **SQLite Micro-Services**\n"
+            f"• DB Size: **{total_jobs} total jobs**\n"
+            f"• Backlog: **{unposted} unposted roles**\n"
+            f"• Broadcaster Interval: **15 minutes**"
         )
 
-    elif cmd == "!companies":
-        registry = load_registry()
-        by_ats = defaultdict(list)
-        for c in registry:
-            by_ats[c["ats"]].append(c["company"])
-
-        msg = "🏢 **Monitored Companies**\n"
-        for ats, companies in sorted(by_ats.items()):
-            emoji = ATS_EMOJIS.get(ats, "📌")
-            names = ", ".join(sorted(companies))
-            msg += f"\n{emoji} **{ats.capitalize()}** ({len(companies)}): {names}"
-
-        # Discord message limit is 2000 chars
-        if len(msg) > 1900:
-            msg = msg[:1900] + "\n... (truncated)"
-        await message.channel.send(msg)
-
-
-# ═══════════════════════════════════════════════════════════════════════
-# ENTRY POINT
-# ═══════════════════════════════════════════════════════════════════════
-
 if __name__ == "__main__":
-    log("Starting JobClaw Discord bot v2 (ATS Ingestion)...")
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+    log("Starting JobClaw Discord Broadcaster...")
     client.run(BOT_TOKEN)

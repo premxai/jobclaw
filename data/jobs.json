@@ -402,9 +402,152 @@
       "keywords_matched": [
         "AI/ML"
       ]
+    },
+    "5e16e8c0e7ed1224": {
+      "title": "Software Engineering Manager, Data Protection Platform",
+      "company": "Verkada",
+      "location": "San Mateo, CA United States",
+      "url": "https://boards.greenhouse.io/verkada/jobs/5059042007",
+      "date_posted": "2026-02-22T15:58:54-05:00",
+      "source_ats": "greenhouse",
+      "job_id": "5059042007",
+      "first_seen": "2026-02-22T21:53:49.579315+00:00",
+      "keywords_matched": [
+        "SWE"
+      ]
+    },
+    "582230b04e474425": {
+      "title": "Systems and Solutions Engineer",
+      "company": "Intel",
+      "location": "Israel, Haifa",
+      "url": "https://intel.wd1.myworkdayjobs.com/en-US/External/job/Israel-Haifa/Systems-and-Solutions-Engineer_JR0279444",
+      "date_posted": "Posted Today",
+      "source_ats": "workday",
+      "job_id": "/job/Israel-Haifa/Systems-and-Solutions-Engineer_JR0279444",
+      "first_seen": "2026-02-22T21:53:49.579315+00:00",
+      "keywords_matched": [
+        "SWE"
+      ]
+    },
+    "08471b2ccef7f388": {
+      "title": "Distinguished Software Engineer - NVLink Fusion Software",
+      "company": "NVIDIA",
+      "location": "6 Locations",
+      "url": "https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/US-CA-Santa-Clara/Distinguished-Software-Engineer---NVLink-Fusion-Software_JR2000295",
+      "date_posted": "Posted Today",
+      "source_ats": "workday",
+      "job_id": "/job/US-CA-Santa-Clara/Distinguished-Software-Engineer---NVLink-Fusion-Software_JR2000295",
+      "first_seen": "2026-02-22T21:53:49.579315+00:00",
+      "keywords_matched": [
+        "SWE"
+      ]
+    },
+    "fadc9629867a10c1": {
+      "title": "Senior Systems Software Engineer, Base OS - NPI",
+      "company": "NVIDIA",
+      "location": "US, CA, Remote",
+      "url": "https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/US-CA-Remote/Senior-Systems-Software-Engineer--Base-OS---NPI_JR2010491-1",
+      "date_posted": "Posted Today",
+      "source_ats": "workday",
+      "job_id": "/job/US-CA-Remote/Senior-Systems-Software-Engineer--Base-OS---NPI_JR2010491-1",
+      "first_seen": "2026-02-22T21:53:49.579315+00:00",
+      "keywords_matched": [
+        "SWE"
+      ]
+    },
+    "450ea60ce2859961": {
+      "title": "Senior Scientific Machine Learning Engineer \u2013 Earth-2",
+      "company": "NVIDIA",
+      "location": "2 Locations",
+      "url": "https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/US-CA-Santa-Clara/Senior-Scientific-Machine-Learning-Engineer---Earth-2_JR2012860",
+      "date_posted": "Posted Today",
+      "source_ats": "workday",
+      "job_id": "/job/US-CA-Santa-Clara/Senior-Scientific-Machine-Learning-Engineer---Earth-2_JR2012860",
+      "first_seen": "2026-02-22T21:53:49.579315+00:00",
+      "keywords_matched": [
+        "AI/ML"
+      ]
+    },
+    "fb0f049dc9b11dbb": {
+      "title": "Senior Software Engineer, Kubernetes and Virtualization - DGX Cloud",
+      "company": "NVIDIA",
+      "location": "2 Locations",
+      "url": "https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/US-CA-Santa-Clara/Senior-Software-Engineer--Kubernetes-and-Virtualization---DGX-Cloud_JR2007944",
+      "date_posted": "Posted Today",
+      "source_ats": "workday",
+      "job_id": "/job/US-CA-Santa-Clara/Senior-Software-Engineer--Kubernetes-and-Virtualization---DGX-Cloud_JR2007944",
+      "first_seen": "2026-02-22T21:53:49.579315+00:00",
+      "keywords_matched": [
+        "SWE"
+      ]
+    },
+    "51654781f067d65e": {
+      "title": "Senior System Software Engineer - GPU Performance",
+      "company": "NVIDIA",
+      "location": "2 Locations",
+      "url": "https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/US-CA-Santa-Clara/Senior-HPC-Performance-Engineer_JR1997214",
+      "date_posted": "Posted Today",
+      "source_ats": "workday",
+      "job_id": "/job/US-CA-Santa-Clara/Senior-HPC-Performance-Engineer_JR1997214",
+      "first_seen": "2026-02-22T21:53:49.579315+00:00",
+      "keywords_matched": [
+        "SWE"
+      ]
+    },
+    "460c178843571785": {
+      "title": "Senior Machine Learning Engineer - Chemistry and Materials Science",
+      "company": "NVIDIA",
+      "location": "2 Locations",
+      "url": "https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/US-CA-Santa-Clara/Senior-Machine-Learning-Engineer---Chemistry-and-Materials-Science_JR2012864",
+      "date_posted": "Posted Today",
+      "source_ats": "workday",
+      "job_id": "/job/US-CA-Santa-Clara/Senior-Machine-Learning-Engineer---Chemistry-and-Materials-Science_JR2012864",
+      "first_seen": "2026-02-22T21:53:49.579315+00:00",
+      "keywords_matched": [
+        "AI/ML"
+      ]
+    },
+    "0f002c646349c7fa": {
+      "title": "Manager, Software Engineering - NSV",
+      "company": "NVIDIA",
+      "location": "Israel, Tel Hai",
+      "url": "https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/Israel-Tel-Hai/Manager--Software-Engineering---NVS_JR2010513",
+      "date_posted": "Posted Today",
+      "source_ats": "workday",
+      "job_id": "/job/Israel-Tel-Hai/Manager--Software-Engineering---NVS_JR2010513",
+      "first_seen": "2026-02-22T21:53:49.579315+00:00",
+      "keywords_matched": [
+        "SWE"
+      ]
+    },
+    "6dca915d6df9d52b": {
+      "title": "Senior Full Stack Developer",
+      "company": "NVIDIA",
+      "location": "Israel, Yokneam",
+      "url": "https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/Israel-Yokneam/Senior-Full-Stack-Developer_JR2013522",
+      "date_posted": "Posted Today",
+      "source_ats": "workday",
+      "job_id": "/job/Israel-Yokneam/Senior-Full-Stack-Developer_JR2013522",
+      "first_seen": "2026-02-22T21:53:49.579315+00:00",
+      "keywords_matched": [
+        "SWE"
+      ]
+    },
+    "748e626cb418fc5d": {
+      "title": "DevOps Engineer",
+      "company": "NVIDIA",
+      "location": "2 Locations",
+      "url": "https://nvidia.wd5.myworkdayjobs.com/en-US/NVIDIAExternalCareerSite/job/Israel-Raanana/DevOps-Engineer_JR2010707",
+      "date_posted": "Posted Today",
+      "source_ats": "workday",
+      "job_id": "/job/Israel-Raanana/DevOps-Engineer_JR2010707",
+      "first_seen": "2026-02-22T21:53:49.579315+00:00",
+      "keywords_matched": [
+        "SWE"
+      ]
     }
   },
-  "last_updated": "2026-02-22T03:56:15.388901+00:00",
+  "last_updated": "2026-02-22T22:00:09.442214+00:00",
   "run_history": [
     {
       "timestamp": "2026-02-22T03:56:15.388901+00:00",
@@ -414,6 +557,177 @@
       "succeeded": 241,
       "failed": 0,
       "duration_s": 23.5
+    },
+    {
+      "timestamp": "2026-02-22T07:24:40.237236+00:00",
+      "fetched": 0,
+      "filtered": 0,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 0.2
+    },
+    {
+      "timestamp": "2026-02-22T07:24:40.711296+00:00",
+      "fetched": 0,
+      "filtered": 0,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 0.1
+    },
+    {
+      "timestamp": "2026-02-22T07:24:41.328059+00:00",
+      "fetched": 0,
+      "filtered": 0,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 0.1
+    },
+    {
+      "timestamp": "2026-02-22T21:53:10.055489+00:00",
+      "fetched": 14982,
+      "filtered": 4345,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 52105.4
+    },
+    {
+      "timestamp": "2026-02-22T21:53:11.138174+00:00",
+      "fetched": 0,
+      "filtered": 0,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 0.1
+    },
+    {
+      "timestamp": "2026-02-22T21:53:49.579315+00:00",
+      "fetched": 15312,
+      "filtered": 4444,
+      "new": 11,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 38.2
+    },
+    {
+      "timestamp": "2026-02-22T21:54:26.765275+00:00",
+      "fetched": 15312,
+      "filtered": 4444,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 26.9
+    },
+    {
+      "timestamp": "2026-02-22T21:54:54.370831+00:00",
+      "fetched": 15312,
+      "filtered": 4444,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 27.3
+    },
+    {
+      "timestamp": "2026-02-22T21:55:25.251638+00:00",
+      "fetched": 15312,
+      "filtered": 4444,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 30.6
+    },
+    {
+      "timestamp": "2026-02-22T21:55:47.667373+00:00",
+      "fetched": 15312,
+      "filtered": 4444,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 22.2
+    },
+    {
+      "timestamp": "2026-02-22T21:56:09.193016+00:00",
+      "fetched": 15312,
+      "filtered": 4444,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 21.3
+    },
+    {
+      "timestamp": "2026-02-22T21:56:34.358162+00:00",
+      "fetched": 15312,
+      "filtered": 4444,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 24.8
+    },
+    {
+      "timestamp": "2026-02-22T21:57:04.464726+00:00",
+      "fetched": 15312,
+      "filtered": 4444,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 29.8
+    },
+    {
+      "timestamp": "2026-02-22T21:57:38.830193+00:00",
+      "fetched": 15310,
+      "filtered": 4442,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 34.0
+    },
+    {
+      "timestamp": "2026-02-22T21:58:19.054342+00:00",
+      "fetched": 15310,
+      "filtered": 4442,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 40.0
+    },
+    {
+      "timestamp": "2026-02-22T21:58:42.426523+00:00",
+      "fetched": 15310,
+      "filtered": 4442,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 22.6
+    },
+    {
+      "timestamp": "2026-02-22T21:59:21.823792+00:00",
+      "fetched": 15310,
+      "filtered": 4442,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 39.2
+    },
+    {
+      "timestamp": "2026-02-22T21:59:47.764377+00:00",
+      "fetched": 15310,
+      "filtered": 4442,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 25.7
+    },
+    {
+      "timestamp": "2026-02-22T22:00:09.442214+00:00",
+      "fetched": 15310,
+      "filtered": 4442,
+      "new": 0,
+      "succeeded": 241,
+      "failed": 0,
+      "duration_s": 21.2
     }
   ]
 }
