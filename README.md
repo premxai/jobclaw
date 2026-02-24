@@ -66,3 +66,4 @@ In a background terminal, run:
 ```powershell
 python scripts/discord_bot.py
 ```
+TODAY -- 2/23/2026
