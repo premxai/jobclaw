@@ -30,9 +30,7 @@ def _atomic_write(path: Path, content: str) -> None:
     try:
         os.write(fd, content.encode("utf-8"))
         os.close(fd)
-        if path.exists():
-            path.unlink()
-        os.rename(tmp_path, str(path))
+        os.replace(tmp_path, str(path))
     except Exception:
         try:
             os.close(fd)
@@ -196,3 +194,15 @@ def store_jobs(new_jobs: list[dict[str, Any]]) -> dict[str, Any]:
     _atomic_write(JOBS_FILE, json.dumps(updated_db, indent=2))
 
     return changes
+
+
+if __name__ == "__main__":
+    """CLI entry point: load raw results, merge into storage, print summary."""
+    raw = load_raw_results()
+    if not raw:
+        print("No raw results found in data/google_jobs_raw.json")
+    else:
+        changes = store_jobs(raw)
+        print(f"Storage complete: {changes['new_count']} new, "
+              f"{changes['duplicate_count']} duplicates, "
+              f"{changes['removed_count']} removed")

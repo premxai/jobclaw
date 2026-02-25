@@ -1,0 +1,10 @@
+# JobClaw - Core Dependencies
+aiohttp>=3.9.0
+discord.py>=2.3.0
+python-dotenv>=1.0.0
+
+# Enterprise scraper (Google, Meta) - browser automation
+playwright>=1.40.0
+
+# OpenClaw CLI (installed via npm: npm i -g @openclaw/cli)
+# Requires: MINIMAX_API_KEY in .env

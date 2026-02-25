@@ -13,7 +13,6 @@ from typing import List, Optional
 import os
 import time
 import asyncio
-import logging
 from datetime import datetime, timezone
 
 from scripts.ingestion.ats_adapters import NormalizedJob
@@ -75,7 +74,7 @@ class AppleJobsAPI:
         try:
             async with session.post(f"{self.API_BASE}/search", json=payload, headers=self.headers) as response:
                 if response.status != 200:
-                    logger.error(f"Apple API error: {response.status}")
+                    _log(f"Apple API error: {response.status}", "ERROR")
                     return []
                 
                 data = await response.json()
@@ -130,7 +129,7 @@ class AmazonJobsAPI:
         try:
             async with session.post(self.API_URL, json=payload, headers=self.HEADERS) as response:
                 if response.status != 200:
-                    logger.error(f"Amazon API error: {response.status}")
+                    _log(f"Amazon API error: {response.status}", "ERROR")
                     return []
                 
                 data = await response.json()
@@ -178,7 +177,7 @@ class MicrosoftJobsAPI:
         try:
             async with session.get(self.SEARCH_ENDPOINT, params=params, headers=self.HEADERS) as response:
                 if response.status != 200:
-                    logger.error(f"Microsoft API error: {response.status}")
+                    _log(f"Microsoft API error: {response.status}", "ERROR")
                     return []
                 
                 data = await response.json()
@@ -239,7 +238,7 @@ class TikTokJobsAPI:
         try:
             async with session.post(self.API_URL, headers=self.HEADERS, json=payload) as response:
                 if response.status != 200:
-                    logger.error(f"TikTok API error: {response.status}")
+                    _log(f"TikTok API error: {response.status}", "ERROR")
                     return []
                 
                 data = await response.json()
@@ -288,7 +287,7 @@ class NvidiaJobsAPI:
         try:
             async with session.get(self.SEARCH_ENDPOINT, params=params, headers=self.HEADERS) as response:
                 if response.status != 200:
-                    logger.error(f"Nvidia API error: {response.status}")
+                    _log(f"Nvidia API error: {response.status}", "ERROR")
                     return []
                 
                 data = await response.json()
@@ -355,7 +354,7 @@ class UberJobsAPI:
         try:
             async with session.post(self.SEARCH_ENDPOINT, json=request_body, params=query_params, headers=self.HEADERS) as response:
                 if response.status != 200:
-                    logger.error(f"Uber API error: {response.status}")
+                    _log(f"Uber API error: {response.status}", "ERROR")
                     return []
                 
                 data = await response.json()
@@ -681,7 +680,7 @@ async def run_enterprise_scraper():
         log_scraper_run(
             conn=conn,
             script_name="scrape_enterprise",
-            companies_fetched=1,  # Number of custom enterprise scrapers that succeeded
+            companies_fetched=8,  # Number of custom enterprise scrapers (Apple, Amazon, MS, Google, Meta, TikTok, Nvidia, Uber)
             new_jobs=new_jobs_inserted,
             duration=round(time.time() - start_t, 2)
         )
@@ -694,5 +693,5 @@ async def run_enterprise_scraper():
 
 if __name__ == "__main__":
     if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     asyncio.run(run_enterprise_scraper())

@@ -47,10 +47,7 @@ def _atomic_write(path: Path, content: str) -> None:
     try:
         os.write(fd, content.encode("utf-8"))
         os.close(fd)
-        # Windows requires target to not exist for os.rename
-        if path.exists():
-            path.unlink()
-        os.rename(tmp_path, str(path))
+        os.replace(tmp_path, str(path))
     except Exception:
         try:
             os.close(fd)

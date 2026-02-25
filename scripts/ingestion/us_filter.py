@@ -50,7 +50,9 @@ def is_us_location(location: str) -> bool:
 
     # Quick exclude: check for non-US countries/cities first
     for exc in _EXCLUDE:
-        if exc in loc_lower:
+        # Use word-boundary matching to avoid false positives
+        # e.g., "UK" should not match "Duke"
+        if re.search(r'\b' + re.escape(exc) + r'\b', loc_lower):
             return False
 
     # Check for US patterns (longer strings first for accuracy)

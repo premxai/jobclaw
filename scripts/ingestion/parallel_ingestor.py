@@ -70,25 +70,45 @@ def load_registry() -> list[dict[str, str]]:
         
         flat_registry = []
         if isinstance(data, list):
+            # Direct list of {company, ats, slug}
             return data
-            
+
+        # Known ATS platform keys in the grouped sections
+        _ATS_PLATFORMS = {"greenhouse", "lever", "ashby", "workday", "workable",
+                          "rippling", "smartrecruiters", "bamboohr"}
+
+        # Handle {"companies": [...]} format (explicit company/ats/slug entries)
+        if "companies" in data and isinstance(data["companies"], list):
+            for c in data["companies"]:
+                name = c.get("company", "")
+                ats = c.get("ats", "")
+                slug = c.get("slug", "")
+                if name and ats and slug:
+                    flat_registry.append({
+                        "company": name,
+                        "ats": ats.lower(),
+                        "slug": slug
+                    })
+
+        # Also handle platform-grouped sections {platform: [{name, slug}]}
         for platform, companies in data.items():
-            if not isinstance(companies, list):
+            if platform == "companies" or not isinstance(companies, list):
                 continue
-                
+            # Only process recognized ATS platform keys
+            ats_key = platform.lower()
+            if ats_key not in _ATS_PLATFORMS:
+                continue
             for c in companies:
-                # Handle legacy schema vs new grouped schema
-                name = c.get("name", "")
+                name = c.get("name", "") or c.get("company", "")
                 slug = c.get("slug") or c.get("url")
                 if not name or not slug:
                     continue
-                    
                 flat_registry.append({
                     "company": name,
-                    "ats": platform.lower(),
+                    "ats": ats_key,
                     "slug": slug
                 })
-                
+
         return flat_registry
     except (json.JSONDecodeError, OSError) as e:
         _log(f"Failed to load registry: {e}", "ERROR")

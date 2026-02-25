@@ -55,7 +55,7 @@ def get_unposted_jobs(conn):
     """Fetch jobs ready to be sent to Discord."""
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM jobs WHERE status = 'unposted' ORDER BY first_seen ASC LIMIT 100")
+    cursor.execute("SELECT * FROM jobs WHERE status = 'unposted' ORDER BY first_seen ASC LIMIT 500")
     
     rows = cursor.fetchall()
     jobs = []

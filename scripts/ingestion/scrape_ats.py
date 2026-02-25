@@ -110,8 +110,10 @@ async def run_ats_scraper(window_hours: int = 24):
     
     # Log the system health metrics to SQL
     err_str = "; ".join(errors) if errors else ""
-    log_scraper_run(conn, "scrape_ats", len(registry), new_jobs_inserted, duration, err_str)
-    conn.close()
+    try:
+        log_scraper_run(conn, "scrape_ats", len(registry), new_jobs_inserted, duration, err_str)
+    finally:
+        conn.close()
     
     _log(f">>> ATS Scraper Complete. Found {new_jobs_inserted} brand new jobs out of {len(time_filtered)} candidates. (Took {duration}s)")
 

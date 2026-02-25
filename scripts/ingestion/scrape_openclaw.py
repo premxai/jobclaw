@@ -187,8 +187,10 @@ async def run_openclaw_scraper():
         
     duration = round(time.time() - start_time, 2)
     err_str = "; ".join(errors) if errors else ""
-    log_scraper_run(conn, "scrape_openclaw", len(PROTECTED_TARGETS), new_jobs_inserted, duration, err_str)
-    conn.close()
+    try:
+        log_scraper_run(conn, "scrape_openclaw", len(PROTECTED_TARGETS), new_jobs_inserted, duration, err_str)
+    finally:
+        conn.close()
     
     _log(f">>> OpenClaw Scraper Complete. Found {new_jobs_inserted} brand new jobs out of {len(time_filtered)} candidates. (Took {duration}s)")
 

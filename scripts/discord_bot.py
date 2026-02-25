@@ -36,80 +36,119 @@ client = discord.Client(intents=intents)
 # UI HELPERS
 # ═══════════════════════════════════════════════════════════════════════
 
-ATS_EMOJIS = {
-    "greenhouse": "🌲",
-    "lever": " اه",
-    "ashby": "🦄",
-    "workday": "🏢",
-    "bamboohr": "🐼",
-    "smartrecruiters": "🎓",
-    "github": "🐙",
-    "ycombinator": "🟠",
-    "remoteok": "🌍",
-    "builtin": "🏗️",
-    "wellfound": "✌️",
-    "unknown": "💼",
+CATEGORY_EMOJIS = {
+    "AI/ML": "🤖",
+    "Data Science": "🔬",
+    "Data Engineering": "🔧",
+    "Data Analyst": "📊",
+    "SWE": "💻",
+    "New Grad": "🎓",
+    "Product": "📦",
+    "Research": "🧪",
+    "Uncategorized": "💼",
 }
 
-def build_embed(job: dict, index: int, total: int) -> discord.Embed:
-    company = job.get("company", "Unknown")
+# Discord embed description limit is 4096 chars. We cap per-page to stay safe.
+DIGEST_PAGE_CHAR_LIMIT = 3800
+
+
+def _job_line(job: dict) -> str:
+    """Format a single job as a compact one-liner for the digest."""
     title = job.get("title", "Unknown Role")
+    company = job.get("company", "Unknown")
+    location = job.get("location", "")
     url = job.get("url", "")
-    ats = job.get("source_ats", "unknown")
-    ats_emoji = ATS_EMOJIS.get(ats, "📌")
 
-    embed = discord.Embed(
-        title=title,
-        url=url if url else None,
-        color=discord.Color.brand_green(),
-    )
-    embed.set_author(name=company)
-    embed.add_field(name="📍 Location", value=job.get("location", "Unknown"), inline=True)
-    embed.add_field(name=f"{ats_emoji} Source", value=ats.capitalize(), inline=True)
-    
-    categories = job.get("keywords_matched", [])
-    if categories:
-        embed.add_field(name="🏷️ Category", value=" • ".join(categories), inline=True)
+    # Shorten location for compactness
+    loc = location.split(",")[0].strip() if location else ""
+    if loc and len(loc) > 25:
+        loc = loc[:22] + "..."
 
-    embed.set_footer(text=f"JobClaw Broadcaster • {index}/{total}")
-    return embed
+    if url:
+        line = f"• **{title}** @ {company}"
+    else:
+        line = f"• **{title}** @ {company}"
+
+    if loc:
+        line += f" — {loc}"
+    if url:
+        line += f" — [Apply]({url})"
+    return line
+
+
+def _group_by_category(jobs: list[dict]) -> dict[str, list[dict]]:
+    """Group jobs by their primary keyword category."""
+    groups = defaultdict(list)
+    for job in jobs:
+        cats = job.get("keywords_matched", [])
+        category = cats[0] if cats else "Uncategorized"
+        groups[category].append(job)
+    return dict(groups)
+
+
+def _paginate_lines(lines: list[str], char_limit: int = DIGEST_PAGE_CHAR_LIMIT) -> list[str]:
+    """Split lines into pages that fit within the char limit."""
+    pages = []
+    current = []
+    current_len = 0
+    for line in lines:
+        line_len = len(line) + 1  # +1 for newline
+        if current and current_len + line_len > char_limit:
+            pages.append("\n".join(current))
+            current = [line]
+            current_len = line_len
+        else:
+            current.append(line)
+            current_len += line_len
+    if current:
+        pages.append("\n".join(current))
+    return pages
+
 
 async def post_jobs_to_channel(channel, unposted_jobs: list[dict]):
     if not unposted_jobs:
         return
 
-    # Group by company
-    by_company = defaultdict(list)
-    for job in unposted_jobs:
-        by_company[job.get("company", "Unknown")].append(job)
+    hashes_to_mark = [job["internal_hash"] for job in unposted_jobs]
+    by_category = _group_by_category(unposted_jobs)
 
-    # Header
+    # Sort categories so the biggest groups come first
+    sorted_cats = sorted(by_category.items(), key=lambda x: len(x[1]), reverse=True)
+
+    ts = datetime.now().strftime("%b %d, %I:%M %p")
     await channel.send(
-        f"🚀 **{len(unposted_jobs)} New Roles Found!**\n"
-        f"📡 Queried deeply from OS Scrapers • 🇺🇸 US Only\n"
+        f"🚀 **JobClaw Digest — {ts}**\n"
+        f"📡 **{len(unposted_jobs)}** new roles across **{len(by_category)}** categories • 🇺🇸 US Only\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
     )
 
-    i = 0
-    hashes_to_mark = []
-    
-    for company, jobs in sorted(by_company.items()):
-        if len(by_company) > 1 and len(jobs) > 1:
-            await channel.send(f"\n**── {company} ({len(jobs)} roles) ──**")
+    for category, jobs in sorted_cats:
+        emoji = CATEGORY_EMOJIS.get(category, "💼")
+        lines = [_job_line(j) for j in jobs]
+        pages = _paginate_lines(lines)
 
-        for job in jobs:
-            i += 1
-            embed = build_embed(job, i, len(unposted_jobs))
+        for page_idx, page_text in enumerate(pages):
+            embed = discord.Embed(
+                description=page_text,
+                color=discord.Color.brand_green(),
+            )
+            if page_idx == 0:
+                header = f"{emoji} {category} — {len(jobs)} roles"
+                embed.set_author(name=header)
+            else:
+                embed.set_author(name=f"{emoji} {category} (cont.)")
+
             await channel.send(embed=embed)
-            hashes_to_mark.append(job["internal_hash"])
-            await asyncio.sleep(0.5)  # Rate limit safety
+            await asyncio.sleep(0.3)
 
-    await channel.send(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n✅ **Batch Broadcast Complete.**")
-    
-    # Safely mark them as posted in the database
+    await channel.send(f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n✅ **Digest complete — {len(unposted_jobs)} roles posted.**")
+
+    # Mark all as posted
     conn = get_connection()
-    mark_jobs_posted(conn, hashes_to_mark)
-    conn.close()
+    try:
+        mark_jobs_posted(conn, hashes_to_mark)
+    finally:
+        conn.close()
     log(f"Successfully posted {len(hashes_to_mark)} jobs.")
 
 # ═══════════════════════════════════════════════════════════════════════

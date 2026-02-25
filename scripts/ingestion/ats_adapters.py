@@ -122,9 +122,9 @@ class LeverAdapter:
             for j in data:
                 created_at = j.get("createdAt", 0)
 
-                # Lever uses ms timestamps
-                if not _is_within_24h(created_at):
-                    continue
+                # Note: Time filtering is handled by the caller's window_hours.
+                # We no longer pre-filter here to avoid silently dropping jobs
+                # when the caller requests a window larger than 24h.
 
                 location = j.get("categories", {}).get("location", "Unknown")
                 if isinstance(location, list):
@@ -197,36 +197,50 @@ class SmartRecruitersAdapter:
     @staticmethod
     async def fetch(session: aiohttp.ClientSession, slug: str, company: str) -> list[NormalizedJob]:
         url = SmartRecruitersAdapter.BASE_URL.format(slug=slug)
-        params = {"limit": 100}
+        all_jobs = []
+        offset = 0
+        limit = 100
+
         try:
-            async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=30)) as resp:
-                if resp.status != 200:
-                    return []
-                data = await resp.json()
+            while True:
+                params = {"limit": limit, "offset": offset}
+                async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=30)) as resp:
+                    if resp.status != 200:
+                        break
+                    data = await resp.json()
 
-            jobs = []
-            for j in data.get("content", []):
-                location_obj = j.get("location", {})
-                location = location_obj.get("city", "")
-                if location_obj.get("region"):
-                    location += f", {location_obj['region']}"
-                if location_obj.get("country"):
-                    location += f", {location_obj['country']}"
-                if not location:
-                    location = "Unknown"
+                content = data.get("content", [])
+                if not content:
+                    break
 
-                released = j.get("releasedDate", "")
+                for j in content:
+                    location_obj = j.get("location", {})
+                    location = location_obj.get("city", "")
+                    if location_obj.get("region"):
+                        location += f", {location_obj['region']}"
+                    if location_obj.get("country"):
+                        location += f", {location_obj['country']}"
+                    if not location:
+                        location = "Unknown"
 
-                jobs.append(NormalizedJob(
-                    title=j.get("name", ""),
-                    company=company,
-                    location=location.strip(", "),
-                    url=f"https://jobs.smartrecruiters.com/{slug}/{j.get('id', '')}",
-                    date_posted=released,
-                    source_ats="smartrecruiters",
-                    job_id=str(j.get("id", "")),
-                ))
-            return jobs
+                    released = j.get("releasedDate", "")
+
+                    all_jobs.append(NormalizedJob(
+                        title=j.get("name", ""),
+                        company=company,
+                        location=location.strip(", "),
+                        url=f"https://jobs.smartrecruiters.com/{slug}/{j.get('id', '')}",
+                        date_posted=released,
+                        source_ats="smartrecruiters",
+                        job_id=str(j.get("id", "")),
+                    ))
+
+                # If we got fewer than `limit` results, we've reached the end
+                if len(content) < limit:
+                    break
+                offset += limit
+
+            return all_jobs
         except Exception:
             return []
 

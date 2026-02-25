@@ -29,17 +29,19 @@ async def run_rss_scraper(window_hours: int = 24):
     # 1. Fetch Job Boards & Aggregators
     async with aiohttp.ClientSession() as session:
         try:
-            boards = await fetch_all_job_boards(session)
-            all_jobs.extend(boards)
-            _log(f"Fetched {len(boards)} jobs from independent Job Boards.")
+            board_jobs, board_errors = await fetch_all_job_boards(session)
+            all_jobs.extend(board_jobs)
+            errors.extend(board_errors)
+            _log(f"Fetched {len(board_jobs)} jobs from independent Job Boards.")
         except Exception as e:
             _log(f"Job Board Error: {e}", "ERROR")
             errors.append(str(e))
 
         try:
-            aggregators = await fetch_all_aggregators(session)
-            all_jobs.extend(aggregators)
-            _log(f"Fetched {len(aggregators)} jobs from RSS Aggregators.")
+            agg_jobs, agg_errors = await fetch_all_aggregators(session)
+            all_jobs.extend(agg_jobs)
+            errors.extend(agg_errors)
+            _log(f"Fetched {len(agg_jobs)} jobs from RSS Aggregators.")
         except Exception as e:
             _log(f"Aggregator Error: {e}", "ERROR")
             errors.append(str(e))
@@ -81,8 +83,10 @@ async def run_rss_scraper(window_hours: int = 24):
     duration = round(time.time() - start_time, 2)
     err_str = "; ".join(errors) if errors else ""
     # Hardcoding '10' sources as an estimate for logging just to keep track
-    log_scraper_run(conn, "scrape_rss", 10, new_jobs_inserted, duration, err_str)
-    conn.close()
+    try:
+        log_scraper_run(conn, "scrape_rss", 10, new_jobs_inserted, duration, err_str)
+    finally:
+        conn.close()
     
     _log(f">>> RSS Scraper Complete. Found {new_jobs_inserted} brand new jobs out of {len(time_filtered)} candidates. (Took {duration}s)")
 

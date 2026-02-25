@@ -75,8 +75,10 @@ async def run_github_scraper(window_hours: int = 24):
         
     duration = round(time.time() - start_time, 2)
     err_str = "; ".join(errors) if errors else ""
-    log_scraper_run(conn, "scrape_github", 6, new_jobs_inserted, duration, err_str) # 6 hardcoded repos
-    conn.close()
+    try:
+        log_scraper_run(conn, "scrape_github", 6, new_jobs_inserted, duration, err_str) # 6 hardcoded repos
+    finally:
+        conn.close()
     
     _log(f">>> GitHub Scraper Complete. Found {new_jobs_inserted} brand new jobs out of {len(time_filtered)} candidates. (Took {duration}s)")
 
