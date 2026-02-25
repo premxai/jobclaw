@@ -14,10 +14,11 @@ def merge_csvs():
         registry = json.load(f)
         
     csv_mappings = {
-        "greenhouse_companies.csv": "Greenhouse",
-        "lever_companies.csv": "Lever",
-        "workday_companies.csv": "Workday",
-        "workable_companies.csv": "Workable"
+        "greenhouse_companies.csv": "greenhouse",
+        "lever_companies.csv": "lever",
+        "workday_companies.csv": "workday",
+        "workable_companies.csv": "workable",
+        "rippling_companies.csv": "rippling"
     }
     
     total_added = 0
@@ -40,25 +41,31 @@ def merge_csvs():
                     
                 # Extract slug from URL depending on platform
                 slug = None
-                if platform == "Greenhouse":
+                if platform == "greenhouse":
                     # e.g https://job-boards.greenhouse.io/adobe -> adobe
                     parts = url.rstrip("/").split("/")
                     if parts:
                         slug = parts[-1]
-                elif platform == "Lever":
+                elif platform == "lever":
                     # e.g https://jobs.lever.co/kopi -> kopi
                     parts = url.rstrip("/").split("/")
                     if parts:
                         slug = parts[-1]
-                elif platform == "Workday":
+                elif platform == "workday":
                     # Keep full URL for Workday as per our ATS schema
                     slug = url
-                elif platform == "Workable":
+                elif platform == "workable":
                     # Keep full URL or piece it depending on our setup? 
                     # Right now we aren't officially tracking Workable, but we can add it as a new platform!
                     parts = url.rstrip("/").split("/")
                     if parts:
                         slug = parts[-1]
+                elif platform == "rippling":
+                    # https://ats.rippling.com/{slug}/jobs
+                    try:
+                        slug = url.split("ats.rippling.com/")[1].split("/jobs")[0]
+                    except IndexError:
+                        pass
                 
                 if not slug:
                     continue
@@ -71,7 +78,7 @@ def merge_csvs():
                 exists = any(c.get("name") == name or c.get("url", c.get("slug")) == slug for c in registry[platform])
                 
                 if not exists:
-                    if platform == "Workday":
+                    if platform == "workday":
                         registry[platform].append({"name": name, "url": slug})
                     else:
                         registry[platform].append({"name": name, "slug": slug})

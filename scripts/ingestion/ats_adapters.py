@@ -419,6 +419,45 @@ class WorkableAdapter:
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# RIPPLING ADAPTER
+# ═══════════════════════════════════════════════════════════════════════
+
+class RipplingAdapter:
+    """Rippling API: api.rippling.com/ats/api/v1/board/{slug}/jobs"""
+
+    BASE_URL = "https://ats.rippling.com/api/v1/board/{slug}/jobs"
+
+    @staticmethod
+    async def fetch(session: aiohttp.ClientSession, slug: str, company: str) -> list[NormalizedJob]:
+        url = RipplingAdapter.BASE_URL.format(slug=slug)
+        try:
+            async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
+                if resp.status != 200:
+                    return []
+                data = await resp.json()
+
+            jobs = []
+            for j in data:
+                location = j.get("location", {}).get("name", "Unknown")
+                
+                # Rippling returns string ISO dates for creation
+                created = j.get("timeCreated", "")
+
+                jobs.append(NormalizedJob(
+                    title=j.get("name", ""),
+                    company=company,
+                    location=location,
+                    url=j.get("url", f"https://ats.rippling.com/{slug}/jobs/{j.get('id', '')}"),
+                    date_posted=created,
+                    source_ats="rippling",
+                    job_id=j.get("id", ""),
+                ))
+            return jobs
+        except Exception:
+            return []
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # ADAPTER REGISTRY
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -430,6 +469,7 @@ ADAPTERS = {
     "bamboohr": BambooHRAdapter,
     "workday": WorkdayAdapter,
     "workable": WorkableAdapter,
+    "rippling": RipplingAdapter,
 }
 
 
