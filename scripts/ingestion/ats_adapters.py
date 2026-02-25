@@ -366,6 +366,59 @@ class WorkdayAdapter:
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# WORKABLE ADAPTER
+# ═══════════════════════════════════════════════════════════════════════
+
+class WorkableAdapter:
+    """Workable API: apply.workable.com/api/v3/accounts/{slug}/jobs"""
+
+    BASE_URL = "https://apply.workable.com/api/v3/accounts/{slug}/jobs"
+
+    @staticmethod
+    async def fetch(session: aiohttp.ClientSession, slug: str, company: str) -> list[NormalizedJob]:
+        url = WorkableAdapter.BASE_URL.format(slug=slug)
+        payload = {
+            "query": "",
+            "location": [],
+            "department": [],
+            "worktype": [],
+            "remote": []
+        }
+        
+        try:
+            async with session.post(url, json=payload, timeout=aiohttp.ClientTimeout(total=30)) as resp:
+                if resp.status != 200:
+                    return []
+                data = await resp.json()
+
+            jobs = []
+            for j in data.get("results", []):
+                location_obj = j.get("location", {})
+                location = location_obj.get("city", "")
+                if location_obj.get("region"):
+                    location += f", {location_obj['region']}"
+                if location_obj.get("country"):
+                    location += f", {location_obj['country']}"
+                if not location:
+                    location = "Unknown"
+
+                published = j.get("published", "")
+
+                jobs.append(NormalizedJob(
+                    title=j.get("title", ""),
+                    company=company,
+                    location=location.strip(", "),
+                    url=f"https://apply.workable.com/{slug}/j/{j.get('shortcode', '')}/",
+                    date_posted=published,
+                    source_ats="workable",
+                    job_id=str(j.get("shortcode", "")),
+                ))
+            return jobs
+        except Exception:
+            return []
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # ADAPTER REGISTRY
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -376,6 +429,7 @@ ADAPTERS = {
     "smartrecruiters": SmartRecruitersAdapter,
     "bamboohr": BambooHRAdapter,
     "workday": WorkdayAdapter,
+    "workable": WorkableAdapter,
 }
 
 

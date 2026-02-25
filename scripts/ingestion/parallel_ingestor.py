@@ -67,9 +67,29 @@ def load_registry() -> list[dict[str, str]]:
         return []
     try:
         data = json.loads(REGISTRY_FILE.read_text(encoding="utf-8"))
+        
+        flat_registry = []
         if isinstance(data, list):
             return data
-        return data.get("companies", [])
+            
+        for platform, companies in data.items():
+            if not isinstance(companies, list):
+                continue
+                
+            for c in companies:
+                # Handle legacy schema vs new grouped schema
+                name = c.get("name", "")
+                slug = c.get("slug") or c.get("url")
+                if not name or not slug:
+                    continue
+                    
+                flat_registry.append({
+                    "company": name,
+                    "ats": platform.lower(),
+                    "slug": slug
+                })
+                
+        return flat_registry
     except (json.JSONDecodeError, OSError) as e:
         _log(f"Failed to load registry: {e}", "ERROR")
         return []
