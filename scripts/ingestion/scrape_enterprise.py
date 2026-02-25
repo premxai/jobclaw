@@ -212,6 +212,184 @@ class MicrosoftJobsAPI:
             
         return normalized
 
+class TikTokJobsAPI:
+    API_URL = "https://api.lifeattiktok.com/api/v1/public/supplier/search/job/posts"
+    HEADERS = {
+        "accept": "*/*",
+        "content-type": "application/json",
+        "website-path": "tiktok",
+        "referer": "https://lifeattiktok.com/",
+        "user-agent": "Mozilla/5.0"
+    }
+
+    async def fetch_jobs(self, session: aiohttp.ClientSession, page: int = 1) -> List[NormalizedJob]:
+        limit = 12
+        offset = (page - 1) * limit
+        payload = {
+            "recruitment_id_list": [],
+            "job_category_id_list": [],
+            "subject_id_list": [],
+            "location_code_list": [],
+            "keyword": "",
+            "limit": limit,
+            "offset": offset,
+        }
+        
+        normalized = []
+        try:
+            async with session.post(self.API_URL, headers=self.HEADERS, json=payload) as response:
+                if response.status != 200:
+                    logger.error(f"TikTok API error: {response.status}")
+                    return []
+                
+                data = await response.json()
+                job_list = data.get("data", {}).get("job_post_list", [])
+                
+                for job in job_list:
+                    job_id = job.get("id")
+                    title = job.get("title")
+                    
+                    city = job.get("city_info", {}).get("en_name")
+                    country = job.get("city_info", {}).get("parent", {}).get("parent", {}).get("en_name")
+                    locs = [x for x in [city, country] if x]
+                    location = ", ".join(locs) if locs else "United States"
+                    
+                    url = f"https://lifeattiktok.com/search/{job_id}" if job_id else ""
+                    
+                    if title and job_id:
+                        normalized.append(NormalizedJob(
+                            title=title,
+                            company="TikTok",
+                            location=location,
+                            url=url,
+                            date_posted="",
+                            source_ats="tiktok",
+                            job_id=str(job_id)
+                        ))
+        except Exception as e:
+            _log(f"Error fetching TikTok Page {page}: {e}", "ERROR")
+            
+        return normalized
+
+class NvidiaJobsAPI:
+    SEARCH_ENDPOINT = "https://nvidia.eightfold.ai/api/pcsx/search"
+    HEADERS = {"accept": "application/json, text/plain, */*", "user-agent": "Mozilla/5.0"}
+    PAGE_SIZE = 10
+
+    async def fetch_jobs(self, session: aiohttp.ClientSession, page: int = 1) -> List[NormalizedJob]:
+        start = (page - 1) * self.PAGE_SIZE
+        params = {
+            "domain": "nvidia.com",
+            "start": str(start),
+            "sort_by": "timestamp"
+        }
+        
+        normalized = []
+        try:
+            async with session.get(self.SEARCH_ENDPOINT, params=params, headers=self.HEADERS) as response:
+                if response.status != 200:
+                    logger.error(f"Nvidia API error: {response.status}")
+                    return []
+                
+                data = await response.json()
+                positions = data.get("data", {}).get("positions", [])
+                
+                for p in positions:
+                    title = p.get("name", "")
+                    locs = p.get("locations", [])
+                    location = locs[0] if locs else "United States"
+                    
+                    ts = p.get("postedTs")
+                    date_posted = ""
+                    if ts:
+                        date_posted = datetime.fromtimestamp(ts, timezone.utc).isoformat()
+                        
+                    url = "https://nvidia.eightfold.ai" + p.get("positionUrl", "")
+                    job_id = p.get("id", "")
+                    
+                    if title and job_id:
+                        normalized.append(NormalizedJob(
+                            title=title,
+                            company="Nvidia",
+                            location=location,
+                            url=url,
+                            date_posted=date_posted,
+                            source_ats="nvidia",
+                            job_id=str(job_id)
+                        ))
+        except Exception as e:
+            _log(f"Error fetching Nvidia Page {page}: {e}", "ERROR")
+            
+        return normalized
+
+class UberJobsAPI:
+    SEARCH_ENDPOINT = "https://www.uber.com/api/loadSearchJobsResults"
+    HEADERS = {
+        'Accept': '*/*',
+        'Content-Type': 'application/json',
+        'Origin': 'https://www.uber.com',
+        'Referer': 'https://www.uber.com/us/en/careers/',
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36',
+        'x-csrf-token': 'x'
+    }
+
+    async def fetch_jobs(self, session: aiohttp.ClientSession, page: int = 1) -> List[NormalizedJob]:
+        limit = 10
+        # Uber's API is 0-indexed for pages
+        page_idx = page - 1
+        
+        request_body = {
+            'limit': limit,
+            'page': page_idx,
+            'params': {
+                'department': [],
+                'lineOfBusinessName': [],
+                'location': [],
+                'programAndPlatform': [],
+                'team': []
+            }
+        }
+        
+        query_params = {'localeCode': 'en'}
+        normalized = []
+        try:
+            async with session.post(self.SEARCH_ENDPOINT, json=request_body, params=query_params, headers=self.HEADERS) as response:
+                if response.status != 200:
+                    logger.error(f"Uber API error: {response.status}")
+                    return []
+                
+                data = await response.json()
+                results = data.get('data', {}).get('results', [])
+                
+                for job in results:
+                    title = job.get('title', '')
+                    job_id = job.get('id', '')
+                    
+                    loc_data = job.get('location', {})
+                    city = loc_data.get('city')
+                    region = loc_data.get('region')
+                    country = loc_data.get('countryName')
+                    
+                    loc_parts = [x for x in [city, region, country] if x]
+                    location = ", ".join(loc_parts) if loc_parts else "United States"
+                    
+                    url = f"https://www.uber.com/global/en/careers/list/{job_id}/" if job_id else ""
+                    
+                    if title and job_id:
+                        normalized.append(NormalizedJob(
+                            title=title,
+                            company="Uber",
+                            location=location,
+                            url=url,
+                            date_posted=job.get('creationDate', ''),
+                            source_ats="uber",
+                            job_id=str(job_id)
+                        ))
+        except Exception as e:
+            _log(f"Error fetching Uber Page {page}: {e}", "ERROR")
+            
+        return normalized
+
 CHUNK_CAPTURE_INIT = """
 (() => {
     const store = [];
@@ -438,8 +616,11 @@ async def run_enterprise_scraper():
         microsoft_api = MicrosoftJobsAPI()
         google_api = GoogleJobsAPI()
         meta_api = MetaJobsAPI()
+        tiktok_api = TikTokJobsAPI()
+        nvidia_api = NvidiaJobsAPI()
+        uber_api = UberJobsAPI()
         
-        log("Fetching active job positions from Apple, Amazon, Microsoft, Google, and Meta...")
+        log("Fetching active job positions from Apple, Amazon, Microsoft, Google, Meta, TikTok, Nvidia, and Uber...")
         
         # Google & Meta fetch all pages deeply via Playwright interceptors.
         google_task = asyncio.create_task(google_api.fetch_all_jobs(max_pages=5))
@@ -449,7 +630,10 @@ async def run_enterprise_scraper():
             results = await asyncio.gather(
                 apple_api.fetch_jobs(session, page=p),
                 amazon_api.fetch_jobs(session, page=p),
-                microsoft_api.fetch_jobs(session, page=p)
+                microsoft_api.fetch_jobs(session, page=p),
+                tiktok_api.fetch_jobs(session, page=p),
+                nvidia_api.fetch_jobs(session, page=p),
+                uber_api.fetch_jobs(session, page=p)
             )
             for res in results:
                 all_jobs.extend(res)
