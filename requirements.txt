@@ -1,5 +1,6 @@
 # JobClaw - Core Dependencies
 aiohttp>=3.9.0
+aiohttp-socks>=0.8.0      # SOCKS4/SOCKS5/HTTP proxy support for aiohttp
 discord.py>=2.3.0
 python-dotenv>=1.0.0
 

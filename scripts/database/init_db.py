@@ -33,13 +33,26 @@ def init_db():
         source_ats TEXT NOT NULL,
         first_seen TEXT NOT NULL,
         status TEXT DEFAULT 'unposted',
-        keywords_matched TEXT
+        keywords_matched TEXT,
+        description TEXT,
+        salary_min REAL,
+        salary_max REAL,
+        salary_currency TEXT,
+        experience_years INTEGER,
+        is_active INTEGER DEFAULT 1,
+        last_seen_at TEXT
     )
     """)
     
     # Create indexing for the headless discord bot to query fast
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_status ON jobs(status)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_first_seen ON jobs(first_seen)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_company ON jobs(company)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_source_ats ON jobs(source_ats)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_is_active ON jobs(is_active)")
+
+    # Run schema migrations for existing databases
+    _migrate_schema(conn)
     
     # Create the run history table for monitoring health
     cursor.execute("""
@@ -57,6 +70,35 @@ def init_db():
     conn.commit()
     logging.info(f"SQLite DB initialized at {DB_PATH} with WAL mode enabled.")
     return conn
+
+
+def _migrate_schema(conn):
+    """Add columns that may be missing on older databases."""
+    cursor = conn.cursor()
+    # Get existing column names
+    cursor.execute("PRAGMA table_info(jobs)")
+    existing_cols = {row[1] for row in cursor.fetchall()}
+
+    migrations = [
+        ("description", "TEXT"),
+        ("salary_min", "REAL"),
+        ("salary_max", "REAL"),
+        ("salary_currency", "TEXT"),
+        ("experience_years", "INTEGER"),
+        ("is_active", "INTEGER DEFAULT 1"),
+        ("last_seen_at", "TEXT"),
+    ]
+
+    for col_name, col_type in migrations:
+        if col_name not in existing_cols:
+            try:
+                cursor.execute(f"ALTER TABLE jobs ADD COLUMN {col_name} {col_type}")
+                logging.info(f"Migrated: added column '{col_name}' to jobs table.")
+            except Exception as e:
+                logging.warning(f"Migration skipped for '{col_name}': {e}")
+
+    conn.commit()
+
 
 def migrate_old_data(conn):
     if not OLD_JSON_PATH.exists():

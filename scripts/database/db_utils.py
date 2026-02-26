@@ -16,6 +16,9 @@ def insert_job(conn, job_dict: dict) -> bool:
     Inserts a job into the SQLite DB.
     Returns True if it was a genuinely NEW job (inserted).
     Returns False if it was completely ignored due to our deduplication hash constraint.
+    
+    If the job already exists (dedup hit), updates last_seen_at and re-activates
+    it — this powers the job lifecycle tracker.
     """
     company_norm = job_dict.get("company", "Unknown").lower().strip()
     source_ats = job_dict.get("source_ats", "unknown").lower().strip()
@@ -31,8 +34,10 @@ def insert_job(conn, job_dict: dict) -> bool:
         cursor.execute("""
             INSERT INTO jobs (
                 internal_hash, job_id, title, company, location, url, 
-                date_posted, source_ats, first_seen, status, keywords_matched
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'unposted', ?)
+                date_posted, source_ats, first_seen, status, keywords_matched,
+                description, salary_min, salary_max, salary_currency,
+                experience_years, is_active, last_seen_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'unposted', ?, ?, ?, ?, ?, ?, 1, ?)
         """, (
             internal_hash,
             job_dict.get("job_id", ""),
@@ -43,13 +48,88 @@ def insert_job(conn, job_dict: dict) -> bool:
             job_dict.get("date_posted", ""),
             job_dict.get("source_ats", ""),
             first_seen,
-            keywords
+            keywords,
+            job_dict.get("description"),
+            job_dict.get("salary_min"),
+            job_dict.get("salary_max"),
+            job_dict.get("salary_currency"),
+            job_dict.get("experience_years"),
+            first_seen,
         ))
         conn.commit()
         return True
     except sqlite3.IntegrityError:
-        # Job already exists (deduplicated by internal_hash)
+        # Job already exists — update last_seen_at and re-activate
+        try:
+            cursor.execute("""
+                UPDATE jobs 
+                SET last_seen_at = ?, is_active = 1 
+                WHERE internal_hash = ?
+            """, (first_seen, internal_hash))
+            
+            # Backfill description/salary if we have them now but didn't before
+            if job_dict.get("description"):
+                cursor.execute("""
+                    UPDATE jobs 
+                    SET description = ?, salary_min = COALESCE(salary_min, ?),
+                        salary_max = COALESCE(salary_max, ?),
+                        salary_currency = COALESCE(salary_currency, ?),
+                        experience_years = COALESCE(experience_years, ?)
+                    WHERE internal_hash = ? AND (description IS NULL OR description = '')
+                """, (
+                    job_dict.get("description"),
+                    job_dict.get("salary_min"),
+                    job_dict.get("salary_max"),
+                    job_dict.get("salary_currency"),
+                    job_dict.get("experience_years"),
+                    internal_hash,
+                ))
+            conn.commit()
+        except Exception:
+            pass
         return False
+
+
+def mark_stale_jobs(conn, source_ats: str, company: str, active_job_ids: set[str]) -> int:
+    """
+    Mark jobs as inactive if they were NOT seen in the latest scrape for this 
+    company+ATS combo. This detects deactivated/filled positions.
+    
+    Returns count of jobs marked inactive.
+    """
+    if not active_job_ids:
+        return 0
+    
+    now = datetime.now(timezone.utc).isoformat()
+    cursor = conn.cursor()
+    
+    company_norm = company.lower().strip()
+    ats_norm = source_ats.lower().strip()
+    
+    # Build the set of hashes that ARE still active
+    active_hashes = set()
+    for jid in active_job_ids:
+        jid_norm = str(jid).lower().strip()
+        active_hashes.add(f"{ats_norm}::{company_norm}::{jid_norm}")
+    
+    # Find all jobs for this company+ats that are currently active
+    cursor.execute("""
+        SELECT internal_hash FROM jobs 
+        WHERE source_ats = ? AND LOWER(company) = ? AND is_active = 1
+    """, (ats_norm, company_norm))
+    
+    all_hashes = {row[0] for row in cursor.fetchall()}
+    stale_hashes = all_hashes - active_hashes
+    
+    if stale_hashes:
+        qs = ",".join("?" for _ in stale_hashes)
+        cursor.execute(
+            f"UPDATE jobs SET is_active = 0, last_seen_at = ? WHERE internal_hash IN ({qs})",
+            [now] + list(stale_hashes)
+        )
+        conn.commit()
+    
+    return len(stale_hashes)
 
 def get_unposted_jobs(conn):
     """Fetch jobs ready to be sent to Discord."""

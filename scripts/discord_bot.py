@@ -155,22 +155,21 @@ async def post_jobs_to_channel(channel, unposted_jobs: list[dict]):
 # DAEMON LOGIC
 # ═══════════════════════════════════════════════════════════════════════
 
-@tasks.loop(minutes=15)
+@tasks.loop(minutes=5)
 async def broadcast_new_jobs():
-    """Wakes up every 15 minutes to check DB for anything new."""
+    """Backup poller — catches anything the instant push missed."""
     channel = client.get_channel(CHANNEL_ID)
     if not channel:
         log(f"Channel {CHANNEL_ID} not found!", "ERROR")
         return
 
-    log("Checking SQLite for unposted jobs...")
     conn = get_connection()
     try:
         jobs = get_unposted_jobs(conn)
         if not jobs:
-            log("No unposted jobs. Going back to sleep.")
-            return
+            return  # Silent — no spam in logs for backup polls
             
+        log(f"Backup poller found {len(jobs)} unposted jobs — pushing now.")
         await post_jobs_to_channel(channel, jobs)
     except Exception as e:
         log(f"Broadcast failure: {e}", "ERROR")
@@ -191,9 +190,10 @@ async def on_ready():
     channel = client.get_channel(CHANNEL_ID)
     if channel:
         await channel.send(
-            f"🦞 **JobClaw Discord Broadcaster v3 is online!**\n"
-            f"📡 Listening to SQLite Database events...\n"
-            f"⚡ Micro-scrapers are handled via OS scheduling."
+            f"🦞 **JobClaw Discord Broadcaster v4 is online!**\n"
+            f"📡 Primary: Instant push after each scraper run\n"
+            f"🔄 Backup: Polling DB every 5 min for anything missed\n"
+            f"⚡ Scrapers: Fast (30min) + Full ATS (1hr) + OpenClaw (4hr)"
         )
         broadcast_new_jobs.start()
     else:
@@ -216,11 +216,14 @@ async def on_message(message: discord.Message):
         conn.close()
 
         await message.channel.send(
-            f"📊 **JobClaw Headless Status**\n"
-            f"• Scraper Arch: **SQLite Micro-Services**\n"
+            f"📊 **JobClaw Status**\n"
+            f"• Scraper Arch: **SQLite + Instant Discord Push**\n"
             f"• DB Size: **{total_jobs} total jobs**\n"
             f"• Backlog: **{unposted} unposted roles**\n"
-            f"• Broadcaster Interval: **15 minutes**"
+            f"• Fast Scan: **every 30 min** (RSS + Enterprise + GitHub)\n"
+            f"• Full ATS Scan: **every 1 hour** (11,800 companies)\n"
+            f"• OpenClaw: **every 4 hours** (LinkedIn/Indeed/Glassdoor)\n"
+            f"• Discord Delivery: **Instant push + 5min backup poll**"
         )
 
 if __name__ == "__main__":
