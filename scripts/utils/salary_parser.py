@@ -97,8 +97,16 @@ def extract_salary(description: str) -> Tuple[Optional[str], Optional[str]]:
         if len(match.groups()) >= 2:
             min_val_str = match.group(1).replace(",", "")
             max_val_str = match.group(2).replace(",", "")
-            min_val = float(min_val_str)
-            max_val = float(max_val_str)
+            # Handle European-style numbers like '82.952.900' (periods as thousands separators)
+            if min_val_str.count('.') > 1:
+                min_val_str = min_val_str.replace('.', '')
+            if max_val_str.count('.') > 1:
+                max_val_str = max_val_str.replace('.', '')
+            try:
+                min_val = float(min_val_str)
+                max_val = float(max_val_str)
+            except ValueError:
+                continue
 
             if "k" in matched_text.lower():
                 if min_val < 1000:

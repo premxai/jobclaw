@@ -258,14 +258,14 @@ async def fetch_with_retry(
                 retry_after = resp.headers.get("Retry-After")
                 if retry_after:
                     try:
-                        wait = float(retry_after)
+                        wait = min(float(retry_after), 30.0)  # Cap at 30s — some sites send absurd values
                     except ValueError:
                         wait = BASE_BACKOFF * (2 ** attempt)
                 else:
                     wait = BASE_BACKOFF * (2 ** attempt)
 
                 jitter = random.uniform(0.5, 1.5)
-                total_wait = wait * jitter
+                total_wait = min(wait * jitter, 45.0)  # Never wait more than 45s total
 
                 tag = f"[{log_tag}] " if log_tag else ""
                 _log(

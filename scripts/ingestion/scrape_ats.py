@@ -37,6 +37,11 @@ from scripts.ingestion.us_filter import is_us_location
 from scripts.ingestion.parallel_ingestor import load_registry, is_within_window
 from scripts.database.db_utils import get_connection, insert_job, log_scraper_run, mark_stale_jobs
 
+# ── Platforms to skip by default ───────────────────────────────────────
+# Workable: 3,547 companies, 429 rate-limits on EVERY request (unusable without proxy)
+# Workday: 1,404 companies, most slugs return 422 (wrong format in registry)
+DEFAULT_SKIP_PLATFORMS = {"workable", "workday"}
+
 # ── Concurrency ───────────────────────────────────────────────────────
 # Workers per platform — NOT coroutines-per-platform. Each worker pulls
 # from a queue, so memory stays bounded regardless of registry size.
@@ -88,10 +93,16 @@ async def _worker(
                 pass  # Cache corrupt — fall through
 
         try:
-            jobs = await fetch_company_jobs(session, cname, ats, slug, rate_limiter=rate_limiter)
+            jobs = await asyncio.wait_for(
+                fetch_company_jobs(session, cname, ats, slug, rate_limiter=rate_limiter),
+                timeout=60,  # 60s max per company — prevents infinite hangs
+            )
             if jobs:
                 cache.put(ats, slug, [j.to_dict() for j in jobs])
             results.append((cname, ats, slug, jobs, None))
+        except asyncio.TimeoutError:
+            _log(f"[{ats}/{slug}] Hard timeout after 60s", "WARN")
+            results.append((cname, ats, slug, [], "timeout"))
         except Exception as e:
             _log(f"[{ats}/{slug}] Fetch failed: {e}", "ERROR")
             results.append((cname, ats, slug, [], str(e)))
@@ -99,28 +110,39 @@ async def _worker(
         queue.task_done()
 
 
-async def run_ats_scraper(window_hours: int = 24):
+async def run_ats_scraper(window_hours: int = 24, skip_platforms: set = None):
     """
     Micro-scraper exclusively for Direct ATS APIs (Greenhouse, Lever, etc.)
     
     Pipeline:
       1. Load registry (~11,800 companies)
-      2. Group by ATS platform → build per-platform queues
-      3. Launch N workers per platform (bounded, NOT 11,800 coroutines)
-      4. Fetch with caching + rate limiting + UA rotation
-      5. Filter: target role → US location → time window
-      6. Insert into SQLite with description + salary enrichment
-      7. Mark vanished jobs as inactive (lifecycle tracking)
+      2. Filter out broken/rate-limited platforms (Workable, Workday)
+      3. Group by ATS platform → build per-platform queues
+      4. Launch N workers per platform (bounded, NOT 11,800 coroutines)
+      5. Fetch with caching + rate limiting + UA rotation
+      6. Filter: target role → US location → time window
+      7. Insert into SQLite with description + salary enrichment
+      8. Mark vanished jobs as inactive (lifecycle tracking)
     """
     start_time = time.time()
     _log(">>> Starting ATS Micro-Scraper v3")
+
+    if skip_platforms is None:
+        skip_platforms = DEFAULT_SKIP_PLATFORMS
 
     registry = load_registry()
     if not registry:
         _log("Empty registry — nothing to ingest.", "WARN")
         return
 
-    _log(f"Loaded {len(registry)} companies for ATS ingestion.")
+    # Filter out broken/rate-limited platforms
+    before_count = len(registry)
+    registry = [c for c in registry if c.get("ats", "").lower() not in skip_platforms]
+    skipped = before_count - len(registry)
+    if skipped:
+        _log(f"Skipping {skipped} companies on platforms: {', '.join(sorted(skip_platforms))}")
+
+    _log(f"Loaded {len(registry)} companies for ATS ingestion (from {before_count} total).")
 
     # Initialize shared infrastructure
     rate_limiter = RateLimiter()
@@ -185,8 +207,18 @@ async def run_ats_scraper(window_hours: int = 24):
     us_filtered = [j for j in role_filtered if is_us_location(j.location)]
     _log(f"US filter: {len(us_filtered)}/{len(role_filtered)} in United States.")
 
-    time_filtered = [j for j in us_filtered if is_within_window(j.date_posted, window_hours)]
-    _log(f"{window_hours}hr filter: {len(time_filtered)}/{len(us_filtered)} within window.")
+    # On first run (empty DB), skip time filter to get ALL active jobs.
+    # On subsequent runs, only take jobs within the window.
+    conn_check = get_connection()
+    existing_count = conn_check.cursor().execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
+    conn_check.close()
+
+    if existing_count == 0:
+        _log(f"First run detected (empty DB) — skipping time window filter, taking all {len(us_filtered)} US tech jobs.")
+        time_filtered = us_filtered
+    else:
+        time_filtered = [j for j in us_filtered if is_within_window(j.date_posted, window_hours)]
+        _log(f"{window_hours}hr filter: {len(time_filtered)}/{len(us_filtered)} within window.")
 
     # ── Database Insertion ────────────────────────────────────────────
     conn = get_connection()

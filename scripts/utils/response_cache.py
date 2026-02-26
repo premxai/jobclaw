@@ -32,7 +32,15 @@ from typing import Any, Optional
 from scripts.utils.logger import _log
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
-CACHE_DIR = PROJECT_ROOT / "data" / "cache"
+
+# Use TEMP directory for cache to avoid OneDrive file-locking conflicts.
+# OneDrive syncs files in the workspace and locks .tmp/.json during sync,
+# which causes atomic rename failures (WinError 5 / WinError 32).
+_temp = os.environ.get("TEMP", os.environ.get("TMP", ""))
+if _temp:
+    CACHE_DIR = Path(_temp) / "jobclaw_cache"
+else:
+    CACHE_DIR = PROJECT_ROOT / "data" / "cache"
 
 # ── TTL per platform (in seconds) ────────────────────────────────────
 # These are tuned based on how often each platform's job listings change.

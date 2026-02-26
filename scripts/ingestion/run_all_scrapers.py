@@ -33,11 +33,11 @@ async def _run_with_timing(name: str, coro):
     try:
         await coro
         dur = round(time.time() - start, 1)
-        _log(f"[orchestrator] ✓ {name} finished in {dur}s")
+        _log(f"[orchestrator] OK {name} finished in {dur}s")
         return (name, dur, None)
     except Exception as e:
         dur = round(time.time() - start, 1)
-        _log(f"[orchestrator] ✗ {name} FAILED after {dur}s: {e}", "ERROR")
+        _log(f"[orchestrator] FAIL {name} after {dur}s: {e}", "ERROR")
         return (name, dur, str(e))
 
 
@@ -46,23 +46,29 @@ async def run_all(
     skip_openclaw: bool = False,
     skip_github: bool = False,
     window_hours: int = 24,
+    skip_platforms: set = None,
 ):
     """
     Launch all scrapers in parallel for maximum speed.
 
-    Priority order (by speed):
-      1. RSS/Aggregators  (~30s)   — cheapest, fastest signal
-      2. Enterprise APIs  (~2-5m)  — 8 companies, REST APIs
-      3. GitHub repos     (~1-2m)  — static markdown parsing
-      4. ATS boards       (~10-30m) — 11,800 companies, the big sweep
-      5. OpenClaw browser (~3-5m)  — expensive, uses Minimax API credits
+    Modes:
+      --hourly:  1hr window, skip Workable/Workday (fast platforms only, ~5-8 min)
+      default:   24hr window, skip Workable/Workday (full sweep, ~10-15 min)
+      --daily:   24hr window, include ALL platforms (slow, ~20+ min)
 
-    All run concurrently — the fast ones report results immediately while
+    Priority order (by speed):
+      1. RSS/Aggregators  (~30s)   -- cheapest, fastest signal
+      2. Enterprise APIs  (~2-5m)  -- 8 companies, REST APIs
+      3. GitHub repos     (~1-2m)  -- static markdown parsing
+      4. ATS boards       (~5-15m) -- 6,800 companies (excl Workable/Workday)
+      5. OpenClaw browser (~3-5m)  -- expensive, uses Minimax API credits
+
+    All run concurrently -- the fast ones report results immediately while
     ATS keeps grinding. No scraper blocks another.
     """
     start_time = time.time()
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    _log(f"[orchestrator] ═══ SPEED SCRAPE STARTED at {ts} ═══")
+    _log(f"[orchestrator] === SPEED SCRAPE STARTED at {ts} (window={window_hours}hr) ===")
 
     tasks = []
 
@@ -79,10 +85,12 @@ async def run_all(
         from scripts.ingestion.scrape_github import run_github_scraper
         tasks.append(_run_with_timing("GitHub Repos", run_github_scraper(window_hours)))
 
-    # ── ATS boards (the big one: 11,800 companies) ──────────────────
+    # ── ATS boards (~6,800 companies after filtering) ────────────────
     if not skip_ats:
         from scripts.ingestion.scrape_ats import run_ats_scraper
-        tasks.append(_run_with_timing("ATS Boards (11,800 cos)", run_ats_scraper(window_hours)))
+        ats_skip = skip_platforms if skip_platforms is not None else None
+        label = f"ATS Boards ({'filtered' if ats_skip else 'all'})"
+        tasks.append(_run_with_timing(label, run_ats_scraper(window_hours, skip_platforms=ats_skip)))
 
     # ── OpenClaw browser automation (LinkedIn/Indeed/Glassdoor) ──────
     if not skip_openclaw:
@@ -90,11 +98,19 @@ async def run_all(
         tasks.append(_run_with_timing("OpenClaw (LinkedIn/Indeed/Glassdoor)", run_openclaw_scraper()))
 
     # Fire all at once — each has its own session + rate limiter
-    results = await asyncio.gather(*tasks, return_exceptions=True)
+    # Global 20-minute timeout so nothing can hang forever
+    try:
+        results = await asyncio.wait_for(
+            asyncio.gather(*tasks, return_exceptions=True),
+            timeout=20 * 60,  # 20 minutes max
+        )
+    except asyncio.TimeoutError:
+        _log("[orchestrator] GLOBAL TIMEOUT after 20 minutes -- aborting remaining scrapers", "ERROR")
+        results = []
 
     # ── Summary ─────────────────────────────────────────────────────
     total_dur = round(time.time() - start_time, 1)
-    _log(f"[orchestrator] ═══ ALL SCRAPERS COMPLETE in {total_dur}s ═══")
+    _log(f"[orchestrator] === ALL SCRAPERS COMPLETE in {total_dur}s ===")
 
     successes = 0
     failures = 0
@@ -117,7 +133,7 @@ async def run_all(
         from scripts.discord_push import push_new_jobs_to_discord
         jobs_pushed = await push_new_jobs_to_discord()
         if jobs_pushed:
-            _log(f"[orchestrator] ⚡ Pushed {jobs_pushed} new jobs to Discord INSTANTLY.")
+            _log(f"[orchestrator] >> Pushed {jobs_pushed} new jobs to Discord INSTANTLY.")
         else:
             _log(f"[orchestrator] No new unposted jobs to push.")
     except Exception as e:
@@ -132,16 +148,31 @@ async def run_all(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="JobClaw Speed Scraper — find jobs FAST")
+    parser = argparse.ArgumentParser(description="JobClaw Speed Scraper -- find jobs FAST")
     parser.add_argument("--fast", action="store_true",
                         help="Quick scan only: RSS + Enterprise + GitHub (skip ATS)")
+    parser.add_argument("--hourly", action="store_true",
+                        help="Hourly mode: 1hr window, skip Workable/Workday (fast ATS only)")
+    parser.add_argument("--daily", action="store_true",
+                        help="Daily mode: 24hr window, include ALL platforms (slow)")
     parser.add_argument("--no-openclaw", action="store_true",
                         help="Skip OpenClaw browser automation (saves API credits)")
     parser.add_argument("--no-github", action="store_true",
                         help="Skip GitHub repo parsing")
-    parser.add_argument("--window", type=int, default=24,
-                        help="Time window in hours for filtering (default: 24)")
+    parser.add_argument("--window", type=int, default=None,
+                        help="Time window in hours for filtering (overrides mode defaults)")
     args = parser.parse_args()
+
+    # Determine window and skip set based on mode
+    if args.hourly:
+        window = args.window or 1
+        skip_platforms = set()  # Skip nothing extra -- default skip already handles Workable/Workday
+    elif args.daily:
+        window = args.window or 24
+        skip_platforms = set()  # Include all platforms for daily sweep
+    else:
+        window = args.window or 24
+        skip_platforms = None  # Use default skip set (Workable + Workday)
 
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -150,7 +181,8 @@ def main():
         skip_ats=args.fast,
         skip_openclaw=args.no_openclaw,
         skip_github=args.no_github,
-        window_hours=args.window,
+        window_hours=window,
+        skip_platforms=skip_platforms,
     ))
 
 

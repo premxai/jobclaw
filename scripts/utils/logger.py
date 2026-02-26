@@ -10,7 +10,10 @@ _log_lock = threading.Lock()
 def _log(msg: str, level: str = "INFO", tag: str = "ingestor") -> None:
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     entry = f"{ts} | {level} | [{tag}] {msg}"
-    print(entry)
+    try:
+        print(entry)
+    except UnicodeEncodeError:
+        print(entry.encode("ascii", errors="replace").decode("ascii"))
     LOGS_DIR.mkdir(parents=True, exist_ok=True)
     with _log_lock:
         with open(LOGS_DIR / "system.log", "a", encoding="utf-8") as f:
