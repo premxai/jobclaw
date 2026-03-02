@@ -159,51 +159,115 @@ async def run_all(
 
 
 def main():
-    parser = argparse.ArgumentParser(description="JobClaw Speed Scraper -- find jobs FAST")
+    parser = argparse.ArgumentParser(
+        description="JobClaw v4 Speed Scraper — find jobs FAST with tiered scheduling",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Tier presets (recommended):
+  --tier fast     RSS + GitHub only              (~30s,  schedule every 5 min)
+  --tier medium   + Enterprise APIs              (~3min, schedule every 30 min)
+  --tier heavy    + ATS boards (1/4 sharded)     (~4min, schedule every 1 hour)
+  --tier deep     Everything incl. OpenClaw      (~15min, schedule every 4 hours)
+
+Legacy flags still work:
+  --fast          Same as --tier fast
+  --hourly        1hr window for ATS
+  --daily         24hr window for everything
+        """,
+    )
+    parser.add_argument("--tier", type=str, default=None,
+                        choices=["fast", "medium", "heavy", "deep"],
+                        help="Scheduling tier preset (fast/medium/heavy/deep)")
     parser.add_argument("--fast", action="store_true",
-                        help="Quick scan only: RSS + Enterprise + GitHub (skip ATS)")
+                        help="Legacy: same as --tier fast")
     parser.add_argument("--hourly", action="store_true",
-                        help="Hourly mode: 1hr window, skip Workable/Workday (fast ATS only)")
+                        help="Legacy: 1hr window, skip slow platforms")
     parser.add_argument("--daily", action="store_true",
-                        help="Daily mode: 24hr window, include ALL platforms (slow)")
+                        help="Legacy: 24hr window, all platforms")
     parser.add_argument("--no-openclaw", action="store_true",
-                        help="Skip OpenClaw browser automation (saves API credits)")
+                        help="Skip OpenClaw browser automation")
     parser.add_argument("--no-github", action="store_true",
                         help="Skip GitHub repo parsing")
     parser.add_argument("--window", type=int, default=None,
-                        help="Time window in hours for filtering (overrides mode defaults)")
+                        help="Time window in hours (overrides tier default)")
     parser.add_argument("--shard", type=str, default=None,
-                        help="ATS registry shard: 0-3 for specific shard, 'auto' for time-based")
+                        help="ATS shard: 0-3 or 'auto' for time-based rotation")
     parser.add_argument("--total-shards", type=int, default=4,
-                        help="Total number of shards (default: 4)")
+                        help="Number of registry shards (default: 4)")
     args = parser.parse_args()
 
-    # Determine window and skip set based on mode
-    if args.hourly:
+    # ── Tier-based presets ─────────────────────────────────────────────
+    tier = args.tier
+
+    # Legacy flag mapping
+    if not tier:
+        if args.fast:
+            tier = "fast"
+        elif args.hourly:
+            tier = "heavy"
+        elif args.daily:
+            tier = "deep"
+
+    if tier == "fast":
+        # RSS + GitHub only (30 seconds)
+        skip_ats = True
+        skip_openclaw = True
+        skip_github = False
         window = args.window or 1
         skip_platforms = set()
-    elif args.daily:
+        shard_val = None
+    elif tier == "medium":
+        # RSS + GitHub + Enterprise (2-3 minutes)
+        skip_ats = True
+        skip_openclaw = True
+        skip_github = False
+        window = args.window or 4
+        skip_platforms = set()
+        shard_val = None
+    elif tier == "heavy":
+        # RSS + GitHub + Enterprise + ATS (sharded, 3-4 minutes)
+        skip_ats = False
+        skip_openclaw = True
+        skip_github = False
         window = args.window or 24
         skip_platforms = set()
+        shard_val = -1  # Auto-shard by time slot
+    elif tier == "deep":
+        # Everything including OpenClaw (15 minutes)
+        skip_ats = False
+        skip_openclaw = False
+        skip_github = False
+        window = args.window or 24
+        skip_platforms = set()
+        shard_val = None  # No sharding — full sweep
     else:
+        # No tier specified — default behavior (full ATS, no OpenClaw)
+        skip_ats = args.fast
+        skip_openclaw = args.no_openclaw
+        skip_github = args.no_github
         window = args.window or 24
         skip_platforms = None
+        shard_val = None
 
-    # Parse shard argument
-    shard_val = None
+    # Override shard from CLI if explicitly set
     if args.shard is not None:
         if args.shard.lower() == 'auto':
-            shard_val = -1  # Auto-detect from time slot
+            shard_val = -1
         else:
             shard_val = int(args.shard)
+
+    _log(f"[orchestrator] Tier={tier or 'default'}, Window={window}hr, "
+         f"Shard={'auto' if shard_val == -1 else shard_val}, "
+         f"ATS={'ON' if not skip_ats else 'OFF'}, "
+         f"OpenClaw={'ON' if not skip_openclaw else 'OFF'}")
 
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     asyncio.run(run_all(
-        skip_ats=args.fast,
-        skip_openclaw=args.no_openclaw,
-        skip_github=args.no_github,
+        skip_ats=skip_ats,
+        skip_openclaw=skip_openclaw,
+        skip_github=skip_github,
         window_hours=window,
         skip_platforms=skip_platforms,
         shard=shard_val,
