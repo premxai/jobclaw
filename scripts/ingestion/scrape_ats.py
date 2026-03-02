@@ -110,22 +110,35 @@ async def _worker(
         queue.task_done()
 
 
-async def run_ats_scraper(window_hours: int = 24, skip_platforms: set = None):
+async def run_ats_scraper(
+    window_hours: int = 24,
+    skip_platforms: set = None,
+    shard: int = -1,
+    total_shards: int = 4,
+):
     """
     Micro-scraper exclusively for Direct ATS APIs (Greenhouse, Lever, etc.)
     
     Pipeline:
       1. Load registry (~11,800 companies)
-      2. Filter out broken/rate-limited platforms (Workable, Workday)
+      2. Apply shard filter (optional: split registry into N rotating chunks)
       3. Group by ATS platform → build per-platform queues
       4. Launch N workers per platform (bounded, NOT 11,800 coroutines)
-      5. Fetch with caching + rate limiting + UA rotation
+      5. Fetch with caching + rate limiting + TLS fingerprint rotation
       6. Filter: target role → US location → time window
       7. Insert into SQLite with description + salary enrichment
       8. Mark vanished jobs as inactive (lifecycle tracking)
+
+    Args:
+        window_hours: Time window for filtering (default 24h)
+        skip_platforms: Set of platform names to skip (default: none)
+        shard: Which shard to process (0 to total_shards-1).
+               -1 = auto-detect based on current 15-minute time slot.
+               None = no sharding (process entire registry).
+        total_shards: Number of shards to split registry into (default 4).
     """
     start_time = time.time()
-    _log(">>> Starting ATS Micro-Scraper v3")
+    _log(">>> Starting ATS Micro-Scraper v4 (curl_cffi TLS impersonation)")
 
     if skip_platforms is None:
         skip_platforms = DEFAULT_SKIP_PLATFORMS
@@ -141,6 +154,23 @@ async def run_ats_scraper(window_hours: int = 24, skip_platforms: set = None):
     skipped = before_count - len(registry)
     if skipped:
         _log(f"Skipping {skipped} companies on platforms: {', '.join(sorted(skip_platforms))}")
+
+    # ── Registry Sharding ──────────────────────────────────────────────
+    # Split 10k+ companies into N rotating shards for shorter runs.
+    # Auto-shard selects based on the current 15-min time slot.
+    if shard is not None:
+        if shard == -1:
+            # Auto-detect shard from current time
+            import datetime
+            now_min = datetime.datetime.now().minute
+            shard = (now_min // 15) % total_shards
+        
+        chunk_size = len(registry) // total_shards
+        remainder = len(registry) % total_shards
+        start_idx = shard * chunk_size + min(shard, remainder)
+        end_idx = start_idx + chunk_size + (1 if shard < remainder else 0)
+        registry = registry[start_idx:end_idx]
+        _log(f"Shard {shard}/{total_shards}: processing {len(registry)} companies (of {before_count - skipped} total)")
 
     _log(f"Loaded {len(registry)} companies for ATS ingestion (from {before_count} total).")
 

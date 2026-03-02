@@ -47,6 +47,8 @@ async def run_all(
     skip_github: bool = False,
     window_hours: int = 24,
     skip_platforms: set = None,
+    shard: int = None,
+    total_shards: int = 4,
 ):
     """
     Launch all scrapers in parallel for maximum speed.
@@ -85,12 +87,21 @@ async def run_all(
         from scripts.ingestion.scrape_github import run_github_scraper
         tasks.append(_run_with_timing("GitHub Repos", run_github_scraper(window_hours)))
 
-    # ── ATS boards (~6,800 companies after filtering) ────────────────
+    # ── ATS boards (~10,500 companies with curl_cffi TLS impersonation) ──
     if not skip_ats:
         from scripts.ingestion.scrape_ats import run_ats_scraper
         ats_skip = skip_platforms if skip_platforms is not None else None
-        label = f"ATS Boards ({'filtered' if ats_skip else 'all'})"
-        tasks.append(_run_with_timing(label, run_ats_scraper(window_hours, skip_platforms=ats_skip)))
+        shard_label = f", shard={shard}/{total_shards}" if shard is not None else ""
+        label = f"ATS Boards ({'filtered' if ats_skip else 'all'}{shard_label})"
+        tasks.append(_run_with_timing(
+            label,
+            run_ats_scraper(
+                window_hours,
+                skip_platforms=ats_skip,
+                shard=shard,
+                total_shards=total_shards,
+            )
+        ))
 
     # ── OpenClaw browser automation (LinkedIn/Indeed/Glassdoor) ──────
     if not skip_openclaw:
@@ -161,18 +172,30 @@ def main():
                         help="Skip GitHub repo parsing")
     parser.add_argument("--window", type=int, default=None,
                         help="Time window in hours for filtering (overrides mode defaults)")
+    parser.add_argument("--shard", type=str, default=None,
+                        help="ATS registry shard: 0-3 for specific shard, 'auto' for time-based")
+    parser.add_argument("--total-shards", type=int, default=4,
+                        help="Total number of shards (default: 4)")
     args = parser.parse_args()
 
     # Determine window and skip set based on mode
     if args.hourly:
         window = args.window or 1
-        skip_platforms = set()  # Skip nothing extra -- default skip already handles Workable/Workday
+        skip_platforms = set()
     elif args.daily:
         window = args.window or 24
-        skip_platforms = set()  # Include all platforms for daily sweep
+        skip_platforms = set()
     else:
         window = args.window or 24
-        skip_platforms = None  # Use default skip set (Workable + Workday)
+        skip_platforms = None
+
+    # Parse shard argument
+    shard_val = None
+    if args.shard is not None:
+        if args.shard.lower() == 'auto':
+            shard_val = -1  # Auto-detect from time slot
+        else:
+            shard_val = int(args.shard)
 
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -183,6 +206,8 @@ def main():
         skip_github=args.no_github,
         window_hours=window,
         skip_platforms=skip_platforms,
+        shard=shard_val,
+        total_shards=args.total_shards,
     ))
 
 
