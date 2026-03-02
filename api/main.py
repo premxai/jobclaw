@@ -70,6 +70,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# API Key auth — disabled if JOBCLAW_API_KEY not set
+from api.auth import APIKeyMiddleware
+app.add_middleware(APIKeyMiddleware)
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # HEALTH
