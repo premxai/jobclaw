@@ -235,6 +235,141 @@ async def push_new_jobs_to_discord():
         conn.close()
 
 
+# ═══════════════════════════════════════════════════════════════════════
+# STREAMING WATERFALL — push jobs to Discord AS they're discovered
+# ═══════════════════════════════════════════════════════════════════════
+
+import asyncio as _asyncio
+
+
+class StreamingJobPusher:
+    """
+    Real-time Discord job pusher that runs alongside scrapers.
+
+    Workers push qualifying jobs into a queue. A background consumer task
+    drains the queue in micro-batches (every BATCH_SIZE jobs or FLUSH_INTERVAL
+    seconds, whichever comes first) and sends them to Discord via webhook.
+
+    Usage:
+        pusher = StreamingJobPusher()
+        task = asyncio.create_task(pusher.run())
+        ...workers push jobs via pusher.push(job_dict)...
+        await pusher.stop()
+        await task
+    """
+
+    BATCH_SIZE = 5          # Max jobs per micro-batch
+    FLUSH_INTERVAL = 10.0   # Seconds between flushes (even if < BATCH_SIZE)
+    RATE_LIMIT_DELAY = 1.0  # Seconds between webhook calls (Discord rate limit)
+
+    def __init__(self, webhook_url: str = None):
+        self._url = webhook_url or WEBHOOK_URL
+        self._queue: _asyncio.Queue = _asyncio.Queue()
+        self._stop = _asyncio.Event()
+        self._total_pushed = 0
+        self._enabled = bool(self._url)
+
+    @property
+    def total_pushed(self) -> int:
+        return self._total_pushed
+
+    def push(self, job_dict: dict) -> None:
+        """Queue a job for streaming push. Non-blocking, safe from any coroutine."""
+        if self._enabled:
+            self._queue.put_nowait(job_dict)
+
+    async def stop(self) -> None:
+        """Signal the consumer to flush remaining jobs and exit."""
+        self._stop.set()
+
+    async def run(self) -> None:
+        """
+        Background consumer: drains queue in micro-batches and sends to Discord.
+        Runs until stop() is called and queue is empty.
+        """
+        if not self._enabled:
+            log("StreamingJobPusher disabled — no DISCORD_WEBHOOK_URL configured.")
+            return
+
+        import aiohttp
+        log("🌊 Streaming waterfall started — jobs will hit Discord in real-time.")
+
+        async with aiohttp.ClientSession() as session:
+            while True:
+                batch = await self._collect_batch()
+
+                if batch:
+                    await self._send_batch(session, batch)
+                    self._total_pushed += len(batch)
+
+                if self._stop.is_set() and self._queue.empty():
+                    break
+
+        if self._total_pushed > 0:
+            log(f"🌊 Streaming waterfall complete — {self._total_pushed} jobs pushed live.")
+
+    async def _collect_batch(self) -> list[dict]:
+        """Collect up to BATCH_SIZE jobs, waiting up to FLUSH_INTERVAL."""
+        batch = []
+        try:
+            # Wait for the first item (or until stop is signaled)
+            try:
+                first = await _asyncio.wait_for(
+                    self._queue.get(),
+                    timeout=self.FLUSH_INTERVAL,
+                )
+                batch.append(first)
+            except _asyncio.TimeoutError:
+                return batch
+
+            # Greedily grab more items without waiting
+            while len(batch) < self.BATCH_SIZE:
+                try:
+                    item = self._queue.get_nowait()
+                    batch.append(item)
+                except _asyncio.QueueEmpty:
+                    break
+        except Exception:
+            pass
+
+        return batch
+
+    async def _send_batch(self, session, batch: list[dict]) -> None:
+        """Send a micro-batch to Discord via webhook."""
+        try:
+            lines = [_job_line(j) for j in batch]
+            text = "\n".join(lines)
+
+            payload = {
+                "embeds": [{
+                    "description": text,
+                    "color": 0x57F287,
+                    "footer": {"text": f"⚡ {len(batch)} new • Streaming live"},
+                }]
+            }
+            resp = await session.post(self._url, json=payload)
+            if resp.status == 429:
+                # Rate limited — wait and retry
+                retry_after = 2.0
+                try:
+                    data = await resp.json()
+                    retry_after = data.get("retry_after", 2.0)
+                except Exception:
+                    pass
+                log(f"Discord rate limited — waiting {retry_after}s", "WARN")
+                await _asyncio.sleep(retry_after)
+                # Retry once
+                await session.post(self._url, json=payload)
+            elif resp.status not in (200, 204):
+                log(f"Webhook returned {resp.status}", "WARN")
+
+            # Respect Discord rate limits
+            await _asyncio.sleep(self.RATE_LIMIT_DELAY)
+
+        except Exception as e:
+            log(f"Streaming push failed: {e}", "WARN")
+
+
 if __name__ == "__main__":
     """Test: push any unposted jobs right now."""
     import asyncio
@@ -242,3 +377,4 @@ if __name__ == "__main__":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     count = asyncio.run(push_new_jobs_to_discord())
     print(f"Pushed {count} jobs to Discord.")
+
