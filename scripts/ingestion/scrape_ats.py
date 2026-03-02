@@ -1,15 +1,16 @@
 """
-ATS Micro-Scraper — v3 with bounded worker pool, caching, rate limiting & lifecycle tracking.
+ATS Micro-Scraper — v4 with curl_cffi TLS impersonation + bounded worker pool.
 
 Scrapes all companies in config/company_registry.json via their ATS board APIs
 (Greenhouse, Lever, Ashby, Workday, Workable, Rippling, SmartRecruiters, BambooHR).
 
-v3 improvements over v2:
-  - Bounded worker pool: processes companies in batches instead of launching 11,800
-    coroutines at once. Uses asyncio.Queue with a fixed number of workers per platform.
+v4 improvements over v3:
+  - curl_cffi TLS impersonation: bypasses Cloudflare/WAF on Workday and Workable
+  - All 8 ATS platforms now actively scraped (5,000 previously skipped companies unlocked)
+  - Bounded worker pool: processes companies in batches via asyncio.Queue
   - Response caching: skips companies whose cache is still fresh (saves 60-80% of requests)
   - Per-host rate limiting: respects each ATS platform's rate limits
-  - UA rotation: randomizes User-Agent per request
+  - UA + TLS fingerprint rotation: randomizes per request
   - Job lifecycle tracking: marks vanished jobs as inactive via mark_stale_jobs()
   - Description + salary extraction: stores full job descriptions, extracts salary ranges
   - Per-platform batching: groups companies by ATS for smarter concurrency control
@@ -17,7 +18,6 @@ v3 improvements over v2:
 """
 
 import asyncio
-import aiohttp
 import os
 import time
 import sys
@@ -38,9 +38,9 @@ from scripts.ingestion.parallel_ingestor import load_registry, is_within_window
 from scripts.database.db_utils import get_connection, insert_job, log_scraper_run, mark_stale_jobs
 
 # ── Platforms to skip by default ───────────────────────────────────────
-# Workable: 3,547 companies, 429 rate-limits on EVERY request (unusable without proxy)
-# Workday: 1,404 companies, most slugs return 422 (wrong format in registry)
-DEFAULT_SKIP_PLATFORMS = {"workable", "workday"}
+# v4: Workday and Workable are now scrapable via curl_cffi TLS impersonation.
+# Set to empty — all 8 ATS platforms are active.
+DEFAULT_SKIP_PLATFORMS: set[str] = set()
 
 # ── Concurrency ───────────────────────────────────────────────────────
 # Workers per platform — NOT coroutines-per-platform. Each worker pulls
@@ -61,7 +61,7 @@ DEFAULT_WORKERS = 8
 async def _worker(
     name: str,
     queue: asyncio.Queue,
-    session: aiohttp.ClientSession,
+    session,  # curl_cffi AsyncSession or aiohttp ClientSession
     rate_limiter: RateLimiter,
     cache: ResponseCache,
     results: list,

@@ -1,10 +1,12 @@
 """
-ATS Platform Adapters — v2 with anti-detection + descriptions.
+ATS Platform Adapters — v3 with TLS impersonation + anti-detection + descriptions.
 
 Each adapter knows how to call a specific ATS platform's public job board API
 and normalize the response into a common NormalizedJob format.
 
-v2 improvements over v1:
+v3 improvements over v2:
+  - Dual-backend HTTP: curl_cffi (TLS impersonation) or aiohttp fallback
+  - Session-agnostic adapters (work with both curl_cffi and aiohttp sessions)
   - Uses hardened HTTP client (UA rotation, per-host rate limiting, retry/backoff)
   - Captures full job descriptions
   - Extracts salary/experience from descriptions
@@ -28,11 +30,21 @@ import re
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone, timedelta
 from typing import Any, Optional
-import aiohttp
 
-from scripts.utils.http_client import fetch_with_retry, RateLimiter
+from scripts.utils.http_client import fetch_with_retry, RateLimiter, HAS_CURL_CFFI
 from scripts.utils.salary_parser import extract_salary, extract_experience, parse_salary_range
 from scripts.utils.logger import _log
+
+
+async def _parse_json(resp) -> Any:
+    """Parse JSON from either a curl_cffi or aiohttp response."""
+    if HAS_CURL_CFFI:
+        from curl_cffi.requests import AsyncSession as CffiSession
+        # curl_cffi responses have .json() as a sync method
+        if hasattr(resp, 'status_code'):
+            return resp.json()
+    # aiohttp responses have .json() as an async method
+    return await resp.json()
 
 
 @dataclass
@@ -103,7 +115,7 @@ class GreenhouseAdapter:
 
     @staticmethod
     async def fetch(
-        session: aiohttp.ClientSession,
+        session,
         slug: str,
         company: str,
         rate_limiter: Optional[RateLimiter] = None,
@@ -119,7 +131,7 @@ class GreenhouseAdapter:
             return []
 
         try:
-            data = await resp.json()
+            data = await _parse_json(resp)
         except Exception as e:
             _log(f"[greenhouse/{slug}] JSON decode error: {e}", "WARN")
             return []
@@ -159,7 +171,7 @@ class LeverAdapter:
 
     @staticmethod
     async def fetch(
-        session: aiohttp.ClientSession,
+        session,
         slug: str,
         company: str,
         rate_limiter: Optional[RateLimiter] = None,
@@ -174,7 +186,7 @@ class LeverAdapter:
             return []
 
         try:
-            data = await resp.json()
+            data = await _parse_json(resp)
         except Exception as e:
             _log(f"[lever/{slug}] JSON decode error: {e}", "WARN")
             return []
@@ -235,7 +247,7 @@ class AshbyAdapter:
 
     @staticmethod
     async def fetch(
-        session: aiohttp.ClientSession,
+        session,
         slug: str,
         company: str,
         rate_limiter: Optional[RateLimiter] = None,
@@ -250,7 +262,7 @@ class AshbyAdapter:
             return []
 
         try:
-            data = await resp.json()
+            data = await _parse_json(resp)
         except Exception as e:
             _log(f"[ashby/{slug}] JSON decode error: {e}", "WARN")
             return []
@@ -291,7 +303,7 @@ class SmartRecruitersAdapter:
 
     @staticmethod
     async def fetch(
-        session: aiohttp.ClientSession,
+        session,
         slug: str,
         company: str,
         rate_limiter: Optional[RateLimiter] = None,
@@ -312,7 +324,7 @@ class SmartRecruitersAdapter:
                 break
 
             try:
-                data = await resp.json()
+                data = await _parse_json(resp)
             except Exception:
                 break
 
@@ -376,7 +388,7 @@ class BambooHRAdapter:
 
     @staticmethod
     async def fetch(
-        session: aiohttp.ClientSession,
+        session,
         slug: str,
         company: str,
         rate_limiter: Optional[RateLimiter] = None,
@@ -392,7 +404,7 @@ class BambooHRAdapter:
             return []
 
         try:
-            data = await resp.json()
+            data = await _parse_json(resp)
         except Exception as e:
             _log(f"[bamboohr/{slug}] JSON decode error: {e}", "WARN")
             return []
@@ -436,7 +448,7 @@ class WorkdayAdapter:
 
     @staticmethod
     async def fetch(
-        session: aiohttp.ClientSession,
+        session,
         slug: str,
         company: str,
         rate_limiter: Optional[RateLimiter] = None,
@@ -473,7 +485,7 @@ class WorkdayAdapter:
                 break
 
             try:
-                data = await resp.json()
+                data = await _parse_json(resp)
             except Exception:
                 break
 
@@ -529,7 +541,7 @@ class WorkableAdapter:
 
     @staticmethod
     async def fetch(
-        session: aiohttp.ClientSession,
+        session,
         slug: str,
         company: str,
         rate_limiter: Optional[RateLimiter] = None,
@@ -553,7 +565,7 @@ class WorkableAdapter:
             return []
 
         try:
-            data = await resp.json()
+            data = await _parse_json(resp)
         except Exception as e:
             _log(f"[workable/{slug}] JSON decode error: {e}", "WARN")
             return []
@@ -599,7 +611,7 @@ class RipplingAdapter:
 
     @staticmethod
     async def fetch(
-        session: aiohttp.ClientSession,
+        session,
         slug: str,
         company: str,
         rate_limiter: Optional[RateLimiter] = None,
@@ -614,7 +626,7 @@ class RipplingAdapter:
             return []
 
         try:
-            data = await resp.json()
+            data = await _parse_json(resp)
         except Exception as e:
             _log(f"[rippling/{slug}] JSON decode error: {e}", "WARN")
             return []
@@ -668,7 +680,7 @@ ADAPTERS = {
 
 
 async def fetch_company_jobs(
-    session: aiohttp.ClientSession,
+    session,
     company: str,
     ats: str,
     slug: str,
