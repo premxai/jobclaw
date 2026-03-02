@@ -203,6 +203,14 @@ RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 MAX_RETRIES = 3
 BASE_BACKOFF = 1.5  # seconds
 
+# Sentinel returned by fetch_with_retry() on HTTP 304 Not Modified
+class _NotModified:
+    """Sentinel for 304 Not Modified — data hasn't changed since last fetch."""
+    def __bool__(self): return True  # Truthy so `if resp:` works
+    def __repr__(self): return "NOT_MODIFIED"
+
+NOT_MODIFIED = _NotModified()
+
 
 async def fetch_with_retry(
     session,  # aiohttp.ClientSession OR curl_cffi AsyncSession
@@ -246,6 +254,12 @@ async def fetch_with_retry(
             # Success
             if status == 200:
                 return resp
+
+            # HTTP 304 Not Modified — data hasn't changed since last fetch
+            if status == 304:
+                if not is_cffi:
+                    await resp.release()
+                return NOT_MODIFIED
 
             # Retryable error
             if status in RETRYABLE_STATUS_CODES:

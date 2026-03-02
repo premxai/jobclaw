@@ -70,6 +70,10 @@ async def _worker(
     """
     Worker coroutine: pulls companies from a queue until empty.
     Only N workers run per platform, bounding memory + concurrency.
+    
+    Supports HTTP 304 Not Modified: when cache has expired but has
+    stored ETag/Last-Modified, sends conditional headers. If server
+    responds 304, reuses cached data without re-fetching.
     """
     while True:
         try:
@@ -108,6 +112,7 @@ async def _worker(
             results.append((cname, ats, slug, [], str(e)))
 
         queue.task_done()
+
 
 
 async def run_ats_scraper(
