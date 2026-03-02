@@ -57,6 +57,47 @@ PLATFORM_WORKERS = {
 }
 DEFAULT_WORKERS = 8
 
+# ── Circuit Breaker ───────────────────────────────────────────────────
+# Lightweight per-platform circuit breaker. No external dependencies.
+# If too many consecutive failures happen on a platform, skip remaining
+# companies to avoid wasting time on unresponsive hosts.
+
+class CircuitBreaker:
+    """Per-platform circuit breaker for ATS scraping.
+    
+    Opens (skips) after `threshold` consecutive errors on a platform.
+    Tracks per-platform failure counts and provides skip decisions.
+    """
+    
+    def __init__(self, threshold: int = 50):
+        self.threshold = threshold
+        self._failures: dict[str, int] = defaultdict(int)
+        self._total_skipped: dict[str, int] = defaultdict(int)
+    
+    def record_failure(self, platform: str) -> None:
+        """Record a failure for a platform."""
+        self._failures[platform] += 1
+    
+    def record_success(self, platform: str) -> None:
+        """Reset failure count on success (half-open → closed)."""
+        self._failures[platform] = max(0, self._failures[platform] - 5)
+    
+    def should_skip(self, platform: str) -> bool:
+        """Check if the platform circuit is open (too many failures)."""
+        if self._failures[platform] >= self.threshold:
+            self._total_skipped[platform] += 1
+            return True
+        return False
+    
+    def summary(self) -> str:
+        """Log summary of circuit breaker state."""
+        opened = {p: f for p, f in self._failures.items() if f >= self.threshold}
+        skipped = {p: s for p, s in self._total_skipped.items() if s > 0}
+        if opened:
+            return f"Circuit breakers OPEN: {opened}, skipped: {skipped}"
+        return "All circuit breakers closed (healthy)"
+
+
 
 async def _worker(
     name: str,
@@ -66,14 +107,13 @@ async def _worker(
     cache: ResponseCache,
     results: list,
     errors: list,
+    circuit_breaker: CircuitBreaker = None,
 ):
     """
     Worker coroutine: pulls companies from a queue until empty.
     Only N workers run per platform, bounding memory + concurrency.
     
-    Supports HTTP 304 Not Modified: when cache has expired but has
-    stored ETag/Last-Modified, sends conditional headers. If server
-    responds 304, reuses cached data without re-fetching.
+    Uses circuit breaker to skip platforms with too many consecutive failures.
     """
     while True:
         try:
@@ -84,6 +124,11 @@ async def _worker(
         cname = company["company"]
         ats = company["ats"]
         slug = company["slug"]
+
+        # Circuit breaker: skip if platform has too many failures
+        if circuit_breaker and circuit_breaker.should_skip(ats):
+            queue.task_done()
+            continue
 
         # Check cache first
         cached_data = cache.get(ats, slug)
@@ -104,12 +149,18 @@ async def _worker(
             if jobs:
                 cache.put(ats, slug, [j.to_dict() for j in jobs])
             results.append((cname, ats, slug, jobs, None))
+            if circuit_breaker:
+                circuit_breaker.record_success(ats)
         except asyncio.TimeoutError:
             _log(f"[{ats}/{slug}] Hard timeout after 60s", "WARN")
             results.append((cname, ats, slug, [], "timeout"))
+            if circuit_breaker:
+                circuit_breaker.record_failure(ats)
         except Exception as e:
             _log(f"[{ats}/{slug}] Fetch failed: {e}", "ERROR")
             results.append((cname, ats, slug, [], str(e)))
+            if circuit_breaker:
+                circuit_breaker.record_failure(ats)
 
         queue.task_done()
 
@@ -182,6 +233,7 @@ async def run_ats_scraper(
     # Initialize shared infrastructure
     rate_limiter = RateLimiter()
     cache = ResponseCache()
+    breaker = CircuitBreaker(threshold=50)
 
     # Group companies by ATS platform
     by_platform = defaultdict(list)
@@ -214,12 +266,16 @@ async def run_ats_scraper(
                         f"{platform}-worker-{i}",
                         q, session, rate_limiter, cache,
                         all_results, errors,
+                        circuit_breaker=breaker,
                     )
                 )
                 worker_tasks.append(task)
 
         # Wait for all workers to drain their queues
         await asyncio.gather(*worker_tasks, return_exceptions=True)
+
+    # Log circuit breaker health
+    _log(f"Circuit breaker: {breaker.summary()}")
 
     # Flatten jobs + collect lifecycle data
     all_jobs = []
