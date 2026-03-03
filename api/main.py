@@ -353,6 +353,182 @@ async def run_dedup(threshold: float = 0.6, dry_run: bool = True):
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# APPLICATION TRACKER — Kanban board API
+# ═══════════════════════════════════════════════════════════════════════
+
+VALID_STAGES = ["saved", "applied", "phone_screen", "onsite", "offer", "rejected", "withdrawn"]
+
+def _ensure_applications_table():
+    """Create applications table in SQLite if it doesn't exist."""
+    conn = get_db()
+    try:
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS applications (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                job_hash TEXT,
+                user_id TEXT DEFAULT 'default',
+                stage TEXT DEFAULT 'saved',
+                notes TEXT,
+                applied_at TEXT,
+                updated_at TEXT,
+                interview_date TEXT,
+                contact_name TEXT,
+                contact_email TEXT
+            )
+        """)
+        conn.commit()
+    finally:
+        conn.close()
+
+_ensure_applications_table()
+
+
+@app.get("/applications")
+async def list_applications(stage: str = None, user_id: str = "default"):
+    """Get all tracked applications, optionally filtered by stage."""
+    conn = get_db()
+    try:
+        cursor = conn.cursor()
+        if stage:
+            cursor.execute("""
+                SELECT a.*, j.title, j.company, j.location, j.url, j.salary_min, j.salary_max
+                FROM applications a
+                LEFT JOIN jobs j ON a.job_hash = j.internal_hash
+                WHERE a.user_id = ? AND a.stage = ?
+                ORDER BY a.updated_at DESC
+            """, (user_id, stage))
+        else:
+            cursor.execute("""
+                SELECT a.*, j.title, j.company, j.location, j.url, j.salary_min, j.salary_max
+                FROM applications a
+                LEFT JOIN jobs j ON a.job_hash = j.internal_hash
+                WHERE a.user_id = ?
+                ORDER BY a.updated_at DESC
+            """, (user_id,))
+        rows = cursor.fetchall()
+        return {"applications": [dict(r) for r in rows], "count": len(rows)}
+    finally:
+        conn.close()
+
+
+@app.post("/applications")
+async def create_application(job_hash: str, stage: str = "saved", notes: str = "", user_id: str = "default"):
+    """Save a job to the application tracker."""
+    if stage not in VALID_STAGES:
+        raise HTTPException(status_code=400, detail=f"Invalid stage. Must be one of: {VALID_STAGES}")
+    
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    
+    conn = get_db()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO applications (job_hash, user_id, stage, notes, updated_at, applied_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (job_hash, user_id, stage, notes, now, now if stage == "applied" else None))
+        conn.commit()
+        app_id = cursor.lastrowid
+        return {"id": app_id, "job_hash": job_hash, "stage": stage, "created": True}
+    finally:
+        conn.close()
+
+
+@app.put("/applications/{app_id}/stage")
+async def update_application_stage(app_id: int, stage: str):
+    """Move an application to a different Kanban stage."""
+    if stage not in VALID_STAGES:
+        raise HTTPException(status_code=400, detail=f"Invalid stage. Must be one of: {VALID_STAGES}")
+    
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    
+    conn = get_db()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE applications SET stage = ?, updated_at = ?,
+                applied_at = CASE WHEN ? = 'applied' AND applied_at IS NULL THEN ? ELSE applied_at END
+            WHERE id = ?
+        """, (stage, now, stage, now, app_id))
+        conn.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Application not found")
+        return {"id": app_id, "stage": stage, "updated": True}
+    finally:
+        conn.close()
+
+
+@app.put("/applications/{app_id}")
+async def update_application(app_id: int, notes: str = None, interview_date: str = None,
+                              contact_name: str = None, contact_email: str = None):
+    """Update application details (notes, interview date, contacts)."""
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc).isoformat()
+    
+    conn = get_db()
+    try:
+        updates = ["updated_at = ?"]
+        params = [now]
+        if notes is not None:
+            updates.append("notes = ?")
+            params.append(notes)
+        if interview_date is not None:
+            updates.append("interview_date = ?")
+            params.append(interview_date)
+        if contact_name is not None:
+            updates.append("contact_name = ?")
+            params.append(contact_name)
+        if contact_email is not None:
+            updates.append("contact_email = ?")
+            params.append(contact_email)
+        
+        params.append(app_id)
+        cursor = conn.cursor()
+        cursor.execute(f"UPDATE applications SET {', '.join(updates)} WHERE id = ?", params)
+        conn.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Application not found")
+        return {"id": app_id, "updated": True}
+    finally:
+        conn.close()
+
+
+@app.delete("/applications/{app_id}")
+async def delete_application(app_id: int):
+    """Remove an application from the tracker."""
+    conn = get_db()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM applications WHERE id = ?", (app_id,))
+        conn.commit()
+        if cursor.rowcount == 0:
+            raise HTTPException(status_code=404, detail="Application not found")
+        return {"id": app_id, "deleted": True}
+    finally:
+        conn.close()
+
+
+@app.get("/applications/stats")
+async def application_stats(user_id: str = "default"):
+    """Get application funnel stats."""
+    conn = get_db()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT stage, COUNT(*) as count
+            FROM applications
+            WHERE user_id = ?
+            GROUP BY stage
+        """, (user_id,))
+        stages = {r[0]: r[1] for r in cursor.fetchall()}
+        total = sum(stages.values())
+        return {"stages": stages, "total": total}
+    finally:
+        conn.close()
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # STATIC FILES — serve web dashboard
 # ═══════════════════════════════════════════════════════════════════════
 

@@ -569,6 +569,79 @@
             transition: width 0.5s ease;
         }
 
+        /* ── Tracker Kanban ─────────────────────────────────────── */
+        .kanban-board {
+            display: flex;
+            gap: 16px;
+            overflow-x: auto;
+            padding-bottom: 16px;
+            align-items: flex-start;
+            min-height: 70vh;
+        }
+
+        .kanban-col {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            min-width: 300px;
+            max-width: 300px;
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+            gap: 12px;
+        }
+
+        .kanban-header {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .kanban-count {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .kanban-cards {
+            min-height: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .kanban-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px;
+            cursor: grab;
+            transition: all 0.2s;
+        }
+
+        .kanban-card:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .kanban-card:active {
+            cursor: grabbing;
+        }
+
+        .k-title {
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .k-company {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
         /* ── Responsive ─────────────────────────────────────────── */
         @media (max-width: 768px) {
             .header {
@@ -616,6 +689,7 @@
             <button class="nav-btn" data-view="stats" onclick="switchView('stats')">Stats</button>
             <button class="nav-btn" data-view="companies" onclick="switchView('companies')">Companies</button>
             <button class="nav-btn" data-view="salary" onclick="switchView('salary')">💰 Salary</button>
+            <button class="nav-btn" data-view="tracker" onclick="switchView('tracker')">📋 Tracker</button>
             <button class="nav-btn" data-view="runs" onclick="switchView('runs')">Scraper Runs</button>
         </nav>
         <div class="header-right">
@@ -695,6 +769,16 @@
             </div>
         </section>
 
+        <!-- ── TRACKER VIEW ── -->
+        <section class="section" id="view-tracker">
+            <h2 class="section-title">📋 Application Tracker</h2>
+            <div class="kanban-board" id="kanban-board">
+                <div class="loading">
+                    <div class="spinner"></div>Loading tracker...
+                </div>
+            </div>
+        </section>
+
         <!-- ── RUNS VIEW ── -->
         <section class="section" id="view-runs">
             <h2 class="section-title">Recent Scraper Runs</h2>
@@ -762,6 +846,7 @@
             if (view === 'stats') loadStats();
             if (view === 'companies') loadCompanies();
             if (view === 'salary') loadSalaryComparisons();
+            if (view === 'tracker') loadTracker();
             if (view === 'runs') loadRuns();
         }
 
@@ -814,6 +899,8 @@
             const ats = `<span>⚙️ ${job.source_ats}</span>`;
             const date = job.first_seen ? `<span>🕐 ${timeAgo(job.first_seen)}</span>` : '';
 
+            const safeTitle = escapeHtml(job.title).replace(/'/g, "\\'");
+            const safeCompany = escapeHtml(job.company).replace(/'/g, "\\'");
             return `
         <div class="job-card" onclick="window.open('${job.url}', '_blank')">
             <div class="job-info">
@@ -821,7 +908,10 @@
                 <div class="job-meta">${company}${loc}${ats}${date}</div>
             </div>
             <div class="job-tags">${tags}</div>
-            ${job.url ? `<a href="${job.url}" target="_blank" class="job-apply" onclick="event.stopPropagation()">Apply →</a>` : ''}
+            <div style="display:flex; gap:10px;">
+                ${job.url ? `<a href="${job.url}" target="_blank" class="job-apply" onclick="event.stopPropagation()">Apply →</a>` : ''}
+                <button class="job-apply" style="background:var(--surface);color:var(--text);border:1px solid var(--border);" onclick="event.stopPropagation(); trackJob('${job.internal_hash}', '${safeTitle}', '${safeCompany}')">+ Track</button>
+            </div>
         </div>
     `;
         }
@@ -1104,6 +1194,114 @@
                 }).join('');
             } catch (err) {
                 grid.innerHTML = `<div class="empty-state">Failed to load: ${err.message}</div>`;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // KANBAN TRACKER
+        // ═══════════════════════════════════════════════════════════════════════
+
+        const KANBAN_STAGES = [
+            { id: 'saved', name: 'Saved', color: 'var(--text-secondary)' },
+            { id: 'applied', name: 'Applied', color: 'var(--blue)' },
+            { id: 'phone_screen', name: 'Phone Screen', color: 'var(--accent)' },
+            { id: 'onsite', name: 'Onsite', color: 'var(--purple)' },
+            { id: 'offer', name: 'Offer', color: 'var(--green)' },
+            { id: 'rejected', name: 'Rejected', color: 'var(--red)' },
+            { id: 'withdrawn', name: 'Withdrawn', color: 'var(--text-muted)' }
+        ];
+
+        async function loadTracker() {
+            try {
+                const resp = await fetch(`${API_BASE}/applications`);
+                const data = await resp.json();
+                renderKanban(data.applications);
+            } catch (err) {
+                document.getElementById('kanban-board').innerHTML = `<div class="empty-state">Failed to load tracker: ${err.message}</div>`;
+            }
+        }
+
+        function renderKanban(apps) {
+            const board = document.getElementById('kanban-board');
+
+            const grouped = {};
+            KANBAN_STAGES.forEach(s => grouped[s.id] = []);
+            apps.forEach(a => {
+                if (grouped[a.stage]) grouped[a.stage].push(a);
+            });
+
+            board.innerHTML = KANBAN_STAGES.map(stage => {
+                const stageApps = grouped[stage.id];
+                return `
+                    <div class="kanban-col" data-stage="${stage.id}" ondragover="allowDrop(event)" ondrop="drop(event)">
+                        <div class="kanban-header">
+                            <span style="color: ${stage.color}">● ${stage.name}</span>
+                            <span class="kanban-count">${stageApps.length}</span>
+                        </div>
+                        <div class="kanban-cards">
+                            ${stageApps.map(a => `
+                                <div class="kanban-card" draggable="true" ondragstart="drag(event)" data-id="${a.id}" id="card-${a.id}">
+                                    <div class="k-title">${escapeHtml(a.title || 'Unknown Job')}</div>
+                                    <div class="k-company">${escapeHtml(a.company || '')}</div>
+                                    <div style="font-size:11px; color:var(--text-muted); margin-top:8px">${timeAgo(a.updated_at)}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drag(ev) {
+            ev.dataTransfer.setData("appid", ev.target.dataset.id);
+        }
+
+        async function drop(ev) {
+            ev.preventDefault();
+            const appId = ev.dataTransfer.getData("appid");
+            if (!appId) return;
+
+            const col = ev.target.closest('.kanban-col');
+            if (!col) return;
+            const newStage = col.dataset.stage;
+
+            // Optimistic UI move
+            const card = document.getElementById(`card-${appId}`);
+            if (card) {
+                const cardsContainer = col.querySelector('.kanban-cards');
+                cardsContainer.appendChild(card);
+            }
+
+            try {
+                await fetch(`${API_BASE}/applications/${appId}/stage?stage=${newStage}`, { method: 'PUT' });
+                loadTracker(); // Refresh to update counts and timestamps
+            } catch (e) {
+                alert('Error moving card: ' + e.message);
+                loadTracker(); // Revert on error
+            }
+        }
+
+        async function trackJob(hash, title, company) {
+            try {
+                const resp = await fetch(`${API_BASE}/applications?job_hash=${hash}&stage=saved`, { method: 'POST' });
+                if (!resp.ok) {
+                    const err = await resp.json();
+                    throw new Error(err.detail || 'Unknown error');
+                }
+
+                // Show temporary toast inside button if possible, else alert
+                alert(`Added ${title} at ${company} to Tracker!`);
+
+                // If tracker is open, update it
+                if (document.getElementById('view-tracker').classList.contains('active')) {
+                    loadTracker();
+                }
+            } catch (e) {
+                alert('Error adding to tracker: ' + e.message);
             }
         }
 
