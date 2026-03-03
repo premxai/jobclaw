@@ -302,6 +302,57 @@ async def estimate_salary(title: str, location: str = ""):
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# AI — SEMANTIC SEARCH & MATCHING
+# ═══════════════════════════════════════════════════════════════════════
+
+_job_embedder = None
+
+@app.get("/jobs/similar")
+async def similar_jobs(query: str, top_k: int = 10):
+    """Find jobs semantically similar to a text query."""
+    global _job_embedder
+    if _job_embedder is None:
+        from scripts.ai.embed_jobs import JobEmbedder
+        _job_embedder = JobEmbedder()
+
+    results = _job_embedder.find_similar(query, top_k=top_k)
+    return {"query": query, "results": results, "count": len(results)}
+
+
+@app.post("/resume/match")
+async def resume_match(resume_text: str = "", top_k: int = 20):
+    """Score jobs against a resume text."""
+    if not resume_text:
+        raise HTTPException(status_code=400, detail="resume_text is required")
+
+    from scripts.ai.match_score import ResumeMatcher
+    matcher = ResumeMatcher()
+    matcher.load_resume(resume_text)
+    matches = matcher.score_jobs(top_k=top_k)
+    return {"matches": matches, "count": len(matches)}
+
+
+@app.post("/admin/dedup")
+async def run_dedup(threshold: float = 0.6, dry_run: bool = True):
+    """Find and optionally merge duplicate job listings."""
+    from scripts.ai.dedup import JobDeduplicator
+    dedup = JobDeduplicator(threshold=threshold)
+    clusters = dedup.find_duplicates()
+
+    result = {
+        "clusters_found": len(clusters),
+        "total_duplicates": sum(len(c) - 1 for c in clusters),
+        "clusters": clusters[:20],  # Preview first 20
+    }
+
+    if not dry_run:
+        merged = dedup.merge_duplicates(clusters)
+        result["merged"] = merged
+
+    return result
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # STATIC FILES — serve web dashboard
 # ═══════════════════════════════════════════════════════════════════════
 
