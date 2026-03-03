@@ -281,6 +281,27 @@ async def broadcast_job(job_dict: dict):
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# SALARY ESTIMATOR
+# ═══════════════════════════════════════════════════════════════════════
+
+_salary_estimator = None
+
+@app.get("/salary/estimate")
+async def estimate_salary(title: str, location: str = ""):
+    """Predict salary range for a job title + location."""
+    global _salary_estimator
+    if _salary_estimator is None:
+        from scripts.ai.salary_estimator import SalaryEstimator
+        _salary_estimator = SalaryEstimator()
+        _salary_estimator.train()
+
+    result = _salary_estimator.predict(title, location)
+    if not result:
+        return {"error": "Insufficient data for prediction", "title": title, "location": location}
+    return {"title": title, "location": location, **result}
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # STATIC FILES — serve web dashboard
 # ═══════════════════════════════════════════════════════════════════════
 
