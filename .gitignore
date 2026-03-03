@@ -32,3 +32,5 @@ logs/*.log
 *.csv
 data/openclaw_*.json
 data/agent_*.yaml
+data/cache/
+logs/*.jsonl

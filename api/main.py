@@ -76,6 +76,20 @@ app.add_middleware(APIKeyMiddleware)
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# STATIC DASHBOARD ROUTE
+# ═══════════════════════════════════════════════════════════════════════
+
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+WEB_DIR = PROJECT_ROOT / "web"
+
+@app.get("/", include_in_schema=False)
+async def root():
+    """Serve the web dashboard."""
+    return FileResponse(WEB_DIR / "index.html")
+
+# ═══════════════════════════════════════════════════════════════════════
 # HEALTH
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -534,13 +548,6 @@ async def application_stats(user_id: str = "default"):
 
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
-
-WEB_DIR = PROJECT_ROOT / "web"
-
-@app.get("/", include_in_schema=False)
-async def root():
-    """Serve the web dashboard."""
-    return FileResponse(WEB_DIR / "index.html")
 
 if WEB_DIR.exists():
     app.mount("/web", StaticFiles(directory=str(WEB_DIR)), name="web")
