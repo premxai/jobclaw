@@ -15,3 +15,7 @@ uvicorn[standard]>=0.30.0
 # Anti-bot stealth scraping (LinkedIn/Indeed/Glassdoor)
 scrapling>=0.4.0
 browserforge>=1.2.0
+
+# PostgreSQL backend (optional — SQLite is the default)
+asyncpg>=0.29.0            # Async connection pool for production
+psycopg2-binary>=2.9.0     # Sync PostgreSQL driver for scrapers

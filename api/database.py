@@ -1,25 +1,39 @@
 """
 Database query layer for the JobClaw API.
 
-Thin wrapper around SQLite that returns raw dicts for the API routes.
+Supports both SQLite (default) and PostgreSQL (via DATABASE_URL).
+Provides read-only query functions for the REST API.
 """
 
 import json
+import os
 import sqlite3
 from pathlib import Path
 
 DB_PATH = Path(__file__).parent.parent / "data" / "jobclaw.db"
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
+
+
+def _is_pg() -> bool:
+    return DATABASE_URL.startswith("postgres")
 
 
 def get_db():
-    """Get a SQLite connection with Row factory for dict-like access."""
+    """Get a database connection (SQLite or PostgreSQL)."""
+    if _is_pg():
+        import psycopg2
+        import psycopg2.extras
+        conn = psycopg2.connect(DATABASE_URL)
+        conn.cursor_factory = psycopg2.extras.RealDictCursor
+        return conn
+
     conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.row_factory = sqlite3.Row
     return conn
 
 
 def _row_to_dict(row) -> dict:
-    """Convert a sqlite3.Row to a dict with parsed keywords."""
+    """Convert a row to a dict with parsed keywords."""
     d = dict(row)
     if d.get("keywords_matched"):
         try:
@@ -28,9 +42,13 @@ def _row_to_dict(row) -> dict:
             d["keywords_matched"] = []
     else:
         d["keywords_matched"] = []
-    # Ensure is_active is bool
-    d["is_active"] = bool(d.get("is_active", 1))
+    d["is_active"] = bool(d.get("is_active", True))
     return d
+
+
+def _ph() -> str:
+    """Placeholder character for the current backend."""
+    return "%s" if _is_pg() else "?"
 
 
 def get_jobs(
@@ -42,44 +60,50 @@ def get_jobs(
     active_only: bool = True,
     search: str = None,
 ) -> tuple[list[dict], int]:
-    """
-    Query jobs with pagination and filters.
-    Returns (jobs, total_count).
-    """
+    """Query jobs with pagination and filters."""
     conn = get_db()
+    p = _ph()
     try:
         conditions = []
         params = []
 
         if active_only:
-            conditions.append("is_active = 1")
+            conditions.append("is_active = TRUE" if _is_pg() else "is_active = 1")
         if company:
-            conditions.append("LOWER(company) = LOWER(?)")
+            conditions.append(f"LOWER(company) = LOWER({p})")
             params.append(company)
         if ats:
-            conditions.append("LOWER(source_ats) = LOWER(?)")
+            conditions.append(f"LOWER(source_ats) = LOWER({p})")
             params.append(ats)
         if keyword:
-            conditions.append("keywords_matched LIKE ?")
+            conditions.append(f"keywords_matched LIKE {p}")
             params.append(f"%{keyword}%")
         if search:
-            conditions.append("(title LIKE ? OR company LIKE ? OR description LIKE ?)")
-            params.extend([f"%{search}%"] * 3)
+            if _is_pg():
+                conditions.append(f"search_vector @@ websearch_to_tsquery('english', {p})")
+                params.append(search)
+            else:
+                conditions.append(f"(title LIKE {p} OR company LIKE {p} OR description LIKE {p})")
+                params.extend([f"%{search}%"] * 3)
 
         where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 
-        # Count
-        count_sql = f"SELECT COUNT(*) FROM jobs {where}"
-        total = conn.execute(count_sql, params).fetchone()[0]
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT COUNT(*) FROM jobs {where}", params)
+        row = cursor.fetchone()
+        total = row[0] if isinstance(row, (list, tuple)) else row.get("count", 0)
 
-        # Paginated results
         offset = (page - 1) * per_page
+        order = "ts_rank(search_vector, websearch_to_tsquery('english', %s)) DESC, first_seen DESC" if (_is_pg() and search) else "first_seen DESC"
+        extra_params = [search] if (_is_pg() and search) else []
+
         query = f"""
             SELECT * FROM jobs {where}
-            ORDER BY first_seen DESC
-            LIMIT ? OFFSET ?
+            ORDER BY {order}
+            LIMIT {p} OFFSET {p}
         """
-        rows = conn.execute(query, params + [per_page, offset]).fetchall()
+        cursor.execute(query, extra_params + params + [per_page, offset] if extra_params else params + [per_page, offset])
+        rows = cursor.fetchall()
         return [_row_to_dict(r) for r in rows], total
     finally:
         conn.close()
@@ -88,10 +112,11 @@ def get_jobs(
 def get_job_by_hash(internal_hash: str) -> dict | None:
     """Get a single job by its internal hash."""
     conn = get_db()
+    p = _ph()
     try:
-        row = conn.execute(
-            "SELECT * FROM jobs WHERE internal_hash = ?", (internal_hash,)
-        ).fetchone()
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT * FROM jobs WHERE internal_hash = {p}", (internal_hash,))
+        row = cursor.fetchone()
         return _row_to_dict(row) if row else None
     finally:
         conn.close()
@@ -100,24 +125,27 @@ def get_job_by_hash(internal_hash: str) -> dict | None:
 def get_companies(ats: str = None) -> list[dict]:
     """Get companies with job counts."""
     conn = get_db()
+    p = _ph()
+    active = "TRUE" if _is_pg() else "1"
     try:
+        cursor = conn.cursor()
         if ats:
-            rows = conn.execute("""
+            cursor.execute(f"""
                 SELECT company, source_ats, COUNT(*) as job_count,
                        MAX(first_seen) as latest_job
-                FROM jobs WHERE LOWER(source_ats) = LOWER(?) AND is_active = 1
+                FROM jobs WHERE LOWER(source_ats) = LOWER({p}) AND is_active = {active}
                 GROUP BY company, source_ats
                 ORDER BY job_count DESC
-            """, (ats,)).fetchall()
+            """, (ats,))
         else:
-            rows = conn.execute("""
+            cursor.execute(f"""
                 SELECT company, source_ats, COUNT(*) as job_count,
                        MAX(first_seen) as latest_job
-                FROM jobs WHERE is_active = 1
+                FROM jobs WHERE is_active = {active}
                 GROUP BY company, source_ats
                 ORDER BY job_count DESC
-            """).fetchall()
-        return [dict(r) for r in rows]
+            """)
+        return [dict(r) for r in cursor.fetchall()]
     finally:
         conn.close()
 
@@ -125,34 +153,46 @@ def get_companies(ats: str = None) -> list[dict]:
 def get_stats() -> dict:
     """Get system-wide statistics."""
     conn = get_db()
+    active = "TRUE" if _is_pg() else "1"
     try:
-        total = conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
-        active = conn.execute("SELECT COUNT(*) FROM jobs WHERE is_active = 1").fetchone()[0]
-        inactive = total - active
-        unposted = conn.execute("SELECT COUNT(*) FROM jobs WHERE status = 'unposted'").fetchone()[0]
-        posted = conn.execute("SELECT COUNT(*) FROM jobs WHERE status = 'posted'").fetchone()[0]
+        cursor = conn.cursor()
 
-        companies = conn.execute(
-            "SELECT COUNT(DISTINCT company) FROM jobs WHERE is_active = 1"
-        ).fetchone()[0]
+        def _scalar(sql):
+            cursor.execute(sql)
+            row = cursor.fetchone()
+            if isinstance(row, (list, tuple)):
+                return row[0]
+            if isinstance(row, dict):
+                return list(row.values())[0]
+            # sqlite3.Row — use index access
+            return row[0]
+
+        total = _scalar("SELECT COUNT(*) FROM jobs")
+        active_count = _scalar(f"SELECT COUNT(*) FROM jobs WHERE is_active = {active}")
+        inactive = total - active_count
+        unposted = _scalar("SELECT COUNT(*) FROM jobs WHERE status = 'unposted'")
+        posted = _scalar("SELECT COUNT(*) FROM jobs WHERE status = 'posted'")
+        companies = _scalar(f"SELECT COUNT(DISTINCT company) FROM jobs WHERE is_active = {active}")
 
         # Platform breakdown
-        rows = conn.execute(
-            "SELECT source_ats, COUNT(*) as cnt FROM jobs WHERE is_active = 1 GROUP BY source_ats"
-        ).fetchall()
-        platforms = {r["source_ats"]: r["cnt"] for r in rows}
+        cursor.execute(f"SELECT source_ats, COUNT(*) as cnt FROM jobs WHERE is_active = {active} GROUP BY source_ats")
+        rows = cursor.fetchall()
+        platforms = {}
+        for r in rows:
+            d = dict(r)
+            platforms[d.get("source_ats", "")] = d.get("cnt", 0)
 
         # Recent counts
-        last_24h = conn.execute(
-            "SELECT COUNT(*) FROM jobs WHERE first_seen >= datetime('now', '-1 day')"
-        ).fetchone()[0]
-        last_7d = conn.execute(
-            "SELECT COUNT(*) FROM jobs WHERE first_seen >= datetime('now', '-7 days')"
-        ).fetchone()[0]
+        if _is_pg():
+            last_24h = _scalar("SELECT COUNT(*) FROM jobs WHERE first_seen >= NOW() - INTERVAL '1 day'")
+            last_7d = _scalar("SELECT COUNT(*) FROM jobs WHERE first_seen >= NOW() - INTERVAL '7 days'")
+        else:
+            last_24h = _scalar("SELECT COUNT(*) FROM jobs WHERE first_seen >= datetime('now', '-1 day')")
+            last_7d = _scalar("SELECT COUNT(*) FROM jobs WHERE first_seen >= datetime('now', '-7 days')")
 
         return {
             "total_jobs": total,
-            "active_jobs": active,
+            "active_jobs": active_count,
             "inactive_jobs": inactive,
             "unposted_jobs": unposted,
             "posted_jobs": posted,
@@ -168,11 +208,13 @@ def get_stats() -> dict:
 def get_scraper_runs(limit: int = 20) -> list[dict]:
     """Get recent scraper run logs."""
     conn = get_db()
+    p = _ph()
     try:
-        rows = conn.execute(
-            "SELECT rowid as id, * FROM runs ORDER BY timestamp DESC LIMIT ?",
-            (limit,)
-        ).fetchall()
-        return [dict(r) for r in rows]
+        cursor = conn.cursor()
+        if _is_pg():
+            cursor.execute(f"SELECT * FROM runs ORDER BY timestamp DESC LIMIT {p}", (limit,))
+        else:
+            cursor.execute(f"SELECT rowid as id, * FROM runs ORDER BY timestamp DESC LIMIT {p}", (limit,))
+        return [dict(r) for r in cursor.fetchall()]
     finally:
         conn.close()
