@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,7 +8,8 @@
     <meta name="description" content="Real-time job aggregation from 10,500+ companies across 8 ATS platforms.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <style>
         :root {
             --bg-primary: #0a0a0f;
@@ -32,7 +34,11 @@
             --radius-sm: 8px;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -106,8 +112,15 @@
         }
 
         @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.4;
+            }
         }
 
         /* ── Navigation ──────────────────────────────────────────── */
@@ -132,8 +145,15 @@
             transition: all 0.2s;
         }
 
-        .nav-btn:hover { color: var(--text-primary); background: var(--bg-card); }
-        .nav-btn.active { color: var(--text-primary); background: var(--accent); }
+        .nav-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-card);
+        }
+
+        .nav-btn.active {
+            color: var(--text-primary);
+            background: var(--accent);
+        }
 
         /* ── Main Layout ────────────────────────────────────────── */
         .main {
@@ -207,8 +227,13 @@
             transition: border-color 0.2s;
         }
 
-        .search-input:focus { border-color: var(--accent); }
-        .search-input::placeholder { color: var(--text-muted); }
+        .search-input:focus {
+            border-color: var(--accent);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
 
         .filter-select {
             padding: 12px 16px;
@@ -236,7 +261,9 @@
             transition: background 0.2s;
         }
 
-        .search-btn:hover { background: var(--accent-hover); }
+        .search-btn:hover {
+            background: var(--accent-hover);
+        }
 
         /* ── Job List ───────────────────────────────────────────── */
         .job-list {
@@ -264,7 +291,9 @@
             box-shadow: 0 0 0 1px var(--accent-glow);
         }
 
-        .job-info { min-width: 0; }
+        .job-info {
+            min-width: 0;
+        }
 
         .job-title {
             font-weight: 600;
@@ -283,7 +312,11 @@
             flex-wrap: wrap;
         }
 
-        .job-meta span { display: flex; align-items: center; gap: 4px; }
+        .job-meta span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
 
         .job-tags {
             display: flex;
@@ -299,11 +332,30 @@
             white-space: nowrap;
         }
 
-        .tag-ai { background: rgba(99, 102, 241, 0.15); color: var(--accent); }
-        .tag-swe { background: rgba(96, 165, 250, 0.15); color: var(--blue); }
-        .tag-data { background: rgba(52, 211, 153, 0.15); color: var(--green); }
-        .tag-ml { background: rgba(167, 139, 250, 0.15); color: var(--purple); }
-        .tag-default { background: rgba(136, 136, 160, 0.15); color: var(--text-secondary); }
+        .tag-ai {
+            background: rgba(99, 102, 241, 0.15);
+            color: var(--accent);
+        }
+
+        .tag-swe {
+            background: rgba(96, 165, 250, 0.15);
+            color: var(--blue);
+        }
+
+        .tag-data {
+            background: rgba(52, 211, 153, 0.15);
+            color: var(--green);
+        }
+
+        .tag-ml {
+            background: rgba(167, 139, 250, 0.15);
+            color: var(--purple);
+        }
+
+        .tag-default {
+            background: rgba(136, 136, 160, 0.15);
+            color: var(--text-secondary);
+        }
 
         .job-apply {
             padding: 8px 16px;
@@ -319,7 +371,10 @@
             text-decoration: none;
         }
 
-        .job-apply:hover { border-color: var(--accent); color: var(--accent); }
+        .job-apply:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
 
         /* ── Pagination ─────────────────────────────────────────── */
         .pagination {
@@ -342,10 +397,19 @@
             transition: all 0.2s;
         }
 
-        .page-btn:hover { border-color: var(--accent); }
-        .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .page-btn:hover {
+            border-color: var(--accent);
+        }
 
-        .page-info { font-size: 13px; color: var(--text-secondary); }
+        .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .page-info {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
 
         /* ── Platform Breakdown ──────────────────────────────────── */
         .platforms-grid {
@@ -364,7 +428,9 @@
             transition: all 0.2s;
         }
 
-        .platform-card:hover { border-color: var(--accent); }
+        .platform-card:hover {
+            border-color: var(--accent);
+        }
 
         .platform-name {
             font-size: 13px;
@@ -402,7 +468,9 @@
             border-bottom: 1px solid var(--border);
         }
 
-        .runs-table tr:hover td { background: var(--bg-card); }
+        .runs-table tr:hover td {
+            background: var(--bg-card);
+        }
 
         /* ── Loading / Empty States ─────────────────────────────── */
         .loading {
@@ -423,7 +491,11 @@
             margin-right: 12px;
         }
 
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
 
         .empty-state {
             text-align: center;
@@ -432,8 +504,13 @@
         }
 
         /* ── Page Sections ──────────────────────────────────────── */
-        .section { display: none; }
-        .section.active { display: block; }
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
 
         .section-title {
             font-size: 18px;
@@ -442,187 +519,302 @@
             letter-spacing: -0.3px;
         }
 
+        /* ── Salary Explorer ────────────────────────────────────── */
+        .salary-form {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .salary-result {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(167, 139, 250, 0.06) 100%);
+            border: 1px solid var(--accent);
+            border-radius: var(--radius);
+            padding: 32px;
+            text-align: center;
+            max-width: 500px;
+            margin: 24px auto;
+        }
+
+        .salary-range {
+            font-size: 36px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--green) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -1px;
+            margin-bottom: 8px;
+        }
+
+        .salary-meta {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .confidence-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            margin-top: 16px;
+            overflow: hidden;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent), var(--green));
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
         /* ── Responsive ─────────────────────────────────────────── */
         @media (max-width: 768px) {
-            .header { padding: 0 16px; }
-            .main { padding: 16px; }
-            .stats-grid { grid-template-columns: repeat(2, 1fr); }
-            .job-card { grid-template-columns: 1fr; gap: 12px; }
-            .search-bar { flex-direction: column; }
-            .nav { overflow-x: auto; }
+            .header {
+                padding: 0 16px;
+            }
+
+            .main {
+                padding: 16px;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .job-card {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .search-bar {
+                flex-direction: column;
+            }
+
+            .salary-form {
+                flex-direction: column;
+            }
+
+            .nav {
+                overflow-x: auto;
+            }
         }
     </style>
 </head>
+
 <body>
 
-<!-- ═══ Header ═══ -->
-<header class="header">
-    <div class="logo">
-        <div class="logo-icon">🦀</div>
-        <span>JobClaw</span>
-    </div>
-    <nav class="nav" id="nav">
-        <button class="nav-btn active" data-view="jobs" onclick="switchView('jobs')">Jobs</button>
-        <button class="nav-btn" data-view="stats" onclick="switchView('stats')">Stats</button>
-        <button class="nav-btn" data-view="companies" onclick="switchView('companies')">Companies</button>
-        <button class="nav-btn" data-view="runs" onclick="switchView('runs')">Scraper Runs</button>
-    </nav>
-    <div class="header-right">
-        <div class="status-badge">
-            <div class="status-dot"></div>
-            <span id="status-text">Connecting...</span>
+    <!-- ═══ Header ═══ -->
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">🦀</div>
+            <span>JobClaw</span>
         </div>
-    </div>
-</header>
-
-<!-- ═══ Main Content ═══ -->
-<main class="main">
-
-    <!-- ── JOBS VIEW ── -->
-    <section class="section active" id="view-jobs">
-        <!-- Stats strip -->
-        <div class="stats-grid" id="stats-strip"></div>
-
-        <!-- Search -->
-        <div class="search-section">
-            <div class="search-bar">
-                <input type="text" class="search-input" id="search-input" placeholder="Search jobs by title, company, or description..." onkeyup="if(event.key==='Enter')searchJobs()">
-                <select class="filter-select" id="filter-ats" onchange="searchJobs()">
-                    <option value="">All Platforms</option>
-                    <option value="greenhouse">Greenhouse</option>
-                    <option value="lever">Lever</option>
-                    <option value="ashby">Ashby</option>
-                    <option value="workday">Workday</option>
-                    <option value="workable">Workable</option>
-                    <option value="smartrecruiters">SmartRecruiters</option>
-                    <option value="bamboohr">BambooHR</option>
-                    <option value="rippling">Rippling</option>
-                </select>
-                <select class="filter-select" id="filter-keyword" onchange="searchJobs()">
-                    <option value="">All Categories</option>
-                    <option value="AI/ML">🤖 AI/ML</option>
-                    <option value="SWE">💻 SWE</option>
-                    <option value="Data Science">🔬 Data Science</option>
-                    <option value="Data Engineering">🔧 Data Engineering</option>
-                    <option value="Data Analyst">📊 Data Analyst</option>
-                    <option value="New Grad">🎓 New Grad</option>
-                    <option value="Product">📦 Product</option>
-                    <option value="Research">🧪 Research</option>
-                </select>
-                <button class="search-btn" onclick="searchJobs()">Search</button>
+        <nav class="nav" id="nav">
+            <button class="nav-btn active" data-view="jobs" onclick="switchView('jobs')">Jobs</button>
+            <button class="nav-btn" data-view="stats" onclick="switchView('stats')">Stats</button>
+            <button class="nav-btn" data-view="companies" onclick="switchView('companies')">Companies</button>
+            <button class="nav-btn" data-view="salary" onclick="switchView('salary')">💰 Salary</button>
+            <button class="nav-btn" data-view="runs" onclick="switchView('runs')">Scraper Runs</button>
+        </nav>
+        <div class="header-right">
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                <span id="status-text">Connecting...</span>
             </div>
         </div>
+    </header>
 
-        <!-- Job results -->
-        <div id="job-list" class="job-list">
-            <div class="loading"><div class="spinner"></div>Loading jobs...</div>
-        </div>
+    <!-- ═══ Main Content ═══ -->
+    <main class="main">
 
-        <!-- Pagination -->
-        <div class="pagination" id="pagination"></div>
-    </section>
+        <!-- ── JOBS VIEW ── -->
+        <section class="section active" id="view-jobs">
+            <!-- Stats strip -->
+            <div class="stats-grid" id="stats-strip"></div>
 
-    <!-- ── STATS VIEW ── -->
-    <section class="section" id="view-stats">
-        <h2 class="section-title">Platform Breakdown</h2>
-        <div class="platforms-grid" id="platforms-grid"></div>
-        <h2 class="section-title">Key Metrics</h2>
-        <div class="stats-grid" id="stats-full"></div>
-    </section>
+            <!-- Search -->
+            <div class="search-section">
+                <div class="search-bar">
+                    <input type="text" class="search-input" id="search-input"
+                        placeholder="Search jobs by title, company, or description..."
+                        onkeyup="if(event.key==='Enter')searchJobs()">
+                    <select class="filter-select" id="filter-ats" onchange="searchJobs()">
+                        <option value="">All Platforms</option>
+                        <option value="greenhouse">Greenhouse</option>
+                        <option value="lever">Lever</option>
+                        <option value="ashby">Ashby</option>
+                        <option value="workday">Workday</option>
+                        <option value="workable">Workable</option>
+                        <option value="smartrecruiters">SmartRecruiters</option>
+                        <option value="bamboohr">BambooHR</option>
+                        <option value="rippling">Rippling</option>
+                    </select>
+                    <select class="filter-select" id="filter-keyword" onchange="searchJobs()">
+                        <option value="">All Categories</option>
+                        <option value="AI/ML">🤖 AI/ML</option>
+                        <option value="SWE">💻 SWE</option>
+                        <option value="Data Science">🔬 Data Science</option>
+                        <option value="Data Engineering">🔧 Data Engineering</option>
+                        <option value="Data Analyst">📊 Data Analyst</option>
+                        <option value="New Grad">🎓 New Grad</option>
+                        <option value="Product">📦 Product</option>
+                        <option value="Research">🧪 Research</option>
+                    </select>
+                    <button class="search-btn" onclick="searchJobs()">Search</button>
+                </div>
+            </div>
 
-    <!-- ── COMPANIES VIEW ── -->
-    <section class="section" id="view-companies">
-        <h2 class="section-title">Companies Hiring</h2>
-        <div id="companies-list" class="job-list">
-            <div class="loading"><div class="spinner"></div>Loading companies...</div>
-        </div>
-    </section>
+            <!-- Job results -->
+            <div id="job-list" class="job-list">
+                <div class="loading">
+                    <div class="spinner"></div>Loading jobs...
+                </div>
+            </div>
 
-    <!-- ── RUNS VIEW ── -->
-    <section class="section" id="view-runs">
-        <h2 class="section-title">Recent Scraper Runs</h2>
-        <div id="runs-list">
-            <div class="loading"><div class="spinner"></div>Loading runs...</div>
-        </div>
-    </section>
+            <!-- Pagination -->
+            <div class="pagination" id="pagination"></div>
+        </section>
 
-</main>
+        <!-- ── STATS VIEW ── -->
+        <section class="section" id="view-stats">
+            <h2 class="section-title">Platform Breakdown</h2>
+            <div class="platforms-grid" id="platforms-grid"></div>
+            <h2 class="section-title">Key Metrics</h2>
+            <div class="stats-grid" id="stats-full"></div>
+        </section>
 
-<script>
-// ═══════════════════════════════════════════════════════════════════════
-// CONFIG
-// ═══════════════════════════════════════════════════════════════════════
-const API_BASE = window.location.origin;
+        <!-- ── COMPANIES VIEW ── -->
+        <section class="section" id="view-companies">
+            <h2 class="section-title">Companies Hiring</h2>
+            <div id="companies-list" class="job-list">
+                <div class="loading">
+                    <div class="spinner"></div>Loading companies...
+                </div>
+            </div>
+        </section>
 
-let currentPage = 1;
-const perPage = 30;
-let statsData = null;
+        <!-- ── RUNS VIEW ── -->
+        <section class="section" id="view-runs">
+            <h2 class="section-title">Recent Scraper Runs</h2>
+            <div id="runs-list">
+                <div class="loading">
+                    <div class="spinner"></div>Loading runs...
+                </div>
+            </div>
+        </section>
 
-// ═══════════════════════════════════════════════════════════════════════
-// VIEWS
-// ═══════════════════════════════════════════════════════════════════════
+        <!-- ── SALARY VIEW ── -->
+        <section class="section" id="view-salary">
+            <h2 class="section-title">💰 Salary Explorer</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 14px;">
+                Predict salary ranges using data from 1,000+ disclosed salaries across tech roles and locations.
+            </p>
+            <div class="salary-form">
+                <input type="text" class="search-input" id="salary-title"
+                    placeholder="Job title (e.g. Senior ML Engineer)" style="flex: 2"
+                    onkeyup="if(event.key==='Enter')estimateSalary()">
+                <select class="filter-select" id="salary-location">
+                    <option value="">Any Location</option>
+                    <option value="San Francisco">🌉 San Francisco / Bay Area</option>
+                    <option value="New York">🗽 New York City</option>
+                    <option value="Seattle">🌲 Seattle / Bellevue</option>
+                    <option value="Los Angeles">🌴 Los Angeles</option>
+                    <option value="Austin">🤠 Austin</option>
+                    <option value="Chicago">🏙️ Chicago</option>
+                    <option value="Boston">🎓 Boston / Cambridge</option>
+                    <option value="Denver">⛰️ Denver / Boulder</option>
+                    <option value="Washington DC">🏛️ Washington DC</option>
+                    <option value="Remote">🌐 Remote</option>
+                </select>
+                <button class="search-btn" onclick="estimateSalary()">Estimate</button>
+            </div>
+            <div id="salary-result"></div>
 
-function switchView(view) {
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(`view-${view}`).classList.add('active');
-    document.querySelector(`[data-view="${view}"]`).classList.add('active');
+            <!-- Quick comparison grid -->
+            <h2 class="section-title" style="margin-top: 32px">Quick Comparisons</h2>
+            <div class="stats-grid" id="salary-comparisons"></div>
+        </section>
 
-    if (view === 'stats') loadStats();
-    if (view === 'companies') loadCompanies();
-    if (view === 'runs') loadRuns();
-}
+    </main>
 
-// ═══════════════════════════════════════════════════════════════════════
-// JOBS
-// ═══════════════════════════════════════════════════════════════════════
+    <script>
+        // ═══════════════════════════════════════════════════════════════════════
+        // CONFIG
+        // ═══════════════════════════════════════════════════════════════════════
+        const API_BASE = window.location.origin;
 
-async function loadJobs(page = 1) {
-    currentPage = page;
-    const list = document.getElementById('job-list');
-    list.innerHTML = '<div class="loading"><div class="spinner"></div>Loading jobs...</div>';
+        let currentPage = 1;
+        const perPage = 30;
+        let statsData = null;
 
-    const search = document.getElementById('search-input').value;
-    const ats = document.getElementById('filter-ats').value;
-    const keyword = document.getElementById('filter-keyword').value;
+        // ═══════════════════════════════════════════════════════════════════════
+        // VIEWS
+        // ═══════════════════════════════════════════════════════════════════════
 
-    const params = new URLSearchParams({ page, per_page: perPage });
-    if (search) params.set('search', search);
-    if (ats) params.set('ats', ats);
-    if (keyword) params.set('keyword', keyword);
+        function switchView(view) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`view-${view}`).classList.add('active');
+            document.querySelector(`[data-view="${view}"]`).classList.add('active');
 
-    try {
-        const resp = await fetch(`${API_BASE}/jobs?${params}`);
-        const data = await resp.json();
-
-        if (!data.jobs || data.jobs.length === 0) {
-            list.innerHTML = '<div class="empty-state">No jobs found. Try adjusting your filters.</div>';
-            document.getElementById('pagination').innerHTML = '';
-            return;
+            if (view === 'stats') loadStats();
+            if (view === 'companies') loadCompanies();
+            if (view === 'salary') loadSalaryComparisons();
+            if (view === 'runs') loadRuns();
         }
 
-        list.innerHTML = data.jobs.map(job => renderJobCard(job)).join('');
-        renderPagination(data.total, data.page, data.per_page);
-    } catch (err) {
-        list.innerHTML = `<div class="empty-state">Failed to load jobs: ${err.message}</div>`;
-    }
-}
+        // ═══════════════════════════════════════════════════════════════════════
+        // JOBS
+        // ═══════════════════════════════════════════════════════════════════════
 
-function renderJobCard(job) {
-    const tags = (job.keywords_matched || []).map(k => {
-        const cls = k.includes('AI') || k.includes('ML') ? 'tag-ai' :
+        async function loadJobs(page = 1) {
+            currentPage = page;
+            const list = document.getElementById('job-list');
+            list.innerHTML = '<div class="loading"><div class="spinner"></div>Loading jobs...</div>';
+
+            const search = document.getElementById('search-input').value;
+            const ats = document.getElementById('filter-ats').value;
+            const keyword = document.getElementById('filter-keyword').value;
+
+            const params = new URLSearchParams({ page, per_page: perPage });
+            if (search) params.set('search', search);
+            if (ats) params.set('ats', ats);
+            if (keyword) params.set('keyword', keyword);
+
+            try {
+                const resp = await fetch(`${API_BASE}/jobs?${params}`);
+                const data = await resp.json();
+
+                if (!data.jobs || data.jobs.length === 0) {
+                    list.innerHTML = '<div class="empty-state">No jobs found. Try adjusting your filters.</div>';
+                    document.getElementById('pagination').innerHTML = '';
+                    return;
+                }
+
+                list.innerHTML = data.jobs.map(job => renderJobCard(job)).join('');
+                renderPagination(data.total, data.page, data.per_page);
+            } catch (err) {
+                list.innerHTML = `<div class="empty-state">Failed to load jobs: ${err.message}</div>`;
+            }
+        }
+
+        function renderJobCard(job) {
+            const tags = (job.keywords_matched || []).map(k => {
+                const cls = k.includes('AI') || k.includes('ML') ? 'tag-ai' :
                     k.includes('SWE') ? 'tag-swe' :
-                    k.includes('Data') ? 'tag-data' :
-                    k.includes('Research') ? 'tag-ml' : 'tag-default';
-        return `<span class="tag ${cls}">${k}</span>`;
-    }).join('');
+                        k.includes('Data') ? 'tag-data' :
+                            k.includes('Research') ? 'tag-ml' : 'tag-default';
+                return `<span class="tag ${cls}">${k}</span>`;
+            }).join('');
 
-    const loc = job.location ? `<span>📍 ${job.location.split(',')[0]}</span>` : '';
-    const company = `<span>🏢 ${job.company}</span>`;
-    const ats = `<span>⚙️ ${job.source_ats}</span>`;
-    const date = job.first_seen ? `<span>🕐 ${timeAgo(job.first_seen)}</span>` : '';
+            const loc = job.location ? `<span>📍 ${job.location.split(',')[0]}</span>` : '';
+            const company = `<span>🏢 ${job.company}</span>`;
+            const ats = `<span>⚙️ ${job.source_ats}</span>`;
+            const date = job.first_seen ? `<span>🕐 ${timeAgo(job.first_seen)}</span>` : '';
 
-    return `
+            return `
         <div class="job-card" onclick="window.open('${job.url}', '_blank')">
             <div class="job-info">
                 <div class="job-title">${escapeHtml(job.title)}</div>
@@ -632,31 +824,31 @@ function renderJobCard(job) {
             ${job.url ? `<a href="${job.url}" target="_blank" class="job-apply" onclick="event.stopPropagation()">Apply →</a>` : ''}
         </div>
     `;
-}
+        }
 
-function renderPagination(total, page, perPage) {
-    const totalPages = Math.ceil(total / perPage);
-    const pag = document.getElementById('pagination');
-    pag.innerHTML = `
+        function renderPagination(total, page, perPage) {
+            const totalPages = Math.ceil(total / perPage);
+            const pag = document.getElementById('pagination');
+            pag.innerHTML = `
         <button class="page-btn" onclick="loadJobs(${page - 1})" ${page <= 1 ? 'disabled' : ''}>← Prev</button>
         <span class="page-info">Page ${page} of ${totalPages} (${total.toLocaleString()} jobs)</span>
         <button class="page-btn" onclick="loadJobs(${page + 1})" ${page >= totalPages ? 'disabled' : ''}>Next →</button>
     `;
-}
+        }
 
-function searchJobs() { loadJobs(1); }
+        function searchJobs() { loadJobs(1); }
 
-// ═══════════════════════════════════════════════════════════════════════
-// STATS
-// ═══════════════════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════════════════
+        // STATS
+        // ═══════════════════════════════════════════════════════════════════════
 
-async function loadStatsStrip() {
-    try {
-        const resp = await fetch(`${API_BASE}/stats`);
-        statsData = await resp.json();
-        document.getElementById('status-text').textContent = `${statsData.active_jobs.toLocaleString()} active jobs`;
+        async function loadStatsStrip() {
+            try {
+                const resp = await fetch(`${API_BASE}/stats`);
+                statsData = await resp.json();
+                document.getElementById('status-text').textContent = `${statsData.active_jobs.toLocaleString()} active jobs`;
 
-        document.getElementById('stats-strip').innerHTML = `
+                document.getElementById('stats-strip').innerHTML = `
             <div class="stat-card">
                 <div class="stat-label">Active Jobs</div>
                 <div class="stat-value" style="color: var(--green)">${statsData.active_jobs.toLocaleString()}</div>
@@ -679,26 +871,26 @@ async function loadStatsStrip() {
                 <div class="stat-value">${Object.keys(statsData.platforms || {}).length}</div>
             </div>
         `;
-    } catch (err) {
-        document.getElementById('status-text').textContent = 'API offline';
-    }
-}
+            } catch (err) {
+                document.getElementById('status-text').textContent = 'API offline';
+            }
+        }
 
-async function loadStats() {
-    if (!statsData) await loadStatsStrip();
-    if (!statsData) return;
+        async function loadStats() {
+            if (!statsData) await loadStatsStrip();
+            if (!statsData) return;
 
-    const platforms = statsData.platforms || {};
-    document.getElementById('platforms-grid').innerHTML = Object.entries(platforms)
-        .sort((a, b) => b[1] - a[1])
-        .map(([name, count]) => `
+            const platforms = statsData.platforms || {};
+            document.getElementById('platforms-grid').innerHTML = Object.entries(platforms)
+                .sort((a, b) => b[1] - a[1])
+                .map(([name, count]) => `
             <div class="platform-card">
                 <div class="platform-name">${name}</div>
                 <div class="platform-count">${count.toLocaleString()}</div>
             </div>
         `).join('');
 
-    document.getElementById('stats-full').innerHTML = `
+            document.getElementById('stats-full').innerHTML = `
         <div class="stat-card">
             <div class="stat-label">Total Jobs (All Time)</div>
             <div class="stat-value">${statsData.total_jobs.toLocaleString()}</div>
@@ -720,26 +912,26 @@ async function loadStats() {
             <div class="stat-value" style="color: var(--orange)">${statsData.unposted_jobs.toLocaleString()}</div>
         </div>
     `;
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// COMPANIES
-// ═══════════════════════════════════════════════════════════════════════
-
-async function loadCompanies() {
-    const list = document.getElementById('companies-list');
-    list.innerHTML = '<div class="loading"><div class="spinner"></div>Loading companies...</div>';
-
-    try {
-        const resp = await fetch(`${API_BASE}/companies`);
-        const companies = await resp.json();
-
-        if (!companies.length) {
-            list.innerHTML = '<div class="empty-state">No companies found.</div>';
-            return;
         }
 
-        list.innerHTML = companies.slice(0, 100).map(c => `
+        // ═══════════════════════════════════════════════════════════════════════
+        // COMPANIES
+        // ═══════════════════════════════════════════════════════════════════════
+
+        async function loadCompanies() {
+            const list = document.getElementById('companies-list');
+            list.innerHTML = '<div class="loading"><div class="spinner"></div>Loading companies...</div>';
+
+            try {
+                const resp = await fetch(`${API_BASE}/companies`);
+                const companies = await resp.json();
+
+                if (!companies.length) {
+                    list.innerHTML = '<div class="empty-state">No companies found.</div>';
+                    return;
+                }
+
+                list.innerHTML = companies.slice(0, 100).map(c => `
             <div class="job-card" onclick="filterByCompany('${escapeHtml(c.company)}')">
                 <div class="job-info">
                     <div class="job-title">${escapeHtml(c.company)}</div>
@@ -753,35 +945,35 @@ async function loadCompanies() {
                 </div>
             </div>
         `).join('');
-    } catch (err) {
-        list.innerHTML = `<div class="empty-state">Failed to load: ${err.message}</div>`;
-    }
-}
-
-function filterByCompany(name) {
-    document.getElementById('search-input').value = name;
-    switchView('jobs');
-    searchJobs();
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// SCRAPER RUNS
-// ═══════════════════════════════════════════════════════════════════════
-
-async function loadRuns() {
-    const container = document.getElementById('runs-list');
-    container.innerHTML = '<div class="loading"><div class="spinner"></div>Loading runs...</div>';
-
-    try {
-        const resp = await fetch(`${API_BASE}/stats/runs?limit=20`);
-        const runs = await resp.json();
-
-        if (!runs.length) {
-            container.innerHTML = '<div class="empty-state">No scraper runs logged yet.</div>';
-            return;
+            } catch (err) {
+                list.innerHTML = `<div class="empty-state">Failed to load: ${err.message}</div>`;
+            }
         }
 
-        container.innerHTML = `
+        function filterByCompany(name) {
+            document.getElementById('search-input').value = name;
+            switchView('jobs');
+            searchJobs();
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // SCRAPER RUNS
+        // ═══════════════════════════════════════════════════════════════════════
+
+        async function loadRuns() {
+            const container = document.getElementById('runs-list');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div>Loading runs...</div>';
+
+            try {
+                const resp = await fetch(`${API_BASE}/stats/runs?limit=20`);
+                const runs = await resp.json();
+
+                if (!runs.length) {
+                    container.innerHTML = '<div class="empty-state">No scraper runs logged yet.</div>';
+                    return;
+                }
+
+                container.innerHTML = `
             <table class="runs-table">
                 <thead>
                     <tr>
@@ -807,47 +999,125 @@ async function loadRuns() {
                 </tbody>
             </table>
         `;
-    } catch (err) {
-        container.innerHTML = `<div class="empty-state">Failed to load: ${err.message}</div>`;
-    }
-}
+            } catch (err) {
+                container.innerHTML = `<div class="empty-state">Failed to load: ${err.message}</div>`;
+            }
+        }
 
-// ═══════════════════════════════════════════════════════════════════════
-// UTILITIES
-// ═══════════════════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════════════════
+        // UTILITIES
+        // ═══════════════════════════════════════════════════════════════════════
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text || '';
-    return div.innerHTML;
-}
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text || '';
+            return div.innerHTML;
+        }
 
-function timeAgo(dateStr) {
-    if (!dateStr) return '';
-    const now = new Date();
-    const date = new Date(dateStr);
-    const diffMs = now - date;
-    const diffMin = Math.floor(diffMs / 60000);
-    const diffHr = Math.floor(diffMin / 60);
-    const diffDay = Math.floor(diffHr / 24);
+        function timeAgo(dateStr) {
+            if (!dateStr) return '';
+            const now = new Date();
+            const date = new Date(dateStr);
+            const diffMs = now - date;
+            const diffMin = Math.floor(diffMs / 60000);
+            const diffHr = Math.floor(diffMin / 60);
+            const diffDay = Math.floor(diffHr / 24);
 
-    if (diffMin < 1) return 'just now';
-    if (diffMin < 60) return `${diffMin}m ago`;
-    if (diffHr < 24) return `${diffHr}h ago`;
-    if (diffDay < 7) return `${diffDay}d ago`;
-    return date.toLocaleDateString();
-}
+            if (diffMin < 1) return 'just now';
+            if (diffMin < 60) return `${diffMin}m ago`;
+            if (diffHr < 24) return `${diffHr}h ago`;
+            if (diffDay < 7) return `${diffDay}d ago`;
+            return date.toLocaleDateString();
+        }
 
-// ═══════════════════════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════════════════════
+        // ═══════════════════════════════════════════════════════════════════════
+        // SALARY EXPLORER
+        // ═══════════════════════════════════════════════════════════════════════
 
-async function init() {
-    await loadStatsStrip();
-    await loadJobs(1);
-}
+        async function estimateSalary() {
+            const title = document.getElementById('salary-title').value;
+            if (!title) return;
+            const location = document.getElementById('salary-location').value;
+            const container = document.getElementById('salary-result');
+            container.innerHTML = '<div class="loading"><div class="spinner"></div>Estimating...</div>';
 
-init();
-</script>
+            try {
+                const params = new URLSearchParams({ title });
+                if (location) params.set('location', location);
+                const resp = await fetch(`${API_BASE}/salary/estimate?${params}`);
+                const data = await resp.json();
+
+                if (data.error) {
+                    container.innerHTML = `<div class="empty-state">${data.error}</div>`;
+                    return;
+                }
+
+                const confPct = Math.round(data.confidence * 100);
+                container.innerHTML = `
+                    <div class="salary-result">
+                        <div class="salary-range">$${(data.salary_min / 1000).toFixed(0)}k – $${(data.salary_max / 1000).toFixed(0)}k</div>
+                        <div class="salary-meta">
+                            <strong>${escapeHtml(title)}</strong>${location ? ` in ${location}` : ''}
+                        </div>
+                        <div class="salary-meta" style="margin-top: 8px">
+                            ${data.currency} • ${confPct}% confidence • ${data.sample_size} salary data points • ${data.method}
+                        </div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" style="width: ${confPct}%"></div>
+                        </div>
+                    </div>
+                `;
+            } catch (err) {
+                container.innerHTML = `<div class="empty-state">Error: ${err.message}</div>`;
+            }
+        }
+
+        async function loadSalaryComparisons() {
+            const roles = [
+                { title: "Software Engineer", loc: "San Francisco" },
+                { title: "Senior ML Engineer", loc: "New York" },
+                { title: "Data Scientist", loc: "Remote" },
+                { title: "Staff Engineer", loc: "Seattle" },
+                { title: "Junior Software Developer", loc: "Austin" },
+                { title: "DevOps Engineer", loc: "Chicago" },
+            ];
+
+            const grid = document.getElementById('salary-comparisons');
+            grid.innerHTML = '<div class="loading"><div class="spinner"></div>Loading comparisons...</div>';
+
+            try {
+                const results = await Promise.all(roles.map(async r => {
+                    const params = new URLSearchParams({ title: r.title, location: r.loc });
+                    const resp = await fetch(`${API_BASE}/salary/estimate?${params}`);
+                    return { ...r, data: await resp.json() };
+                }));
+
+                grid.innerHTML = results.map(r => {
+                    if (r.data.error) return '';
+                    return `
+                        <div class="stat-card">
+                            <div class="stat-label">${r.title}</div>
+                            <div class="stat-value" style="font-size: 20px; color: var(--green)">$${(r.data.salary_min / 1000).toFixed(0)}k–$${(r.data.salary_max / 1000).toFixed(0)}k</div>
+                            <div class="stat-change">📍 ${r.loc} • ${r.data.sample_size} samples</div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                grid.innerHTML = `<div class="empty-state">Failed to load: ${err.message}</div>`;
+            }
+        }
+
+        // ═══════════════════════════════════════════════════════════════════════
+        // INIT
+        // ═══════════════════════════════════════════════════════════════════════
+
+        async function init() {
+            await loadStatsStrip();
+            await loadJobs(1);
+        }
+
+        init();
+    </script>
 </body>
+
 </html>
