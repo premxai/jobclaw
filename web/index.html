@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JobClaw — AI Job Board Dashboard</title>
+    <meta name="description" content="Real-time job aggregation from 10,500+ companies across 8 ATS platforms.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #16161f;
+            --bg-card-hover: #1c1c28;
+            --border: #2a2a3a;
+            --border-hover: #3a3a54;
+            --text-primary: #e8e8ef;
+            --text-secondary: #8888a0;
+            --text-muted: #5e5e73;
+            --accent: #6366f1;
+            --accent-glow: rgba(99, 102, 241, 0.15);
+            --accent-hover: #818cf8;
+            --green: #34d399;
+            --green-glow: rgba(52, 211, 153, 0.12);
+            --orange: #fb923c;
+            --red: #f87171;
+            --blue: #60a5fa;
+            --purple: #a78bfa;
+            --radius: 12px;
+            --radius-sm: 8px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── Header ──────────────────────────────────────────────── */
+        .header {
+            background: linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, transparent 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 0 32px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 20px;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--accent) 0%, var(--purple) 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--green-glow);
+            border: 1px solid rgba(52, 211, 153, 0.2);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--green);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* ── Navigation ──────────────────────────────────────────── */
+        .nav {
+            display: flex;
+            gap: 4px;
+            background: var(--bg-secondary);
+            padding: 4px;
+            border-radius: 10px;
+        }
+
+        .nav-btn {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            border-radius: 7px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover { color: var(--text-primary); background: var(--bg-card); }
+        .nav-btn.active { color: var(--text-primary); background: var(--accent); }
+
+        /* ── Main Layout ────────────────────────────────────────── */
+        .main {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 32px;
+        }
+
+        /* ── Stats Cards ────────────────────────────────────────── */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            transition: all 0.2s;
+        }
+
+        .stat-card:hover {
+            border-color: var(--border-hover);
+            transform: translateY(-1px);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -1px;
+        }
+
+        .stat-change {
+            font-size: 12px;
+            margin-top: 4px;
+            color: var(--green);
+        }
+
+        /* ── Search Bar ─────────────────────────────────────────── */
+        .search-section {
+            margin-bottom: 24px;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 12px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .search-input:focus { border-color: var(--accent); }
+        .search-input::placeholder { color: var(--text-muted); }
+
+        .filter-select {
+            padding: 12px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            cursor: pointer;
+            min-width: 160px;
+        }
+
+        .search-btn {
+            padding: 12px 24px;
+            background: var(--accent);
+            border: none;
+            border-radius: var(--radius-sm);
+            color: white;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-btn:hover { background: var(--accent-hover); }
+
+        /* ── Job List ───────────────────────────────────────────── */
+        .job-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .job-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px 20px;
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            align-items: center;
+            gap: 16px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .job-card:hover {
+            border-color: var(--accent);
+            background: var(--bg-card-hover);
+            box-shadow: 0 0 0 1px var(--accent-glow);
+        }
+
+        .job-info { min-width: 0; }
+
+        .job-title {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .job-meta {
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .job-meta span { display: flex; align-items: center; gap: 4px; }
+
+        .job-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .tag-ai { background: rgba(99, 102, 241, 0.15); color: var(--accent); }
+        .tag-swe { background: rgba(96, 165, 250, 0.15); color: var(--blue); }
+        .tag-data { background: rgba(52, 211, 153, 0.15); color: var(--green); }
+        .tag-ml { background: rgba(167, 139, 250, 0.15); color: var(--purple); }
+        .tag-default { background: rgba(136, 136, 160, 0.15); color: var(--text-secondary); }
+
+        .job-apply {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+
+        .job-apply:hover { border-color: var(--accent); color: var(--accent); }
+
+        /* ── Pagination ─────────────────────────────────────────── */
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .page-btn {
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover { border-color: var(--accent); }
+        .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .page-info { font-size: 13px; color: var(--text-secondary); }
+
+        /* ── Platform Breakdown ──────────────────────────────────── */
+        .platforms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .platform-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .platform-card:hover { border-color: var(--accent); }
+
+        .platform-name {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: capitalize;
+            margin-bottom: 4px;
+        }
+
+        .platform-count {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        /* ── Run History ────────────────────────────────────────── */
+        .runs-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .runs-table th {
+            text-align: left;
+            padding: 12px 16px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .runs-table td {
+            padding: 12px 16px;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .runs-table tr:hover td { background: var(--bg-card); }
+
+        /* ── Loading / Empty States ─────────────────────────────── */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            color: var(--text-muted);
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 12px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px;
+            color: var(--text-muted);
+        }
+
+        /* ── Page Sections ──────────────────────────────────────── */
+        .section { display: none; }
+        .section.active { display: block; }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            letter-spacing: -0.3px;
+        }
+
+        /* ── Responsive ─────────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .header { padding: 0 16px; }
+            .main { padding: 16px; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .job-card { grid-template-columns: 1fr; gap: 12px; }
+            .search-bar { flex-direction: column; }
+            .nav { overflow-x: auto; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ═══ Header ═══ -->
+<header class="header">
+    <div class="logo">
+        <div class="logo-icon">🦀</div>
+        <span>JobClaw</span>
+    </div>
+    <nav class="nav" id="nav">
+        <button class="nav-btn active" data-view="jobs" onclick="switchView('jobs')">Jobs</button>
+        <button class="nav-btn" data-view="stats" onclick="switchView('stats')">Stats</button>
+        <button class="nav-btn" data-view="companies" onclick="switchView('companies')">Companies</button>
+        <button class="nav-btn" data-view="runs" onclick="switchView('runs')">Scraper Runs</button>
+    </nav>
+    <div class="header-right">
+        <div class="status-badge">
+            <div class="status-dot"></div>
+            <span id="status-text">Connecting...</span>
+        </div>
+    </div>
+</header>
+
+<!-- ═══ Main Content ═══ -->
+<main class="main">
+
+    <!-- ── JOBS VIEW ── -->
+    <section class="section active" id="view-jobs">
+        <!-- Stats strip -->
+        <div class="stats-grid" id="stats-strip"></div>
+
+        <!-- Search -->
+        <div class="search-section">
+            <div class="search-bar">
+                <input type="text" class="search-input" id="search-input" placeholder="Search jobs by title, company, or description..." onkeyup="if(event.key==='Enter')searchJobs()">
+                <select class="filter-select" id="filter-ats" onchange="searchJobs()">
+                    <option value="">All Platforms</option>
+                    <option value="greenhouse">Greenhouse</option>
+                    <option value="lever">Lever</option>
+                    <option value="ashby">Ashby</option>
+                    <option value="workday">Workday</option>
+                    <option value="workable">Workable</option>
+                    <option value="smartrecruiters">SmartRecruiters</option>
+                    <option value="bamboohr">BambooHR</option>
+                    <option value="rippling">Rippling</option>
+                </select>
+                <select class="filter-select" id="filter-keyword" onchange="searchJobs()">
+                    <option value="">All Categories</option>
+                    <option value="AI/ML">🤖 AI/ML</option>
+                    <option value="SWE">💻 SWE</option>
+                    <option value="Data Science">🔬 Data Science</option>
+                    <option value="Data Engineering">🔧 Data Engineering</option>
+                    <option value="Data Analyst">📊 Data Analyst</option>
+                    <option value="New Grad">🎓 New Grad</option>
+                    <option value="Product">📦 Product</option>
+                    <option value="Research">🧪 Research</option>
+                </select>
+                <button class="search-btn" onclick="searchJobs()">Search</button>
+            </div>
+        </div>
+
+        <!-- Job results -->
+        <div id="job-list" class="job-list">
+            <div class="loading"><div class="spinner"></div>Loading jobs...</div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" id="pagination"></div>
+    </section>
+
+    <!-- ── STATS VIEW ── -->
+    <section class="section" id="view-stats">
+        <h2 class="section-title">Platform Breakdown</h2>
+        <div class="platforms-grid" id="platforms-grid"></div>
+        <h2 class="section-title">Key Metrics</h2>
+        <div class="stats-grid" id="stats-full"></div>
+    </section>
+
+    <!-- ── COMPANIES VIEW ── -->
+    <section class="section" id="view-companies">
+        <h2 class="section-title">Companies Hiring</h2>
+        <div id="companies-list" class="job-list">
+            <div class="loading"><div class="spinner"></div>Loading companies...</div>
+        </div>
+    </section>
+
+    <!-- ── RUNS VIEW ── -->
+    <section class="section" id="view-runs">
+        <h2 class="section-title">Recent Scraper Runs</h2>
+        <div id="runs-list">
+            <div class="loading"><div class="spinner"></div>Loading runs...</div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════════════════════════
+const API_BASE = window.location.origin;
+
+let currentPage = 1;
+const perPage = 30;
+let statsData = null;
+
+// ═══════════════════════════════════════════════════════════════════════
+// VIEWS
+// ═══════════════════════════════════════════════════════════════════════
+
+function switchView(view) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`view-${view}`).classList.add('active');
+    document.querySelector(`[data-view="${view}"]`).classList.add('active');
+
+    if (view === 'stats') loadStats();
+    if (view === 'companies') loadCompanies();
+    if (view === 'runs') loadRuns();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// JOBS
+// ═══════════════════════════════════════════════════════════════════════
+
+async function loadJobs(page = 1) {
+    currentPage = page;
+    const list = document.getElementById('job-list');
+    list.innerHTML = '<div class="loading"><div class="spinner"></div>Loading jobs...</div>';
+
+    const search = document.getElementById('search-input').value;
+    const ats = document.getElementById('filter-ats').value;
+    const keyword = document.getElementById('filter-keyword').value;
+
+    const params = new URLSearchParams({ page, per_page: perPage });
+    if (search) params.set('search', search);
+    if (ats) params.set('ats', ats);
+    if (keyword) params.set('keyword', keyword);
+
+    try {
+        const resp = await fetch(`${API_BASE}/jobs?${params}`);
+        const data = await resp.json();
+
+        if (!data.jobs || data.jobs.length === 0) {
+            list.innerHTML = '<div class="empty-state">No jobs found. Try adjusting your filters.</div>';
+            document.getElementById('pagination').innerHTML = '';
+            return;
+        }
+
+        list.innerHTML = data.jobs.map(job => renderJobCard(job)).join('');
+        renderPagination(data.total, data.page, data.per_page);
+    } catch (err) {
+        list.innerHTML = `<div class="empty-state">Failed to load jobs: ${err.message}</div>`;
+    }
+}
+
+function renderJobCard(job) {
+    const tags = (job.keywords_matched || []).map(k => {
+        const cls = k.includes('AI') || k.includes('ML') ? 'tag-ai' :
+                    k.includes('SWE') ? 'tag-swe' :
+                    k.includes('Data') ? 'tag-data' :
+                    k.includes('Research') ? 'tag-ml' : 'tag-default';
+        return `<span class="tag ${cls}">${k}</span>`;
+    }).join('');
+
+    const loc = job.location ? `<span>📍 ${job.location.split(',')[0]}</span>` : '';
+    const company = `<span>🏢 ${job.company}</span>`;
+    const ats = `<span>⚙️ ${job.source_ats}</span>`;
+    const date = job.first_seen ? `<span>🕐 ${timeAgo(job.first_seen)}</span>` : '';
+
+    return `
+        <div class="job-card" onclick="window.open('${job.url}', '_blank')">
+            <div class="job-info">
+                <div class="job-title">${escapeHtml(job.title)}</div>
+                <div class="job-meta">${company}${loc}${ats}${date}</div>
+            </div>
+            <div class="job-tags">${tags}</div>
+            ${job.url ? `<a href="${job.url}" target="_blank" class="job-apply" onclick="event.stopPropagation()">Apply →</a>` : ''}
+        </div>
+    `;
+}
+
+function renderPagination(total, page, perPage) {
+    const totalPages = Math.ceil(total / perPage);
+    const pag = document.getElementById('pagination');
+    pag.innerHTML = `
+        <button class="page-btn" onclick="loadJobs(${page - 1})" ${page <= 1 ? 'disabled' : ''}>← Prev</button>
+        <span class="page-info">Page ${page} of ${totalPages} (${total.toLocaleString()} jobs)</span>
+        <button class="page-btn" onclick="loadJobs(${page + 1})" ${page >= totalPages ? 'disabled' : ''}>Next →</button>
+    `;
+}
+
+function searchJobs() { loadJobs(1); }
+
+// ═══════════════════════════════════════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════════════════════════════════════
+
+async function loadStatsStrip() {
+    try {
+        const resp = await fetch(`${API_BASE}/stats`);
+        statsData = await resp.json();
+        document.getElementById('status-text').textContent = `${statsData.active_jobs.toLocaleString()} active jobs`;
+
+        document.getElementById('stats-strip').innerHTML = `
+            <div class="stat-card">
+                <div class="stat-label">Active Jobs</div>
+                <div class="stat-value" style="color: var(--green)">${statsData.active_jobs.toLocaleString()}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Companies</div>
+                <div class="stat-value">${statsData.companies.toLocaleString()}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Last 24 Hours</div>
+                <div class="stat-value" style="color: var(--accent)">${statsData.jobs_last_24h.toLocaleString()}</div>
+                <div class="stat-change">↑ new today</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Last 7 Days</div>
+                <div class="stat-value">${statsData.jobs_last_7d.toLocaleString()}</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Platforms</div>
+                <div class="stat-value">${Object.keys(statsData.platforms || {}).length}</div>
+            </div>
+        `;
+    } catch (err) {
+        document.getElementById('status-text').textContent = 'API offline';
+    }
+}
+
+async function loadStats() {
+    if (!statsData) await loadStatsStrip();
+    if (!statsData) return;
+
+    const platforms = statsData.platforms || {};
+    document.getElementById('platforms-grid').innerHTML = Object.entries(platforms)
+        .sort((a, b) => b[1] - a[1])
+        .map(([name, count]) => `
+            <div class="platform-card">
+                <div class="platform-name">${name}</div>
+                <div class="platform-count">${count.toLocaleString()}</div>
+            </div>
+        `).join('');
+
+    document.getElementById('stats-full').innerHTML = `
+        <div class="stat-card">
+            <div class="stat-label">Total Jobs (All Time)</div>
+            <div class="stat-value">${statsData.total_jobs.toLocaleString()}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Active</div>
+            <div class="stat-value" style="color: var(--green)">${statsData.active_jobs.toLocaleString()}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Inactive (Filled)</div>
+            <div class="stat-value" style="color: var(--red)">${statsData.inactive_jobs.toLocaleString()}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Posted to Discord</div>
+            <div class="stat-value" style="color: var(--blue)">${statsData.posted_jobs.toLocaleString()}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Unposted</div>
+            <div class="stat-value" style="color: var(--orange)">${statsData.unposted_jobs.toLocaleString()}</div>
+        </div>
+    `;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// COMPANIES
+// ═══════════════════════════════════════════════════════════════════════
+
+async function loadCompanies() {
+    const list = document.getElementById('companies-list');
+    list.innerHTML = '<div class="loading"><div class="spinner"></div>Loading companies...</div>';
+
+    try {
+        const resp = await fetch(`${API_BASE}/companies`);
+        const companies = await resp.json();
+
+        if (!companies.length) {
+            list.innerHTML = '<div class="empty-state">No companies found.</div>';
+            return;
+        }
+
+        list.innerHTML = companies.slice(0, 100).map(c => `
+            <div class="job-card" onclick="filterByCompany('${escapeHtml(c.company)}')">
+                <div class="job-info">
+                    <div class="job-title">${escapeHtml(c.company)}</div>
+                    <div class="job-meta">
+                        <span>⚙️ ${c.source_ats}</span>
+                        ${c.latest_job ? `<span>🕐 Latest: ${timeAgo(c.latest_job)}</span>` : ''}
+                    </div>
+                </div>
+                <div class="job-tags">
+                    <span class="tag tag-ai">${c.job_count} open roles</span>
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        list.innerHTML = `<div class="empty-state">Failed to load: ${err.message}</div>`;
+    }
+}
+
+function filterByCompany(name) {
+    document.getElementById('search-input').value = name;
+    switchView('jobs');
+    searchJobs();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// SCRAPER RUNS
+// ═══════════════════════════════════════════════════════════════════════
+
+async function loadRuns() {
+    const container = document.getElementById('runs-list');
+    container.innerHTML = '<div class="loading"><div class="spinner"></div>Loading runs...</div>';
+
+    try {
+        const resp = await fetch(`${API_BASE}/stats/runs?limit=20`);
+        const runs = await resp.json();
+
+        if (!runs.length) {
+            container.innerHTML = '<div class="empty-state">No scraper runs logged yet.</div>';
+            return;
+        }
+
+        container.innerHTML = `
+            <table class="runs-table">
+                <thead>
+                    <tr>
+                        <th>Script</th>
+                        <th>Time</th>
+                        <th>Companies</th>
+                        <th>New Jobs</th>
+                        <th>Duration</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${runs.map(r => `
+                        <tr>
+                            <td>${escapeHtml(r.script_name)}</td>
+                            <td>${timeAgo(r.timestamp)}</td>
+                            <td>${r.companies_fetched}</td>
+                            <td style="color: var(--green); font-weight: 600">${r.new_jobs_found}</td>
+                            <td>${r.duration_s.toFixed(1)}s</td>
+                            <td>${r.errors ? `<span style="color: var(--red)">⚠ Error</span>` : `<span style="color: var(--green)">✓ OK</span>`}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (err) {
+        container.innerHTML = `<div class="empty-state">Failed to load: ${err.message}</div>`;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════════════════
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text || '';
+    return div.innerHTML;
+}
+
+function timeAgo(dateStr) {
+    if (!dateStr) return '';
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now - date;
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffHr = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHr / 24);
+
+    if (diffMin < 1) return 'just now';
+    if (diffMin < 60) return `${diffMin}m ago`;
+    if (diffHr < 24) return `${diffHr}h ago`;
+    if (diffDay < 7) return `${diffDay}d ago`;
+    return date.toLocaleDateString();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════════
+
+async function init() {
+    await loadStatsStrip();
+    await loadJobs(1);
+}
+
+init();
+</script>
+</body>
+</html>

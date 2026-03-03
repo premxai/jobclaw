@@ -281,6 +281,24 @@ async def broadcast_job(job_dict: dict):
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# STATIC FILES — serve web dashboard
+# ═══════════════════════════════════════════════════════════════════════
+
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
+WEB_DIR = PROJECT_ROOT / "web"
+
+@app.get("/", include_in_schema=False)
+async def root():
+    """Serve the web dashboard."""
+    return FileResponse(WEB_DIR / "index.html")
+
+if WEB_DIR.exists():
+    app.mount("/web", StaticFiles(directory=str(WEB_DIR)), name="web")
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # MAIN
 # ═══════════════════════════════════════════════════════════════════════
 
