@@ -12,5 +12,6 @@ playwright>=1.40.0
 fastapi>=0.115.0
 uvicorn[standard]>=0.30.0
 
-# OpenClaw CLI (installed via npm: npm i -g @openclaw/cli)
-# Requires: MINIMAX_API_KEY in .env
+# Anti-bot stealth scraping (LinkedIn/Indeed/Glassdoor)
+scrapling>=0.4.0
+browserforge>=1.2.0
