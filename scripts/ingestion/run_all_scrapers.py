@@ -1,17 +1,24 @@
 """
-SPEED-OPTIMIZED Scraper Orchestrator — runs all scrapers in parallel.
+ZERO-MISS Scraper Orchestrator — guaranteed full coverage.
 
-Strategy: maximum job discovery speed.
-  - RSS + GitHub + Enterprise + ATS all run concurrently
-  - Each scraper has its own session / rate limiter (no resource contention)
-  - Enterprise (8 companies) and RSS finish in <2 min → you get quick wins
-    while ATS grinds through 11,800 companies in the background
-  - Discord notification fires the moment ANY scraper finds new jobs
+Strategy: EVERY tier scrapes ATS companies. Shard rotation guarantees
+all 11,822 companies are covered within 4 consecutive runs (~20 min).
+
+Tiers:
+  fast:   RSS + GitHub + ATS (1 rotating shard)           ~2 min
+  medium: RSS + GitHub + Enterprise + ATS (1 shard)       ~4 min
+  deep:   Everything + Stealth (ALL shards, no rotation)  ~15 min
+
+With `fast` every 5 min:
+  Run 1 → shard 0 (~3,000 companies)
+  Run 2 → shard 1 (~3,000 companies)
+  Run 3 → shard 2 (~3,000 companies)
+  Run 4 → shard 3 (~3,000 companies)
+  = full 11,822 coverage every 20 minutes
 
 Usage:
-    python scripts/ingestion/run_all_scrapers.py              # full blast
-    python scripts/ingestion/run_all_scrapers.py --fast        # skip ATS (quick scan only)
-    python scripts/ingestion/run_all_scrapers.py --no-openclaw # skip expensive browser automation
+    python scripts/ingestion/run_all_scrapers.py --tier fast
+    python scripts/ingestion/run_all_scrapers.py --tier deep
 """
 
 import asyncio
@@ -25,6 +32,32 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.utils.logger import _log
+
+# ── Shard Rotation Counter ───────────────────────────────────────────
+SHARD_COUNTER_FILE = PROJECT_ROOT / "data" / ".shard_counter"
+
+
+def get_next_shard(total_shards: int = 4) -> int:
+    """Deterministic shard rotation: 0 → 1 → 2 → 3 → 0 → ...
+    
+    Uses a file-based counter so it persists across runs.
+    Guarantees full registry coverage every `total_shards` runs.
+    """
+    current = 0
+    if SHARD_COUNTER_FILE.exists():
+        try:
+            current = int(SHARD_COUNTER_FILE.read_text().strip())
+        except (ValueError, OSError):
+            current = 0
+    
+    shard = current % total_shards
+    
+    # Increment for next run
+    SHARD_COUNTER_FILE.parent.mkdir(parents=True, exist_ok=True)
+    SHARD_COUNTER_FILE.write_text(str(current + 1))
+    
+    _log(f"[shard-rotation] Shard {shard}/{total_shards} (run #{current + 1})")
+    return shard
 
 
 async def _run_with_timing(name: str, coro):
@@ -51,22 +84,19 @@ async def run_all(
     total_shards: int = 4,
 ):
     """
-    Launch all scrapers in parallel for maximum speed.
+    Launch all scrapers in parallel — ZERO-MISS coverage.
 
-    Modes:
-      --hourly:  1hr window, skip Workable/Workday (fast platforms only, ~5-8 min)
-      default:   24hr window, skip Workable/Workday (full sweep, ~10-15 min)
-      --daily:   24hr window, include ALL platforms (slow, ~20+ min)
+    Every tier includes ATS. Shard rotation guarantees full
+    11,822 company coverage every 4 runs (~20 min with fast tier).
 
     Priority order (by speed):
       1. RSS/Aggregators  (~30s)   -- cheapest, fastest signal
-      2. Enterprise APIs  (~2-5m)  -- 8 companies, REST APIs
-      3. GitHub repos     (~1-2m)  -- static markdown parsing
-      4. ATS boards       (~5-15m) -- 6,800 companies (excl Workable/Workday)
-      5. OpenClaw browser (~3-5m)  -- expensive, uses Minimax API credits
+      2. GitHub repos     (~1-2m)  -- static markdown parsing
+      3. Enterprise APIs  (~2-5m)  -- 8 companies, REST APIs
+      4. ATS boards       (~2-8m)  -- 3,000 companies per shard
+      5. Stealth scraper  (~3-5m)  -- LinkedIn/Indeed/Glassdoor
 
-    All run concurrently -- the fast ones report results immediately while
-    ATS keeps grinding. No scraper blocks another.
+    All run concurrently — no scraper blocks another.
     """
     start_time = time.time()
     ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -208,70 +238,64 @@ Legacy flags still work:
                         help="Number of registry shards (default: 4)")
     args = parser.parse_args()
 
-    # ── Tier-based presets ─────────────────────────────────────────────
+    # ── Tier-based presets (ZERO-MISS: every tier includes ATS) ────────
     tier = args.tier
+    total_shards = args.total_shards
 
     # Legacy flag mapping
     if not tier:
         if args.fast:
             tier = "fast"
         elif args.hourly:
-            tier = "heavy"
+            tier = "medium"
         elif args.daily:
             tier = "deep"
 
     if tier == "fast":
-        # RSS + GitHub only (30 seconds)
-        skip_ats = True
-        skip_openclaw = True
-        skip_github = False
-        window = args.window or 1
-        skip_platforms = set()
-        shard_val = None
-    elif tier == "medium":
-        # RSS + GitHub + Enterprise (2-3 minutes)
-        skip_ats = True
+        # RSS + GitHub + ATS (1 rotating shard) — ~2 min
+        # Full 11,822 coverage every 4 runs = every 20 minutes
+        skip_ats = False
         skip_openclaw = True
         skip_github = False
         window = args.window or 4
         skip_platforms = set()
-        shard_val = None
-    elif tier == "heavy":
-        # RSS + GitHub + Enterprise + ATS (sharded, 3-4 minutes)
+        shard_val = get_next_shard(total_shards)  # Deterministic rotation
+    elif tier == "medium":
+        # RSS + GitHub + Enterprise + ATS (1 rotating shard) — ~4 min
         skip_ats = False
         skip_openclaw = True
         skip_github = False
-        window = args.window or 24
+        window = args.window or 8
         skip_platforms = set()
-        shard_val = -1  # Auto-shard by time slot
+        shard_val = get_next_shard(total_shards)
     elif tier == "deep":
-        # Everything including OpenClaw (15 minutes)
+        # Everything: ALL shards + Stealth scrapers — ~15 min
         skip_ats = False
         skip_openclaw = False
         skip_github = False
         window = args.window or 24
         skip_platforms = set()
-        shard_val = None  # No sharding — full sweep
+        shard_val = None  # No sharding — full sweep of all 11,822
     else:
-        # No tier specified — default behavior (full ATS, no OpenClaw)
-        skip_ats = args.fast
+        # No tier specified — default to medium behavior
+        skip_ats = False
         skip_openclaw = args.no_openclaw
         skip_github = args.no_github
         window = args.window or 24
         skip_platforms = None
-        shard_val = None
+        shard_val = get_next_shard(total_shards)
 
     # Override shard from CLI if explicitly set
     if args.shard is not None:
         if args.shard.lower() == 'auto':
-            shard_val = -1
+            shard_val = get_next_shard(total_shards)
         else:
             shard_val = int(args.shard)
 
     _log(f"[orchestrator] Tier={tier or 'default'}, Window={window}hr, "
-         f"Shard={'auto' if shard_val == -1 else shard_val}, "
-         f"ATS={'ON' if not skip_ats else 'OFF'}, "
-         f"OpenClaw={'ON' if not skip_openclaw else 'OFF'}")
+         f"Shard={shard_val if shard_val is not None else 'ALL'}/{total_shards}, "
+         f"ATS=ON, "
+         f"Stealth={'ON' if not skip_openclaw else 'OFF'}")
 
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
