@@ -91,7 +91,7 @@ def get_jobs(
         cursor = conn.cursor()
         cursor.execute(f"SELECT COUNT(*) FROM jobs {where}", params)
         row = cursor.fetchone()
-        total = row[0] if isinstance(row, (list, tuple)) else row.get("count", 0)
+        total = row[0] if row else 0
 
         offset = (page - 1) * per_page
 

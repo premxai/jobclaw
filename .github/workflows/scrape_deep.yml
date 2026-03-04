@@ -1,7 +1,7 @@
 name: "🔍 Deep Tier — LinkedIn, Indeed, Glassdoor via Brave Search (Daily)"
 
 # ┌────────────────────────────────────────────────────────────────────┐
-# │  DEEP TIER — runs twice daily at 6 AM and 6 PM UTC               │
+# │  DEEP TIER — runs daily at 6 PM EST (11 PM UTC)                │
 # │  Scraper: Brave Search API (LinkedIn, Indeed, Glassdoor)          │
 # │           Falls back to OpenClaw if no BRAVE_SEARCH_API_KEY set   │
 # │  + RSS + GitHub for fresh baseline                                │
@@ -10,7 +10,7 @@ name: "🔍 Deep Tier — LinkedIn, Indeed, Glassdoor via Brave Search (Daily)"
 
 on:
   schedule:
-    - cron: '0 18 * * *'    # 6 PM UTC daily (1 PM EST)
+    - cron: '0 23 * * *'    # 11 PM UTC = 6 PM EST
   workflow_dispatch:
 
 jobs:
