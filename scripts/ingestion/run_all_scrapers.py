@@ -133,10 +133,10 @@ async def run_all(
             )
         ))
 
-    # ── Stealth Scraper (LinkedIn/Indeed/Glassdoor via Scrapling) ────────
+    # ── Stealth Scraper (LinkedIn/Indeed/Glassdoor via OpenClaw) ────────
     if not skip_openclaw:
-        from scripts.ingestion.stealth_scraper import run_stealth_scraper
-        tasks.append(_run_with_timing("Stealth Scraper (LinkedIn/Indeed/Glassdoor)", run_stealth_scraper()))
+        from scripts.ingestion.scrape_openclaw import run_openclaw_scraper
+        tasks.append(_run_with_timing("OpenClaw Scraper (LinkedIn/Indeed/Glassdoor)", run_openclaw_scraper()))
 
     # ── Streaming Waterfall: push jobs to Discord in real-time ────────
     from scripts.discord_push import StreamingJobPusher

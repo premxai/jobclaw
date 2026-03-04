@@ -18,7 +18,7 @@ from scripts.database.db_utils import get_connection, insert_job, log_scraper_ru
 PROTECTED_TARGETS = [
     {
         "name": "LinkedIn AI Jobs",
-        "url": "https://www.linkedin.com/jobs/search/?keywords=AI%20Software%20Engineer&location=United%20States&f_TPR=r86400&position=1&pageNum=0",
+        "url": "https://www.linkedin.com/jobs/search/?keywords=AI%20Software%20Engineer&location=United%20States&f_TPR=r3600&position=1&pageNum=0",
         "source_ats": "linkedin"
     },
     {
@@ -83,9 +83,10 @@ provider:
 system_prompt: |
   You are a web scraping assistant. Wait for the page to load fully.
   Scroll down to load more jobs if necessary. Extract the top 15 job listings visible.
+  IMPORTANT: ONLY extract jobs that were posted in the LAST 1 HOUR. If a job says "2 hours ago" or "1d ago", ignore it.
   Return the data STRICTLY as a JSON array of objects with the keys:
   'title', 'company', 'location', and 'url'. Do not include any other text.
-  If you cannot find listings, return an empty array [].
+  If you cannot find listings matching the 1-hour criteria, return an empty array [].
 
 tools:
   - name: browse_web
@@ -169,8 +170,8 @@ async def run_openclaw_scraper():
     us_filtered = [j for j in role_filtered if is_us_location(j["location"])]
     _log(f"US filter: {len(us_filtered)}/{len(role_filtered)} in United States.")
     
-    # Note: We skip the 24hr filter here because the URLs passed to OpenClaw 
-    # already force the job board to only show jobs from the last 24 hours (e.g., `fromage=1`).
+    # Note: For LinkedIn we force `r3600` via URL. For others, the LLM prompt 
+    # strictly filters for listings showing "last hour" / "minutes ago".
     time_filtered = us_filtered
     
     # Database injection + Deduplication

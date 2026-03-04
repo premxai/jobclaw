@@ -34,3 +34,8 @@ data/openclaw_*.json
 data/agent_*.yaml
 data/cache/
 logs/*.jsonl
+
+# Node & Next.js
+node_modules/
+.next/
+next-env.d.ts

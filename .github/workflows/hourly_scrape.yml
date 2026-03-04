@@ -1,0 +1,45 @@
+name: Hourly JobClaw Scraper
+
+on:
+  schedule:
+    # Runs at the top of every hour (e.g. 1:00, 2:00, 3:00)
+    - cron: '0 * * * *'
+  workflow_dispatch: # Allows manual trigger from the GitHub Actions tab
+
+jobs:
+  run-scraper:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js (for OpenClaw CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install OpenClaw CLI
+        run: npm install -g @openclaw/cli
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          playwright install chromium
+
+      - name: Run Web Scraper Engine
+        env:
+          # Supabase Database Secrets mapping
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          OPENCLAW_API_KEY: ${{ secrets.OPENCLAW_API_KEY }}  # Optional if using specific providers
+        run: |
+          SHARD=$(( $(date +%H) % 4 ))
+          python scripts/ingestion/run_all_scrapers.py --window 1 --shard $SHARD
