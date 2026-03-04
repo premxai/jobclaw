@@ -1,17 +1,16 @@
-name: "🔍 Deep Tier — LinkedIn, Indeed, Glassdoor via OpenClaw (Daily)"
+name: "🔍 Deep Tier — LinkedIn, Indeed, Glassdoor via Brave Search (Daily)"
 
 # ┌────────────────────────────────────────────────────────────────────┐
-# │  DEEP TIER — runs once daily at 6 AM UTC                         │
-# │  Scrapers: OpenClaw (LinkedIn, Indeed, Glassdoor)                 │
-# │            + RSS + GitHub for fresh daily baseline                │
-# │  Duration: ~15-30 minutes per run                                 │
-# │  Note: Runs with 1-hour window despite daily cadence because      │
-# │        OpenClaw only scrapes recent pages regardless              │
+# │  DEEP TIER — runs twice daily at 6 AM and 6 PM UTC               │
+# │  Scraper: Brave Search API (LinkedIn, Indeed, Glassdoor)          │
+# │           Falls back to OpenClaw if no BRAVE_SEARCH_API_KEY set   │
+# │  + RSS + GitHub for fresh baseline                                │
+# │  Duration: ~1-2 minutes (Brave) or ~15-30 minutes (OpenClaw)     │
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
   schedule:
-    - cron: '0 6 * * *'    # 6:00 AM UTC every day
+    - cron: '0 6,18 * * *'    # 6 AM + 6 PM UTC every day
   workflow_dispatch:
 
 jobs:
@@ -22,32 +21,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Node.js (for OpenClaw CLI)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install OpenClaw CLI
-        run: |
-          npm install -g @openclaw/cli
-          which openclaw || (echo "OpenClaw not on PATH — trying npx fallback" && npx openclaw --version)
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
           cache: 'pip'
 
-      - name: Install Python dependencies + Playwright
-        run: |
-          pip install -r requirements.txt
-          playwright install chromium --with-deps
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
 
-      - name: Run deep-tier scrapers (OpenClaw + full stack)
+      # Only install Node/Playwright if falling back to OpenClaw
+      - name: Install OpenClaw (fallback only)
+        if: ${{ !env.BRAVE_SEARCH_API_KEY }}
+        run: |
+          npm install -g @openclaw/cli || true
+          pip install playwright && playwright install chromium --with-deps || true
+        env:
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
+
+      - name: Run deep-tier scrapers
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          OPENCLAW_API_KEY: ${{ secrets.OPENCLAW_API_KEY }}
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
           DISCORD_CHANNEL_AI: ${{ secrets.DISCORD_CHANNEL_AI }}
@@ -57,11 +52,6 @@ jobs:
           DISCORD_CHANNEL_PRODUCT: ${{ secrets.DISCORD_CHANNEL_PRODUCT }}
           DISCORD_CHANNEL_RESEARCH: ${{ secrets.DISCORD_CHANNEL_RESEARCH }}
         run: |
-          # Run all 4 shards sequentially so OpenClaw doesn't race with ATS
-          for SHARD in 0 1 2 3; do
-            echo "=== Deep scrape: shard $SHARD/4 ==="
-            python scripts/ingestion/run_all_scrapers.py \
-              --tier deep \
-              --window 1 \
-              --shard $SHARD || true   # Continue even if one shard fails
-          done
+          python scripts/ingestion/run_all_scrapers.py \
+            --tier deep \
+            --window 24

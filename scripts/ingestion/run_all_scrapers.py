@@ -133,10 +133,17 @@ async def run_all(
             )
         ))
 
-    # ── Stealth Scraper (LinkedIn/Indeed/Glassdoor via OpenClaw) ────────
+    # ── Deep Discovery (LinkedIn/Indeed/Glassdoor) ────────────────────
+    # Prefer Brave Search API (fast, reliable). Fall back to OpenClaw (browser).
     if not skip_openclaw:
-        from scripts.ingestion.scrape_openclaw import run_openclaw_scraper
-        tasks.append(_run_with_timing("OpenClaw Scraper (LinkedIn/Indeed/Glassdoor)", run_openclaw_scraper()))
+        brave_key = os.getenv("BRAVE_SEARCH_API_KEY", "")
+        if brave_key:
+            from scripts.ingestion.scrape_brave import run_brave_scraper
+            tasks.append(_run_with_timing("Brave Search (LinkedIn/Indeed/Glassdoor)", run_brave_scraper()))
+        else:
+            _log("[orchestrator] No BRAVE_SEARCH_API_KEY — falling back to OpenClaw", "WARN")
+            from scripts.ingestion.scrape_openclaw import run_openclaw_scraper
+            tasks.append(_run_with_timing("OpenClaw Scraper (LinkedIn/Indeed/Glassdoor)", run_openclaw_scraper()))
 
     # ── Streaming Waterfall: push jobs to Discord in real-time ────────
     from scripts.discord_push import StreamingJobPusher
