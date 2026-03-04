@@ -1,18 +1,15 @@
 """
-Discord Webhook Poster — sends job digests INSTANTLY after scraping.
+Discord Job Card Pusher — posts individual job cards to category channels.
 
-Unlike the bot daemon (which polls every 15 min), this module is called
-directly by the scraper orchestrator the moment it finishes. Zero delay.
+Each job is posted as a rich embed card to the appropriate Discord channel
+based on its keyword category (AI, SWE, Data, etc.). If the category can't
+be determined, jobs go to the general fallback channel.
 
-Uses Discord Webhook (simple HTTP POST) — no bot process needed.
-Falls back to bot token + channel ID if no webhook URL is set.
+Card fields: Title, Company, Location, Date Posted, ATS Source, Apply link.
 
 Setup:
-  1. In Discord: Server Settings → Integrations → Webhooks → New Webhook
-  2. Copy the webhook URL
-  3. Add to .env: DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
-  
-  OR: Uses existing DISCORD_BOT_TOKEN + DISCORD_CHANNEL_ID as fallback.
+  Bot Token + Channel IDs in .env (see .env.example)
+  OR: DISCORD_WEBHOOK_URL for single-channel webhook mode.
 """
 
 import json
@@ -34,173 +31,210 @@ try:
 except ImportError:
     pass
 
-WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
-BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID")
-
 
 def log(msg: str, level: str = "INFO"):
     _log(msg, level, "discord_push")
 
 
+# ═══════════════════════════════════════════════════════════════════════
+# CHANNEL ROUTING
+# ═══════════════════════════════════════════════════════════════════════
+
+BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
+GENERAL_CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID")
+
+# Category → Channel ID mapping
+CATEGORY_CHANNELS = {
+    "AI/ML":             os.getenv("DISCORD_CHANNEL_AI"),
+    "Data Science":      os.getenv("DISCORD_CHANNEL_DATA"),
+    "Data Engineering":  os.getenv("DISCORD_CHANNEL_DATA"),
+    "Data Analyst":      os.getenv("DISCORD_CHANNEL_DATA"),
+    "SWE":               os.getenv("DISCORD_CHANNEL_SWE"),
+    "New Grad":          os.getenv("DISCORD_CHANNEL_NEWGRAD"),
+    "Product":           os.getenv("DISCORD_CHANNEL_PRODUCT"),
+    "Research":          os.getenv("DISCORD_CHANNEL_RESEARCH"),
+}
+
 CATEGORY_EMOJIS = {
-    "AI/ML": "🤖",
-    "Data Science": "🔬",
-    "Data Engineering": "🔧",
-    "Data Analyst": "📊",
-    "SWE": "💻",
-    "New Grad": "🎓",
-    "Product": "📦",
-    "Research": "🧪",
-    "Uncategorized": "💼",
+    "AI/ML": "🤖", "Data Science": "🔬", "Data Engineering": "🔧",
+    "Data Analyst": "📊", "SWE": "💻", "New Grad": "🎓",
+    "Product": "📦", "Research": "🧪", "Uncategorized": "💼",
+}
+
+CATEGORY_COLORS = {
+    "AI/ML": 0x9B59B6,        # Purple
+    "Data Science": 0x3498DB,  # Blue
+    "Data Engineering": 0x1ABC9C, # Teal
+    "Data Analyst": 0x2ECC71,  # Green
+    "SWE": 0xE67E22,           # Orange
+    "New Grad": 0xF1C40F,      # Yellow
+    "Product": 0xE74C3C,       # Red
+    "Research": 0x95A5A6,      # Gray
+    "Uncategorized": 0x546E7A, # Dark gray
+}
+
+ATS_LABELS = {
+    "greenhouse": "Greenhouse", "lever": "Lever", "workday": "Workday",
+    "ashby": "Ashby", "smartrecruiters": "SmartRecruiters",
+    "rippling": "Rippling", "workable": "Workable", "icims": "iCIMS",
+    "github-swe-newgrad": "GitHub", "github-ai-newgrad": "GitHub",
+    "github-internship": "GitHub", "github-new-grad": "GitHub",
+    "remoteok": "RemoteOK", "remotive": "Remotive", "wwr": "WWR",
+    "dice": "Dice", "wellfound": "Wellfound", "ycombinator": "Y Combinator",
+    "linkedin": "LinkedIn", "indeed": "Indeed", "glassdoor": "Glassdoor",
 }
 
 
-def _job_line(job: dict) -> str:
-    """One-liner for a job in the digest."""
+def _get_category(job: dict) -> str:
+    """Get the primary category for a job."""
+    cats = job.get("keywords_matched", [])
+    if isinstance(cats, str):
+        try:
+            cats = json.loads(cats)
+        except (json.JSONDecodeError, TypeError):
+            cats = []
+    return cats[0] if cats else "Uncategorized"
+
+
+def _get_channel_id(category: str) -> str | None:
+    """Resolve a category to a Discord channel ID. Falls back to general."""
+    channel = CATEGORY_CHANNELS.get(category)
+    if channel:
+        return channel
+    return GENERAL_CHANNEL_ID
+
+
+def _format_date(date_str: str | None) -> str:
+    """Format a date string for display."""
+    if not date_str:
+        return "Unknown"
+    try:
+        d = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+        return d.strftime("%b %d, %Y")
+    except (ValueError, TypeError):
+        return date_str[:10] if len(date_str) >= 10 else date_str
+
+
+def _build_job_embed(job: dict) -> dict:
+    """Build a single Discord embed card for one job."""
     title = job.get("title", "Unknown Role")
     company = job.get("company", "Unknown")
-    location = job.get("location", "")
+    location = job.get("location", "Remote")
     url = job.get("url", "")
+    date_posted = job.get("date_posted") or job.get("first_seen", "")
+    source_ats = job.get("source_ats", "")
+    category = _get_category(job)
 
-    loc = location.split(",")[0].strip() if location else ""
-    if loc and len(loc) > 25:
-        loc = loc[:22] + "..."
+    emoji = CATEGORY_EMOJIS.get(category, "💼")
+    color = CATEGORY_COLORS.get(category, 0x546E7A)
+    ats_label = ATS_LABELS.get(source_ats.lower(), source_ats) if source_ats else "Direct"
 
-    line = f"• **{title}** @ {company}"
-    if loc:
-        line += f" — {loc}"
-    if url:
-        line += f" — [Apply]({url})"
-    return line
+    # Truncate location if too long
+    if location and len(location) > 40:
+        location = location[:37] + "..."
 
-
-def _group_by_category(jobs: list[dict]) -> dict[str, list[dict]]:
-    groups = defaultdict(list)
-    for job in jobs:
-        cats = job.get("keywords_matched", [])
-        category = cats[0] if cats else "Uncategorized"
-        groups[category].append(job)
-    return dict(groups)
-
-
-def _build_embeds(jobs: list[dict]) -> list[dict]:
-    """Build Discord embed objects for a job digest."""
-    by_category = _group_by_category(jobs)
-    sorted_cats = sorted(by_category.items(), key=lambda x: len(x[1]), reverse=True)
-
-    embeds = []
-    for category, cat_jobs in sorted_cats:
-        emoji = CATEGORY_EMOJIS.get(category, "💼")
-        lines = [_job_line(j) for j in cat_jobs]
-
-        # Chunk to 4000 chars per embed (Discord limit is 4096)
-        pages = []
-        current = []
-        current_len = 0
-        for line in lines:
-            line_len = len(line) + 1
-            if current and current_len + line_len > 3800:
-                pages.append("\n".join(current))
-                current = [line]
-                current_len = line_len
-            else:
-                current.append(line)
-                current_len += line_len
-        if current:
-            pages.append("\n".join(current))
-
-        for i, page_text in enumerate(pages):
-            embed = {
-                "description": page_text,
-                "color": 0x57F287,  # Discord brand green
-            }
-            if i == 0:
-                embed["author"] = {"name": f"{emoji} {category} — {len(cat_jobs)} roles"}
-            else:
-                embed["author"] = {"name": f"{emoji} {category} (cont.)"}
-            embeds.append(embed)
-
-    return embeds
-
-
-async def _send_via_webhook(webhook_url: str, jobs: list[dict]):
-    """Send digest via Discord webhook (simple HTTP POST, no bot needed)."""
-    import aiohttp
-
-    ts = datetime.now().strftime("%b %d, %I:%M %p")
-    by_category = _group_by_category(jobs)
-
-    header_content = (
-        f"🚀 **JobClaw Digest — {ts}**\n"
-        f"📡 **{len(jobs)}** new roles across **{len(by_category)}** categories • 🇺🇸 US Only\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    )
-
-    embeds = _build_embeds(jobs)
-
-    # Discord webhooks allow max 10 embeds per message
-    async with aiohttp.ClientSession() as session:
-        # Send header
-        await session.post(webhook_url, json={"content": header_content})
-
-        # Send embeds in batches of 10
-        for i in range(0, len(embeds), 10):
-            batch = embeds[i:i + 10]
-            payload = {"embeds": batch}
-            resp = await session.post(webhook_url, json=payload)
-            if resp.status != 204:
-                log(f"Webhook returned {resp.status}: {await resp.text()}", "WARN")
-
-        # Footer
-        await session.post(webhook_url, json={
-            "content": f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n✅ **Digest complete — {len(jobs)} roles posted.**"
-        })
-
-
-async def _send_via_bot_api(bot_token: str, channel_id: str, jobs: list[dict]):
-    """Send digest via Discord Bot API (REST, no running bot process needed)."""
-    import aiohttp
-
-    ts = datetime.now().strftime("%b %d, %I:%M %p")
-    by_category = _group_by_category(jobs)
-    url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
-    headers = {
-        "Authorization": f"Bot {bot_token}",
-        "Content-Type": "application/json",
+    embed = {
+        "title": f"{emoji}  {title}",
+        "color": color,
+        "fields": [
+            {"name": "🏢 Company", "value": company, "inline": True},
+            {"name": "📍 Location", "value": location or "Remote", "inline": True},
+            {"name": "📅 Posted", "value": _format_date(date_posted), "inline": True},
+            {"name": "🔗 Source", "value": ats_label, "inline": True},
+            {"name": "🏷️ Category", "value": category, "inline": True},
+        ],
+        "footer": {"text": f"JobClaw • {ats_label}"},
+        "timestamp": datetime.utcnow().isoformat(),
     }
 
-    header_content = (
-        f"🚀 **JobClaw Digest — {ts}**\n"
-        f"📡 **{len(jobs)}** new roles across **{len(by_category)}** categories • 🇺🇸 US Only\n"
-        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    )
+    if url:
+        embed["url"] = url
+        embed["fields"].append(
+            {"name": "📎 Apply", "value": f"[Click here to apply]({url})", "inline": False}
+        )
 
-    embeds = _build_embeds(jobs)
+    # Salary if available
+    salary_min = job.get("salary_min")
+    salary_max = job.get("salary_max")
+    if salary_min or salary_max:
+        if salary_min and salary_max:
+            salary = f"${int(salary_min / 1000)}k – ${int(salary_max / 1000)}k"
+        elif salary_min:
+            salary = f"${int(salary_min / 1000)}k+"
+        else:
+            salary = f"Up to ${int(salary_max / 1000)}k"
+        # Insert salary as the 3rd field (after Company, Location)
+        embed["fields"].insert(2, {"name": "💰 Salary", "value": salary, "inline": True})
 
-    async with aiohttp.ClientSession() as session:
-        # Header message
-        await session.post(url, headers=headers, json={"content": header_content})
+    return embed
 
-        # Embeds in batches of 10
-        for i in range(0, len(embeds), 10):
-            batch = embeds[i:i + 10]
-            resp = await session.post(url, headers=headers, json={"embeds": batch})
-            if resp.status not in (200, 201):
-                log(f"Bot API returned {resp.status}: {await resp.text()}", "WARN")
 
-        # Footer
-        await session.post(url, headers=headers, json={
-            "content": f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n✅ **Digest complete — {len(jobs)} roles posted.**"
-        })
+# ═══════════════════════════════════════════════════════════════════════
+# SENDING — Bot API (multi-channel) or Webhook (single-channel)
+# ═══════════════════════════════════════════════════════════════════════
 
+async def _send_card_via_bot(session, channel_id: str, embed: dict) -> bool:
+    """Send a single job card to a specific channel via Bot API."""
+    url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
+    headers = {
+        "Authorization": f"Bot {BOT_TOKEN}",
+        "Content-Type": "application/json",
+    }
+    resp = await session.post(url, headers=headers, json={"embeds": [embed]})
+
+    if resp.status == 429:
+        # Rate limited — wait and retry once
+        try:
+            data = await resp.json()
+            wait = data.get("retry_after", 2.0)
+        except Exception:
+            wait = 2.0
+        log(f"Rate limited — waiting {wait}s", "WARN")
+        import asyncio
+        await asyncio.sleep(wait)
+        resp = await session.post(url, headers=headers, json={"embeds": [embed]})
+
+    if resp.status not in (200, 201):
+        log(f"Bot API returned {resp.status} for channel {channel_id}", "WARN")
+        return False
+    return True
+
+
+async def _send_card_via_webhook(session, embed: dict) -> bool:
+    """Send a single job card via webhook (goes to one channel only)."""
+    resp = await session.post(WEBHOOK_URL, json={"embeds": [embed]})
+
+    if resp.status == 429:
+        try:
+            data = await resp.json()
+            wait = data.get("retry_after", 2.0)
+        except Exception:
+            wait = 2.0
+        log(f"Rate limited — waiting {wait}s", "WARN")
+        import asyncio
+        await asyncio.sleep(wait)
+        resp = await session.post(WEBHOOK_URL, json={"embeds": [embed]})
+
+    if resp.status not in (200, 204):
+        log(f"Webhook returned {resp.status}", "WARN")
+        return False
+    return True
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# MAIN PUSH FUNCTION
+# ═══════════════════════════════════════════════════════════════════════
 
 async def push_new_jobs_to_discord():
     """
     Called by the orchestrator IMMEDIATELY after scraping finishes.
-    Checks DB for unposted jobs → sends them to Discord → marks as posted.
+    Posts each job as an individual embed card to the correct category channel.
     Returns the number of jobs posted.
     """
+    import asyncio
+    import aiohttp
+
     conn = get_connection()
     try:
         jobs = get_unposted_jobs(conn)
@@ -208,25 +242,53 @@ async def push_new_jobs_to_discord():
             log("No unposted jobs — nothing to push.")
             return 0
 
-        log(f"Pushing {len(jobs)} new jobs to Discord...")
-
+        log(f"Pushing {len(jobs)} new jobs to Discord as individual cards...")
         hashes = [j["internal_hash"] for j in jobs]
 
-        # Prefer webhook (simpler, no bot process), fall back to bot API
-        if WEBHOOK_URL:
-            await _send_via_webhook(WEBHOOK_URL, jobs)
-            log(f"Sent {len(jobs)} jobs via webhook.")
-        elif BOT_TOKEN and CHANNEL_ID:
-            await _send_via_bot_api(BOT_TOKEN, CHANNEL_ID, jobs)
-            log(f"Sent {len(jobs)} jobs via Bot API.")
-        else:
-            log("No DISCORD_WEBHOOK_URL or BOT_TOKEN configured — skipping push.", "WARN")
-            return 0
+        # Group jobs by target channel for efficient sending
+        channel_jobs: dict[str, list[dict]] = defaultdict(list)
+        for job in jobs:
+            category = _get_category(job)
+            channel_id = _get_channel_id(category)
 
-        # Mark as posted
+            if BOT_TOKEN and channel_id:
+                channel_jobs[channel_id].append(job)
+            elif WEBHOOK_URL:
+                channel_jobs["__webhook__"].append(job)
+            else:
+                log("No Discord credentials configured — skipping.", "WARN")
+                return 0
+
+        sent_count = 0
+        failed_count = 0
+
+        async with aiohttp.ClientSession() as session:
+            for channel_id, ch_jobs in channel_jobs.items():
+                for job in ch_jobs:
+                    embed = _build_job_embed(job)
+                    try:
+                        if channel_id == "__webhook__":
+                            ok = await _send_card_via_webhook(session, embed)
+                        else:
+                            ok = await _send_card_via_bot(session, channel_id, embed)
+
+                        if ok:
+                            sent_count += 1
+                        else:
+                            failed_count += 1
+                    except Exception as e:
+                        log(f"Failed to send card: {e}", "WARN")
+                        failed_count += 1
+
+                    # Respect Discord rate limits: ~1 msg/sec
+                    await asyncio.sleep(1.0)
+
+        log(f"Sent {sent_count} cards ({failed_count} failed)")
+
+        # Mark all as posted even if some failed (avoid re-sending spam)
         mark_jobs_posted(conn, hashes)
         log(f"Marked {len(hashes)} jobs as posted.")
-        return len(jobs)
+        return sent_count
 
     except Exception as e:
         log(f"Discord push failed: {e}", "ERROR")
@@ -236,7 +298,7 @@ async def push_new_jobs_to_discord():
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# STREAMING WATERFALL — push jobs to Discord AS they're discovered
+# STREAMING WATERFALL — push jobs as they're discovered (real-time)
 # ═══════════════════════════════════════════════════════════════════════
 
 import asyncio as _asyncio
@@ -244,37 +306,27 @@ import asyncio as _asyncio
 
 class StreamingJobPusher:
     """
-    Real-time Discord job pusher that runs alongside scrapers.
+    Real-time Discord job pusher — posts individual cards as jobs are discovered.
 
-    Workers push qualifying jobs into a queue. A background consumer task
-    drains the queue in micro-batches (every BATCH_SIZE jobs or FLUSH_INTERVAL
-    seconds, whichever comes first) and sends them to Discord via webhook.
-
-    Usage:
-        pusher = StreamingJobPusher()
-        task = asyncio.create_task(pusher.run())
-        ...workers push jobs via pusher.push(job_dict)...
-        await pusher.stop()
-        await task
+    Each job gets its own embed card. If BOT_TOKEN is set, cards are routed
+    to the appropriate category channel. Otherwise, falls back to webhook.
     """
 
-    BATCH_SIZE = 5          # Max jobs per micro-batch
-    FLUSH_INTERVAL = 10.0   # Seconds between flushes (even if < BATCH_SIZE)
-    RATE_LIMIT_DELAY = 1.0  # Seconds between webhook calls (Discord rate limit)
+    RATE_LIMIT_DELAY = 1.0  # Seconds between webhook calls
 
     def __init__(self, webhook_url: str = None):
-        self._url = webhook_url or WEBHOOK_URL
+        self._webhook_url = webhook_url or WEBHOOK_URL
         self._queue: _asyncio.Queue = _asyncio.Queue()
         self._stop = _asyncio.Event()
         self._total_pushed = 0
-        self._enabled = bool(self._url)
+        self._enabled = bool(self._webhook_url or BOT_TOKEN)
 
     @property
     def total_pushed(self) -> int:
         return self._total_pushed
 
     def push(self, job_dict: dict) -> None:
-        """Queue a job for streaming push. Non-blocking, safe from any coroutine."""
+        """Queue a job for streaming push. Non-blocking."""
         if self._enabled:
             self._queue.put_nowait(job_dict)
 
@@ -283,12 +335,9 @@ class StreamingJobPusher:
         self._stop.set()
 
     async def run(self) -> None:
-        """
-        Background consumer: drains queue in micro-batches and sends to Discord.
-        Runs until stop() is called and queue is empty.
-        """
+        """Background consumer: posts each job as a card in real-time."""
         if not self._enabled:
-            log("StreamingJobPusher disabled — no DISCORD_WEBHOOK_URL configured.")
+            log("StreamingJobPusher disabled — no Discord credentials configured.")
             return
 
         import aiohttp
@@ -296,78 +345,38 @@ class StreamingJobPusher:
 
         async with aiohttp.ClientSession() as session:
             while True:
-                batch = await self._collect_batch()
+                # Wait for a job or stop signal
+                try:
+                    job = await _asyncio.wait_for(self._queue.get(), timeout=10.0)
+                except _asyncio.TimeoutError:
+                    if self._stop.is_set() and self._queue.empty():
+                        break
+                    continue
 
-                if batch:
-                    await self._send_batch(session, batch)
-                    self._total_pushed += len(batch)
+                try:
+                    category = _get_category(job)
+                    channel_id = _get_channel_id(category)
+                    embed = _build_job_embed(job)
+
+                    if BOT_TOKEN and channel_id:
+                        ok = await _send_card_via_bot(session, channel_id, embed)
+                    elif self._webhook_url:
+                        ok = await _send_card_via_webhook(session, embed)
+                    else:
+                        ok = False
+
+                    if ok:
+                        self._total_pushed += 1
+                except Exception as e:
+                    log(f"Streaming push failed: {e}", "WARN")
+
+                await _asyncio.sleep(self.RATE_LIMIT_DELAY)
 
                 if self._stop.is_set() and self._queue.empty():
                     break
 
         if self._total_pushed > 0:
-            log(f"🌊 Streaming waterfall complete — {self._total_pushed} jobs pushed live.")
-
-    async def _collect_batch(self) -> list[dict]:
-        """Collect up to BATCH_SIZE jobs, waiting up to FLUSH_INTERVAL."""
-        batch = []
-        try:
-            # Wait for the first item (or until stop is signaled)
-            try:
-                first = await _asyncio.wait_for(
-                    self._queue.get(),
-                    timeout=self.FLUSH_INTERVAL,
-                )
-                batch.append(first)
-            except _asyncio.TimeoutError:
-                return batch
-
-            # Greedily grab more items without waiting
-            while len(batch) < self.BATCH_SIZE:
-                try:
-                    item = self._queue.get_nowait()
-                    batch.append(item)
-                except _asyncio.QueueEmpty:
-                    break
-        except Exception:
-            pass
-
-        return batch
-
-    async def _send_batch(self, session, batch: list[dict]) -> None:
-        """Send a micro-batch to Discord via webhook."""
-        try:
-            lines = [_job_line(j) for j in batch]
-            text = "\n".join(lines)
-
-            payload = {
-                "embeds": [{
-                    "description": text,
-                    "color": 0x57F287,
-                    "footer": {"text": f"⚡ {len(batch)} new • Streaming live"},
-                }]
-            }
-            resp = await session.post(self._url, json=payload)
-            if resp.status == 429:
-                # Rate limited — wait and retry
-                retry_after = 2.0
-                try:
-                    data = await resp.json()
-                    retry_after = data.get("retry_after", 2.0)
-                except Exception:
-                    pass
-                log(f"Discord rate limited — waiting {retry_after}s", "WARN")
-                await _asyncio.sleep(retry_after)
-                # Retry once
-                await session.post(self._url, json=payload)
-            elif resp.status not in (200, 204):
-                log(f"Webhook returned {resp.status}", "WARN")
-
-            # Respect Discord rate limits
-            await _asyncio.sleep(self.RATE_LIMIT_DELAY)
-
-        except Exception as e:
-            log(f"Streaming push failed: {e}", "WARN")
+            log(f"🌊 Streaming waterfall complete — {self._total_pushed} cards pushed live.")
 
 
 if __name__ == "__main__":
@@ -376,5 +385,4 @@ if __name__ == "__main__":
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     count = asyncio.run(push_new_jobs_to_discord())
-    print(f"Pushed {count} jobs to Discord.")
-
+    print(f"Pushed {count} job cards to Discord.")
