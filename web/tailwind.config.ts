@@ -1,7 +1,6 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
-	darkMode: ["class"],
 	content: [
 		"./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
 		"./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -13,41 +12,41 @@ const config: Config = {
 				sans: ['var(--font-lexend)', 'Lexend', 'system-ui', 'sans-serif'],
 			},
 			colors: {
-				// JobClaw dark palette
+				// Warm palette
+				background: '#FAF7F2',
+				foreground: '#1A1A1A',
 				surface: {
-					DEFAULT: '#161B22',
-					2: '#21262D',
-					3: '#282E36',
+					DEFAULT: '#FFFFFF',
+					2: '#F5F0E8',
+					3: '#EDE6D8',
 				},
-				border: '#30363D',
-				'text-primary': '#E6EDF3',
-				'text-secondary': '#8B949E',
+				border: '#E5DDD0',
+				'text-primary': '#1A1A1A',
+				'text-secondary': '#7A7062',
 				accent: {
-					DEFAULT: '#F0883E',
-					hover: '#E07020',
+					DEFAULT: '#E8713A',
+					hover: '#D4612E',
+					light: '#FFF0E6',
 				},
-				success: '#3FB950',
-				info: '#58A6FF',
-				warning: '#D29922',
-				// Semantic tokens
-				background: '#0D1117',
-				foreground: '#E6EDF3',
+				success: '#2D8A4E',
+				info: '#3574D4',
+				warning: '#C98A1A',
 				card: {
-					DEFAULT: '#161B22',
-					foreground: '#E6EDF3',
+					DEFAULT: '#FFFFFF',
+					foreground: '#1A1A1A',
 				},
 				muted: {
-					DEFAULT: '#21262D',
-					foreground: '#8B949E',
+					DEFAULT: '#F5F0E8',
+					foreground: '#7A7062',
 				},
-				// Chart colors
+				// Chart colors — warm palette
 				chart: {
-					'1': '#F0883E',
-					'2': '#58A6FF',
-					'3': '#3FB950',
-					'4': '#D29922',
-					'5': '#BC8CFF',
-					'6': '#FF7B72',
+					'1': '#E8713A',
+					'2': '#3574D4',
+					'3': '#2D8A4E',
+					'4': '#C98A1A',
+					'5': '#9B6FD4',
+					'6': '#D44B4B',
 				},
 			},
 			borderRadius: {

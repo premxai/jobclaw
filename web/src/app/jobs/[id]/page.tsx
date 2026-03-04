@@ -26,10 +26,8 @@ export default function JobDetailPage() {
         const id = params.id as string;
         fetchJobById(id).then((j) => {
             setJob(j);
-            // Check if saved
             const savedList = JSON.parse(localStorage.getItem("jobclaw_saved") || "[]");
             setSaved(savedList.some((s: any) => s.internal_hash === j?.internal_hash));
-            // Load related jobs
             if (j) {
                 fetchJobs({ limit: 6 }).then((data) => {
                     setRelated(data.jobs.filter((r) => r.internal_hash !== j.internal_hash).slice(0, 3));
@@ -56,9 +54,9 @@ export default function JobDetailPage() {
             <div className="min-h-screen">
                 <TopNav />
                 <div className="max-w-3xl mx-auto px-6 py-20 text-center">
-                    <div className="w-16 h-16 rounded-full bg-surface mx-auto mb-4 animate-pulse" />
-                    <div className="h-8 bg-surface rounded-lg w-64 mx-auto mb-3 animate-pulse" />
-                    <div className="h-5 bg-surface rounded w-48 mx-auto animate-pulse" />
+                    <div className="w-16 h-16 rounded-full bg-surface-2 mx-auto mb-4 animate-pulse" />
+                    <div className="h-8 bg-surface-2 rounded-lg w-64 mx-auto mb-3 animate-pulse" />
+                    <div className="h-5 bg-surface-2 rounded w-48 mx-auto animate-pulse" />
                 </div>
             </div>
         );
@@ -73,7 +71,6 @@ export default function JobDetailPage() {
             <TopNav />
 
             <div className="max-w-3xl mx-auto px-6 py-8">
-                {/* Back */}
                 <button
                     onClick={() => router.back()}
                     className="flex items-center gap-2 text-text-secondary hover:text-text-primary text-sm mb-8 transition-colors"
@@ -89,36 +86,30 @@ export default function JobDetailPage() {
                         <p className="text-sm text-text-secondary mb-1">{job.company}</p>
                         <h1 className="text-3xl font-bold text-text-primary tracking-tight mb-3">{job.title}</h1>
 
-                        {/* Info pills */}
                         <div className="flex flex-wrap gap-3">
                             {job.location && (
                                 <div className="flex items-center gap-1.5 pill-dark">
-                                    <MapPin className="w-3.5 h-3.5" />
-                                    {job.location}
+                                    <MapPin className="w-3.5 h-3.5" /> {job.location}
                                 </div>
                             )}
                             {salary && (
                                 <div className="flex items-center gap-1.5 pill-dark">
-                                    <DollarSign className="w-3.5 h-3.5" />
-                                    {salary}
+                                    <DollarSign className="w-3.5 h-3.5" /> {salary}
                                 </div>
                             )}
                             {job.date_posted && (
                                 <div className="flex items-center gap-1.5 pill-dark">
-                                    <Calendar className="w-3.5 h-3.5" />
-                                    {job.date_posted}
+                                    <Calendar className="w-3.5 h-3.5" /> {job.date_posted}
                                 </div>
                             )}
                             {job.source_ats && (
                                 <div className="flex items-center gap-1.5 pill-dark">
-                                    <Link2 className="w-3.5 h-3.5" />
-                                    {job.source_ats}
+                                    <Link2 className="w-3.5 h-3.5" /> {job.source_ats}
                                 </div>
                             )}
                             {category && (
                                 <div className="flex items-center gap-1.5 pill-accent">
-                                    <Briefcase className="w-3.5 h-3.5" />
-                                    {category}
+                                    <Briefcase className="w-3.5 h-3.5" /> {category}
                                 </div>
                             )}
                         </div>
@@ -127,12 +118,7 @@ export default function JobDetailPage() {
 
                 {/* CTA */}
                 <div className="flex gap-3 mb-10 animate-slide-up">
-                    <a
-                        href={job.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn-primary text-base px-8 py-3"
-                    >
+                    <a href={job.url} target="_blank" rel="noopener noreferrer" className="btn-primary text-base px-8 py-3">
                         Apply Now →
                     </a>
                     <button onClick={toggleSave} className="btn-outline flex items-center gap-2">
@@ -145,10 +131,8 @@ export default function JobDetailPage() {
                 {job.description && (
                     <div className="mb-12 animate-fade-in">
                         <h2 className="text-lg font-bold text-text-primary mb-4">About this Role</h2>
-                        <div className="bg-surface border border-border rounded-xl p-6">
-                            <p className="text-text-secondary leading-relaxed whitespace-pre-line">
-                                {job.description}
-                            </p>
+                        <div className="bg-white border border-border rounded-xl p-6">
+                            <p className="text-text-secondary leading-relaxed whitespace-pre-line">{job.description}</p>
                         </div>
                     </div>
                 )}
@@ -159,7 +143,7 @@ export default function JobDetailPage() {
                         <h2 className="text-lg font-bold text-text-primary mb-4">Similar Jobs</h2>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             {related.map((r, i) => (
-                                <a key={r.internal_hash || i} href={`/jobs/${r.id}`}>
+                                <a key={r.internal_hash || i} href={`/jobs/${r.id}`} className="block h-full">
                                     <JobCard job={r} />
                                 </a>
                             ))}

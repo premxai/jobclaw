@@ -29,7 +29,7 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="pt-20 pb-16 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-4 animate-fade-in">
+          <h1 className="text-5xl md:text-6xl font-bold tracking-tight mb-4 text-text-primary animate-fade-in">
             Track Every Tech Job.
             <br />
             <span className="text-accent">Automatically.</span>
@@ -41,7 +41,7 @@ export default function LandingPage() {
 
           {/* Search bar */}
           <div className="max-w-xl mx-auto mb-16 animate-slide-up">
-            <div className="flex items-center bg-surface border border-border rounded-xl overflow-hidden focus-within:border-accent transition-colors">
+            <div className="flex items-center bg-white border border-border rounded-xl overflow-hidden focus-within:border-accent transition-colors shadow-sm">
               <Search className="w-5 h-5 text-text-secondary ml-4 shrink-0" />
               <input
                 type="text"
@@ -61,13 +61,13 @@ export default function LandingPage() {
         {/* Stats */}
         <div className="max-w-3xl mx-auto grid grid-cols-3 gap-4 mb-20">
           {[
-            { icon: Zap, value: `${stats.total_jobs}+`, label: "Jobs Tracked", color: "text-accent" },
-            { icon: Building2, value: stats.total_companies.toLocaleString(), label: "Companies", color: "text-info" },
-            { icon: Clock, value: "24/7", label: "Monitoring", color: "text-success" },
+            { icon: Zap, value: `${stats.total_jobs}+`, label: "Jobs Tracked", color: "#E8713A" },
+            { icon: Building2, value: stats.total_companies.toLocaleString(), label: "Companies", color: "#3574D4" },
+            { icon: Clock, value: "24/7", label: "Monitoring", color: "#2D8A4E" },
           ].map((stat, i) => (
             <div key={i} className="stat-card text-center animate-slide-up" style={{ animationDelay: `${i * 100}ms` }}>
-              <stat.icon className={`w-6 h-6 ${stat.color} mx-auto mb-2`} />
-              <div className={`text-3xl font-bold ${stat.color}`}>{stat.value}</div>
+              <stat.icon className="w-6 h-6 mx-auto mb-2" style={{ color: stat.color }} />
+              <div className="text-3xl font-bold" style={{ color: stat.color }}>{stat.value}</div>
               <div className="text-sm text-text-secondary mt-1">{stat.label}</div>
             </div>
           ))}
@@ -87,7 +87,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {jobs.map((job, i) => (
               <div key={job.internal_hash || i} className="animate-slide-up" style={{ animationDelay: `${i * 50}ms` }}>
-                <Link href={`/jobs/${job.id}`}>
+                <Link href={`/jobs/${job.id}`} className="block h-full">
                   <JobCard job={job} />
                 </Link>
               </div>
@@ -103,7 +103,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-8 px-6">
+      <footer className="border-t border-border py-8 px-6 bg-white">
         <div className="max-w-6xl mx-auto flex items-center justify-between text-sm text-text-secondary">
           <p>🦀 JobClaw — Tracking {stats.total_companies.toLocaleString()} companies</p>
           <div className="flex items-center gap-4">

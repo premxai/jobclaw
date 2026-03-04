@@ -18,11 +18,12 @@ const PIE_COLORS = ["#F0883E", "#58A6FF", "#3FB950", "#D29922", "#BC8CFF", "#FF7
 
 const CHART_TOOLTIP_STYLE = {
     contentStyle: {
-        backgroundColor: "#161B22",
-        border: "1px solid #30363D",
+        backgroundColor: "#FFFFFF",
+        border: "1px solid #E5DDD0",
         borderRadius: "8px",
-        color: "#E6EDF3",
+        color: "#1A1A1A",
         fontSize: "13px",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
     },
 };
 
@@ -53,7 +54,7 @@ function CustomNode(props: any) {
                 y={y + height / 2}
                 textAnchor="start"
                 dominantBaseline="central"
-                fill="#E6EDF3"
+                fill="#1A1A1A"
                 fontSize={12}
                 fontWeight={500}
             >
@@ -170,18 +171,18 @@ export default function DashboardPage() {
     }, [jobs, categoryData]);
 
     const statCards = [
-        { icon: Briefcase, label: "Total Tracked", value: stats.total, color: "#F0883E" },
-        { icon: Send, label: "Applied", value: stats.applied, color: "#58A6FF" },
-        { icon: Target, label: "Interviews", value: stats.interview, color: "#D29922" },
-        { icon: Trophy, label: "Offers", value: stats.offer, color: "#3FB950" },
+        { icon: Briefcase, label: "Total Tracked", value: stats.total, color: "#E8713A" },
+        { icon: Send, label: "Applied", value: stats.applied, color: "#3574D4" },
+        { icon: Target, label: "Interviews", value: stats.interview, color: "#C98A1A" },
+        { icon: Trophy, label: "Offers", value: stats.offer, color: "#2D8A4E" },
     ];
 
     // Pipeline funnel
     const funnelData = [
-        { stage: "Saved", count: stats.saved, color: "#8B949E" },
-        { stage: "Applied", count: stats.applied, color: "#58A6FF" },
-        { stage: "Interview", count: stats.interview, color: "#D29922" },
-        { stage: "Offer", count: stats.offer, color: "#3FB950" },
+        { stage: "Saved", count: stats.saved, color: "#7A7062" },
+        { stage: "Applied", count: stats.applied, color: "#3574D4" },
+        { stage: "Interview", count: stats.interview, color: "#C98A1A" },
+        { stage: "Offer", count: stats.offer, color: "#2D8A4E" },
     ];
 
     return (
@@ -297,8 +298,8 @@ export default function DashboardPage() {
                                     <h2 className="font-semibold text-sm mb-4">Top Companies Applied</h2>
                                     <ResponsiveContainer width="100%" height={260}>
                                         <BarChart data={companyData} layout="vertical" margin={{ left: 10 }}>
-                                            <XAxis type="number" stroke="#8B949E" fontSize={11} />
-                                            <YAxis type="category" dataKey="name" stroke="#8B949E" fontSize={11} width={85} />
+                                            <XAxis type="number" stroke="#B8AFA0" fontSize={11} />
+                                            <YAxis type="category" dataKey="name" stroke="#B8AFA0" fontSize={11} width={85} />
                                             <Tooltip {...CHART_TOOLTIP_STYLE} />
                                             <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                                                 {companyData.map((_, i) => (
@@ -317,15 +318,15 @@ export default function DashboardPage() {
                                 <h2 className="font-semibold text-sm mb-4">Application Timeline</h2>
                                 <ResponsiveContainer width="100%" height={220}>
                                     <LineChart data={timelineData}>
-                                        <XAxis dataKey="date" stroke="#8B949E" fontSize={11} />
-                                        <YAxis stroke="#8B949E" fontSize={11} />
+                                        <XAxis dataKey="date" stroke="#B8AFA0" fontSize={11} />
+                                        <YAxis stroke="#B8AFA0" fontSize={11} />
                                         <Tooltip {...CHART_TOOLTIP_STYLE} />
                                         <Line
                                             type="monotone"
                                             dataKey="applications"
-                                            stroke="#F0883E"
+                                            stroke="#E8713A"
                                             strokeWidth={2.5}
-                                            dot={{ fill: "#F0883E", r: 3 }}
+                                            dot={{ fill: "#E8713A", r: 3 }}
                                             activeDot={{ r: 5 }}
                                         />
                                     </LineChart>
@@ -364,10 +365,10 @@ export default function DashboardPage() {
                                             <p className="text-sm font-medium text-text-primary truncate">{job.title}</p>
                                             <p className="text-xs text-text-secondary">{job.company}</p>
                                         </div>
-                                        <span className={`pill text-xs ${job.status === "offer" ? "bg-green-500/10 text-green-400" :
-                                                job.status === "interview" ? "bg-yellow-500/10 text-yellow-400" :
-                                                    job.status === "applied" ? "bg-blue-500/10 text-blue-400" :
-                                                        "pill-dark"
+                                        <span className={`pill text-xs ${job.status === "offer" ? "bg-green-100 text-green-700" :
+                                            job.status === "interview" ? "bg-yellow-100 text-yellow-700" :
+                                                job.status === "applied" ? "bg-blue-100 text-blue-700" :
+                                                    "pill-dark"
                                             }`}>
                                             {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
                                         </span>

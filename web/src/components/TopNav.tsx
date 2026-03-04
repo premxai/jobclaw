@@ -13,7 +13,7 @@ export default function TopNav() {
     const pathname = usePathname();
 
     return (
-        <nav className="sticky top-0 z-50 bg-[#0D1117]/80 backdrop-blur-md border-b border-border">
+        <nav className="sticky top-0 z-50 bg-[#FAF7F2]/90 backdrop-blur-md border-b border-border">
             <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2 group">
@@ -33,7 +33,7 @@ export default function TopNav() {
                                 key={item.href}
                                 href={item.href}
                                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-                                        ? "text-accent bg-accent/10"
+                                        ? "text-accent bg-accent-light"
                                         : "text-text-secondary hover:text-text-primary hover:bg-surface-2"
                                     }`}
                             >
@@ -43,7 +43,7 @@ export default function TopNav() {
                     })}
                 </div>
 
-                {/* Mobile menu */}
+                {/* Mobile */}
                 <div className="md:hidden flex items-center gap-1">
                     {NAV_ITEMS.map((item) => {
                         const isActive = pathname === item.href ||
@@ -53,7 +53,7 @@ export default function TopNav() {
                                 key={item.href}
                                 href={item.href}
                                 className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${isActive
-                                        ? "text-accent bg-accent/10"
+                                        ? "text-accent bg-accent-light"
                                         : "text-text-secondary hover:text-text-primary"
                                     }`}
                             >

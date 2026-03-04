@@ -1,6 +1,4 @@
-// Job Card — clean white card matching the mood board reference
-// Company logo, title, tags, salary, apply button
-
+// Job Card — uniform height, warm theme
 import CompanyLogo from "./CompanyLogo";
 
 export interface Job {
@@ -90,22 +88,22 @@ export default function JobCard({ job, onSave, saved = false }: JobCardProps) {
     const time = timeAgo(job.date_posted || job.first_seen || "");
 
     return (
-        <div className="job-card group">
+        <div className="job-card">
             {/* Header: logo + company + time + save */}
             <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-3">
                     <CompanyLogo company={job.company} size="md" />
                     <div>
-                        <p className="text-sm font-medium text-gray-900">{job.company}</p>
-                        {time && <p className="text-xs text-gray-400">{time}</p>}
+                        <p className="text-sm font-medium text-text-primary">{job.company}</p>
+                        {time && <p className="text-xs text-text-secondary">{time}</p>}
                     </div>
                 </div>
                 {onSave && (
                     <button
                         onClick={(e) => { e.preventDefault(); onSave(job); }}
                         className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${saved
-                                ? "bg-gray-900 text-white border-gray-900"
-                                : "bg-white text-gray-500 border-gray-200 hover:border-gray-400"
+                                ? "bg-accent text-white border-accent"
+                                : "bg-white text-text-secondary border-border hover:border-accent"
                             }`}
                     >
                         {saved ? "Saved ✓" : "Save"}
@@ -113,29 +111,28 @@ export default function JobCard({ job, onSave, saved = false }: JobCardProps) {
                 )}
             </div>
 
-            {/* Title */}
-            <h3 className="text-lg font-bold text-gray-900 mb-3 leading-tight">
+            {/* Title — fixed 2 lines */}
+            <h3 className="text-base font-bold text-text-primary mb-3 leading-tight line-clamp-2 min-h-[2.5rem]">
                 {job.title}
             </h3>
 
-            {/* Tags */}
-            <div className="flex flex-wrap gap-2 mb-4">
-                {category && (
-                    <span className="pill-white">{category}</span>
-                )}
+            {/* Tags — fixed height area */}
+            <div className="flex flex-wrap gap-1.5 mb-4 min-h-[2rem]">
+                {category && <span className="pill pill-accent">{category}</span>}
                 {job.location && (
-                    <span className="pill-white">{job.location.length > 25 ? job.location.slice(0, 25) + "…" : job.location}</span>
+                    <span className="pill pill-white">{job.location.length > 22 ? job.location.slice(0, 22) + "…" : job.location}</span>
                 )}
-                <span className="pill-white">{sourceLabel(job.source_ats)}</span>
+                <span className="pill pill-white">{sourceLabel(job.source_ats)}</span>
             </div>
 
+            {/* Spacer to push footer to bottom */}
+            <div className="flex-1" />
+
             {/* Footer: salary + apply */}
-            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+            <div className="flex items-center justify-between pt-3 border-t border-border">
                 <div>
-                    {salary && <p className="text-sm font-bold text-gray-900">{salary}</p>}
-                    {!salary && job.location && (
-                        <p className="text-xs text-gray-400">{job.location}</p>
-                    )}
+                    {salary && <p className="text-sm font-bold text-text-primary">{salary}</p>}
+                    {!salary && <p className="text-xs text-text-secondary">{job.location || "—"}</p>}
                 </div>
                 <a
                     href={job.url}

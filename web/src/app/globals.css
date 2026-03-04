@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 /* ═══════════════════════════════════════════════════════════
-   JobClaw — Global Styles
-   Typography: Lexend | Theme: Dark | Style: Clean & Minimal
+   JobClaw — Warm Theme
+   Typography: Lexend | Theme: Warm Cream | Style: Clean
    ═══════════════════════════════════════════════════════════ */
 
 @layer base {
@@ -21,55 +21,53 @@
   }
 
   body {
-    background-color: #0D1117;
-    color: #E6EDF3;
+    background-color: #FAF7F2;
+    color: #1A1A1A;
     font-family: var(--font-lexend), 'Lexend', system-ui, sans-serif;
     line-height: 1.6;
     min-height: 100vh;
   }
 
-  /* Selection */
   ::selection {
-    background: rgba(240, 136, 62, 0.3);
-    color: #E6EDF3;
+    background: rgba(232, 113, 58, 0.2);
+    color: #1A1A1A;
   }
 
-  /* Scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
 
   ::-webkit-scrollbar-track {
-    background: #0D1117;
+    background: #FAF7F2;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #30363D;
+    background: #D5CEC2;
     border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #484F58;
+    background: #B8AFA0;
   }
 
-  /* Focus */
   *:focus-visible {
-    outline: 2px solid #F0883E;
+    outline: 2px solid #E8713A;
     outline-offset: 2px;
   }
 }
 
 @layer components {
 
-  /* Job card — the white card from the mood board */
+  /* Job card — uniform height with flex layout */
   .job-card {
-    @apply bg-white rounded-xl p-5 transition-all duration-200;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    @apply bg-white rounded-xl p-5 transition-all duration-200 flex flex-col h-full;
+    border: 1px solid #E5DDD0;
   }
 
   .job-card:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    border-color: #E8713A;
+    box-shadow: 0 4px 20px rgba(232, 113, 58, 0.08);
     transform: translateY(-2px);
   }
 
@@ -79,20 +77,23 @@
   }
 
   .pill-dark {
-    @apply bg-surface-2 text-text-secondary border border-border;
+    @apply bg-surface-2 text-text-secondary;
+    border: 1px solid #E5DDD0;
   }
 
   .pill-accent {
-    @apply bg-accent/10 text-accent;
+    background: #FFF0E6;
+    color: #E8713A;
   }
 
   .pill-white {
-    @apply bg-gray-100 text-gray-700;
+    @apply bg-surface-2 text-text-secondary;
   }
 
   /* Stat card */
   .stat-card {
-    @apply bg-surface rounded-xl border border-border p-5;
+    @apply bg-white rounded-xl p-5;
+    border: 1px solid #E5DDD0;
   }
 
   /* Section heading */
@@ -102,11 +103,12 @@
 
   /* CTA button */
   .btn-primary {
-    @apply inline-flex items-center justify-center px-5 py-2.5 bg-accent text-white font-semibold rounded-lg transition-colors duration-150 text-sm;
+    @apply inline-flex items-center justify-center px-5 py-2.5 text-white font-semibold rounded-lg transition-colors duration-150 text-sm;
+    background: #E8713A;
   }
 
   .btn-primary:hover {
-    @apply bg-accent-hover;
+    background: #D4612E;
   }
 
   .btn-dark {
@@ -118,7 +120,8 @@
   }
 
   .btn-outline {
-    @apply inline-flex items-center justify-center px-5 py-2.5 bg-transparent text-text-primary border border-border font-medium rounded-lg transition-colors duration-150 text-sm;
+    @apply inline-flex items-center justify-center px-5 py-2.5 bg-white text-text-primary font-medium rounded-lg transition-colors duration-150 text-sm;
+    border: 1px solid #E5DDD0;
   }
 
   .btn-outline:hover {
@@ -127,17 +130,18 @@
 
   /* Kanban column */
   .kanban-column {
-    @apply bg-surface/50 rounded-xl border border-border p-4 min-h-[400px];
-    backdrop-filter: blur(8px);
+    @apply bg-surface-2 rounded-xl p-4 min-h-[400px];
+    border: 1px solid #E5DDD0;
   }
 
   /* Kanban card */
   .kanban-card {
-    @apply bg-surface-2 rounded-lg border border-border p-4 cursor-grab transition-all duration-150;
+    @apply bg-white rounded-lg p-4 cursor-grab transition-all duration-150;
+    border: 1px solid #E5DDD0;
   }
 
   .kanban-card:hover {
-    @apply border-accent/50;
+    border-color: #E8713A;
   }
 
   .kanban-card:active {
@@ -146,24 +150,17 @@
 
   /* Input field */
   .input-field {
-    @apply w-full bg-surface border border-border rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary text-sm transition-colors focus:border-accent focus:outline-none;
+    @apply w-full bg-white rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary text-sm transition-colors focus:outline-none;
+    border: 1px solid #E5DDD0;
+  }
+
+  .input-field:focus {
+    border-color: #E8713A;
   }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
-  }
-
-  .animate-delay-100 {
-    animation-delay: 100ms;
-  }
-
-  .animate-delay-200 {
-    animation-delay: 200ms;
-  }
-
-  .animate-delay-300 {
-    animation-delay: 300ms;
   }
 }

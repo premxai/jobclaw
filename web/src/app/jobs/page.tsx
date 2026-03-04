@@ -25,7 +25,6 @@ export default function JobFeedPage() {
     const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
     const LIMIT = 12;
 
-    // Load saved jobs from localStorage
     useEffect(() => {
         const saved = localStorage.getItem("jobclaw_saved");
         if (saved) {
@@ -41,7 +40,6 @@ export default function JobFeedPage() {
         const data = await fetchJobs({ search, page, limit: LIMIT });
         let filtered = data.jobs;
 
-        // Client-side filtering (since API may not support category/source filters)
         if (selectedCategories.size > 0) {
             filtered = filtered.filter((j) => {
                 try {
@@ -93,7 +91,6 @@ export default function JobFeedPage() {
         const saved = localStorage.getItem("jobclaw_saved");
         let arr: Job[] = [];
         try { arr = JSON.parse(saved || "[]"); } catch { }
-
         const exists = arr.find((j) => j.internal_hash === job.internal_hash);
         if (exists) {
             arr = arr.filter((j) => j.internal_hash !== job.internal_hash);
@@ -113,7 +110,7 @@ export default function JobFeedPage() {
             <div className="max-w-7xl mx-auto px-6 py-8">
                 {/* Search header */}
                 <div className="flex items-center gap-4 mb-8">
-                    <div className="flex-1 flex items-center bg-surface border border-border rounded-xl overflow-hidden focus-within:border-accent transition-colors">
+                    <div className="flex-1 flex items-center bg-white border border-border rounded-xl overflow-hidden focus-within:border-accent transition-colors shadow-sm">
                         <Search className="w-5 h-5 text-text-secondary ml-4 shrink-0" />
                         <input
                             type="text"
@@ -145,7 +142,6 @@ export default function JobFeedPage() {
                     {showFilters && (
                         <aside className="w-56 shrink-0 animate-slide-in">
                             <div className="sticky top-24 space-y-6">
-                                {/* Category */}
                                 <div>
                                     <h3 className="text-sm font-semibold text-text-primary mb-3">Category</h3>
                                     <div className="space-y-2">
@@ -155,17 +151,14 @@ export default function JobFeedPage() {
                                                     type="checkbox"
                                                     checked={selectedCategories.has(cat)}
                                                     onChange={() => toggleCategory(cat)}
-                                                    className="w-4 h-4 rounded border-border bg-surface accent-accent"
+                                                    className="w-4 h-4 rounded border-border accent-accent"
                                                 />
-                                                <span className="text-sm text-text-secondary group-hover:text-text-primary transition-colors">
-                                                    {cat}
-                                                </span>
+                                                <span className="text-sm text-text-secondary group-hover:text-text-primary transition-colors">{cat}</span>
                                             </label>
                                         ))}
                                     </div>
                                 </div>
 
-                                {/* Source */}
                                 <div>
                                     <h3 className="text-sm font-semibold text-text-primary mb-3">Source</h3>
                                     <div className="space-y-2">
@@ -175,17 +168,14 @@ export default function JobFeedPage() {
                                                     type="checkbox"
                                                     checked={selectedSources.has(src)}
                                                     onChange={() => toggleSource(src)}
-                                                    className="w-4 h-4 rounded border-border bg-surface accent-accent"
+                                                    className="w-4 h-4 rounded border-border accent-accent"
                                                 />
-                                                <span className="text-sm text-text-secondary group-hover:text-text-primary transition-colors">
-                                                    {src}
-                                                </span>
+                                                <span className="text-sm text-text-secondary group-hover:text-text-primary transition-colors">{src}</span>
                                             </label>
                                         ))}
                                     </div>
                                 </div>
 
-                                {/* Clear */}
                                 {activeFilters > 0 && (
                                     <button
                                         onClick={() => { setSelectedCategories(new Set()); setSelectedSources(new Set()); }}
@@ -209,14 +199,14 @@ export default function JobFeedPage() {
                         {loading ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                                 {Array.from({ length: 6 }).map((_, i) => (
-                                    <div key={i} className="bg-surface rounded-xl h-56 animate-pulse" />
+                                    <div key={i} className="bg-white rounded-xl border border-border h-56 animate-pulse" />
                                 ))}
                             </div>
                         ) : (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                                 {jobs.map((job, i) => (
                                     <div key={job.internal_hash || i} className="animate-fade-in" style={{ animationDelay: `${i * 30}ms` }}>
-                                        <Link href={`/jobs/${job.id}`}>
+                                        <Link href={`/jobs/${job.id}`} className="block h-full">
                                             <JobCard job={job} onSave={handleSave} saved={savedJobs.has(job.internal_hash)} />
                                         </Link>
                                     </div>
@@ -231,24 +221,11 @@ export default function JobFeedPage() {
                             </div>
                         )}
 
-                        {/* Pagination */}
                         {total > LIMIT && (
                             <div className="flex items-center justify-center gap-2 mt-10">
-                                <button
-                                    onClick={() => setPage(Math.max(1, page - 1))}
-                                    disabled={page === 1}
-                                    className="btn-outline disabled:opacity-30"
-                                >
-                                    Previous
-                                </button>
+                                <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="btn-outline disabled:opacity-30">Previous</button>
                                 <span className="text-sm text-text-secondary px-4">Page {page}</span>
-                                <button
-                                    onClick={() => setPage(page + 1)}
-                                    disabled={jobs.length < LIMIT}
-                                    className="btn-outline disabled:opacity-30"
-                                >
-                                    Next
-                                </button>
+                                <button onClick={() => setPage(page + 1)} disabled={jobs.length < LIMIT} className="btn-outline disabled:opacity-30">Next</button>
                             </div>
                         )}
                     </main>
