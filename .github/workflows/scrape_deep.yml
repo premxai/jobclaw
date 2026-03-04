@@ -10,7 +10,7 @@ name: "🔍 Deep Tier — LinkedIn, Indeed, Glassdoor via Brave Search (Daily)"
 
 on:
   schedule:
-    - cron: '0 6,18 * * *'    # 6 AM + 6 PM UTC every day
+    - cron: '0 6 * * *'    # 6 AM UTC daily (30 queries/day × 30 = 900/mo, free tier)
   workflow_dispatch:
 
 jobs:

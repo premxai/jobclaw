@@ -39,26 +39,57 @@ except ImportError:
 BRAVE_API_KEY = os.getenv("BRAVE_SEARCH_API_KEY", "")
 BRAVE_SEARCH_URL = "https://api.search.brave.com/res/v1/web/search"
 
-# Job search queries — each gets its own API call
-# Designed to maximize coverage across roles and platforms
+# ═══════════════════════════════════════════════════════════════════════
+# SEARCH QUERIES — 30 queries × 20 results each = ~600 results per run
+# Budget: 30 queries × 1 run/day × 30 days = 900/month (free tier = 1,000)
+# ═══════════════════════════════════════════════════════════════════════
+
 SEARCH_QUERIES = [
-    # AI/ML roles
-    {"q": "AI engineer jobs United States posted today", "category": "AI/ML"},
-    {"q": "machine learning engineer jobs hiring now USA", "category": "AI/ML"},
-    # SWE roles
-    {"q": "software engineer jobs United States posted today", "category": "SWE"},
-    {"q": "backend engineer jobs USA hiring now 2026", "category": "SWE"},
-    {"q": "frontend developer jobs remote United States", "category": "SWE"},
-    # Data roles
-    {"q": "data scientist jobs United States posted today", "category": "Data Science"},
-    {"q": "data engineer jobs hiring USA", "category": "Data Engineering"},
+    # ── AI/ML (7 queries) ────────────────────────────────────────────
+    {"q": "machine learning engineer jobs United States hiring", "category": "AI/ML"},
+    {"q": "AI engineer jobs USA remote", "category": "AI/ML"},
+    {"q": "NLP engineer LLM jobs United States", "category": "AI/ML"},
+    {"q": "computer vision engineer deep learning jobs USA", "category": "AI/ML"},
+    {"q": "MLOps engineer ML platform jobs hiring USA", "category": "AI/ML"},
+    {"q": "generative AI engineer jobs United States 2026", "category": "AI/ML"},
+    {"q": "applied scientist machine learning jobs USA", "category": "AI/ML"},
+
+    # ── SWE (7 queries) ──────────────────────────────────────────────
+    {"q": "software engineer jobs United States hiring now", "category": "SWE"},
+    {"q": "backend engineer Python Go jobs USA", "category": "SWE"},
+    {"q": "frontend engineer React jobs remote United States", "category": "SWE"},
+    {"q": "full stack developer jobs USA", "category": "SWE"},
+    {"q": "DevOps SRE cloud engineer jobs United States", "category": "SWE"},
+    {"q": "iOS Android mobile engineer jobs USA", "category": "SWE"},
+    {"q": "platform infrastructure engineer jobs USA hiring", "category": "SWE"},
+
+    # ── Data Science (3 queries) ─────────────────────────────────────
+    {"q": "data scientist jobs United States hiring", "category": "Data Science"},
+    {"q": "applied data scientist quantitative jobs USA", "category": "Data Science"},
+    {"q": "decision scientist analytics jobs United States", "category": "Data Science"},
+
+    # ── Data Engineering (3 queries) ─────────────────────────────────
+    {"q": "data engineer jobs United States hiring", "category": "Data Engineering"},
+    {"q": "analytics engineer data platform jobs USA", "category": "Data Engineering"},
+    {"q": "ETL data pipeline engineer jobs USA cloud", "category": "Data Engineering"},
+
+    # ── Data Analyst (3 queries) ─────────────────────────────────────
     {"q": "data analyst jobs United States entry level", "category": "Data Analyst"},
-    # New Grad / Internship
+    {"q": "business intelligence analyst jobs USA", "category": "Data Analyst"},
+    {"q": "product data analyst jobs United States", "category": "Data Analyst"},
+
+    # ── New Grad / Internship (4 queries) ────────────────────────────
     {"q": "new grad software engineer 2026 jobs USA", "category": "New Grad"},
-    {"q": "software engineering internship 2026 USA", "category": "New Grad"},
-    # Product / Research
-    {"q": "product manager tech jobs United States", "category": "Product"},
-    {"q": "research scientist AI jobs USA", "category": "Research"},
+    {"q": "entry level software engineer jobs United States", "category": "New Grad"},
+    {"q": "software engineering internship 2026 summer USA", "category": "New Grad"},
+    {"q": "rotational program technology 2026 new grad", "category": "New Grad"},
+
+    # ── Product (2 queries) ──────────────────────────────────────────
+    {"q": "technical product manager jobs United States", "category": "Product"},
+    {"q": "associate product manager tech jobs USA", "category": "Product"},
+
+    # ── Research (1 query) ───────────────────────────────────────────
+    {"q": "research scientist engineer AI jobs USA", "category": "Research"},
 ]
 
 # Domains that are job boards — used to identify and parse job listings
