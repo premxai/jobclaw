@@ -1,22 +1,21 @@
-name: "⚡ Medium Tier — ATS Companies, Sharded (Every 4 Hours)"
+name: "⚡ Medium Tier — ATS Companies, Sharded (Hourly Rotation)"
 
 # ┌────────────────────────────────────────────────────────────────────┐
-# │  MEDIUM TIER — runs every 4 hours, rotates shards                 │
+# │  MEDIUM TIER — runs every hour, rotates through 4 shards          │
 # │  Scrapers: Greenhouse, Lever, Ashby, SmartRecruiters,             │
 # │            Rippling, Workable, + Enterprise (Apple/Google/etc)    │
-# │  Strategy: 4 shards × ~3,000 companies each.                      │
-# │    00:00 UTC → shard 0  (~3k companies)                           │
-# │    04:00 UTC → shard 1  (~3k companies)                           │
-# │    08:00 UTC → shard 2  (~3k companies)                           │
-# │    12:00 UTC → shard 3  (~3k companies)                           │
-# │    16:00 UTC → shard 0  (cycle restarts every 16h)                │
-# │  Full 11,800+ company coverage every ~16 hours                    │
+# │  Strategy: 4 shards × ~3,000 companies each, 1 shard per hour    │
+# │    Hour 0 → shard 0  (~3k companies)                              │
+# │    Hour 1 → shard 1  (~3k companies)                              │
+# │    Hour 2 → shard 2  (~3k companies)                              │
+# │    Hour 3 → shard 3  (~3k companies)                              │
+# │    Hour 4 → shard 0  (cycle restarts — full coverage every 4h)   │
 # │  Duration: ~8-15 minutes per run                                  │
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
   schedule:
-    - cron: '0 0,4,8,12,16,20 * * *'   # Every 4 hours
+    - cron: '0 * * * *'   # Every hour
   workflow_dispatch:
     inputs:
       shard:
@@ -54,18 +53,17 @@ jobs:
           DISCORD_CHANNEL_PRODUCT: ${{ secrets.DISCORD_CHANNEL_PRODUCT }}
           DISCORD_CHANNEL_RESEARCH: ${{ secrets.DISCORD_CHANNEL_RESEARCH }}
         run: |
-          # Determine shard: use manual input if triggered via workflow_dispatch, else auto-rotate by hour
+          # Determine shard: use manual input or auto-rotate by hour
           SHARD_INPUT="${{ github.event.inputs.shard }}"
           if [ "$SHARD_INPUT" = "auto" ] || [ -z "$SHARD_INPUT" ]; then
-            SHARD=$(( ($(date +%H) / 4) % 4 ))
+            SHARD=$(( $(date +%H) % 4 ))
           else
             SHARD=$SHARD_INPUT
           fi
           echo "Running shard $SHARD/4"
-          # Window=24 ensures no jobs slip through between shard rotations.
-          # Each shard runs once every ~16 hours, so window must cover at least that.
+          # Window=4 is safe now — each shard runs once every 4 hours (no gaps)
           python scripts/ingestion/run_all_scrapers.py \
             --tier medium \
-            --window 24 \
+            --window 4 \
             --shard $SHARD \
             --skip-openclaw
