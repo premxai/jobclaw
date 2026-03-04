@@ -1,0 +1,51 @@
+name: "📋 Expand ATS Company Registry (Daily)"
+
+# ┌────────────────────────────────────────────────────────────────────┐
+# │  Runs once daily at 11 PM UTC                                     │
+# │  Auto-discovers new companies from GitHub company lists           │
+# │  and adds them to config/company_registry.json                    │
+# │  Commits changes back to the repo so the next scraper run         │
+# │  picks up the expanded registry automatically                     │
+# └────────────────────────────────────────────────────────────────────┘
+
+on:
+  schedule:
+    - cron: '0 23 * * *'   # 11 PM UTC daily (end of day)
+  workflow_dispatch:
+
+jobs:
+  expand-registry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install minimal dependencies
+        run: pip install requests
+
+      - name: Run registry expansion
+        run: python scripts/utils/expand_registry.py
+
+      - name: Commit expanded registry
+        run: |
+          git config user.name "JobClaw Bot"
+          git config user.email "bot@jobclaw.dev"
+          git add config/company_registry.json
+          # Only commit if there are actual changes
+          if git diff --cached --quiet; then
+            echo "No new companies discovered — registry unchanged."
+          else
+            ADDED=$(git diff --cached --stat | tail -1)
+            git commit -m "chore(registry): auto-expand company registry [bot]
+
+          $ADDED"
+            git push origin main
+            echo "✅ Registry expanded and pushed."
+          fi
