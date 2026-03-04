@@ -1,0 +1,45 @@
+import sys, sqlite3
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+# DB Stats
+db = Path('data/jobclaw.db')
+if db.exists():
+    conn = sqlite3.connect(db)
+    total = conn.execute('SELECT COUNT(*) FROM jobs').fetchone()[0]
+    active = conn.execute('SELECT COUNT(*) FROM jobs WHERE is_active=1').fetchone()[0]
+    sources = conn.execute('SELECT source_ats, COUNT(*) c FROM jobs GROUP BY source_ats ORDER BY c DESC LIMIT 15').fetchall()
+    recent_q = "SELECT COUNT(*) FROM jobs WHERE first_seen >= datetime('now','-24 hours')"
+    recent = conn.execute(recent_q).fetchone()[0]
+    print(f'Total jobs: {total}')
+    print(f'Active jobs: {active}')
+    print(f'Added last 24h: {recent}')
+    print('By source:')
+    for s, c in sources:
+        print(f'  {s or "unknown"}: {c}')
+    conn.close()
+else:
+    print('ERROR: No database found at data/jobclaw.db')
+
+print()
+print('Module import checks:')
+checks = [
+    ('RSS',        'scripts.ingestion.scrape_rss',        'run_rss_scraper'),
+    ('GitHub',     'scripts.ingestion.scrape_github',     'run_github_scraper'),
+    ('ATS',        'scripts.ingestion.scrape_ats',        'run_ats_scraper'),
+    ('Enterprise', 'scripts.ingestion.scrape_enterprise', None),
+    ('OpenClaw',   'scripts.ingestion.scrape_openclaw',   'run_openclaw_scraper'),
+    ('Discord',    'scripts.discord_push',                'push_new_jobs_to_discord'),
+    ('DB Utils',   'scripts.database.db_utils',           'get_connection'),
+    ('Role Filter','scripts.ingestion.role_filter',       'passes_role_filter'),
+]
+for name, mod, fn in checks:
+    try:
+        m = __import__(mod, fromlist=[fn] if fn else [''])
+        if fn and not hasattr(m, fn):
+            print(f'  [{name}] IMPORT OK — missing function: {fn}')
+        else:
+            print(f'  [{name}] OK')
+    except Exception as e:
+        print(f'  [{name}] IMPORT ERROR — {e}')
