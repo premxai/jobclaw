@@ -16,7 +16,7 @@ import json
 import os
 import sys
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -145,7 +145,7 @@ def _build_job_embed(job: dict) -> dict:
             {"name": "🏷️ Category", "value": category, "inline": True},
         ],
         "footer": {"text": f"JobClaw • {ats_label}"},
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
     if url:
