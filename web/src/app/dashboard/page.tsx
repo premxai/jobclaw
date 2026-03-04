@@ -1,12 +1,20 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import TopNav from "@/components/TopNav";
-import { fetchStats } from "@/lib/api";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Sankey, Layer, Rectangle } from "recharts";
-import { Activity, Building2, Layers, TrendingUp } from "lucide-react";
+import CompanyLogo from "@/components/CompanyLogo";
+import {
+    BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+    PieChart, Pie, Cell, LineChart, Line, Sankey,
+} from "recharts";
+import { Activity, Send, Target, Trophy, TrendingUp, Briefcase } from "lucide-react";
 
-// Chart colors
-const COLORS = ["#F0883E", "#58A6FF", "#3FB950", "#D29922", "#BC8CFF", "#FF7B72", "#79C0FF", "#FFA657"];
+// Vibrant Sankey link colors
+const SANKEY_COLORS = [
+    "#F0883E", "#58A6FF", "#3FB950", "#D29922", "#BC8CFF",
+    "#FF7B72", "#79C0FF", "#FFA657", "#7EE787", "#D2A8FF",
+];
+
+const PIE_COLORS = ["#F0883E", "#58A6FF", "#3FB950", "#D29922", "#BC8CFF", "#FF7B72", "#79C0FF", "#FFA657"];
 
 const CHART_TOOLTIP_STYLE = {
     contentStyle: {
@@ -16,70 +24,164 @@ const CHART_TOOLTIP_STYLE = {
         color: "#E6EDF3",
         fontSize: "13px",
     },
-    cursor: { fill: "rgba(240, 136, 62, 0.08)" },
 };
 
+// Custom Sankey link with color
+function CustomLink(props: any) {
+    const { sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, index } = props;
+    const color = SANKEY_COLORS[index % SANKEY_COLORS.length];
+    return (
+        <path
+            d={`M${sourceX},${sourceY} C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`}
+            fill="none"
+            stroke={color}
+            strokeWidth={linkWidth}
+            strokeOpacity={0.5}
+        />
+    );
+}
+
+// Custom Sankey node with color
+function CustomNode(props: any) {
+    const { x, y, width, height, index, payload } = props;
+    const color = SANKEY_COLORS[index % SANKEY_COLORS.length];
+    return (
+        <g>
+            <rect x={x} y={y} width={width} height={height} fill={color} rx={3} />
+            <text
+                x={x + width + 8}
+                y={y + height / 2}
+                textAnchor="start"
+                dominantBaseline="central"
+                fill="#E6EDF3"
+                fontSize={12}
+                fontWeight={500}
+            >
+                {payload?.name}
+            </text>
+        </g>
+    );
+}
+
+interface TrackedJob {
+    internal_hash: string;
+    title: string;
+    company: string;
+    location: string;
+    url: string;
+    date_posted: string;
+    source_ats: string;
+    status: string;
+    addedAt?: string;
+    keywords_matched?: string;
+    salary_min?: number | null;
+    salary_max?: number | null;
+}
+
 export default function DashboardPage() {
-    const [stats, setStats] = useState<any>(null);
+    const [jobs, setJobs] = useState<TrackedJob[]>([]);
 
     useEffect(() => {
-        fetchStats().then(setStats);
+        const saved = localStorage.getItem("jobclaw_saved");
+        if (saved) {
+            try { setJobs(JSON.parse(saved)); } catch { }
+        }
     }, []);
 
-    if (!stats) {
-        return (
-            <div className="min-h-screen">
-                <TopNav />
-                <div className="max-w-7xl mx-auto px-6 py-8">
-                    <div className="grid grid-cols-4 gap-5 mb-8">
-                        {[1, 2, 3, 4].map((i) => (
-                            <div key={i} className="stat-card h-24 animate-pulse" />
-                        ))}
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    // Derived stats
+    const stats = useMemo(() => {
+        const saved = jobs.filter((j) => j.status === "saved").length;
+        const applied = jobs.filter((j) => j.status === "applied").length;
+        const interview = jobs.filter((j) => j.status === "interview").length;
+        const offer = jobs.filter((j) => j.status === "offer").length;
+        const total = jobs.length;
+        const responseRate = total > 0 ? Math.round(((interview + offer) / Math.max(applied, 1)) * 100) : 0;
+        return { saved, applied, interview, offer, total, responseRate };
+    }, [jobs]);
 
-    // Transform data for charts
-    const categoryData = Object.entries(stats.categories || {}).map(([name, value]) => ({
-        name,
-        value: Number(value),
-    }));
+    // By category
+    const categoryData = useMemo(() => {
+        const map: Record<string, number> = {};
+        jobs.forEach((j) => {
+            let cat = "Other";
+            try {
+                const kw = JSON.parse(j.keywords_matched || "[]");
+                if (kw.length > 0) cat = kw[0];
+            } catch { }
+            map[cat] = (map[cat] || 0) + 1;
+        });
+        return Object.entries(map).map(([name, value]) => ({ name, value }));
+    }, [jobs]);
 
-    const sourceData = Object.entries(stats.by_source || {})
-        .map(([name, value]) => ({ name: formatSourceName(name), value: Number(value) }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 8);
+    // By company (top 8)
+    const companyData = useMemo(() => {
+        const map: Record<string, number> = {};
+        jobs.forEach((j) => { map[j.company] = (map[j.company] || 0) + 1; });
+        return Object.entries(map)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 8);
+    }, [jobs]);
 
-    // Sankey data: Source → Category flow
-    const sankeyNodes = [
-        ...new Set([...sourceData.map((s) => s.name), ...categoryData.map((c) => c.name)]),
-    ].map((name) => ({ name }));
+    // Application timeline (by week added)
+    const timelineData = useMemo(() => {
+        const dayMap: Record<string, number> = {};
+        jobs.forEach((j) => {
+            const d = j.addedAt || j.date_posted || new Date().toISOString();
+            const day = new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+            dayMap[day] = (dayMap[day] || 0) + 1;
+        });
+        return Object.entries(dayMap).map(([date, count]) => ({ date, applications: count }));
+    }, [jobs]);
 
-    const sankeyLinks = sourceData.flatMap((source) =>
-        categoryData.map((cat) => ({
-            source: sankeyNodes.findIndex((n) => n.name === source.name),
-            target: sankeyNodes.findIndex((n) => n.name === cat.name),
-            value: Math.max(1, Math.round((source.value * cat.value) / stats.total_jobs)),
-        }))
-    ).filter((l) => l.value > 1 && l.source !== -1 && l.target !== -1);
+    // Sankey: Status → Category flow
+    const sankeyData = useMemo(() => {
+        if (jobs.length === 0) return null;
 
-    // Simulated daily trend data
-    const trendData = Array.from({ length: 14 }, (_, i) => {
-        const d = new Date();
-        d.setDate(d.getDate() - (13 - i));
-        return {
-            date: d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-            jobs: Math.floor(20 + Math.random() * 40 + i * 3),
-        };
-    });
+        const statuses = ["Saved", "Applied", "Interview", "Offer"];
+        const categories = [...new Set(categoryData.map((c) => c.name))];
+        const nodes = [...statuses, ...categories].map((name) => ({ name }));
+
+        const linkMap: Record<string, number> = {};
+        jobs.forEach((j) => {
+            const statusLabel = j.status.charAt(0).toUpperCase() + j.status.slice(1);
+            let cat = "Other";
+            try {
+                const kw = JSON.parse(j.keywords_matched || "[]");
+                if (kw.length > 0) cat = kw[0];
+            } catch { }
+            const key = `${statusLabel}→${cat}`;
+            linkMap[key] = (linkMap[key] || 0) + 1;
+        });
+
+        const links = Object.entries(linkMap)
+            .map(([key, value]) => {
+                const [src, tgt] = key.split("→");
+                return {
+                    source: nodes.findIndex((n) => n.name === src),
+                    target: nodes.findIndex((n) => n.name === tgt),
+                    value,
+                };
+            })
+            .filter((l) => l.source !== -1 && l.target !== -1 && l.value > 0);
+
+        if (links.length === 0) return null;
+        return { nodes, links };
+    }, [jobs, categoryData]);
 
     const statCards = [
-        { icon: Activity, label: "Total Jobs", value: stats.total_jobs.toLocaleString(), color: "#F0883E" },
-        { icon: Building2, label: "Companies", value: stats.total_companies.toLocaleString(), color: "#58A6FF" },
-        { icon: Layers, label: "Sources", value: String(stats.sources), color: "#3FB950" },
-        { icon: TrendingUp, label: "Categories", value: String(Object.keys(stats.categories || {}).length), color: "#D29922" },
+        { icon: Briefcase, label: "Total Tracked", value: stats.total, color: "#F0883E" },
+        { icon: Send, label: "Applied", value: stats.applied, color: "#58A6FF" },
+        { icon: Target, label: "Interviews", value: stats.interview, color: "#D29922" },
+        { icon: Trophy, label: "Offers", value: stats.offer, color: "#3FB950" },
+    ];
+
+    // Pipeline funnel
+    const funnelData = [
+        { stage: "Saved", count: stats.saved, color: "#8B949E" },
+        { stage: "Applied", count: stats.applied, color: "#58A6FF" },
+        { stage: "Interview", count: stats.interview, color: "#D29922" },
+        { stage: "Offer", count: stats.offer, color: "#3FB950" },
     ];
 
     return (
@@ -87,14 +189,22 @@ export default function DashboardPage() {
             <TopNav />
 
             <div className="max-w-7xl mx-auto px-6 py-8">
-                <h1 className="text-3xl font-bold tracking-tight mb-8">Dashboard</h1>
+                <div className="mb-8">
+                    <h1 className="text-3xl font-bold tracking-tight mb-1">My Dashboard</h1>
+                    <p className="text-text-secondary text-sm">
+                        Your job application insights and pipeline overview
+                    </p>
+                </div>
 
                 {/* Stat cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
                     {statCards.map((stat, i) => (
                         <div key={i} className="stat-card animate-slide-up" style={{ animationDelay: `${i * 50}ms` }}>
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: stat.color + "15" }}>
+                                <div
+                                    className="w-10 h-10 rounded-lg flex items-center justify-center"
+                                    style={{ backgroundColor: stat.color + "15" }}
+                                >
                                     <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
                                 </div>
                                 <div>
@@ -106,106 +216,168 @@ export default function DashboardPage() {
                     ))}
                 </div>
 
-                {/* Charts grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
-                    {/* Jobs by Category — Pie */}
-                    <div className="stat-card">
-                        <h2 className="font-semibold text-sm mb-4">Jobs by Category</h2>
-                        <ResponsiveContainer width="100%" height={280}>
-                            <PieChart>
-                                <Pie
-                                    data={categoryData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={60}
-                                    outerRadius={100}
-                                    paddingAngle={3}
-                                    dataKey="value"
-                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                    labelLine={false}
-                                >
-                                    {categoryData.map((_, i) => (
-                                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip {...CHART_TOOLTIP_STYLE} />
-                            </PieChart>
-                        </ResponsiveContainer>
+                {jobs.length === 0 ? (
+                    // Empty state
+                    <div className="text-center py-20 animate-fade-in">
+                        <p className="text-6xl mb-4">📊</p>
+                        <h2 className="text-xl font-bold text-text-primary mb-2">No application data yet</h2>
+                        <p className="text-text-secondary mb-6">
+                            Save jobs from the feed and move them through your tracker to see insights here.
+                        </p>
+                        <a href="/jobs" className="btn-primary">Browse Jobs</a>
                     </div>
+                ) : (
+                    <>
+                        {/* Pipeline funnel */}
+                        <div className="stat-card mb-8 animate-fade-in">
+                            <h2 className="font-semibold text-sm mb-5">Application Pipeline</h2>
+                            <div className="flex items-end gap-3 h-40">
+                                {funnelData.map((stage, i) => {
+                                    const maxCount = Math.max(...funnelData.map((s) => s.count), 1);
+                                    const height = Math.max((stage.count / maxCount) * 100, 8);
+                                    return (
+                                        <div key={i} className="flex-1 flex flex-col items-center gap-2">
+                                            <span className="text-lg font-bold" style={{ color: stage.color }}>
+                                                {stage.count}
+                                            </span>
+                                            <div
+                                                className="w-full rounded-t-lg transition-all duration-500"
+                                                style={{
+                                                    height: `${height}%`,
+                                                    backgroundColor: stage.color,
+                                                    opacity: 0.8,
+                                                }}
+                                            />
+                                            <span className="text-xs text-text-secondary">{stage.stage}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                            {stats.applied > 0 && (
+                                <div className="mt-4 pt-4 border-t border-border text-center">
+                                    <p className="text-sm text-text-secondary">
+                                        Response rate:{" "}
+                                        <span className="font-bold text-accent">{stats.responseRate}%</span>
+                                    </p>
+                                </div>
+                            )}
+                        </div>
 
-                    {/* Top Sources — Bar */}
-                    <div className="stat-card">
-                        <h2 className="font-semibold text-sm mb-4">Top Sources</h2>
-                        <ResponsiveContainer width="100%" height={280}>
-                            <BarChart data={sourceData} layout="vertical" margin={{ left: 10 }}>
-                                <XAxis type="number" stroke="#8B949E" fontSize={11} />
-                                <YAxis type="category" dataKey="name" stroke="#8B949E" fontSize={11} width={90} />
-                                <Tooltip {...CHART_TOOLTIP_STYLE} />
-                                <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                                    {sourceData.map((_, i) => (
-                                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
+                            {/* Jobs by Category — Pie */}
+                            {categoryData.length > 0 && (
+                                <div className="stat-card">
+                                    <h2 className="font-semibold text-sm mb-4">Applications by Category</h2>
+                                    <ResponsiveContainer width="100%" height={260}>
+                                        <PieChart>
+                                            <Pie
+                                                data={categoryData}
+                                                cx="50%"
+                                                cy="50%"
+                                                innerRadius={55}
+                                                outerRadius={95}
+                                                paddingAngle={3}
+                                                dataKey="value"
+                                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                                                labelLine={false}
+                                            >
+                                                {categoryData.map((_, i) => (
+                                                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip {...CHART_TOOLTIP_STYLE} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            )}
 
-                {/* Trend — Line chart (full width) */}
-                <div className="stat-card mb-8">
-                    <h2 className="font-semibold text-sm mb-4">Jobs Discovered Over Time</h2>
-                    <ResponsiveContainer width="100%" height={250}>
-                        <LineChart data={trendData}>
-                            <XAxis dataKey="date" stroke="#8B949E" fontSize={11} />
-                            <YAxis stroke="#8B949E" fontSize={11} />
-                            <Tooltip {...CHART_TOOLTIP_STYLE} />
-                            <Line
-                                type="monotone"
-                                dataKey="jobs"
-                                stroke="#F0883E"
-                                strokeWidth={2.5}
-                                dot={{ fill: "#F0883E", r: 3 }}
-                                activeDot={{ r: 5 }}
-                            />
-                        </LineChart>
-                    </ResponsiveContainer>
-                </div>
+                            {/* Top Companies — Bar */}
+                            {companyData.length > 0 && (
+                                <div className="stat-card">
+                                    <h2 className="font-semibold text-sm mb-4">Top Companies Applied</h2>
+                                    <ResponsiveContainer width="100%" height={260}>
+                                        <BarChart data={companyData} layout="vertical" margin={{ left: 10 }}>
+                                            <XAxis type="number" stroke="#8B949E" fontSize={11} />
+                                            <YAxis type="category" dataKey="name" stroke="#8B949E" fontSize={11} width={85} />
+                                            <Tooltip {...CHART_TOOLTIP_STYLE} />
+                                            <Bar dataKey="value" radius={[0, 4, 4, 0]}>
+                                                {companyData.map((_, i) => (
+                                                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                                                ))}
+                                            </Bar>
+                                        </BarChart>
+                                    </ResponsiveContainer>
+                                </div>
+                            )}
+                        </div>
 
-                {/* Sankey — Source to Category Flow */}
-                {sankeyLinks.length > 0 && (
-                    <div className="stat-card">
-                        <h2 className="font-semibold text-sm mb-4">Source → Category Flow</h2>
-                        <p className="text-xs text-text-secondary mb-4">How jobs flow from sources into categories</p>
-                        <ResponsiveContainer width="100%" height={350}>
-                            <Sankey
-                                data={{ nodes: sankeyNodes, links: sankeyLinks }}
-                                nodeWidth={12}
-                                nodePadding={24}
-                                margin={{ left: 0, right: 150, top: 10, bottom: 10 }}
-                                link={{ stroke: "#30363D", strokeOpacity: 0.5 }}
-                            >
-                                <Tooltip {...CHART_TOOLTIP_STYLE} />
-                            </Sankey>
-                        </ResponsiveContainer>
-                    </div>
+                        {/* Application Timeline */}
+                        {timelineData.length > 1 && (
+                            <div className="stat-card mb-8">
+                                <h2 className="font-semibold text-sm mb-4">Application Timeline</h2>
+                                <ResponsiveContainer width="100%" height={220}>
+                                    <LineChart data={timelineData}>
+                                        <XAxis dataKey="date" stroke="#8B949E" fontSize={11} />
+                                        <YAxis stroke="#8B949E" fontSize={11} />
+                                        <Tooltip {...CHART_TOOLTIP_STYLE} />
+                                        <Line
+                                            type="monotone"
+                                            dataKey="applications"
+                                            stroke="#F0883E"
+                                            strokeWidth={2.5}
+                                            dot={{ fill: "#F0883E", r: 3 }}
+                                            activeDot={{ r: 5 }}
+                                        />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        )}
+
+                        {/* Colorful Sankey — Status → Category Flow */}
+                        {sankeyData && (
+                            <div className="stat-card">
+                                <h2 className="font-semibold text-sm mb-2">Application Flow</h2>
+                                <p className="text-xs text-text-secondary mb-4">Pipeline stage → Job category</p>
+                                <ResponsiveContainer width="100%" height={320}>
+                                    <Sankey
+                                        data={sankeyData}
+                                        nodeWidth={14}
+                                        nodePadding={28}
+                                        margin={{ left: 0, right: 160, top: 10, bottom: 10 }}
+                                        link={<CustomLink />}
+                                        node={<CustomNode />}
+                                    >
+                                        <Tooltip {...CHART_TOOLTIP_STYLE} />
+                                    </Sankey>
+                                </ResponsiveContainer>
+                            </div>
+                        )}
+
+                        {/* Recent activity */}
+                        <div className="stat-card mt-8">
+                            <h2 className="font-semibold text-sm mb-4">Recent Activity</h2>
+                            <div className="space-y-3">
+                                {jobs.slice(0, 5).map((job) => (
+                                    <div key={job.internal_hash} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
+                                        <CompanyLogo company={job.company} size="sm" />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium text-text-primary truncate">{job.title}</p>
+                                            <p className="text-xs text-text-secondary">{job.company}</p>
+                                        </div>
+                                        <span className={`pill text-xs ${job.status === "offer" ? "bg-green-500/10 text-green-400" :
+                                                job.status === "interview" ? "bg-yellow-500/10 text-yellow-400" :
+                                                    job.status === "applied" ? "bg-blue-500/10 text-blue-400" :
+                                                        "pill-dark"
+                                            }`}>
+                                            {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </>
                 )}
             </div>
         </div>
     );
-}
-
-function formatSourceName(ats: string): string {
-    const map: Record<string, string> = {
-        greenhouse: "Greenhouse",
-        lever: "Lever",
-        workday: "Workday",
-        "github-swe-newgrad": "GitHub SWE",
-        "github-ai-newgrad": "GitHub AI",
-        "github-internship": "GitHub Intern",
-        "github-new-grad": "GitHub Grad",
-        indeed: "Indeed",
-        linkedin: "LinkedIn",
-        brave_search: "Brave",
-    };
-    return map[ats] || ats;
 }
