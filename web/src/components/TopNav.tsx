@@ -1,22 +1,67 @@
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+"use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-export function TopNav() {
+const NAV_ITEMS = [
+    { href: "/", label: "Home" },
+    { href: "/jobs", label: "Jobs" },
+    { href: "/tracker", label: "Tracker" },
+    { href: "/dashboard", label: "Dashboard" },
+];
+
+export default function TopNav() {
+    const pathname = usePathname();
+
     return (
-        <nav className="w-full flex items-center justify-between py-6 px-8 max-w-7xl mx-auto">
-            <div className="flex items-center gap-2 font-semibold text-lg hover:opacity-80 transition-opacity cursor-pointer">
-                <span className="text-foreground">JobClaw</span>
-            </div>
+        <nav className="sticky top-0 z-50 bg-[#0D1117]/80 backdrop-blur-md border-b border-border">
+            <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+                {/* Logo */}
+                <Link href="/" className="flex items-center gap-2 group">
+                    <span className="text-2xl">🦀</span>
+                    <span className="text-lg font-bold text-text-primary tracking-tight">
+                        Job<span className="text-accent">Claw</span>
+                    </span>
+                </Link>
 
-            <div className="hidden md:flex items-center gap-8 text-sm font-medium text-foreground/80">
-                <Link href="/jobs" className="hover:text-primary transition-colors">Jobs</Link>
-                <Link href="/companies" className="hover:text-primary transition-colors">Companies</Link>
-                <Link href="/blog" className="hover:text-primary transition-colors">Blog</Link>
-            </div>
+                {/* Nav links */}
+                <div className="hidden md:flex items-center gap-1">
+                    {NAV_ITEMS.map((item) => {
+                        const isActive = pathname === item.href ||
+                            (item.href !== "/" && pathname.startsWith(item.href));
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
+                                        ? "text-accent bg-accent/10"
+                                        : "text-text-secondary hover:text-text-primary hover:bg-surface-2"
+                                    }`}
+                            >
+                                {item.label}
+                            </Link>
+                        );
+                    })}
+                </div>
 
-            <div className="flex items-center gap-4">
-                <Button variant="outline" className="rounded-full px-6 border-slate-200">Sign in</Button>
-                <Button className="rounded-full px-6 bg-primary hover:bg-primary/90 text-white shadow-sm border-none">Post a job</Button>
+                {/* Mobile menu */}
+                <div className="md:hidden flex items-center gap-1">
+                    {NAV_ITEMS.map((item) => {
+                        const isActive = pathname === item.href ||
+                            (item.href !== "/" && pathname.startsWith(item.href));
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors ${isActive
+                                        ? "text-accent bg-accent/10"
+                                        : "text-text-secondary hover:text-text-primary"
+                                    }`}
+                            >
+                                {item.label}
+                            </Link>
+                        );
+                    })}
+                </div>
             </div>
         </nav>
     );

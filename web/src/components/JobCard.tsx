@@ -1,169 +1,151 @@
-/* eslint-disable @next/next/no-img-element */
-import { Button } from '@/components/ui/button';
-import { BookmarkIcon } from 'lucide-react';
+// Job Card — clean white card matching the mood board reference
+// Company logo, title, tags, salary, apply button
 
-export interface JobProps {
+import CompanyLogo from "./CompanyLogo";
+
+export interface Job {
+    id: number;
     internal_hash: string;
     title: string;
     company: string;
     location: string;
-    job_type?: string;
-    salary_min?: number;
-    salary_max?: number;
+    url: string;
+    date_posted: string;
+    source_ats: string;
+    salary_min?: number | null;
+    salary_max?: number | null;
     salary_currency?: string;
+    keywords_matched?: string;
+    description?: string;
     first_seen?: string;
-    source_ats?: string;
-    url?: string;
-    keywords_matched?: string[];
+    status?: string;
 }
 
-function formatSalary(min?: number, max?: number, currency?: string) {
-    const sym = currency === 'USD' ? '$' : '';
-    if (min && max) return `${sym}${Math.floor(min / 1000)}k – ${sym}${Math.floor(max / 1000)}k`;
-    if (min) return `${sym}${Math.floor(min / 1000)}k+`;
+function timeAgo(dateStr: string): string {
+    if (!dateStr) return "";
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now.getTime() - date.getTime();
+    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+    if (diffHrs < 1) return "just now";
+    if (diffHrs < 24) return `${diffHrs}h ago`;
+    const diffDays = Math.floor(diffHrs / 24);
+    if (diffDays === 1) return "1 day ago";
+    if (diffDays < 30) return `${diffDays} days ago`;
+    return dateStr;
+}
+
+function formatSalary(min?: number | null, max?: number | null): string | null {
+    if (!min && !max) return null;
+    const fmt = (n: number) => {
+        if (n >= 1000) return `$${Math.round(n / 1000)}k`;
+        return `$${n}`;
+    };
+    if (min && max) return `${fmt(min)} – ${fmt(max)}`;
+    if (min) return `${fmt(min)}+`;
+    if (max) return `Up to ${fmt(max)}`;
     return null;
 }
 
-function getAtsLabel(ats?: string) {
-    const map: Record<string, string> = {
-        linkedin: 'LinkedIn', indeed: 'Indeed', glassdoor: 'Glassdoor',
-        greenhouse: 'Greenhouse', lever: 'Lever', workday: 'Workday',
-        smartrecruiters: 'SmartRecruiters', ashby: 'Ashby',
-    };
-    return ats ? (map[ats.toLowerCase()] ?? ats) : 'Direct';
-}
-
-function formatDate(dateStr?: string) {
-    if (!dateStr) return 'Recently';
+function getCategory(keywords?: string): string | null {
+    if (!keywords) return null;
     try {
-        const d = new Date(dateStr);
-        const now = new Date();
-        const diffH = Math.floor((now.getTime() - d.getTime()) / 3600000);
-        if (diffH < 1) return 'Just now';
-        if (diffH < 24) return `${diffH}h ago`;
-        const diffD = Math.floor(diffH / 24);
-        if (diffD < 7) return `${diffD}d ago`;
-        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    } catch { return 'Recently'; }
+        const parsed = JSON.parse(keywords);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+    } catch {
+        return keywords;
+    }
+    return null;
 }
 
-/** Row-style job card for the main feed */
-export function JobCard({ job }: { job: JobProps }) {
-    const fallbackLogo = `https://ui-avatars.com/api/?name=${encodeURIComponent(job.company)}&background=e88b68&color=fff&size=64&bold=true&length=1`;
-    const salaryText = formatSalary(job.salary_min, job.salary_max, job.salary_currency);
-    const atsLabel = getAtsLabel(job.source_ats);
+function sourceLabel(ats: string): string {
+    const labels: Record<string, string> = {
+        greenhouse: "Greenhouse",
+        lever: "Lever",
+        workday: "Workday",
+        ashby: "Ashby",
+        rippling: "Rippling",
+        linkedin: "LinkedIn",
+        indeed: "Indeed",
+        glassdoor: "Glassdoor",
+        wellfound: "Wellfound",
+        brave_search: "Brave Search",
+        "github-swe-newgrad": "GitHub",
+        "github-ai-newgrad": "GitHub",
+        "github-internship": "GitHub",
+        "github-new-grad": "GitHub",
+    };
+    return labels[ats] || ats;
+}
+
+interface JobCardProps {
+    job: Job;
+    onSave?: (job: Job) => void;
+    saved?: boolean;
+}
+
+export default function JobCard({ job, onSave, saved = false }: JobCardProps) {
+    const salary = formatSalary(job.salary_min, job.salary_max);
+    const category = getCategory(job.keywords_matched);
+    const time = timeAgo(job.date_posted || job.first_seen || "");
 
     return (
-        <a
-            href={job.url || '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group bg-card hover:shadow-lg transition-all duration-200 rounded-2xl px-6 py-5 border border-black/[0.06] flex flex-col sm:flex-row items-start sm:items-center gap-5 mb-3 hover:-translate-y-px"
-        >
-            <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-black/5 bg-white shadow-sm flex items-center justify-center">
-                <img src={fallbackLogo} alt={`${job.company}`} className="w-full h-full object-cover" />
-            </div>
-
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xs font-semibold text-muted-foreground">{job.company}</span>
-                    <span className="text-muted-foreground/40">•</span>
-                    <span className="text-xs text-muted-foreground">{atsLabel}</span>
-                    <span className="text-muted-foreground/40">•</span>
-                    <span className="text-xs text-muted-foreground">{formatDate(job.first_seen)}</span>
+        <div className="job-card group">
+            {/* Header: logo + company + time + save */}
+            <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-3">
+                    <CompanyLogo company={job.company} size="md" />
+                    <div>
+                        <p className="text-sm font-medium text-gray-900">{job.company}</p>
+                        {time && <p className="text-xs text-gray-400">{time}</p>}
+                    </div>
                 </div>
-                <h3 className="text-[1.1rem] font-bold text-foreground group-hover:text-primary transition-colors leading-snug truncate pr-4">
-                    {job.title}
-                </h3>
-                <div className="flex flex-wrap items-center gap-2 mt-2.5">
-                    {job.location && (
-                        <span className="px-2.5 py-0.5 bg-muted rounded-md text-xs font-medium text-muted-foreground">{job.location}</span>
-                    )}
-                    {job.job_type && (
-                        <span className="px-2.5 py-0.5 bg-muted rounded-md text-xs font-medium text-muted-foreground">{job.job_type}</span>
-                    )}
-                    {(job.keywords_matched ?? []).slice(0, 3).map((kw) => (
-                        <span key={kw} className="px-2.5 py-0.5 bg-primary/10 text-primary/80 rounded-md text-xs font-medium">{kw}</span>
-                    ))}
-                </div>
-            </div>
-
-            <div className="flex items-center gap-3 self-end sm:self-auto">
-                {salaryText && (
-                    <span className="text-sm font-semibold text-green-700 bg-green-50 px-3 py-1 rounded-full border border-green-100 whitespace-nowrap">
-                        {salaryText}
-                    </span>
+                {onSave && (
+                    <button
+                        onClick={(e) => { e.preventDefault(); onSave(job); }}
+                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${saved
+                                ? "bg-gray-900 text-white border-gray-900"
+                                : "bg-white text-gray-500 border-gray-200 hover:border-gray-400"
+                            }`}
+                    >
+                        {saved ? "Saved ✓" : "Save"}
+                    </button>
                 )}
-                <Button
-                    onClick={(e) => e.preventDefault()}
-                    variant="ghost"
-                    size="icon"
-                    className="rounded-full text-muted-foreground hover:text-foreground hover:bg-muted h-9 w-9 shrink-0 border border-black/5"
-                >
-                    <BookmarkIcon className="w-4 h-4" />
-                </Button>
-                <Button className="rounded-full px-5 py-2 bg-foreground hover:bg-foreground/85 text-white font-semibold text-sm transition-all hover:scale-[1.02] border-none shadow-sm h-9">
-                    Apply
-                </Button>
-            </div>
-        </a>
-    );
-}
-
-/** Grid-style compact card for the /jobs page grid view */
-export function JobGridCard({ job }: { job: JobProps }) {
-    const fallbackLogo = `https://ui-avatars.com/api/?name=${encodeURIComponent(job.company)}&background=e88b68&color=fff&size=64&bold=true&length=1`;
-    const salaryText = formatSalary(job.salary_min, job.salary_max, job.salary_currency);
-
-    return (
-        <a
-            href={job.url || '#'}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group bg-white hover:shadow-lg transition-all duration-200 rounded-3xl p-6 border border-black/[0.06] flex flex-col gap-4 hover:-translate-y-px"
-        >
-            <div className="flex items-start justify-between">
-                <div className="w-12 h-12 rounded-xl overflow-hidden border border-black/5 bg-white shadow-sm flex items-center justify-center shrink-0">
-                    <img src={fallbackLogo} alt={job.company} className="w-full h-full object-cover" />
-                </div>
-                <Button
-                    onClick={(e) => e.preventDefault()}
-                    variant="outline"
-                    className="rounded-full text-xs h-8 px-3 border border-black/10 text-muted-foreground font-medium hover:bg-muted"
-                >
-                    <BookmarkIcon className="w-3 h-3 mr-1.5" />
-                    Save
-                </Button>
             </div>
 
-            <div>
-                <div className="text-xs text-muted-foreground mb-1 font-medium">{job.company} <span className="text-muted-foreground/50">·</span> {formatDate(job.first_seen)}</div>
-                <h3 className="text-xl font-bold text-foreground group-hover:text-primary transition-colors leading-tight">
-                    {job.title}
-                </h3>
-            </div>
+            {/* Title */}
+            <h3 className="text-lg font-bold text-gray-900 mb-3 leading-tight">
+                {job.title}
+            </h3>
 
-            <div className="flex flex-wrap gap-2">
-                {job.job_type && (
-                    <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold">{job.job_type}</span>
+            {/* Tags */}
+            <div className="flex flex-wrap gap-2 mb-4">
+                {category && (
+                    <span className="pill-white">{category}</span>
                 )}
                 {job.location && (
-                    <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold">{job.location}</span>
+                    <span className="pill-white">{job.location.length > 25 ? job.location.slice(0, 25) + "…" : job.location}</span>
                 )}
+                <span className="pill-white">{sourceLabel(job.source_ats)}</span>
             </div>
 
-            <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-50">
+            {/* Footer: salary + apply */}
+            <div className="flex items-center justify-between pt-3 border-t border-gray-100">
                 <div>
-                    {salaryText ? (
-                        <div className="text-base font-bold text-foreground">{salaryText}</div>
-                    ) : (
-                        <div className="text-sm text-muted-foreground font-medium">{job.location || 'Remote'}</div>
+                    {salary && <p className="text-sm font-bold text-gray-900">{salary}</p>}
+                    {!salary && job.location && (
+                        <p className="text-xs text-gray-400">{job.location}</p>
                     )}
                 </div>
-                <Button className="rounded-full px-5 py-2 bg-foreground hover:bg-foreground/85 text-white font-semibold text-sm transition-all hover:scale-[1.02] border-none shadow-sm h-9">
+                <a
+                    href={job.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-dark text-xs px-4 py-2"
+                >
                     Apply now
-                </Button>
+                </a>
             </div>
-        </a>
+        </div>
     );
 }

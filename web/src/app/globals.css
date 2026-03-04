@@ -2,35 +2,168 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════
+   JobClaw — Global Styles
+   Typography: Lexend | Theme: Dark | Style: Clean & Minimal
+   ═══════════════════════════════════════════════════════════ */
+
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: #0D1117;
+    color: #E6EDF3;
+    font-family: var(--font-lexend), 'Lexend', system-ui, sans-serif;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Selection */
+  ::selection {
+    background: rgba(240, 136, 62, 0.3);
+    color: #E6EDF3;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0D1117;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #30363D;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #484F58;
+  }
+
+  /* Focus */
+  *:focus-visible {
+    outline: 2px solid #F0883E;
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+
+  /* Job card — the white card from the mood board */
+  .job-card {
+    @apply bg-white rounded-xl p-5 transition-all duration-200;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  }
+
+  .job-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-2px);
+  }
+
+  /* Pill/tag */
+  .pill {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+  }
+
+  .pill-dark {
+    @apply bg-surface-2 text-text-secondary border border-border;
+  }
+
+  .pill-accent {
+    @apply bg-accent/10 text-accent;
+  }
+
+  .pill-white {
+    @apply bg-gray-100 text-gray-700;
+  }
+
+  /* Stat card */
+  .stat-card {
+    @apply bg-surface rounded-xl border border-border p-5;
+  }
+
+  /* Section heading */
+  .section-heading {
+    @apply text-xl font-bold tracking-tight text-text-primary;
+  }
+
+  /* CTA button */
+  .btn-primary {
+    @apply inline-flex items-center justify-center px-5 py-2.5 bg-accent text-white font-semibold rounded-lg transition-colors duration-150 text-sm;
+  }
+
+  .btn-primary:hover {
+    @apply bg-accent-hover;
+  }
+
+  .btn-dark {
+    @apply inline-flex items-center justify-center px-5 py-2.5 bg-gray-900 text-white font-semibold rounded-lg transition-colors duration-150 text-sm;
+  }
+
+  .btn-dark:hover {
+    @apply bg-gray-800;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center px-5 py-2.5 bg-transparent text-text-primary border border-border font-medium rounded-lg transition-colors duration-150 text-sm;
+  }
+
+  .btn-outline:hover {
+    @apply bg-surface-2;
+  }
+
+  /* Kanban column */
+  .kanban-column {
+    @apply bg-surface/50 rounded-xl border border-border p-4 min-h-[400px];
+    backdrop-filter: blur(8px);
+  }
+
+  /* Kanban card */
+  .kanban-card {
+    @apply bg-surface-2 rounded-lg border border-border p-4 cursor-grab transition-all duration-150;
+  }
+
+  .kanban-card:hover {
+    @apply border-accent/50;
+  }
+
+  .kanban-card:active {
+    @apply cursor-grabbing;
+  }
+
+  /* Input field */
+  .input-field {
+    @apply w-full bg-surface border border-border rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary text-sm transition-colors focus:border-accent focus:outline-none;
+  }
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
-}
 
+  .animate-delay-100 {
+    animation-delay: 100ms;
+  }
 
+  .animate-delay-200 {
+    animation-delay: 200ms;
+  }
 
-@layer base {
-  :root {
-    --background: 45 30% 97%; /* #faf9f6 - warm off-white */
-    --foreground: 220 20% 15%; /* warm dark slate */
-    --card: 0 0% 100%;
-    --card-foreground: 220 20% 15%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 15%;
-    --primary: 16 74% 66%; /* #e88b68 - Coral */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 192 71% 21%; /* #0f4c5c - Dark Teal */
-    --secondary-foreground: 0 0% 100%;
-    --muted: 45 15% 93%;
-    --muted-foreground: 220 15% 45%;
-    --accent: 45 15% 93%;
-    --accent-foreground: 220 20% 15%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 93%; /* soft border */
-    --input: 0 0% 93%;
-    --ring: 16 74% 66%;
-    --radius: 0.75rem; /* softer, rounder */
+  .animate-delay-300 {
+    animation-delay: 300ms;
   }
 }

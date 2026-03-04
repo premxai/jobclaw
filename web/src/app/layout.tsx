@@ -1,15 +1,23 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Lexend } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+const lexend = Lexend({
   subsets: ["latin"],
-  variable: "--font-inter"
+  variable: "--font-lexend",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "JobClaw | Find Top Jobs",
-  description: "Find top jobs for AI Engineers and Developers.",
+  title: "JobClaw — Track Every Tech Job. Automatically.",
+  description:
+    "11,800+ companies monitored 24/7. Find AI/ML, SWE, Data, and New Grad jobs from Greenhouse, Lever, Workday, LinkedIn, and more.",
+  keywords: ["jobs", "tech jobs", "AI jobs", "software engineer", "new grad", "job board"],
+  openGraph: {
+    title: "JobClaw — Track Every Tech Job",
+    description: "11,800+ companies monitored. Updated every hour.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({
@@ -18,10 +26,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body
-        className={`${inter.variable} font-sans antialiased bg-background text-foreground`}
-      >
+    <html lang="en" className="dark">
+      <body className={`${lexend.variable} font-sans antialiased`}>
         {children}
       </body>
     </html>
