@@ -226,10 +226,12 @@ Legacy flags still work:
                         help="Legacy: 1hr window, skip slow platforms")
     parser.add_argument("--daily", action="store_true",
                         help="Legacy: 24hr window, all platforms")
-    parser.add_argument("--no-openclaw", action="store_true",
+    parser.add_argument("--no-openclaw", "--skip-openclaw", dest="no_openclaw", action="store_true",
                         help="Skip OpenClaw browser automation")
     parser.add_argument("--no-github", action="store_true",
                         help="Skip GitHub repo parsing")
+    parser.add_argument("--skip-ats", dest="skip_ats", action="store_true",
+                        help="Skip all ATS board scrapers (Greenhouse, Lever, etc.)")
     parser.add_argument("--window", type=int, default=None,
                         help="Time window in hours (overrides tier default)")
     parser.add_argument("--shard", type=str, default=None,
@@ -292,9 +294,17 @@ Legacy flags still work:
         else:
             shard_val = int(args.shard)
 
+    # CLI flags can override tier defaults for skip flags
+    if args.skip_ats:
+        skip_ats = True
+    if args.no_openclaw:
+        skip_openclaw = True
+    if args.no_github:
+        skip_github = True
+
     _log(f"[orchestrator] Tier={tier or 'default'}, Window={window}hr, "
          f"Shard={shard_val if shard_val is not None else 'ALL'}/{total_shards}, "
-         f"ATS=ON, "
+         f"ATS={'OFF' if skip_ats else 'ON'}, "
          f"Stealth={'ON' if not skip_openclaw else 'OFF'}")
 
     if sys.platform == "win32":

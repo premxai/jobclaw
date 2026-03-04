@@ -1,0 +1,50 @@
+name: "🚀 Fast Tier — RSS + GitHub (Every Hour)"
+
+# ┌────────────────────────────────────────────────────────────────────┐
+# │  FAST TIER — runs every hour                                       │
+# │  Scrapers: RSS feeds + GitHub job-board repos                     │
+# │  Duration: ~1-2 minutes per run                                    │
+# │  Coverage: RemoteOK, Remotive, WWR, Dice, Wellfound, YC, GitHub   │
+# └────────────────────────────────────────────────────────────────────┘
+
+on:
+  schedule:
+    - cron: '0 * * * *'       # Top of every hour
+  workflow_dispatch:
+
+jobs:
+  fast-scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10        # Fail fast if RSS/GitHub hangs
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run fast-tier scrapers (RSS + GitHub)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+          DISCORD_CHANNEL_AI: ${{ secrets.DISCORD_CHANNEL_AI }}
+          DISCORD_CHANNEL_SWE: ${{ secrets.DISCORD_CHANNEL_SWE }}
+          DISCORD_CHANNEL_DATA: ${{ secrets.DISCORD_CHANNEL_DATA }}
+          DISCORD_CHANNEL_NEWGRAD: ${{ secrets.DISCORD_CHANNEL_NEWGRAD }}
+          DISCORD_CHANNEL_PRODUCT: ${{ secrets.DISCORD_CHANNEL_PRODUCT }}
+          DISCORD_CHANNEL_RESEARCH: ${{ secrets.DISCORD_CHANNEL_RESEARCH }}
+        run: |
+          python scripts/ingestion/run_all_scrapers.py \
+            --tier fast \
+            --window 1 \
+            --skip-ats \
+            --skip-openclaw

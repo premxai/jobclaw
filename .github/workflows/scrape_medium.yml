@@ -1,0 +1,69 @@
+name: "⚡ Medium Tier — ATS Companies, Sharded (Every 4 Hours)"
+
+# ┌────────────────────────────────────────────────────────────────────┐
+# │  MEDIUM TIER — runs every 4 hours, rotates shards                 │
+# │  Scrapers: Greenhouse, Lever, Ashby, SmartRecruiters,             │
+# │            Rippling, Workable, + Enterprise (Apple/Google/etc)    │
+# │  Strategy: 4 shards × ~3,000 companies each.                      │
+# │    00:00 UTC → shard 0  (~3k companies)                           │
+# │    04:00 UTC → shard 1  (~3k companies)                           │
+# │    08:00 UTC → shard 2  (~3k companies)                           │
+# │    12:00 UTC → shard 3  (~3k companies)                           │
+# │    16:00 UTC → shard 0  (cycle restarts every 16h)                │
+# │  Full 11,800+ company coverage every ~16 hours                    │
+# │  Duration: ~8-15 minutes per run                                  │
+# └────────────────────────────────────────────────────────────────────┘
+
+on:
+  schedule:
+    - cron: '0 0,4,8,12,16,20 * * *'   # Every 4 hours
+  workflow_dispatch:
+    inputs:
+      shard:
+        description: 'Shard override (0-3, or "auto")'
+        default: 'auto'
+
+jobs:
+  medium-scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run medium-tier scrapers (ATS + Enterprise, sharded)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+          DISCORD_CHANNEL_AI: ${{ secrets.DISCORD_CHANNEL_AI }}
+          DISCORD_CHANNEL_SWE: ${{ secrets.DISCORD_CHANNEL_SWE }}
+          DISCORD_CHANNEL_DATA: ${{ secrets.DISCORD_CHANNEL_DATA }}
+          DISCORD_CHANNEL_NEWGRAD: ${{ secrets.DISCORD_CHANNEL_NEWGRAD }}
+          DISCORD_CHANNEL_PRODUCT: ${{ secrets.DISCORD_CHANNEL_PRODUCT }}
+          DISCORD_CHANNEL_RESEARCH: ${{ secrets.DISCORD_CHANNEL_RESEARCH }}
+        run: |
+          # Determine shard: use manual input if triggered via workflow_dispatch, else auto-rotate by hour
+          SHARD_INPUT="${{ github.event.inputs.shard }}"
+          if [ "$SHARD_INPUT" = "auto" ] || [ -z "$SHARD_INPUT" ]; then
+            SHARD=$(( ($(date +%H) / 4) % 4 ))
+          else
+            SHARD=$SHARD_INPUT
+          fi
+          echo "Running shard $SHARD/4"
+          python scripts/ingestion/run_all_scrapers.py \
+            --tier medium \
+            --window 4 \
+            --shard $SHARD \
+            --skip-openclaw

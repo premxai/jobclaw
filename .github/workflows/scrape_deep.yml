@@ -1,0 +1,67 @@
+name: "🔍 Deep Tier — LinkedIn, Indeed, Glassdoor via OpenClaw (Daily)"
+
+# ┌────────────────────────────────────────────────────────────────────┐
+# │  DEEP TIER — runs once daily at 6 AM UTC                         │
+# │  Scrapers: OpenClaw (LinkedIn, Indeed, Glassdoor)                 │
+# │            + RSS + GitHub for fresh daily baseline                │
+# │  Duration: ~15-30 minutes per run                                 │
+# │  Note: Runs with 1-hour window despite daily cadence because      │
+# │        OpenClaw only scrapes recent pages regardless              │
+# └────────────────────────────────────────────────────────────────────┘
+
+on:
+  schedule:
+    - cron: '0 6 * * *'    # 6:00 AM UTC every day
+  workflow_dispatch:
+
+jobs:
+  deep-scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js (for OpenClaw CLI)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install OpenClaw CLI
+        run: |
+          npm install -g @openclaw/cli
+          which openclaw || (echo "OpenClaw not on PATH — trying npx fallback" && npx openclaw --version)
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install Python dependencies + Playwright
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium --with-deps
+
+      - name: Run deep-tier scrapers (OpenClaw + full stack)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          OPENCLAW_API_KEY: ${{ secrets.OPENCLAW_API_KEY }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+          DISCORD_CHANNEL_AI: ${{ secrets.DISCORD_CHANNEL_AI }}
+          DISCORD_CHANNEL_SWE: ${{ secrets.DISCORD_CHANNEL_SWE }}
+          DISCORD_CHANNEL_DATA: ${{ secrets.DISCORD_CHANNEL_DATA }}
+          DISCORD_CHANNEL_NEWGRAD: ${{ secrets.DISCORD_CHANNEL_NEWGRAD }}
+          DISCORD_CHANNEL_PRODUCT: ${{ secrets.DISCORD_CHANNEL_PRODUCT }}
+          DISCORD_CHANNEL_RESEARCH: ${{ secrets.DISCORD_CHANNEL_RESEARCH }}
+        run: |
+          # Run all 4 shards sequentially so OpenClaw doesn't race with ATS
+          for SHARD in 0 1 2 3; do
+            echo "=== Deep scrape: shard $SHARD/4 ==="
+            python scripts/ingestion/run_all_scrapers.py \
+              --tier deep \
+              --window 1 \
+              --shard $SHARD || true   # Continue even if one shard fails
+          done
