@@ -174,12 +174,19 @@ def _build_job_embed(job: dict) -> dict:
 # SENDING — Bot API (multi-channel) or Webhook (single-channel)
 # ═══════════════════════════════════════════════════════════════════════
 
+# Shared headers — User-Agent is required or Cloudflare returns 1010
+_DISCORD_HEADERS = {
+    "User-Agent": "JobClaw/1.0 (https://github.com/premxai/jobclaw)",
+    "Content-Type": "application/json",
+}
+
+
 async def _send_card_via_bot(session, channel_id: str, embed: dict) -> bool:
     """Send a single job card to a specific channel via Bot API."""
     url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
     headers = {
+        **_DISCORD_HEADERS,
         "Authorization": f"Bot {BOT_TOKEN}",
-        "Content-Type": "application/json",
     }
     resp = await session.post(url, headers=headers, json={"embeds": [embed]})
 
@@ -203,7 +210,8 @@ async def _send_card_via_bot(session, channel_id: str, embed: dict) -> bool:
 
 async def _send_card_via_webhook(session, embed: dict) -> bool:
     """Send a single job card via webhook (goes to one channel only)."""
-    resp = await session.post(WEBHOOK_URL, json={"embeds": [embed]})
+    # Webhook URL includes auth, but still needs User-Agent for Cloudflare
+    resp = await session.post(WEBHOOK_URL, headers=_DISCORD_HEADERS, json={"embeds": [embed]})
 
     if resp.status == 429:
         try:
