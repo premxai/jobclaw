@@ -112,29 +112,29 @@ def random_headers() -> dict[str, str]:
 # PER-HOST RATE LIMITER — token bucket with jitter
 # ═══════════════════════════════════════════════════════════════════════
 
-# Default RPS limits per ATS domain — tuned from real observation
+# Default RPS limits per ATS domain — tuned for maximum stealth (24/7 reliability)
 PLATFORM_RATE_LIMITS: dict[str, float] = {
-    # Public board APIs — push harder, these are designed for volume
-    "boards-api.greenhouse.io": 10.0,
-    "api.lever.co": 8.0,
-    "api.ashbyhq.com": 10.0,
-    "api.smartrecruiters.com": 6.0,
-    # Workday / Workable — previously blocked, now accessible via curl_cffi TLS
-    "myworkdayjobs.com": 3.0,
-    "apply.workable.com": 5.0,
+    # Public board APIs
+    "boards-api.greenhouse.io": 3.0,
+    "api.lever.co": 3.0,
+    "api.ashbyhq.com": 3.0,
+    "api.smartrecruiters.com": 2.0,
+    # Workday / Workable — aggressive WAFs, go slow
+    "myworkdayjobs.com": 1.0,
+    "apply.workable.com": 2.0,
     # Others
-    "ats.rippling.com": 5.0,
-    "bamboohr.com": 5.0,
+    "ats.rippling.com": 2.0,
+    "bamboohr.com": 2.0,
     # Enterprise endpoints
-    "jobs.apple.com": 3.0,
-    "www.amazon.jobs": 3.0,
-    "apply.careers.microsoft.com": 4.0,
-    "nvidia.eightfold.ai": 4.0,
-    "api.lifeattiktok.com": 4.0,
-    "www.uber.com": 2.0,
+    "jobs.apple.com": 1.5,
+    "www.amazon.jobs": 1.5,
+    "apply.careers.microsoft.com": 2.0,
+    "nvidia.eightfold.ai": 2.0,
+    "api.lifeattiktok.com": 2.0,
+    "www.uber.com": 1.0,
 }
 
-_DEFAULT_RPS = 2.0
+_DEFAULT_RPS = 1.5
 
 
 @dataclass

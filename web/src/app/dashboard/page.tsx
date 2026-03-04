@@ -2,67 +2,8 @@
 import { useState, useEffect, useMemo } from "react";
 import TopNav from "@/components/TopNav";
 import CompanyLogo from "@/components/CompanyLogo";
-import {
-    BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-    PieChart, Pie, Cell, LineChart, Line, Sankey,
-} from "recharts";
-import { Activity, Send, Target, Trophy, TrendingUp, Briefcase } from "lucide-react";
-
-// Vibrant Sankey link colors
-const SANKEY_COLORS = [
-    "#F0883E", "#58A6FF", "#3FB950", "#D29922", "#BC8CFF",
-    "#FF7B72", "#79C0FF", "#FFA657", "#7EE787", "#D2A8FF",
-];
-
-const PIE_COLORS = ["#F0883E", "#58A6FF", "#3FB950", "#D29922", "#BC8CFF", "#FF7B72", "#79C0FF", "#FFA657"];
-
-const CHART_TOOLTIP_STYLE = {
-    contentStyle: {
-        backgroundColor: "#FFFFFF",
-        border: "1px solid #E5DDD0",
-        borderRadius: "8px",
-        color: "#1A1A1A",
-        fontSize: "13px",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-    },
-};
-
-// Custom Sankey link with color
-function CustomLink(props: any) {
-    const { sourceX, targetX, sourceY, targetY, sourceControlX, targetControlX, linkWidth, index } = props;
-    const color = SANKEY_COLORS[index % SANKEY_COLORS.length];
-    return (
-        <path
-            d={`M${sourceX},${sourceY} C${sourceControlX},${sourceY} ${targetControlX},${targetY} ${targetX},${targetY}`}
-            fill="none"
-            stroke={color}
-            strokeWidth={linkWidth}
-            strokeOpacity={0.5}
-        />
-    );
-}
-
-// Custom Sankey node with color
-function CustomNode(props: any) {
-    const { x, y, width, height, index, payload } = props;
-    const color = SANKEY_COLORS[index % SANKEY_COLORS.length];
-    return (
-        <g>
-            <rect x={x} y={y} width={width} height={height} fill={color} rx={3} />
-            <text
-                x={x + width + 8}
-                y={y + height / 2}
-                textAnchor="start"
-                dominantBaseline="central"
-                fill="#1A1A1A"
-                fontSize={12}
-                fontWeight={500}
-            >
-                {payload?.name}
-            </text>
-        </g>
-    );
-}
+import { Activity, Send, Target, Trophy, Briefcase, Calendar, MapPin, ExternalLink, Flame } from "lucide-react";
+import Link from "next/link";
 
 interface TrackedJob {
     internal_hash: string;
@@ -75,9 +16,14 @@ interface TrackedJob {
     status: string;
     addedAt?: string;
     keywords_matched?: string;
-    salary_min?: number | null;
-    salary_max?: number | null;
 }
+
+const STATUS_COLORS: Record<string, { bg: string, text: string, border: string }> = {
+    saved: { bg: "bg-gray-100", text: "text-gray-600", border: "border-gray-200" },
+    applied: { bg: "bg-blue-50", text: "text-blue-600", border: "border-blue-200" },
+    interview: { bg: "bg-amber-50", text: "text-amber-600", border: "border-amber-200" },
+    offer: { bg: "bg-green-50", text: "text-green-600", border: "border-green-200" },
+};
 
 export default function DashboardPage() {
     const [jobs, setJobs] = useState<TrackedJob[]>([]);
@@ -96,284 +42,205 @@ export default function DashboardPage() {
         const interview = jobs.filter((j) => j.status === "interview").length;
         const offer = jobs.filter((j) => j.status === "offer").length;
         const total = jobs.length;
-        const responseRate = total > 0 ? Math.round(((interview + offer) / Math.max(applied, 1)) * 100) : 0;
-        return { saved, applied, interview, offer, total, responseRate };
+
+        // Calculate this week's applications
+        const now = new Date();
+        const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        const appliedThisWeek = jobs.filter(j => {
+            if (j.status !== "applied" && j.status !== "interview" && j.status !== "offer") return false;
+            const d = new Date(j.addedAt || new Date().toISOString());
+            return d >= startOfWeek;
+        }).length;
+
+        return { saved, applied, interview, offer, total, appliedThisWeek };
     }, [jobs]);
 
-    // By category
-    const categoryData = useMemo(() => {
-        const map: Record<string, number> = {};
-        jobs.forEach((j) => {
-            let cat = "Other";
-            try {
-                const kw = JSON.parse(j.keywords_matched || "[]");
-                if (kw.length > 0) cat = kw[0];
-            } catch { }
-            map[cat] = (map[cat] || 0) + 1;
+    // Sort jobs by most recently added/updated for the table
+    const sortedJobs = useMemo(() => {
+        return [...jobs].sort((a, b) => {
+            const dA = new Date(a.addedAt || a.date_posted || 0).getTime();
+            const dB = new Date(b.addedAt || b.date_posted || 0).getTime();
+            return dB - dA;
         });
-        return Object.entries(map).map(([name, value]) => ({ name, value }));
     }, [jobs]);
-
-    // By company (top 8)
-    const companyData = useMemo(() => {
-        const map: Record<string, number> = {};
-        jobs.forEach((j) => { map[j.company] = (map[j.company] || 0) + 1; });
-        return Object.entries(map)
-            .map(([name, value]) => ({ name, value }))
-            .sort((a, b) => b.value - a.value)
-            .slice(0, 8);
-    }, [jobs]);
-
-    // Application timeline (by week added)
-    const timelineData = useMemo(() => {
-        const dayMap: Record<string, number> = {};
-        jobs.forEach((j) => {
-            const d = j.addedAt || j.date_posted || new Date().toISOString();
-            const day = new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
-            dayMap[day] = (dayMap[day] || 0) + 1;
-        });
-        return Object.entries(dayMap).map(([date, count]) => ({ date, applications: count }));
-    }, [jobs]);
-
-    // Sankey: Status → Category flow
-    const sankeyData = useMemo(() => {
-        if (jobs.length === 0) return null;
-
-        const statuses = ["Saved", "Applied", "Interview", "Offer"];
-        const categories = [...new Set(categoryData.map((c) => c.name))];
-        const nodes = [...statuses, ...categories].map((name) => ({ name }));
-
-        const linkMap: Record<string, number> = {};
-        jobs.forEach((j) => {
-            const statusLabel = j.status.charAt(0).toUpperCase() + j.status.slice(1);
-            let cat = "Other";
-            try {
-                const kw = JSON.parse(j.keywords_matched || "[]");
-                if (kw.length > 0) cat = kw[0];
-            } catch { }
-            const key = `${statusLabel}→${cat}`;
-            linkMap[key] = (linkMap[key] || 0) + 1;
-        });
-
-        const links = Object.entries(linkMap)
-            .map(([key, value]) => {
-                const [src, tgt] = key.split("→");
-                return {
-                    source: nodes.findIndex((n) => n.name === src),
-                    target: nodes.findIndex((n) => n.name === tgt),
-                    value,
-                };
-            })
-            .filter((l) => l.source !== -1 && l.target !== -1 && l.value > 0);
-
-        if (links.length === 0) return null;
-        return { nodes, links };
-    }, [jobs, categoryData]);
 
     const statCards = [
-        { icon: Briefcase, label: "Total Tracked", value: stats.total, color: "#E8713A" },
-        { icon: Send, label: "Applied", value: stats.applied, color: "#3574D4" },
-        { icon: Target, label: "Interviews", value: stats.interview, color: "#C98A1A" },
-        { icon: Trophy, label: "Offers", value: stats.offer, color: "#2D8A4E" },
+        { icon: Briefcase, label: "Total Tracked", value: stats.total, color: "text-accent", bg: "bg-accent/10" },
+        { icon: Send, label: "Applied", value: stats.applied, color: "text-blue-600", bg: "bg-blue-50" },
+        { icon: Target, label: "Interviews", value: stats.interview, color: "text-amber-600", bg: "bg-amber-50" },
+        { icon: Trophy, label: "Offers", value: stats.offer, color: "text-green-600", bg: "bg-green-50" },
     ];
 
-    // Pipeline funnel
-    const funnelData = [
-        { stage: "Saved", count: stats.saved, color: "#7A7062" },
-        { stage: "Applied", count: stats.applied, color: "#3574D4" },
-        { stage: "Interview", count: stats.interview, color: "#C98A1A" },
-        { stage: "Offer", count: stats.offer, color: "#2D8A4E" },
-    ];
+    const weeklyGoal = 10;
+    const progressPercent = Math.min((stats.appliedThisWeek / weeklyGoal) * 100, 100);
 
     return (
-        <div className="min-h-screen">
+        <div className="min-h-screen bg-background">
             <TopNav />
 
             <div className="max-w-7xl mx-auto px-6 py-8">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold tracking-tight mb-1">My Dashboard</h1>
-                    <p className="text-text-secondary text-sm">
-                        Your job application insights and pipeline overview
-                    </p>
-                </div>
-
-                {/* Stat cards */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
-                    {statCards.map((stat, i) => (
-                        <div key={i} className="stat-card animate-slide-up" style={{ animationDelay: `${i * 50}ms` }}>
-                            <div className="flex items-center gap-3">
-                                <div
-                                    className="w-10 h-10 rounded-lg flex items-center justify-center"
-                                    style={{ backgroundColor: stat.color + "15" }}
-                                >
-                                    <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
-                                </div>
-                                <div>
-                                    <p className="text-2xl font-bold" style={{ color: stat.color }}>{stat.value}</p>
-                                    <p className="text-xs text-text-secondary">{stat.label}</p>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                <div className="mb-8 flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight mb-1 text-text-primary">Dashboard</h1>
+                        <p className="text-text-secondary text-sm">
+                            Manage and track your active job applications
+                        </p>
+                    </div>
+                    <Link href="/tracker" className="btn-outline flex items-center gap-2">
+                        <Activity className="w-4 h-4" />
+                        Kanban View
+                    </Link>
                 </div>
 
                 {jobs.length === 0 ? (
-                    // Empty state
-                    <div className="text-center py-20 animate-fade-in">
-                        <p className="text-6xl mb-4">📊</p>
-                        <h2 className="text-xl font-bold text-text-primary mb-2">No application data yet</h2>
-                        <p className="text-text-secondary mb-6">
-                            Save jobs from the feed and move them through your tracker to see insights here.
+                    // Empty state (Simplify style)
+                    <div className="bg-white rounded-xl border border-border p-12 text-center animate-fade-in shadow-sm mt-10">
+                        <div className="w-20 h-20 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <Briefcase className="w-10 h-10 text-accent" />
+                        </div>
+                        <h2 className="text-2xl font-bold text-text-primary mb-2">No applications yet</h2>
+                        <p className="text-text-secondary mb-8 max-w-md mx-auto">
+                            Your tracker is empty! Start saving jobs from your feed to keep track of your job search progress.
                         </p>
-                        <a href="/jobs" className="btn-primary">Browse Jobs</a>
+                        <Link href="/jobs" className="btn-primary inline-flex">
+                            Explore Jobs
+                        </Link>
                     </div>
                 ) : (
                     <>
-                        {/* Pipeline funnel */}
-                        <div className="stat-card mb-8 animate-fade-in">
-                            <h2 className="font-semibold text-sm mb-5">Application Pipeline</h2>
-                            <div className="flex items-end gap-3 h-40">
-                                {funnelData.map((stage, i) => {
-                                    const maxCount = Math.max(...funnelData.map((s) => s.count), 1);
-                                    const height = Math.max((stage.count / maxCount) * 100, 8);
-                                    return (
-                                        <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                                            <span className="text-lg font-bold" style={{ color: stage.color }}>
-                                                {stage.count}
-                                            </span>
-                                            <div
-                                                className="w-full rounded-t-lg transition-all duration-500"
-                                                style={{
-                                                    height: `${height}%`,
-                                                    backgroundColor: stage.color,
-                                                    opacity: 0.8,
-                                                }}
-                                            />
-                                            <span className="text-xs text-text-secondary">{stage.stage}</span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            {stats.applied > 0 && (
-                                <div className="mt-4 pt-4 border-t border-border text-center">
-                                    <p className="text-sm text-text-secondary">
-                                        Response rate:{" "}
-                                        <span className="font-bold text-accent">{stats.responseRate}%</span>
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-8">
-                            {/* Jobs by Category — Pie */}
-                            {categoryData.length > 0 && (
-                                <div className="stat-card">
-                                    <h2 className="font-semibold text-sm mb-4">Applications by Category</h2>
-                                    <ResponsiveContainer width="100%" height={260}>
-                                        <PieChart>
-                                            <Pie
-                                                data={categoryData}
-                                                cx="50%"
-                                                cy="50%"
-                                                innerRadius={55}
-                                                outerRadius={95}
-                                                paddingAngle={3}
-                                                dataKey="value"
-                                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                                labelLine={false}
-                                            >
-                                                {categoryData.map((_, i) => (
-                                                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                                                ))}
-                                            </Pie>
-                                            <Tooltip {...CHART_TOOLTIP_STYLE} />
-                                        </PieChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            )}
-
-                            {/* Top Companies — Bar */}
-                            {companyData.length > 0 && (
-                                <div className="stat-card">
-                                    <h2 className="font-semibold text-sm mb-4">Top Companies Applied</h2>
-                                    <ResponsiveContainer width="100%" height={260}>
-                                        <BarChart data={companyData} layout="vertical" margin={{ left: 10 }}>
-                                            <XAxis type="number" stroke="#B8AFA0" fontSize={11} />
-                                            <YAxis type="category" dataKey="name" stroke="#B8AFA0" fontSize={11} width={85} />
-                                            <Tooltip {...CHART_TOOLTIP_STYLE} />
-                                            <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                                                {companyData.map((_, i) => (
-                                                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                                                ))}
-                                            </Bar>
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Application Timeline */}
-                        {timelineData.length > 1 && (
-                            <div className="stat-card mb-8">
-                                <h2 className="font-semibold text-sm mb-4">Application Timeline</h2>
-                                <ResponsiveContainer width="100%" height={220}>
-                                    <LineChart data={timelineData}>
-                                        <XAxis dataKey="date" stroke="#B8AFA0" fontSize={11} />
-                                        <YAxis stroke="#B8AFA0" fontSize={11} />
-                                        <Tooltip {...CHART_TOOLTIP_STYLE} />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="applications"
-                                            stroke="#E8713A"
-                                            strokeWidth={2.5}
-                                            dot={{ fill: "#E8713A", r: 3 }}
-                                            activeDot={{ r: 5 }}
-                                        />
-                                    </LineChart>
-                                </ResponsiveContainer>
-                            </div>
-                        )}
-
-                        {/* Colorful Sankey — Status → Category Flow */}
-                        {sankeyData && (
-                            <div className="stat-card">
-                                <h2 className="font-semibold text-sm mb-2">Application Flow</h2>
-                                <p className="text-xs text-text-secondary mb-4">Pipeline stage → Job category</p>
-                                <ResponsiveContainer width="100%" height={320}>
-                                    <Sankey
-                                        data={sankeyData}
-                                        nodeWidth={14}
-                                        nodePadding={28}
-                                        margin={{ left: 0, right: 160, top: 10, bottom: 10 }}
-                                        link={<CustomLink />}
-                                        node={<CustomNode />}
-                                    >
-                                        <Tooltip {...CHART_TOOLTIP_STYLE} />
-                                    </Sankey>
-                                </ResponsiveContainer>
-                            </div>
-                        )}
-
-                        {/* Recent activity */}
-                        <div className="stat-card mt-8">
-                            <h2 className="font-semibold text-sm mb-4">Recent Activity</h2>
-                            <div className="space-y-3">
-                                {jobs.slice(0, 5).map((job) => (
-                                    <div key={job.internal_hash} className="flex items-center gap-3 py-2 border-b border-border last:border-0">
-                                        <CompanyLogo company={job.company} size="sm" />
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium text-text-primary truncate">{job.title}</p>
-                                            <p className="text-xs text-text-secondary">{job.company}</p>
-                                        </div>
-                                        <span className={`pill text-xs ${job.status === "offer" ? "bg-green-100 text-green-700" :
-                                            job.status === "interview" ? "bg-yellow-100 text-yellow-700" :
-                                                job.status === "applied" ? "bg-blue-100 text-blue-700" :
-                                                    "pill-dark"
-                                            }`}>
-                                            {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
-                                        </span>
+                        {/* Top Stats Row */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mb-8">
+                            {statCards.map((stat, i) => (
+                                <div key={i} className="bg-white rounded-xl border border-border p-5 flex items-center gap-4 animate-slide-up shadow-sm hover:shadow-md transition-shadow" style={{ animationDelay: `${i * 50}ms` }}>
+                                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${stat.bg}`}>
+                                        <stat.icon className={`w-6 h-6 ${stat.color}`} />
                                     </div>
-                                ))}
+                                    <div>
+                                        <p className="text-2xl font-bold text-text-primary">{stat.value}</p>
+                                        <p className="text-xs font-medium text-text-secondary uppercase tracking-wider">{stat.label}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                            {/* Weekly Goal Widget */}
+                            <div className="bg-white rounded-xl border border-border p-6 shadow-sm animate-fade-in lg:col-span-1">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <Flame className="w-5 h-5 text-accent" />
+                                    <h2 className="font-semibold text-text-primary">Weekly Goal</h2>
+                                </div>
+                                <div className="flex items-end justify-between mb-3">
+                                    <div>
+                                        <span className="text-3xl font-bold text-text-primary">{stats.appliedThisWeek}</span>
+                                        <span className="text-text-secondary ml-1">/ {weeklyGoal} apps</span>
+                                    </div>
+                                    <span className="text-sm font-medium text-accent">
+                                        {Math.round(progressPercent)}%
+                                    </span>
+                                </div>
+                                <div className="w-full bg-gray-100 rounded-full h-2.5 mb-2 overflow-hidden">
+                                    <div
+                                        className="bg-accent h-2.5 rounded-full transition-all duration-1000 ease-out"
+                                        style={{ width: `${progressPercent}%` }}
+                                    ></div>
+                                </div>
+                                <p className="text-xs text-text-secondary mt-3">
+                                    {stats.appliedThisWeek >= weeklyGoal
+                                        ? "🎉 Goal reached! You're on fire this week."
+                                        : `${weeklyGoal - stats.appliedThisWeek} more to reach your weekly goal.`}
+                                </p>
+                            </div>
+
+                            {/* Info Banner */}
+                            <div className="bg-accent/5 rounded-xl border border-accent/20 p-6 flex flex-col justify-center animate-fade-in lg:col-span-2">
+                                <h3 className="font-semibold text-text-primary mb-2 text-lg">Keep up the momentum! 🚀</h3>
+                                <p className="text-text-secondary text-sm mb-4">
+                                    You're tracking {stats.total} jobs in your pipeline. Make sure to update statuses in your Kanban board when you hear back from recruiters.
+                                </p>
+                                <div>
+                                    <Link href="/tracker" className="text-sm font-medium text-accent hover:underline flex items-center gap-1">
+                                        Update statuses in Kanban <span aria-hidden="true">→</span>
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Recent Applications Table */}
+                        <div className="bg-white rounded-xl border border-border overflow-hidden shadow-sm animate-slide-up" style={{ animationDelay: "200ms" }}>
+                            <div className="px-6 py-5 border-b border-border bg-gray-50/50 flex justify-between items-center">
+                                <h2 className="font-semibold text-text-primary">Recent Applications</h2>
+                            </div>
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr className="border-b border-border text-xs font-semibold text-text-secondary uppercase tracking-wider bg-gray-50/20">
+                                            <th className="px-6 py-4">Company & Role</th>
+                                            <th className="px-6 py-4">Status</th>
+                                            <th className="px-6 py-4 hidden md:table-cell">Location</th>
+                                            <th className="px-6 py-4 hidden sm:table-cell">Added</th>
+                                            <th className="px-6 py-4 text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-border">
+                                        {sortedJobs.map((job) => {
+                                            const statusStyle = STATUS_COLORS[job.status] || STATUS_COLORS.saved;
+                                            const addedDate = new Date(job.addedAt || job.date_posted || Date.now());
+
+                                            return (
+                                                <tr key={job.internal_hash} className="hover:bg-gray-50/50 transition-colors group">
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-10 h-10 shrink-0">
+                                                                <CompanyLogo companyName={job.company} size="sm" />
+                                                            </div>
+                                                            <div>
+                                                                <p className="font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-1">
+                                                                    {job.company}
+                                                                </p>
+                                                                <p className="text-sm text-text-secondary line-clamp-1">{job.title}</p>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border} capitalize`}>
+                                                            {job.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 hidden md:table-cell">
+                                                        <div className="flex items-center gap-1.5 text-sm text-text-secondary">
+                                                            <MapPin className="w-3.5 h-3.5" />
+                                                            <span className="line-clamp-1">{job.location || "Remote"}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 hidden sm:table-cell text-sm text-text-secondary">
+                                                        <div className="flex items-center gap-1.5">
+                                                            <Calendar className="w-3.5 h-3.5" />
+                                                            {addedDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-right">
+                                                        {job.url ? (
+                                                            <a
+                                                                href={job.url}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="inline-flex items-center justify-center p-2 rounded-lg text-text-secondary hover:text-accent hover:bg-accent/10 transition-colors tooltip-trigger"
+                                                                title="View original posting"
+                                                            >
+                                                                <ExternalLink className="w-4 h-4" />
+                                                            </a>
+                                                        ) : (
+                                                            <span className="text-xs text-gray-400">No URL</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </>

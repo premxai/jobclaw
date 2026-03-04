@@ -3,7 +3,7 @@
  * Falls back to mock data if the API isn't running.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // ─── Job types ──────────────────────────────────────────────────────
 export interface ApiJob {

@@ -45,17 +45,18 @@ DEFAULT_SKIP_PLATFORMS: set[str] = set()
 # ── Concurrency ───────────────────────────────────────────────────────
 # Workers per platform — NOT coroutines-per-platform. Each worker pulls
 # from a queue, so memory stays bounded regardless of registry size.
+# Workers per platform — lower bounds are better for 24/7 stealth scraping
 PLATFORM_WORKERS = {
-    "greenhouse": 20,       # Public API, very tolerant
-    "lever": 15,             # Public API, tolerant
-    "ashby": 15,             # Public API, tolerant
-    "smartrecruiters": 10,
-    "workday": 5,            # Aggressive WAF — don't push past 5
-    "workable": 10,
-    "rippling": 10,
-    "bamboohr": 8,
+    "greenhouse": 5,
+    "lever": 5,
+    "ashby": 5,
+    "smartrecruiters": 3,
+    "workday": 2,            # Aggressive WAF — don't push past 2-3
+    "workable": 3,
+    "rippling": 3,
+    "bamboohr": 3,
 }
-DEFAULT_WORKERS = 8
+DEFAULT_WORKERS = 3
 
 # ── Circuit Breaker ───────────────────────────────────────────────────
 # Lightweight per-platform circuit breaker. No external dependencies.
@@ -144,7 +145,7 @@ async def _worker(
         try:
             jobs = await asyncio.wait_for(
                 fetch_company_jobs(session, cname, ats, slug, rate_limiter=rate_limiter),
-                timeout=60,  # 60s max per company — prevents infinite hangs
+                timeout=120,  # 120s max per company — allows stealthy rate limits + retries to complete
             )
             if jobs:
                 cache.put(ats, slug, [j.to_dict() for j in jobs])
@@ -152,7 +153,7 @@ async def _worker(
             if circuit_breaker:
                 circuit_breaker.record_success(ats)
         except asyncio.TimeoutError:
-            _log(f"[{ats}/{slug}] Hard timeout after 60s", "WARN")
+            _log(f"[{ats}/{slug}] Hard timeout after 120s", "WARN")
             results.append((cname, ats, slug, [], "timeout"))
             if circuit_breaker:
                 circuit_breaker.record_failure(ats)

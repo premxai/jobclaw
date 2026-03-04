@@ -58,7 +58,7 @@ export default function JobFeedPage() {
                 Indeed: ["indeed"],
             };
             filtered = filtered.filter((j) => {
-                return [...selectedSources].some((s) => (sourceMap[s] || []).includes(j.source_ats));
+                return Array.from(selectedSources).some((s) => (sourceMap[s] || []).includes(j.source_ats));
             });
         }
 
@@ -192,7 +192,7 @@ export default function JobFeedPage() {
                     <main className="flex-1">
                         <div className="flex items-center justify-between mb-6">
                             <p className="text-sm text-text-secondary">
-                                Showing <span className="text-text-primary font-medium">{jobs.length}</span> jobs
+                                Showing <span className="text-text-primary font-medium">{total}</span> jobs
                             </p>
                         </div>
 
