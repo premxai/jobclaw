@@ -62,8 +62,10 @@ jobs:
             SHARD=$SHARD_INPUT
           fi
           echo "Running shard $SHARD/4"
+          # Window=24 ensures no jobs slip through between shard rotations.
+          # Each shard runs once every ~16 hours, so window must cover at least that.
           python scripts/ingestion/run_all_scrapers.py \
             --tier medium \
-            --window 4 \
+            --window 24 \
             --shard $SHARD \
             --skip-openclaw
