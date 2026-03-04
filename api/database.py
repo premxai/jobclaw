@@ -94,15 +94,22 @@ def get_jobs(
         total = row[0] if isinstance(row, (list, tuple)) else row.get("count", 0)
 
         offset = (page - 1) * per_page
-        order = "ts_rank(search_vector, websearch_to_tsquery('english', %s)) DESC, first_seen DESC" if (_is_pg() and search) else "first_seen DESC"
-        extra_params = [search] if (_is_pg() and search) else []
+
+        # Safe ORDER BY — choose between two pre-defined static strings only.
+        # Never interpolate user input into ORDER BY.
+        if _is_pg() and search:
+            order_clause = "ts_rank(search_vector, websearch_to_tsquery('english', %s)) DESC, first_seen DESC"
+            extra_params = [search]
+        else:
+            order_clause = "first_seen DESC"
+            extra_params = []
 
         query = f"""
             SELECT * FROM jobs {where}
-            ORDER BY {order}
+            ORDER BY {order_clause}
             LIMIT {p} OFFSET {p}
         """
-        cursor.execute(query, extra_params + params + [per_page, offset] if extra_params else params + [per_page, offset])
+        cursor.execute(query, extra_params + params + [per_page, offset])
         rows = cursor.fetchall()
         return [_row_to_dict(r) for r in rows], total
     finally:

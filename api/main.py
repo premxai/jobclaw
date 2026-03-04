@@ -51,6 +51,19 @@ async def lifespan(app: FastAPI):
         total = conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
         conn.close()
         print(f"✅ Database connected: {total} jobs in JobClaw")
+
+    # Validate Discord configuration
+    webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
+    bot_token = os.getenv("DISCORD_BOT_TOKEN")
+    channel_id = os.getenv("DISCORD_CHANNEL_ID")
+    if webhook_url:
+        print("✅ Discord: webhook configured")
+    elif bot_token and channel_id:
+        print("✅ Discord: bot token + channel ID configured (fallback mode)")
+    else:
+        print("⚠️  Discord: NOT configured — set DISCORD_WEBHOOK_URL (or DISCORD_BOT_TOKEN + DISCORD_CHANNEL_ID) in .env")
+        print("   See .env.example for setup instructions.")
+
     yield
 
 
@@ -61,13 +74,17 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS — allow all origins for development
+# CORS — lock to frontend origins; wildcard + credentials=True is a spec violation
+_allowed_origins = os.getenv(
+    "CORS_ORIGINS",
+    "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001"
+).split(",")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "X-API-Key", "Authorization"],
 )
 
 # API Key auth — disabled if JOBCLAW_API_KEY not set
@@ -86,8 +103,11 @@ WEB_DIR = PROJECT_ROOT / "web"
 
 @app.get("/", include_in_schema=False)
 async def root():
-    """Serve the web dashboard."""
-    return FileResponse(WEB_DIR / "index.html")
+    """Serve the web dashboard index if it exists."""
+    index = WEB_DIR / "index.html"
+    if index.exists():
+        return FileResponse(index)
+    return JSONResponse({"status": "ok", "message": "JobClaw API — see /docs"})
 
 # ═══════════════════════════════════════════════════════════════════════
 # HEALTH
@@ -233,11 +253,17 @@ async def trigger_scraper(
     Manually trigger a scraper run in the background.
     Returns immediately — check /stats/runs for results.
     """
+    VALID_TIERS = {"fast", "medium", "heavy", "deep"}
+    if tier not in VALID_TIERS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid tier '{tier}'. Must be one of: {', '.join(VALID_TIERS)}"
+        )
     import subprocess
     cmd = [
         sys.executable,
         str(PROJECT_ROOT / "scripts" / "ingestion" / "run_all_scrapers.py"),
-        "--tier", tier,
+        "--tier", tier,  # safe — tier validated against allowlist above
     ]
     try:
         proc = subprocess.Popen(
@@ -263,9 +289,20 @@ _ws_clients: set[WebSocket] = set()
 async def websocket_job_stream(websocket: WebSocket):
     """
     Real-time job stream. Clients receive new jobs as JSON as they're scraped.
-    
+
     Message format: {"type": "new_job", "data": {...job fields...}}
+
+    Auth: If JOBCLAW_API_KEY is set, clients must supply it as a query param:
+        ws://host/ws/jobs?token=<your-api-key>
     """
+    # Optional token auth — mirrors the X-API-Key middleware logic
+    required_key = os.getenv("JOBCLAW_API_KEY")
+    if required_key:
+        provided = websocket.query_params.get("token", "")
+        if provided != required_key:
+            await websocket.close(code=4401, reason="Unauthorized: invalid or missing token")
+            return
+
     await websocket.accept()
     _ws_clients.add(websocket)
     try:

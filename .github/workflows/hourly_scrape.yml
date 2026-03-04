@@ -9,7 +9,7 @@ on:
 jobs:
   run-scraper:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -20,7 +20,10 @@ jobs:
           node-version: '20'
 
       - name: Install OpenClaw CLI
-        run: npm install -g @openclaw/cli
+        # Install globally and verify it resolves on the PATH
+        run: |
+          npm install -g @openclaw/cli
+          which openclaw || npx openclaw --version
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -32,14 +35,25 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          playwright install chromium
+          playwright install chromium --with-deps
 
       - name: Run Web Scraper Engine
         env:
-          # Supabase Database Secrets mapping
+          # Supabase Database Secrets
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-          OPENCLAW_API_KEY: ${{ secrets.OPENCLAW_API_KEY }}  # Optional if using specific providers
+          # Discord — prefer webhook URL, fall back to bot token
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+          DISCORD_CHANNEL_AI: ${{ secrets.DISCORD_CHANNEL_AI }}
+          DISCORD_CHANNEL_SWE: ${{ secrets.DISCORD_CHANNEL_SWE }}
+          DISCORD_CHANNEL_DATA: ${{ secrets.DISCORD_CHANNEL_DATA }}
+          DISCORD_CHANNEL_NEWGRAD: ${{ secrets.DISCORD_CHANNEL_NEWGRAD }}
+          DISCORD_CHANNEL_PRODUCT: ${{ secrets.DISCORD_CHANNEL_PRODUCT }}
+          DISCORD_CHANNEL_RESEARCH: ${{ secrets.DISCORD_CHANNEL_RESEARCH }}
+          # OpenClaw (optional — for specific providers)
+          OPENCLAW_API_KEY: ${{ secrets.OPENCLAW_API_KEY }}
         run: |
           SHARD=$(( $(date +%H) % 4 ))
           python scripts/ingestion/run_all_scrapers.py --window 1 --shard $SHARD

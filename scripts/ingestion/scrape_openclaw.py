@@ -111,13 +111,14 @@ settings:
     
     try:
         # Run the openclaw CLI command
-        # Windows requires shell=True for npx aliases
-        command = f'openclaw run "{agent_file}"'
-        
+        # Use a list instead of a shell string to prevent injection.
+        # 'openclaw' must be on PATH; no shell expansion occurs.
+        command = ["openclaw", "run", str(agent_file)]
+
         process = await asyncio.to_thread(
             subprocess.run,
             command,
-            shell=True,
+            shell=False,
             capture_output=True,
             text=True,
             timeout=330
