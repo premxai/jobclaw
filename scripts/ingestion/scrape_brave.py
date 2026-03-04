@@ -226,7 +226,7 @@ async def _search_brave(session, query: str, count: int = 20) -> list[dict]:
     params = {
         "q": query,
         "count": count,
-        "freshness": "pw",  # past week (wider net for more results)
+        "freshness": "pd",  # past day (last 24 hours)
         "country": "us",
         "text_decorations": 0,  # must be int, not bool (aiohttp restriction)
     }
