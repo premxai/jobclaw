@@ -195,9 +195,9 @@ async def _search_brave(session, query: str, count: int = 20) -> list[dict]:
     params = {
         "q": query,
         "count": count,
-        "freshness": "pd",  # past day
+        "freshness": "pw",  # past week (wider net for more results)
         "country": "us",
-        "text_decorations": False,
+        "text_decorations": 0,  # must be int, not bool (aiohttp restriction)
     }
     headers = {
         "Accept": "application/json",
@@ -288,7 +288,7 @@ async def run_brave_scraper() -> int:
             f"{total_inserted} new jobs inserted, {total_skipped} filtered out"
         )
 
-        log_scraper_run(conn, "brave_search", total_inserted, dur)
+        log_scraper_run(conn, "brave_search", total_inserted, 0, dur)
 
     except Exception as e:
         _log_brave(f"Brave Search scraper failed: {e}", "ERROR")
