@@ -62,7 +62,7 @@ jobs:
           # Determine shard: use manual input or auto-rotate by hour
           SHARD_INPUT="${{ github.event.inputs.shard }}"
           if [ "$SHARD_INPUT" = "auto" ] || [ -z "$SHARD_INPUT" ]; then
-            SHARD=$(( $(date +%H) % 4 ))
+            SHARD=$(( $(date +%-H) % 4 ))
           else
             SHARD=$SHARD_INPUT
           fi
