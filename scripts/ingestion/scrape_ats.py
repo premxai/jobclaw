@@ -52,7 +52,7 @@ PLATFORM_WORKERS = {
     "ashby": 3,
     "smartrecruiters": 2,
     "workday": 2,            # Aggressive WAF — don't push past 2-3
-    "workable": 2,
+    "workable": 1,            # Single worker — Workable 429s hard with concurrency
     "rippling": 2,
     "bamboohr": 2,
 }

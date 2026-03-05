@@ -119,7 +119,7 @@ PLATFORM_RATE_LIMITS: dict[str, float] = {
     "api.smartrecruiters.com": 2.0,
     # Workday / Workable — aggressive WAFs, go slow
     "myworkdayjobs.com": 1.0,
-    "apply.workable.com": 2.0,
+    "apply.workable.com": 0.3,   # ~1 req / 3.3s — Workable 429s hard above this
     # Others
     "ats.rippling.com": 2.0,
     "bamboohr.com": 2.0,
@@ -137,15 +137,43 @@ _DEFAULT_RPS = 1.5
 
 @dataclass
 class _HostBucket:
-    """Token bucket for a single host."""
+    """Token bucket for a single host with adaptive 429 backoff."""
     rps: float
     tokens: float = 0.0
     last_refill: float = field(default_factory=time.monotonic)
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
+    _base_rps: float = 0.0  # original RPS before any 429 reductions
+    _consecutive_429s: int = 0
+    _cooldown_until: float = 0.0  # monotonic timestamp — global pause on 429 storms
+
+    def __post_init__(self):
+        if self._base_rps == 0.0:
+            self._base_rps = self.rps
+
+    def record_429(self):
+        """Called when the host returns 429. Halves RPS and sets a cooldown."""
+        self._consecutive_429s += 1
+        # Halve RPS down to floor of 0.05 (1 req / 20s)
+        self.rps = max(0.05, self.rps * 0.5)
+        # Global cooldown: all workers for this host must wait
+        cooldown_secs = min(10.0 * self._consecutive_429s, 60.0)
+        self._cooldown_until = time.monotonic() + cooldown_secs
+
+    def record_success(self):
+        """Called on successful request. Gradually restores RPS."""
+        self._consecutive_429s = 0
+        # Restore towards base RPS by 20% per success
+        if self.rps < self._base_rps:
+            self.rps = min(self._base_rps, self.rps * 1.2)
 
     async def acquire(self):
         """Wait until a token is available, then consume one."""
         async with self.lock:
+            # Respect global cooldown from 429 storms
+            now = time.monotonic()
+            if now < self._cooldown_until:
+                await asyncio.sleep(self._cooldown_until - now)
+
             now = time.monotonic()
             elapsed = now - self.last_refill
             self.tokens = min(self.rps, self.tokens + elapsed * self.rps)
@@ -192,6 +220,16 @@ class RateLimiter:
         bucket = self._get_bucket(url)
         await bucket.acquire()
 
+    def record_429(self, url: str):
+        """Signal that the host returned 429. Triggers adaptive slowdown."""
+        bucket = self._get_bucket(url)
+        bucket.record_429()
+
+    def record_success(self, url: str):
+        """Signal that a request succeeded. Gradually restores rate."""
+        bucket = self._get_bucket(url)
+        bucket.record_success()
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # RETRY ENGINE — exponential backoff on 429/503/502
@@ -231,7 +269,8 @@ async def fetch_with_retry(
     """
     is_cffi = HAS_CURL_CFFI and isinstance(session, CffiAsyncSession)
 
-    for attempt in range(max_retries + 1):
+    total_attempts = max_retries + 1
+    for attempt in range(total_attempts):
         try:
             # Rate limit
             if rate_limiter:
@@ -251,6 +290,8 @@ async def fetch_with_retry(
 
             # Success
             if status == 200:
+                if rate_limiter:
+                    rate_limiter.record_success(url)
                 return resp
 
             # HTTP 304 Not Modified — data hasn't changed since last fetch
@@ -261,6 +302,18 @@ async def fetch_with_retry(
 
             # Retryable error
             if status in RETRYABLE_STATUS_CODES:
+                # Notify rate limiter about 429 for adaptive slowdown
+                if status == 429 and rate_limiter:
+                    rate_limiter.record_429(url)
+
+                # Last attempt — don't waste time sleeping
+                if attempt >= max_retries:
+                    tag = f"[{log_tag}] " if log_tag else ""
+                    _log(f"{tag}HTTP {status} on {url} — retries exhausted", "WARN")
+                    if not is_cffi:
+                        await resp.release()
+                    return None
+
                 retry_after = resp.headers.get("Retry-After")
                 if retry_after:
                     try:
