@@ -50,10 +50,12 @@ jobs:
         run: pytest tests/ -v --tb=short || true
 
       - name: Verify API imports
-        run: python -c "from api.main import app; print(f'Routes: {len(app.routes)}')"
+        run: |
+          python -c "from api.main import app; print('Routes:', len(app.routes))"
 
       - name: Verify scraper imports
-        run: python -c "from scripts.database.db_utils import get_connection; print('DB OK')"
+        run: |
+          python -c "from scripts.database.db_utils import get_connection; print('DB OK')"
 
   deploy:
     name: Deploy to Railway
