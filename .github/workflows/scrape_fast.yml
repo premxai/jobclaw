@@ -15,7 +15,7 @@ on:
 jobs:
   fast-scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 10        # Fail fast if RSS/GitHub hangs
+    timeout-minutes: 20        # Playwright install + scraping needs ~15min
 
     steps:
       - uses: actions/checkout@v4

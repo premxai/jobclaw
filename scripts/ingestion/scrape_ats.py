@@ -299,18 +299,10 @@ async def run_ats_scraper(
     us_filtered = [j for j in role_filtered if is_us_location(j.location)]
     _log(f"US filter: {len(us_filtered)}/{len(role_filtered)} in United States.")
 
-    # On first run (empty DB), skip time filter to get ALL active jobs.
-    # On subsequent runs, only take jobs within the window.
-    conn_check = get_connection()
-    existing_count = conn_check.cursor().execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
-    conn_check.close()
-
-    if existing_count == 0:
-        _log(f"First run detected (empty DB) — skipping time window filter, taking all {len(us_filtered)} US tech jobs.")
-        time_filtered = us_filtered
-    else:
-        time_filtered = [j for j in us_filtered if is_within_window(j.date_posted, window_hours)]
-        _log(f"{window_hours}hr filter: {len(time_filtered)}/{len(us_filtered)} within window.")
+    # Always apply time filter — on GitHub Actions the DB is ephemeral,
+    # so "first run" detection doesn't make sense for CI.
+    time_filtered = [j for j in us_filtered if is_within_window(j.date_posted, window_hours)]
+    _log(f"{window_hours}hr filter: {len(time_filtered)}/{len(us_filtered)} within window.")
 
     # ── Database Insertion ────────────────────────────────────────────
     conn = get_connection()
