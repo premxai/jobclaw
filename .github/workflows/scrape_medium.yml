@@ -70,7 +70,7 @@ jobs:
           # Window=4 is safe now — each shard runs once every 4 hours (no gaps)
           python scripts/ingestion/run_all_scrapers.py \
             --tier medium \
-            --window 4 \
+            --window 6 \
             --shard $SHARD \
             --skip-openclaw
 
