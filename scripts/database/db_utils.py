@@ -41,7 +41,11 @@ def is_postgres() -> bool:
 # ═══════════════════════════════════════════════════════════════════════
 
 def get_connection():
-    """Get a SQLite connection. Falls back to SQLite if no DATABASE_URL."""
+    """Get a SQLite connection. Falls back to SQLite if no DATABASE_URL.
+    
+    Auto-initializes the schema (jobs + runs tables) on first access
+    so GitHub Actions runners don't crash with 'no such table'.
+    """
     if is_postgres():
         # For sync code that needs a connection, create a psycopg2 connection
         try:
@@ -52,9 +56,69 @@ def get_connection():
         except ImportError:
             raise ImportError("psycopg2 required for PostgreSQL. Run: pip install psycopg2-binary")
     
+    # Ensure the data directory exists
+    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+    
+    needs_init = not DB_PATH.exists()
     conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.execute("PRAGMA journal_mode=WAL")
+    
+    if needs_init:
+        _ensure_sqlite_schema(conn)
+    else:
+        # Check if tables exist (handles edge case of empty DB file)
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='jobs'")
+        if not cursor.fetchone():
+            _ensure_sqlite_schema(conn)
+    
     return conn
+
+
+def _ensure_sqlite_schema(conn):
+    """Create core tables if they don't exist. Lightweight — safe to call multiple times."""
+    cursor = conn.cursor()
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS jobs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        internal_hash TEXT UNIQUE NOT NULL,
+        job_id TEXT,
+        title TEXT NOT NULL,
+        company TEXT NOT NULL,
+        location TEXT,
+        url TEXT NOT NULL,
+        date_posted TEXT,
+        source_ats TEXT NOT NULL,
+        first_seen TEXT NOT NULL,
+        status TEXT DEFAULT 'unposted',
+        keywords_matched TEXT,
+        description TEXT,
+        salary_min REAL,
+        salary_max REAL,
+        salary_currency TEXT,
+        experience_years INTEGER,
+        is_active INTEGER DEFAULT 1,
+        last_seen_at TEXT
+    )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_status ON jobs(status)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_first_seen ON jobs(first_seen)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_company ON jobs(company)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_source_ats ON jobs(source_ats)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_is_active ON jobs(is_active)")
+    
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS runs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        script_name TEXT NOT NULL,
+        timestamp TEXT NOT NULL,
+        companies_fetched INTEGER,
+        new_jobs_found INTEGER,
+        duration_s REAL,
+        errors TEXT
+    )
+    """)
+    conn.commit()
 
 
 # ═══════════════════════════════════════════════════════════════════════
