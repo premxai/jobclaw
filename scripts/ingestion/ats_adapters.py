@@ -573,11 +573,14 @@ class WorkableAdapter:
         jobs = []
         for j in data.get("results", []):
             location_obj = j.get("location", {})
-            location = location_obj.get("city", "")
-            if location_obj.get("region"):
-                location += f", {location_obj['region']}"
-            if location_obj.get("country"):
-                location += f", {location_obj['country']}"
+            location = location_obj.get("city") or ""
+            region = location_obj.get("region")
+            if region:
+                location += f", {region}" if location else region
+            country = location_obj.get("country")
+            if country:
+                location += f", {country}" if location else country
+            
             if not location:
                 location = "Unknown"
 

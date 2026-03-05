@@ -43,15 +43,14 @@ import aiohttp
 # TLS IMPERSONATION — which browser to pretend to be
 # ═══════════════════════════════════════════════════════════════════════
 
-# curl_cffi impersonation targets — rotates between these
+# curl_cffi impersonation targets — rotates between these.
+# Using older, universally supported versions to avoid ImpersonateError
 _IMPERSONATE_TARGETS = [
-    "chrome124",
-    "chrome126",
-    "chrome127",
-    "chrome131",
-    "chrome133a",
-    "edge101",
-    "safari17_0",
+    "chrome110",
+    "chrome116",
+    "chrome120",
+    "edge99",
+    "safari15_3",
 ]
 
 def _random_impersonate() -> str:
