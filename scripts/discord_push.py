@@ -24,6 +24,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.utils.logger import _log
 from scripts.database.db_utils import get_connection, get_unposted_jobs, mark_jobs_posted
+from scripts.utils.dedup_file import load_posted_hashes, save_posted_hashes, is_already_posted, mark_as_posted
 
 try:
     from dotenv import load_dotenv
@@ -238,10 +239,15 @@ async def push_new_jobs_to_discord():
     """
     Called by the orchestrator IMMEDIATELY after scraping finishes.
     Posts each job as an individual embed card to the correct category channel.
+    Uses file-based dedup to avoid re-posting across ephemeral CI runs.
     Returns the number of jobs posted.
     """
     import asyncio
     import aiohttp
+
+    # Load persistent dedup hashes from git-tracked file
+    posted_hashes = load_posted_hashes()
+    log(f"Loaded {len(posted_hashes)} previously-posted hashes from dedup file.")
 
     conn = get_connection()
     try:
@@ -250,12 +256,22 @@ async def push_new_jobs_to_discord():
             log("No unposted jobs — nothing to push.")
             return 0
 
-        log(f"Pushing {len(jobs)} new jobs to Discord as individual cards...")
-        hashes = [j["internal_hash"] for j in jobs]
+        # Filter out jobs we already posted in previous runs
+        fresh_jobs = [j for j in jobs if not is_already_posted(posted_hashes, j["internal_hash"])]
+        skipped = len(jobs) - len(fresh_jobs)
+        if skipped > 0:
+            log(f"Skipped {skipped} already-posted jobs (dedup file).")
+        
+        if not fresh_jobs:
+            log("All jobs already posted in previous runs — nothing new.")
+            return 0
+
+        log(f"Pushing {len(fresh_jobs)} new jobs to Discord as individual cards...")
+        hashes = [j["internal_hash"] for j in fresh_jobs]
 
         # Group jobs by target channel for efficient sending
         channel_jobs: dict[str, list[dict]] = defaultdict(list)
-        for job in jobs:
+        for job in fresh_jobs:
             category = _get_category(job)
             channel_id = _get_channel_id(category)
 
@@ -282,6 +298,7 @@ async def push_new_jobs_to_discord():
 
                         if ok:
                             sent_count += 1
+                            mark_as_posted(posted_hashes, job["internal_hash"])
                         else:
                             failed_count += 1
                     except Exception as e:
@@ -293,9 +310,14 @@ async def push_new_jobs_to_discord():
 
         log(f"Sent {sent_count} cards ({failed_count} failed)")
 
-        # Mark all as posted even if some failed (avoid re-sending spam)
+        # Mark all as posted in SQLite too (for within-run dedup)
         mark_jobs_posted(conn, hashes)
         log(f"Marked {len(hashes)} jobs as posted.")
+        
+        # Persist dedup hashes to disk for cross-run dedup
+        save_posted_hashes(posted_hashes)
+        log(f"Saved {len(posted_hashes)} hashes to dedup file.")
+        
         return sent_count
 
     except Exception as e:
@@ -328,14 +350,19 @@ class StreamingJobPusher:
         self._stop = _asyncio.Event()
         self._total_pushed = 0
         self._enabled = bool(self._webhook_url or BOT_TOKEN)
+        # Load persistent dedup hashes
+        self._posted_hashes = load_posted_hashes() if self._enabled else {}
 
     @property
     def total_pushed(self) -> int:
         return self._total_pushed
 
     def push(self, job_dict: dict) -> None:
-        """Queue a job for streaming push. Non-blocking."""
+        """Queue a job for streaming push. Non-blocking. Skips already-posted jobs."""
         if self._enabled:
+            h = job_dict.get("internal_hash", "")
+            if h and is_already_posted(self._posted_hashes, h):
+                return  # Already posted in a previous run
             self._queue.put_nowait(job_dict)
 
     async def stop(self) -> None:
@@ -385,6 +412,9 @@ class StreamingJobPusher:
 
         if self._total_pushed > 0:
             log(f"🌊 Streaming waterfall complete — {self._total_pushed} cards pushed live.")
+            # Save dedup hashes after streaming
+            save_posted_hashes(self._posted_hashes)
+            log(f"Saved {len(self._posted_hashes)} hashes to dedup file.")
 
 
 if __name__ == "__main__":
