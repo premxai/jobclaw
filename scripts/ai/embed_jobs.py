@@ -22,11 +22,10 @@ Usage:
 
 import json
 import os
-import sqlite3
 import numpy as np
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent.parent.parent / "data" / "jobclaw.db"
+from scripts.database.db_utils import get_connection, is_postgres
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -159,32 +158,34 @@ class JobEmbedder:
         
         Returns count of jobs embedded.
         """
-        conn = sqlite3.connect(str(DB_PATH), timeout=10)
-        conn.row_factory = sqlite3.Row
-        
+        conn = get_connection()
+        ph = "%s" if is_postgres() else "?"
+
         try:
             # Ensure embedding column exists
             try:
                 conn.execute("ALTER TABLE jobs ADD COLUMN embedding_json TEXT")
                 conn.commit()
-            except sqlite3.OperationalError:
-                pass  # Column already exists
+            except Exception:
+                conn.rollback()  # Required for PG after failed ALTER
 
             # Get jobs without embeddings
-            cursor = conn.execute("""
+            cursor = conn.cursor()
+            cursor.execute(f"""
                 SELECT internal_hash, title, company, location, description, keywords_matched
                 FROM jobs
                 WHERE embedding_json IS NULL AND is_active = 1
                 ORDER BY first_seen DESC
-                LIMIT ?
+                LIMIT {ph}
             """, (limit,))
+            cols = [desc[0] for desc in cursor.description]
             rows = cursor.fetchall()
 
             if not rows:
                 return 0
 
             # Build texts
-            jobs = [dict(r) for r in rows]
+            jobs = [dict(zip(cols, r)) for r in rows]
             texts = [self._job_to_text(j) for j in jobs]
             hashes = [j["internal_hash"] for j in jobs]
 
@@ -196,7 +197,7 @@ class JobEmbedder:
             for i, (hash_val, emb) in enumerate(zip(hashes, embeddings)):
                 emb_json = json.dumps(emb.tolist())
                 conn.execute(
-                    "UPDATE jobs SET embedding_json = ? WHERE internal_hash = ?",
+                    f"UPDATE jobs SET embedding_json = {ph} WHERE internal_hash = {ph}",
                     (emb_json, hash_val)
                 )
                 if (i + 1) % 500 == 0:
@@ -217,19 +218,21 @@ class JobEmbedder:
         """
         query_vec = self.embed_text(query_text)
 
-        conn = sqlite3.connect(str(DB_PATH), timeout=10)
-        conn.row_factory = sqlite3.Row
+        conn = get_connection()
         try:
-            cursor = conn.execute("""
+            cursor = conn.cursor()
+            cursor.execute("""
                 SELECT internal_hash, title, company, location, url, embedding_json
                 FROM jobs
                 WHERE embedding_json IS NOT NULL AND is_active = 1
                 LIMIT 5000
             """)
+            cols = [desc[0] for desc in cursor.description]
             rows = cursor.fetchall()
 
             results = []
-            for row in rows:
+            for raw_row in rows:
+                row = dict(zip(cols, raw_row))
                 try:
                     emb = np.array(json.loads(row["embedding_json"]), dtype=np.float32)
                     sim = float(np.dot(query_vec, emb))  # Already normalized → cosine sim

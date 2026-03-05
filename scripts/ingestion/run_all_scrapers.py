@@ -166,10 +166,9 @@ async def run_all(
             from scripts.ingestion.scrape_brave import run_brave_scraper
             tasks.append(_run_with_timing("Brave Search (LinkedIn/Indeed/Glassdoor)", run_brave_scraper()))
 
-    # ── Streaming Waterfall: push jobs to Discord in real-time ────────
-    from scripts.discord_push import StreamingJobPusher
-    pusher = StreamingJobPusher()
-    pusher_task = asyncio.create_task(pusher.run())
+    # NOTE: StreamingJobPusher disabled — no scraper currently calls pusher.push().
+    # The batch push_new_jobs_to_discord() at the end handles all Discord notifications.
+    # StreamingJobPusher can be re-enabled when scrapers are wired to call push() per job.
 
     # Fire all scrapers at once — each has its own session + rate limiter
     # Global 20-minute timeout so nothing can hang forever
@@ -181,13 +180,6 @@ async def run_all(
     except asyncio.TimeoutError:
         _log("[orchestrator] GLOBAL TIMEOUT after 20 minutes -- aborting remaining scrapers", "ERROR")
         results = []
-
-    # Stop the streaming pusher and wait for it to flush
-    await pusher.stop()
-    try:
-        await asyncio.wait_for(pusher_task, timeout=30)
-    except asyncio.TimeoutError:
-        _log("[orchestrator] Streaming pusher flush timed out", "WARN")
 
     # ── Summary ─────────────────────────────────────────────────────
     total_dur = round(time.time() - start_time, 1)

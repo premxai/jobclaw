@@ -15,10 +15,9 @@ Usage:
 
 import json
 import numpy as np
-import sqlite3
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent.parent.parent / "data" / "jobclaw.db"
+from scripts.database.db_utils import get_connection
 
 
 class ResumeMatcher:
@@ -51,18 +50,20 @@ class ResumeMatcher:
         if self.resume_vector is None:
             raise ValueError("No resume loaded. Call load_resume() first.")
 
-        conn = sqlite3.connect(str(DB_PATH), timeout=10)
-        conn.row_factory = sqlite3.Row
+        conn = get_connection()
         try:
-            cursor = conn.execute("""
+            cursor = conn.cursor()
+            cursor.execute("""
                 SELECT internal_hash, title, company, location, url, 
                        salary_min, salary_max, keywords_matched, embedding_json
                 FROM jobs
                 WHERE embedding_json IS NOT NULL AND is_active = 1
             """)
+            cols = [desc[0] for desc in cursor.description]
             
             results = []
-            for row in cursor:
+            for raw_row in cursor:
+                row = dict(zip(cols, raw_row))
                 try:
                     emb = np.array(json.loads(row["embedding_json"]), dtype=np.float32)
                     score = float(np.dot(self.resume_vector, emb))

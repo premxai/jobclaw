@@ -24,7 +24,6 @@ import asyncio
 import random
 import time
 import os
-from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Optional, Any
 
@@ -198,7 +197,7 @@ class RateLimiter:
 # RETRY ENGINE — exponential backoff on 429/503/502
 # ═══════════════════════════════════════════════════════════════════════
 
-RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
+RETRYABLE_STATUS_CODES = {403, 429, 500, 502, 503, 504}
 MAX_RETRIES = 3
 BASE_BACKOFF = 1.5  # seconds
 
@@ -265,7 +264,7 @@ async def fetch_with_retry(
                 retry_after = resp.headers.get("Retry-After")
                 if retry_after:
                     try:
-                        wait = min(float(retry_after), 30.0)
+                        wait = min(float(retry_after), 120.0)
                     except ValueError:
                         wait = BASE_BACKOFF * (2 ** attempt)
                 else:

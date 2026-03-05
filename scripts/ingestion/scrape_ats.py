@@ -47,14 +47,14 @@ DEFAULT_SKIP_PLATFORMS: set[str] = set()
 # from a queue, so memory stays bounded regardless of registry size.
 # Workers per platform — lower bounds are better for 24/7 stealth scraping
 PLATFORM_WORKERS = {
-    "greenhouse": 5,
-    "lever": 5,
-    "ashby": 5,
-    "smartrecruiters": 3,
+    "greenhouse": 3,
+    "lever": 3,
+    "ashby": 3,
+    "smartrecruiters": 2,
     "workday": 2,            # Aggressive WAF — don't push past 2-3
-    "workable": 3,
-    "rippling": 3,
-    "bamboohr": 3,
+    "workable": 2,
+    "rippling": 2,
+    "bamboohr": 2,
 }
 DEFAULT_WORKERS = 3
 
@@ -70,7 +70,7 @@ class CircuitBreaker:
     Tracks per-platform failure counts and provides skip decisions.
     """
     
-    def __init__(self, threshold: int = 50):
+    def __init__(self, threshold: int = 15):
         self.threshold = threshold
         self._failures: dict[str, int] = defaultdict(int)
         self._total_skipped: dict[str, int] = defaultdict(int)
@@ -81,7 +81,7 @@ class CircuitBreaker:
     
     def record_success(self, platform: str) -> None:
         """Reset failure count on success (half-open → closed)."""
-        self._failures[platform] = max(0, self._failures[platform] - 5)
+        self._failures[platform] = 0
     
     def should_skip(self, platform: str) -> bool:
         """Check if the platform circuit is open (too many failures)."""
@@ -143,9 +143,11 @@ async def _worker(
                 pass  # Cache corrupt — fall through
 
         try:
+            # Workday is slow — give it more time
+            per_company_timeout = 180 if ats == "workday" else 120
             jobs = await asyncio.wait_for(
                 fetch_company_jobs(session, cname, ats, slug, rate_limiter=rate_limiter),
-                timeout=120,  # 120s max per company — allows stealthy rate limits + retries to complete
+                timeout=per_company_timeout,
             )
             if jobs:
                 cache.put(ats, slug, [j.to_dict() for j in jobs])
@@ -153,7 +155,7 @@ async def _worker(
             if circuit_breaker:
                 circuit_breaker.record_success(ats)
         except asyncio.TimeoutError:
-            _log(f"[{ats}/{slug}] Hard timeout after 120s", "WARN")
+            _log(f"[{ats}/{slug}] Hard timeout", "WARN")
             results.append((cname, ats, slug, [], "timeout"))
             if circuit_breaker:
                 circuit_breaker.record_failure(ats)
@@ -234,7 +236,7 @@ async def run_ats_scraper(
     # Initialize shared infrastructure
     rate_limiter = RateLimiter()
     cache = ResponseCache()
-    breaker = CircuitBreaker(threshold=50)
+    breaker = CircuitBreaker(threshold=15)
 
     # Group companies by ATS platform, EXCEPT workday which requires OpenClaw
     by_platform = defaultdict(list)

@@ -183,52 +183,64 @@ _DISCORD_HEADERS = {
 
 
 async def _send_card_via_bot(session, channel_id: str, embed: dict) -> bool:
-    """Send a single job card to a specific channel via Bot API."""
+    """Send a single job card to a specific channel via Bot API (3-retry exponential backoff)."""
+    import asyncio
     url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
     headers = {
         **_DISCORD_HEADERS,
         "Authorization": f"Bot {BOT_TOKEN}",
     }
-    resp = await session.post(url, headers=headers, json={"embeds": [embed]})
 
-    if resp.status == 429:
-        # Rate limited — wait and retry once
-        try:
-            data = await resp.json()
-            wait = data.get("retry_after", 2.0)
-        except Exception:
-            wait = 2.0
-        log(f"Rate limited — waiting {wait}s", "WARN")
-        import asyncio
-        await asyncio.sleep(wait)
+    for attempt in range(3):
         resp = await session.post(url, headers=headers, json={"embeds": [embed]})
 
-    if resp.status not in (200, 201):
+        if resp.status in (200, 201):
+            return True
+
+        if resp.status == 429:
+            try:
+                data = await resp.json()
+                wait = data.get("retry_after", 2.0)
+            except Exception:
+                wait = 2.0
+            backoff = max(wait, 2.0) * (2 ** attempt)
+            log(f"Rate limited — waiting {backoff:.1f}s (attempt {attempt + 1}/3)", "WARN")
+            await asyncio.sleep(backoff)
+            continue
+
         log(f"Bot API returned {resp.status} for channel {channel_id}", "WARN")
         return False
-    return True
+
+    log(f"Bot API — retries exhausted for channel {channel_id}", "WARN")
+    return False
 
 
 async def _send_card_via_webhook(session, embed: dict) -> bool:
-    """Send a single job card via webhook (goes to one channel only)."""
-    # Webhook URL includes auth, but still needs User-Agent for Cloudflare
-    resp = await session.post(WEBHOOK_URL, headers=_DISCORD_HEADERS, json={"embeds": [embed]})
+    """Send a single job card via webhook (3-retry exponential backoff)."""
+    import asyncio
 
-    if resp.status == 429:
-        try:
-            data = await resp.json()
-            wait = data.get("retry_after", 2.0)
-        except Exception:
-            wait = 2.0
-        log(f"Rate limited — waiting {wait}s", "WARN")
-        import asyncio
-        await asyncio.sleep(wait)
-        resp = await session.post(WEBHOOK_URL, json={"embeds": [embed]})
+    for attempt in range(3):
+        resp = await session.post(WEBHOOK_URL, headers=_DISCORD_HEADERS, json={"embeds": [embed]})
 
-    if resp.status not in (200, 204):
+        if resp.status in (200, 204):
+            return True
+
+        if resp.status == 429:
+            try:
+                data = await resp.json()
+                wait = data.get("retry_after", 2.0)
+            except Exception:
+                wait = 2.0
+            backoff = max(wait, 2.0) * (2 ** attempt)
+            log(f"Rate limited — waiting {backoff:.1f}s (attempt {attempt + 1}/3)", "WARN")
+            await asyncio.sleep(backoff)
+            continue
+
         log(f"Webhook returned {resp.status}", "WARN")
         return False
-    return True
+
+    log("Webhook — retries exhausted", "WARN")
+    return False
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -267,7 +279,7 @@ async def push_new_jobs_to_discord():
             return 0
 
         log(f"Pushing {len(fresh_jobs)} new jobs to Discord as individual cards...")
-        hashes = [j["internal_hash"] for j in fresh_jobs]
+        sent_hashes = []
 
         # Group jobs by target channel for efficient sending
         channel_jobs: dict[str, list[dict]] = defaultdict(list)
@@ -299,6 +311,7 @@ async def push_new_jobs_to_discord():
                         if ok:
                             sent_count += 1
                             mark_as_posted(posted_hashes, job["internal_hash"])
+                            sent_hashes.append(job["internal_hash"])
                         else:
                             failed_count += 1
                     except Exception as e:
@@ -310,9 +323,10 @@ async def push_new_jobs_to_discord():
 
         log(f"Sent {sent_count} cards ({failed_count} failed)")
 
-        # Mark all as posted in SQLite too (for within-run dedup)
-        mark_jobs_posted(conn, hashes)
-        log(f"Marked {len(hashes)} jobs as posted.")
+        # Mark only successfully-sent jobs as posted in the DB
+        if sent_hashes:
+            mark_jobs_posted(conn, sent_hashes)
+            log(f"Marked {len(sent_hashes)}/{len(fresh_jobs)} jobs as posted in DB.")
         
         # Persist dedup hashes to disk for cross-run dedup
         save_posted_hashes(posted_hashes)
@@ -402,6 +416,7 @@ class StreamingJobPusher:
 
                     if ok:
                         self._total_pushed += 1
+                        mark_as_posted(self._posted_hashes, job.get("internal_hash", ""))
                 except Exception as e:
                     log(f"Streaming push failed: {e}", "WARN")
 

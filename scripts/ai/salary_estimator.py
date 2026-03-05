@@ -15,12 +15,11 @@ Usage:
 """
 
 import re
-import sqlite3
 from collections import defaultdict
 from pathlib import Path
-from statistics import mean, median, stdev
 
-DB_PATH = Path(__file__).parent.parent.parent / "data" / "jobclaw.db"
+from scripts.database.db_utils import get_connection, is_postgres
+from statistics import mean, median, stdev
 
 
 # ── Location Normalization ───────────────────────────────────────────
@@ -128,18 +127,17 @@ class SalaryEstimator:
     Falls back to broader groups when specific data is sparse.
     """
 
-    def __init__(self, db_path: str = None):
-        self.db_path = db_path or str(DB_PATH)
+    def __init__(self):
         # salary_data[role_category][seniority][metro] = [(min, max), ...]
         self.salary_data: dict = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
         self._trained = False
 
     def train(self) -> int:
         """Load salary data from the database. Returns number of salary records used."""
-        conn = sqlite3.connect(self.db_path, timeout=10)
-        conn.row_factory = sqlite3.Row
+        conn = get_connection()
         try:
-            rows = conn.execute("""
+            cursor = conn.cursor()
+            cursor.execute("""
                 SELECT title, location, salary_min, salary_max, salary_currency
                 FROM jobs 
                 WHERE salary_min IS NOT NULL 
@@ -148,7 +146,9 @@ class SalaryEstimator:
                 AND salary_max > 10000
                 AND salary_currency = 'USD'
                 AND is_active = 1
-            """).fetchall()
+            """)
+            cols = [desc[0] for desc in cursor.description]
+            rows = [dict(zip(cols, r)) for r in cursor.fetchall()]
 
             count = 0
             for row in rows:
@@ -248,26 +248,29 @@ class SalaryEstimator:
         if not self._trained:
             self.train()
 
-        conn = sqlite3.connect(self.db_path, timeout=10)
-        conn.row_factory = sqlite3.Row
+        conn = get_connection()
+        ph = "%s" if is_postgres() else "?"
         updated = 0
 
         try:
-            rows = conn.execute("""
+            cursor = conn.cursor()
+            cursor.execute("""
                 SELECT internal_hash, title, location
                 FROM jobs 
                 WHERE (salary_min IS NULL OR salary_min = 0)
                 AND is_active = 1
                 LIMIT 5000
-            """).fetchall()
+            """)
+            cols = [desc[0] for desc in cursor.description]
+            rows = [dict(zip(cols, r)) for r in cursor.fetchall()]
 
             for row in rows:
                 estimate = self.predict(row["title"], row["location"] or "")
                 if estimate and estimate["confidence"] >= 0.5:
-                    conn.execute("""
+                    conn.execute(f"""
                         UPDATE jobs 
-                        SET salary_min = ?, salary_max = ?, salary_currency = ?
-                        WHERE internal_hash = ? AND (salary_min IS NULL OR salary_min = 0)
+                        SET salary_min = {ph}, salary_max = {ph}, salary_currency = {ph}
+                        WHERE internal_hash = {ph} AND (salary_min IS NULL OR salary_min = 0)
                     """, (
                         estimate["salary_min"],
                         estimate["salary_max"],

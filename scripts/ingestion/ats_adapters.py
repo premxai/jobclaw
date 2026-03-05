@@ -139,7 +139,8 @@ class GreenhouseAdapter:
         jobs = []
         for j in data.get("jobs", []):
             updated_at = j.get("updated_at") or j.get("created_at", "")
-            location = j.get("location", {}).get("name", "Unknown")
+            loc_obj = j.get("location")
+            location = loc_obj.get("name", "Unknown") if isinstance(loc_obj, dict) else "Unknown"
 
             # Full description from the content field (HTML)
             raw_content = j.get("content", "")
@@ -198,7 +199,11 @@ class LeverAdapter:
         for j in data:
             created_at = j.get("createdAt", 0)
 
-            location = j.get("categories", {}).get("location", "Unknown")
+            cats = j.get("categories")
+            if isinstance(cats, dict):
+                location = cats.get("location", "Unknown")
+            else:
+                location = "Unknown"
             if isinstance(location, list):
                 location = ", ".join(location) if location else "Unknown"
 
@@ -346,10 +351,10 @@ class SmartRecruitersAdapter:
 
                 # SmartRecruiters includes jobAd.sections for descriptions
                 description = None
-                job_ad = j.get("jobAd", {})
+                job_ad = j.get("jobAd")
                 if job_ad and isinstance(job_ad, dict):
-                    sections = job_ad.get("sections", {})
-                    if sections:
+                    sections = job_ad.get("sections")
+                    if sections and isinstance(sections, dict):
                         desc_parts = []
                         for section_key in ["jobDescription", "qualifications", "additionalInformation"]:
                             section = sections.get(section_key, {})
@@ -411,11 +416,13 @@ class BambooHRAdapter:
 
         jobs = []
         for j in data.get("result", []):
+            loc_obj = j.get("location")
             location_parts = []
-            if j.get("location", {}).get("city"):
-                location_parts.append(j["location"]["city"])
-            if j.get("location", {}).get("state"):
-                location_parts.append(j["location"]["state"])
+            if isinstance(loc_obj, dict):
+                if loc_obj.get("city"):
+                    location_parts.append(loc_obj["city"])
+                if loc_obj.get("state"):
+                    location_parts.append(loc_obj["state"])
             location = ", ".join(location_parts) if location_parts else "Unknown"
 
             description = _strip_html(j.get("description", "")) or None
@@ -471,7 +478,7 @@ class WorkdayAdapter:
 
         all_jobs = []
         offset = 0
-        max_pages = 25  # Safety limit: 500 jobs max
+        max_pages = 50  # Safety limit: 1000 jobs max
 
         while offset < max_pages * 20:
             payload["offset"] = offset
@@ -547,60 +554,72 @@ class WorkableAdapter:
         rate_limiter: Optional[RateLimiter] = None,
     ) -> list[NormalizedJob]:
         url = WorkableAdapter.BASE_URL.format(slug=slug)
-        payload = {
-            "query": "",
-            "location": [],
-            "department": [],
-            "worktype": [],
-            "remote": [],
-        }
+        all_jobs = []
+        token = None  # Cursor for pagination
+        max_pages = 20  # Safety limit
 
-        resp = await fetch_with_retry(
-            session, "POST", url,
-            rate_limiter=rate_limiter,
-            log_tag=f"workable/{slug}",
-            json=payload,
-        )
-        if not resp:
-            return []
+        for _ in range(max_pages):
+            payload = {
+                "query": "",
+                "location": [],
+                "department": [],
+                "worktype": [],
+                "remote": [],
+            }
+            if token:
+                payload["token"] = token
 
-        try:
-            data = await _parse_json(resp)
-        except Exception as e:
-            _log(f"[workable/{slug}] JSON decode error: {e}", "WARN")
-            return []
-
-        jobs = []
-        for j in data.get("results", []):
-            location_obj = j.get("location", {})
-            location = location_obj.get("city") or ""
-            region = location_obj.get("region")
-            if region:
-                location += f", {region}" if location else region
-            country = location_obj.get("country")
-            if country:
-                location += f", {country}" if location else country
-            
-            if not location:
-                location = "Unknown"
-
-            published = j.get("published", "")
-
-            description = _strip_html(j.get("description", "")) or None
-
-            job = NormalizedJob(
-                title=j.get("title", ""),
-                company=company,
-                location=location.strip(", "),
-                url=f"https://apply.workable.com/{slug}/j/{j.get('shortcode', '')}/",
-                date_posted=published,
-                source_ats="workable",
-                job_id=str(j.get("shortcode", "")),
-                description=description,
+            resp = await fetch_with_retry(
+                session, "POST", url,
+                rate_limiter=rate_limiter,
+                log_tag=f"workable/{slug}",
+                json=payload,
             )
-            jobs.append(_enrich_job(job))
+            if not resp:
+                break
 
-        return jobs
+            try:
+                data = await _parse_json(resp)
+            except Exception as e:
+                _log(f"[workable/{slug}] JSON decode error: {e}", "WARN")
+                break
+
+            for j in data.get("results", []):
+                location_obj = j.get("location", {})
+                location = location_obj.get("city") or ""
+                region = location_obj.get("region")
+                if region:
+                    location += f", {region}" if location else region
+                country = location_obj.get("country")
+                if country:
+                    location += f", {country}" if location else country
+                
+                if not location:
+                    location = "Unknown"
+
+                published = j.get("published", "")
+
+                description = _strip_html(j.get("description", "")) or None
+
+                job = NormalizedJob(
+                    title=j.get("title", ""),
+                    company=company,
+                    location=location.strip(", "),
+                    url=f"https://apply.workable.com/{slug}/j/{j.get('shortcode', '')}/",
+                    date_posted=published,
+                    source_ats="workable",
+                    job_id=str(j.get("shortcode", "")),
+                    description=description,
+                )
+                all_jobs.append(_enrich_job(job))
+
+            # Check for next page cursor
+            next_token = data.get("nextPage") or data.get("paging", {}).get("next")
+            if not next_token or not data.get("results"):
+                break
+            token = next_token
+
+        return all_jobs
 
 
 # ═══════════════════════════════════════════════════════════════════════

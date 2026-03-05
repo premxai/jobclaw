@@ -8,7 +8,6 @@ Run:  uvicorn api.main:app --reload --port 8000
 Docs: http://localhost:8000/docs
 """
 
-import asyncio
 import json
 import os
 import sys
@@ -30,7 +29,7 @@ from api.models import (
 )
 from api.database import (
     get_jobs, get_job_by_hash, get_companies,
-    get_stats, get_scraper_runs, get_db,
+    get_stats, get_scraper_runs, get_db, _ph, _is_pg,
 )
 
 
@@ -51,6 +50,12 @@ async def lifespan(app: FastAPI):
         total = conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
         conn.close()
         print(f"✅ Database connected: {total} jobs in JobClaw")
+
+    # Create applications table on startup (not import time)
+    try:
+        _ensure_applications_table()
+    except Exception:
+        pass  # Will be created when DB is available
 
     # Validate Discord configuration
     webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
@@ -83,7 +88,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["Content-Type", "X-API-Key", "Authorization"],
 )
 
@@ -123,6 +128,65 @@ async def health_check():
         return HealthResponse(status="ok", database="connected", total_jobs=total)
     except Exception as e:
         return HealthResponse(status="degraded", database=str(e), total_jobs=0)
+
+
+@app.get("/health/deep", tags=["System"])
+async def deep_health_check():
+    """Deep health check — database, scraper freshness, Discord, and disk."""
+    checks: dict = {"status": "ok", "checks": {}}
+
+    # 1. Database connectivity + stats
+    try:
+        conn = get_db()
+        total = conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
+        active = conn.execute("SELECT COUNT(*) FROM jobs WHERE is_active = 1").fetchone()[0]
+        unposted = conn.execute("SELECT COUNT(*) FROM jobs WHERE status = 'unposted'").fetchone()[0]
+
+        if _is_pg():
+            freshness_q = "SELECT COUNT(*) FROM jobs WHERE first_seen >= NOW() - INTERVAL '24 hours'"
+        else:
+            freshness_q = "SELECT COUNT(*) FROM jobs WHERE first_seen >= datetime('now', '-24 hours')"
+        recent = conn.execute(freshness_q).fetchone()[0]
+
+        # Last scraper run
+        try:
+            cursor = conn.cursor()
+            cursor.execute("SELECT started_at, tier FROM scraper_runs ORDER BY started_at DESC LIMIT 1")
+            last_run = cursor.fetchone()
+            last_run_info = {"started_at": last_run[0], "tier": last_run[1]} if last_run else None
+        except Exception:
+            last_run_info = None
+
+        conn.close()
+        checks["checks"]["database"] = {
+            "status": "ok",
+            "total_jobs": total,
+            "active_jobs": active,
+            "unposted": unposted,
+            "jobs_last_24h": recent,
+            "last_run": last_run_info,
+        }
+    except Exception as e:
+        checks["status"] = "degraded"
+        checks["checks"]["database"] = {"status": "error", "error": str(e)}
+
+    # 2. Discord configuration
+    webhook = bool(os.getenv("DISCORD_WEBHOOK_URL"))
+    bot = bool(os.getenv("DISCORD_BOT_TOKEN")) and bool(os.getenv("DISCORD_CHANNEL_ID"))
+    checks["checks"]["discord"] = {
+        "status": "ok" if (webhook or bot) else "unconfigured",
+        "webhook": webhook,
+        "bot_token": bot,
+    }
+
+    # 3. Data freshness alert
+    if checks["checks"].get("database", {}).get("jobs_last_24h", 0) == 0:
+        checks["status"] = "warning"
+        checks["checks"]["freshness"] = {"status": "stale", "message": "No new jobs in 24h"}
+    else:
+        checks["checks"]["freshness"] = {"status": "ok"}
+
+    return checks
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -410,54 +474,73 @@ async def run_dedup(threshold: float = 0.6, dry_run: bool = True):
 VALID_STAGES = ["saved", "applied", "phone_screen", "onsite", "offer", "rejected", "withdrawn"]
 
 def _ensure_applications_table():
-    """Create applications table in SQLite if it doesn't exist."""
+    """Create applications table if it doesn't exist (SQLite and PostgreSQL)."""
     conn = get_db()
     try:
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS applications (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                job_hash TEXT,
-                user_id TEXT DEFAULT 'default',
-                stage TEXT DEFAULT 'saved',
-                notes TEXT,
-                applied_at TEXT,
-                updated_at TEXT,
-                interview_date TEXT,
-                contact_name TEXT,
-                contact_email TEXT
-            )
-        """)
+        if _is_pg():
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS applications (
+                    id SERIAL PRIMARY KEY,
+                    job_hash TEXT,
+                    user_id TEXT DEFAULT 'default',
+                    stage TEXT DEFAULT 'saved',
+                    notes TEXT,
+                    applied_at TEXT,
+                    updated_at TEXT,
+                    interview_date TEXT,
+                    contact_name TEXT,
+                    contact_email TEXT
+                )
+            """)
+        else:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS applications (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    job_hash TEXT,
+                    user_id TEXT DEFAULT 'default',
+                    stage TEXT DEFAULT 'saved',
+                    notes TEXT,
+                    applied_at TEXT,
+                    updated_at TEXT,
+                    interview_date TEXT,
+                    contact_name TEXT,
+                    contact_email TEXT
+                )
+            """)
         conn.commit()
     finally:
         conn.close()
 
-_ensure_applications_table()
+# Deferred — called in lifespan instead of at import time
+# _ensure_applications_table()
 
 
 @app.get("/applications")
 async def list_applications(stage: str = None, user_id: str = "default"):
     """Get all tracked applications, optionally filtered by stage."""
     conn = get_db()
+    p = _ph()
     try:
         cursor = conn.cursor()
         if stage:
-            cursor.execute("""
+            cursor.execute(f"""
                 SELECT a.*, j.title, j.company, j.location, j.url, j.salary_min, j.salary_max
                 FROM applications a
                 LEFT JOIN jobs j ON a.job_hash = j.internal_hash
-                WHERE a.user_id = ? AND a.stage = ?
+                WHERE a.user_id = {p} AND a.stage = {p}
                 ORDER BY a.updated_at DESC
             """, (user_id, stage))
         else:
-            cursor.execute("""
+            cursor.execute(f"""
                 SELECT a.*, j.title, j.company, j.location, j.url, j.salary_min, j.salary_max
                 FROM applications a
                 LEFT JOIN jobs j ON a.job_hash = j.internal_hash
-                WHERE a.user_id = ?
+                WHERE a.user_id = {p}
                 ORDER BY a.updated_at DESC
             """, (user_id,))
         rows = cursor.fetchall()
-        return {"applications": [dict(r) for r in rows], "count": len(rows)}
+        cols = [desc[0] for desc in cursor.description]
+        return {"applications": [dict(zip(cols, r)) for r in rows], "count": len(rows)}
     finally:
         conn.close()
 
@@ -472,11 +555,12 @@ async def create_application(job_hash: str, stage: str = "saved", notes: str = "
     now = datetime.now(timezone.utc).isoformat()
     
     conn = get_db()
+    p = _ph()
     try:
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(f"""
             INSERT INTO applications (job_hash, user_id, stage, notes, updated_at, applied_at)
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES ({p}, {p}, {p}, {p}, {p}, {p})
         """, (job_hash, user_id, stage, notes, now, now if stage == "applied" else None))
         conn.commit()
         app_id = cursor.lastrowid
@@ -495,12 +579,13 @@ async def update_application_stage(app_id: int, stage: str):
     now = datetime.now(timezone.utc).isoformat()
     
     conn = get_db()
+    p = _ph()
     try:
         cursor = conn.cursor()
-        cursor.execute("""
-            UPDATE applications SET stage = ?, updated_at = ?,
-                applied_at = CASE WHEN ? = 'applied' AND applied_at IS NULL THEN ? ELSE applied_at END
-            WHERE id = ?
+        cursor.execute(f"""
+            UPDATE applications SET stage = {p}, updated_at = {p},
+                applied_at = CASE WHEN {p} = 'applied' AND applied_at IS NULL THEN {p} ELSE applied_at END
+            WHERE id = {p}
         """, (stage, now, stage, now, app_id))
         conn.commit()
         if cursor.rowcount == 0:
@@ -518,25 +603,26 @@ async def update_application(app_id: int, notes: str = None, interview_date: str
     now = datetime.now(timezone.utc).isoformat()
     
     conn = get_db()
+    p = _ph()
     try:
-        updates = ["updated_at = ?"]
+        updates = [f"updated_at = {p}"]
         params = [now]
         if notes is not None:
-            updates.append("notes = ?")
+            updates.append(f"notes = {p}")
             params.append(notes)
         if interview_date is not None:
-            updates.append("interview_date = ?")
+            updates.append(f"interview_date = {p}")
             params.append(interview_date)
         if contact_name is not None:
-            updates.append("contact_name = ?")
+            updates.append(f"contact_name = {p}")
             params.append(contact_name)
         if contact_email is not None:
-            updates.append("contact_email = ?")
+            updates.append(f"contact_email = {p}")
             params.append(contact_email)
         
         params.append(app_id)
         cursor = conn.cursor()
-        cursor.execute(f"UPDATE applications SET {', '.join(updates)} WHERE id = ?", params)
+        cursor.execute(f"UPDATE applications SET {', '.join(updates)} WHERE id = {p}", params)
         conn.commit()
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Application not found")
@@ -549,9 +635,10 @@ async def update_application(app_id: int, notes: str = None, interview_date: str
 async def delete_application(app_id: int):
     """Remove an application from the tracker."""
     conn = get_db()
+    p = _ph()
     try:
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM applications WHERE id = ?", (app_id,))
+        cursor.execute(f"DELETE FROM applications WHERE id = {p}", (app_id,))
         conn.commit()
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Application not found")
@@ -564,12 +651,13 @@ async def delete_application(app_id: int):
 async def application_stats(user_id: str = "default"):
     """Get application funnel stats."""
     conn = get_db()
+    p = _ph()
     try:
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(f"""
             SELECT stage, COUNT(*) as count
             FROM applications
-            WHERE user_id = ?
+            WHERE user_id = {p}
             GROUP BY stage
         """, (user_id,))
         stages = {r[0]: r[1] for r in cursor.fetchall()}
@@ -580,11 +668,60 @@ async def application_stats(user_id: str = "default"):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# STATIC FILES — serve web dashboard
+# PROMETHEUS METRICS — basic metrics endpoint for monitoring
 # ═══════════════════════════════════════════════════════════════════════
 
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import PlainTextResponse
+
+
+@app.get("/metrics", response_class=PlainTextResponse, tags=["System"], include_in_schema=False)
+async def prometheus_metrics():
+    """Prometheus-compatible metrics endpoint."""
+    lines = []
+    try:
+        conn = get_db()
+        total = conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
+        active = conn.execute("SELECT COUNT(*) FROM jobs WHERE is_active = 1").fetchone()[0]
+        unposted = conn.execute("SELECT COUNT(*) FROM jobs WHERE status = 'unposted'").fetchone()[0]
+
+        # Per-platform counts
+        cursor = conn.cursor()
+        cursor.execute("SELECT source_ats, COUNT(*) FROM jobs WHERE is_active = 1 GROUP BY source_ats")
+        platform_counts = cursor.fetchall()
+
+        conn.close()
+
+        lines.append("# HELP jobclaw_jobs_total Total number of jobs in database")
+        lines.append("# TYPE jobclaw_jobs_total gauge")
+        lines.append(f"jobclaw_jobs_total {total}")
+
+        lines.append("# HELP jobclaw_jobs_active Number of active job listings")
+        lines.append("# TYPE jobclaw_jobs_active gauge")
+        lines.append(f"jobclaw_jobs_active {active}")
+
+        lines.append("# HELP jobclaw_jobs_unposted Jobs pending Discord notification")
+        lines.append("# TYPE jobclaw_jobs_unposted gauge")
+        lines.append(f"jobclaw_jobs_unposted {unposted}")
+
+        lines.append("# HELP jobclaw_jobs_by_platform Active jobs per ATS platform")
+        lines.append("# TYPE jobclaw_jobs_by_platform gauge")
+        for platform, count in platform_counts:
+            safe_name = (platform or "unknown").replace('"', '\\"')
+            lines.append(f'jobclaw_jobs_by_platform{{platform="{safe_name}"}} {count}')
+
+        lines.append("# HELP jobclaw_websocket_clients Connected WebSocket clients")
+        lines.append("# TYPE jobclaw_websocket_clients gauge")
+        lines.append(f"jobclaw_websocket_clients {len(_ws_clients)}")
+
+    except Exception as e:
+        lines.append(f"# ERROR: {e}")
+
+    return "\n".join(lines) + "\n"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# STATIC FILES — serve web dashboard
+# ═══════════════════════════════════════════════════════════════════════
 
 if WEB_DIR.exists():
     app.mount("/web", StaticFiles(directory=str(WEB_DIR)), name="web")

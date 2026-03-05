@@ -65,14 +65,12 @@ def _job_line(job: dict) -> str:
         loc = loc[:22] + "..."
 
     if url:
-        line = f"• **{title}** @ {company}"
+        line = f"• [**{title}**]({url}) @ {company}"
     else:
         line = f"• **{title}** @ {company}"
 
     if loc:
         line += f" — {loc}"
-    if url:
-        line += f" — [Apply]({url})"
     return line
 
 

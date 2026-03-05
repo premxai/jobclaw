@@ -17,11 +17,10 @@ Usage:
 
 import json
 import re
-import sqlite3
 from collections import defaultdict
 from pathlib import Path
 
-DB_PATH = Path(__file__).parent.parent.parent / "data" / "jobclaw.db"
+from scripts.database.db_utils import get_connection, is_postgres
 
 
 def _tokenize(text: str) -> set[str]:
@@ -63,9 +62,8 @@ class JobDeduplicator:
     4. Merge: keep the most complete listing, mark others as inactive
     """
 
-    def __init__(self, threshold: float = 0.6, db_path: str = None):
+    def __init__(self, threshold: float = 0.6):
         self.threshold = threshold
-        self.db_path = db_path or str(DB_PATH)
         self._use_minhash = False
         
         try:
@@ -94,24 +92,28 @@ class JobDeduplicator:
         Returns list of clusters, where each cluster is a list of
         {internal_hash, title, company, source_ats, description_len} dicts.
         """
-        conn = sqlite3.connect(self.db_path, timeout=10)
-        conn.row_factory = sqlite3.Row
-        
+        conn = get_connection()
+        ph = "%s" if is_postgres() else "?"
+
         try:
-            rows = conn.execute("""
+            cursor = conn.cursor()
+            cursor.execute(f"""
                 SELECT internal_hash, title, company, source_ats, 
                        description, location, salary_min
                 FROM jobs
                 WHERE is_active = 1
                 ORDER BY first_seen DESC
-                LIMIT ?
-            """, (limit,)).fetchall()
+                LIMIT {ph}
+            """, (limit,))
+            cols = [desc[0] for desc in cursor.description]
+            raw_rows = cursor.fetchall()
+            rows = [dict(zip(cols, r)) for r in raw_rows]
 
-            # Group by normalized title
+    # Group by normalized title
             title_groups = defaultdict(list)
             for row in rows:
                 norm = self._normalize_title(row["title"])
-                title_groups[norm].append(dict(row))
+                title_groups[norm].append(row)
 
             clusters = []
 
@@ -238,7 +240,8 @@ class JobDeduplicator:
         "Most complete" = longest description + has salary.
         Returns count of jobs marked as duplicates.
         """
-        conn = sqlite3.connect(self.db_path, timeout=10)
+        conn = get_connection()
+        ph = "%s" if is_postgres() else "?"
         merged = 0
 
         try:
@@ -255,7 +258,7 @@ class JobDeduplicator:
                 
                 for dup in duplicates:
                     conn.execute(
-                        "UPDATE jobs SET is_active = 0, status = 'archived' WHERE internal_hash = ?",
+                        f"UPDATE jobs SET is_active = 0, status = 'archived' WHERE internal_hash = {ph}",
                         (dup["internal_hash"],)
                     )
                     merged += 1

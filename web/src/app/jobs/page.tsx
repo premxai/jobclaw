@@ -8,7 +8,7 @@ import { fetchJobs } from "@/lib/api";
 import { Search, SlidersHorizontal, X } from "lucide-react";
 
 const CATEGORIES = ["AI/ML", "SWE", "Data Science", "Data Engineering", "Data Analyst", "New Grad", "Product", "Research"];
-const SOURCES = ["Greenhouse", "Lever", "Workday", "GitHub", "LinkedIn", "Indeed"];
+const SOURCES = ["Greenhouse", "Lever", "Workday", "Ashby", "SmartRecruiters", "Workable", "Rippling", "BambooHR", "GitHub", "Enterprise", "RSS", "LinkedIn", "Indeed"];
 
 export default function JobFeedPage() {
     const searchParams = useSearchParams();
@@ -37,10 +37,14 @@ export default function JobFeedPage() {
 
     const loadJobs = useCallback(async () => {
         setLoading(true);
-        const data = await fetchJobs({ search, page, limit: LIMIT });
+        // Pass first selected category/source to server for efficient filtering
+        const category = selectedCategories.size === 1 ? Array.from(selectedCategories)[0] : undefined;
+        const source = selectedSources.size === 1 ? Array.from(selectedSources)[0].toLowerCase() : undefined;
+        const data = await fetchJobs({ search, page, limit: LIMIT, category, source });
         let filtered = data.jobs;
 
-        if (selectedCategories.size > 0) {
+        // Client-side filtering only needed when multiple filters are selected
+        if (selectedCategories.size > 1) {
             filtered = filtered.filter((j) => {
                 try {
                     const kw = JSON.parse(j.keywords_matched || "[]");
@@ -48,17 +52,24 @@ export default function JobFeedPage() {
                 } catch { return false; }
             });
         }
-        if (selectedSources.size > 0) {
+        if (selectedSources.size > 1) {
             const sourceMap: Record<string, string[]> = {
-                Greenhouse: ["greenhouse"],
-                Lever: ["lever"],
-                Workday: ["workday"],
-                GitHub: ["github-swe-newgrad", "github-ai-newgrad", "github-internship", "github-new-grad"],
-                LinkedIn: ["linkedin"],
-                Indeed: ["indeed"],
+                greenhouse: ["greenhouse"],
+                lever: ["lever"],
+                workday: ["workday"],
+                ashby: ["ashby"],
+                smartrecruiters: ["smartrecruiters"],
+                workable: ["workable"],
+                rippling: ["rippling"],
+                bamboohr: ["bamboohr"],
+                github: ["github-swe-newgrad", "github-ai-newgrad", "github-internship", "github-new-grad"],
+                enterprise: ["apple", "amazon", "microsoft", "google", "meta", "tiktok", "nvidia", "uber", "tesla", "cursor"],
+                rss: ["rss"],
+                linkedin: ["linkedin"],
+                indeed: ["indeed"],
             };
             filtered = filtered.filter((j) => {
-                return Array.from(selectedSources).some((s) => (sourceMap[s] || []).includes(j.source_ats));
+                return Array.from(selectedSources).some((s) => (sourceMap[s.toLowerCase()] || []).includes(j.source_ats));
             });
         }
 

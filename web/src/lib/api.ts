@@ -70,22 +70,26 @@ export async function fetchJobs(params?: {
 
 // ─── Fetch single job ───────────────────────────────────────────────
 export async function fetchJobById(id: string): Promise<any | null> {
-    // The backend uses internal_hash as the ID in the URL
-    // But we may receive either a numeric index or a hash — try both
+    // Use the dedicated /jobs/{hash} endpoint instead of fetching all jobs
     try {
-        // First try: fetch all jobs and find by index
-        const allRes = await fetch(`${API_BASE}/jobs?per_page=200`, { cache: "no-store" });
-        if (!allRes.ok) throw new Error("API error");
-        const allData = await allRes.json();
-        const numId = parseInt(id);
-        if (!isNaN(numId) && numId > 0 && numId <= allData.jobs.length) {
-            return normaliseJob(allData.jobs[numId - 1], numId);
+        // Try direct hash lookup first (most common case)
+        const res = await fetch(`${API_BASE}/jobs/${encodeURIComponent(id)}`, { cache: "no-store" });
+        if (res.ok) {
+            const job = await res.json();
+            return normaliseJob(job);
         }
-        // If not numeric, try by hash
-        const res = await fetch(`${API_BASE}/jobs/${id}`, { cache: "no-store" });
-        if (!res.ok) return null;
-        const job = await res.json();
-        return normaliseJob(job);
+        // If not found by hash, it might be a numeric index — fetch that page
+        const numId = parseInt(id);
+        if (!isNaN(numId) && numId > 0) {
+            const pageRes = await fetch(`${API_BASE}/jobs?page=1&per_page=${numId}`, { cache: "no-store" });
+            if (pageRes.ok) {
+                const data = await pageRes.json();
+                if (data.jobs && data.jobs.length >= numId) {
+                    return normaliseJob(data.jobs[numId - 1], numId);
+                }
+            }
+        }
+        return null;
     } catch {
         const jobs = getMockJobs();
         return jobs.find((j) => String(j.id) === id) || null;
