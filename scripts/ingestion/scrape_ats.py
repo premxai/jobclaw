@@ -236,13 +236,20 @@ async def run_ats_scraper(
     cache = ResponseCache()
     breaker = CircuitBreaker(threshold=50)
 
-    # Group companies by ATS platform
+    # Group companies by ATS platform, EXCEPT workday which requires OpenClaw
     by_platform = defaultdict(list)
+    workday_companies = []
+    
     for c in registry:
-        by_platform[c["ats"]].append(c)
+        if c["ats"] == "workday":
+            workday_companies.append(c)
+        else:
+            by_platform[c["ats"]].append(c)
 
     platform_summary = ", ".join(f"{k}={len(v)}" for k, v in sorted(by_platform.items()))
     _log(f"Platform breakdown: {platform_summary}")
+    if workday_companies:
+        _log(f"Separated {len(workday_companies)} Workday companies for OpenClaw routing.")
 
     all_results = []
     errors = []
@@ -357,6 +364,8 @@ async def run_ats_scraper(
         f"New={new_jobs_inserted}, Candidates={len(time_filtered)}, "
         f"Errors={len(errors)}, Duration={duration}s"
     )
+
+    return {"workday_companies": workday_companies}
 
 
 if __name__ == "__main__":

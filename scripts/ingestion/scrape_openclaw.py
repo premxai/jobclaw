@@ -143,9 +143,10 @@ settings:
         return []
 
 
-async def run_openclaw_scraper():
+async def run_openclaw_scraper(extra_companies: list = None):
     """
     Micro-scraper exclusively for orchestrating the OpenClaw CLI against protected Cloudflare endpoints.
+    Can also accept 'extra_companies' (e.g. Workday ATS links) that failed standard scraping due to bot protection.
     """
     start_time = time.time()
     _log(">>> Starting OpenClaw Anti-Bot Micro-Scraper")
@@ -153,11 +154,33 @@ async def run_openclaw_scraper():
     all_jobs = []
     errors = []
     
-    for target in PROTECTED_TARGETS:
+    # 1. Standard Targets
+    targets = list(PROTECTED_TARGETS)
+    
+    # 2. Add extra companies (typically Workday ATS)
+    if extra_companies:
+        _log(f"Received {len(extra_companies)} extra companies for OpenClaw routing.")
+        for c in extra_companies:
+            if c.get("ats") == "workday" and "slug" in c:
+                parts = c["slug"].split(":")
+                if len(parts) == 3:
+                    tenant, shard, site = parts
+                    url = f"https://{tenant}.wd{shard}.myworkdayjobs.com/en-US/{site}"
+                    targets.append({
+                        "name": f"Workday_{c['company'].replace(' ', '')}",
+                        "url": url,
+                        "instructions": "Wait for the job listings grid to load. Extract all software engineering, data, AI, and product roles currently visible. Note the job title, location, and the link to the description page.",
+                        "source_ats": "workday",
+                        "company_override": c["company"]
+                    })
+    
+    for target in targets:
         try:
             jobs = await run_openclaw_target(target)
             for j in jobs:
                  j["source_ats"] = target["source_ats"]
+                 if "company_override" in target:
+                     j["company"] = target["company_override"]
             all_jobs.extend(jobs)
         except Exception as e:
             errors.append(f"{target['name']}: {str(e)}")
