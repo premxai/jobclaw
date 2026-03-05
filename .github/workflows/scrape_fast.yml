@@ -46,6 +46,6 @@ jobs:
         run: |
           python scripts/ingestion/run_all_scrapers.py \
             --tier fast \
-            --window 1 \
+            --window 24 \
             --skip-ats \
             --skip-openclaw
