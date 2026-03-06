@@ -19,6 +19,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 import aiohttp
+import json
+import re
 from typing import List, Optional
 import os
 import time
@@ -175,7 +177,10 @@ class AmazonJobsAPI:
                 rate_limiter=rate_limiter,
                 log_tag="amazon",
                 json=payload,
-                headers={"Content-Type": "application/json"},
+                headers={
+                    "Content-Type": "application/json",
+                    "Accept-Encoding": "gzip, deflate",
+                },
             )
             if not resp:
                 return []
@@ -194,8 +199,8 @@ class AmazonJobsAPI:
                 title = first(fields.get("title")) or ""
                 location = first(fields.get("location")) or "United States"
                 date_posted = first(fields.get("createdDate")) or ""
-                job_id = hit.get("id", "")
-                url = f"https://www.amazon.jobs/en/jobs/{job_id}"
+                job_id = first(fields.get("icimsJobId")) or first(fields.get("jobCode")) or ""
+                url = first(fields.get("urlNextStep")) or f"https://www.amazon.jobs/en/jobs/{job_id}"
                 
                 desc_parts = []
                 raw_desc = first(fields.get("description"))
@@ -651,59 +656,19 @@ CHUNK_CAPTURE_INIT = """
 """
 
 class GoogleJobsAPI:
-    URL = "https://careers.google.com/jobs/results/"
+    URL = "https://www.google.com/about/careers/applications/jobs/results/"
 
-    async def _wait_for_ds_chunk(self, page, chunk_key: str, timeout_ms: int):
-        js = """
-        (chunkKey) => {
-            const store = globalThis.__dsChunkStore || [];
-            for (const entry of store) {
-                if (entry && entry.key === chunkKey && entry.data && !entry.__consumed) {
-                    entry.__consumed = true; return entry;
-                }
-            }
-            const queue = globalThis.AF_initDataChunkQueue;
-            if (Array.isArray(queue)) {
-                for (const entry of queue) {
-                    if (entry && entry.key === chunkKey && entry.data && !entry.__consumed) {
-                        entry.__consumed = true; return entry;
-                    }
-                }
-            }
-            const requests = globalThis.AF_dataServiceRequests || {};
-            const candidate = requests[chunkKey];
-            if (candidate && candidate.data && !candidate.__consumed) {
-                candidate.__consumed = true; return { key: chunkKey, data: candidate.data };
-            }
-            return null;
-        }
-        """
-        try:
-            handle = await page.wait_for_function(js, arg=chunk_key, timeout=timeout_ms)
-            chunk = await handle.json_value()
-            if not chunk or "data" not in chunk: return None
-            return chunk["data"]
-        except Exception:
+    @staticmethod
+    def _extract_ds1(html: str):
+        """Extract ds:1 data from AF_initDataCallback in SSR HTML."""
+        pattern = r"AF_initDataCallback\(\{key:\s*'ds:1'.*?data:(\[.+?),\s*sideChannel:"
+        match = re.search(pattern, html, re.DOTALL)
+        if not match:
             return None
-
-    async def _click_next_page(self, page) -> bool:
-        selectors = [
-            "button[aria-label='Next page']",
-            "div[role='button'][aria-label='Next page']",
-            "button:has-text(\"Next\")",
-        ]
-        for selector in selectors:
-            locator = page.locator(selector)
-            try:
-                if await locator.count() == 0: continue
-                target = locator.first
-                if not await target.is_enabled(): continue
-                await target.click()
-                await page.wait_for_timeout(500)
-                return True
-            except Exception:
-                continue
-        return False
+        try:
+            return json.loads(match.group(1))
+        except (json.JSONDecodeError, ValueError):
+            return None
 
     def _parse_ds1(self, ds1_payload) -> List[NormalizedJob]:
         """Parse Google's ds:1 data chunk. Wrapped in try/except for resilience
@@ -760,38 +725,44 @@ class GoogleJobsAPI:
             _log(f"[google] ds:1 structure changed or malformed: {e}", "WARN")
         return jobs
 
-    async def fetch_all_jobs(self, max_pages: int = 5) -> List[NormalizedJob]:
-        try:
-            from playwright.async_api import async_playwright
-        except ImportError:
-            _log("Playwright not installed. Skipping Google jobs.", "ERROR")
-            return []
-
+    async def fetch_all_jobs(self, max_pages: int = 5,
+                             session=None,
+                             rate_limiter: Optional[RateLimiter] = None) -> List[NormalizedJob]:
+        """Fetch Google jobs via HTTP SSR extraction (no Playwright needed)."""
         all_jobs = []
-        timeout_ms = 25000
-        try:
-            async with async_playwright() as p:
-                browser = await p.chromium.launch(headless=True)
-                context = await browser.new_context(user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
-                page = await context.new_page()
-                await page.add_init_script(CHUNK_CAPTURE_INIT)
-                
-                await page.goto(self.URL, wait_until="networkidle", timeout=timeout_ms)
-                
-                for _ in range(max_pages):
-                    data = await self._wait_for_ds_chunk(page, "ds:1", timeout_ms)
-                    if data:
-                        parsed = self._parse_ds1(data)
-                        all_jobs.extend(parsed)
-                    
-                    has_next = await self._click_next_page(page)
-                    if not has_next: break
-                
-                await context.close()
-                await browser.close()
-        except Exception as e:
-            _log(f"Error fetching Google jobs via Playwright: {e}", "ERROR")
-            
+
+        for page in range(1, max_pages + 1):
+            url = f"{self.URL}?page={page}"
+            resp = await fetch_with_retry(
+                session, "GET", url,
+                rate_limiter=rate_limiter,
+                log_tag="google",
+            )
+            if not resp:
+                break
+
+            html = resp.text if hasattr(resp, "status_code") else await resp.text()
+            data = self._extract_ds1(html)
+            if not data:
+                _log(f"[google] No ds:1 data on page {page}", "DEBUG")
+                break
+
+            parsed = self._parse_ds1(data)
+            if not parsed:
+                break
+            all_jobs.extend(parsed)
+
+            # Check total — data is [entries, null, total, page_size]
+            total = 0
+            if isinstance(data, list):
+                for item in data[1:]:
+                    if isinstance(item, int) and item > 100:
+                        total = item
+                        break
+            if total and page * 20 >= total:
+                break
+
+        _log(f"[google] Extracted {len(all_jobs)} jobs from {min(page, max_pages)} pages")
         return all_jobs
 
 class MetaJobsAPI:
@@ -923,11 +894,7 @@ async def run_enterprise_scraper():
         
         log("Fetching from Apple, Amazon, Microsoft, Google, Meta, TikTok, Nvidia, Uber, Tesla, Cursor...")
         
-        # Google & Meta use Playwright — run them in parallel background tasks
-        google_task = asyncio.create_task(google_api.fetch_all_jobs(max_pages=10))
-        meta_task = asyncio.create_task(meta_api.fetch_all_jobs())
-        
-        # Full pagination for REST API companies (no more 5-page cap)
+        # Full pagination for all API companies (including Google via HTTP SSR)
         api_results = await asyncio.gather(
             _paginate_api(apple_api, session, "Apple", rate_limiter=rate_limiter, max_pages=15),
             _paginate_api(amazon_api, session, "Amazon", rate_limiter=rate_limiter, max_pages=20),
@@ -937,25 +904,18 @@ async def run_enterprise_scraper():
             _paginate_api(uber_api, session, "Uber", rate_limiter=rate_limiter, max_pages=15),
             _paginate_api(tesla_api, session, "Tesla", rate_limiter=rate_limiter, max_pages=1),
             _paginate_api(cursor_api, session, "Cursor", rate_limiter=rate_limiter, max_pages=1),
+            google_api.fetch_all_jobs(max_pages=10, session=session, rate_limiter=rate_limiter),
+            meta_api.fetch_all_jobs(session=session, rate_limiter=rate_limiter),
             return_exceptions=True,
         )
         
-        api_names = ["Apple", "Amazon", "Microsoft", "TikTok", "Nvidia", "Uber", "Tesla", "Cursor"]
+        api_names = ["Apple", "Amazon", "Microsoft", "TikTok", "Nvidia", "Uber", "Tesla", "Cursor", "Google", "Meta"]
         for name, result in zip(api_names, api_results):
             if isinstance(result, Exception):
                 log(f"{name} scraper error: {result}", "ERROR")
             else:
                 log(f"{name}: {len(result)} raw jobs")
                 all_jobs.extend(result)
-
-        # Wait for Playwright scrapers
-        google_jobs = await google_task
-        meta_jobs = await meta_task
-        
-        log(f"Google: {len(google_jobs)} raw jobs")
-        log(f"Meta: {len(meta_jobs)} raw jobs")
-        all_jobs.extend(google_jobs)
-        all_jobs.extend(meta_jobs)
 
     log(f"Fetched {len(all_jobs)} total raw jobs from enterprise endpoints.")
 

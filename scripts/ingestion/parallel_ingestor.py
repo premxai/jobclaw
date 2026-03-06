@@ -103,6 +103,22 @@ def load_registry() -> list[dict[str, str]]:
                 slug = c.get("slug") or c.get("url")
                 if not name or not slug:
                     continue
+
+                # Workday URLs → tenant:shard:site slug format
+                # e.g. https://microsoft.wd5.myworkdayjobs.com/Microsoft
+                #   → microsoft:5:Microsoft
+                if ats_key == "workday" and "myworkdayjobs.com" in slug:
+                    import re as _re
+                    m = _re.match(
+                        r"https?://([^.]+)\.wd(\d+)\.myworkdayjobs\.com/(?:en-[A-Za-z]{2}/)?(.+?)/?$",
+                        slug,
+                    )
+                    if m:
+                        slug = f"{m.group(1)}:{m.group(2)}:{m.group(3)}"
+                    else:
+                        _log(f"Workday URL parse failed: {slug}", "WARN")
+                        continue
+
                 flat_registry.append({
                     "company": name,
                     "ats": ats_key,
@@ -177,6 +193,11 @@ def is_within_window(date_str: str, window_hours: int = 24) -> bool:
             parsed = datetime.strptime(date_str, fmt)
             if parsed.tzinfo is None:
                 parsed = parsed.replace(tzinfo=timezone.utc)
+            # Date-only strings (e.g. "2025-03-05") parse as midnight UTC.
+            # Treat them as end-of-day so they pass the 24h window on the
+            # same calendar day.
+            if fmt == "%Y-%m-%d":
+                parsed = parsed.replace(hour=23, minute=59, second=59)
             return parsed >= cutoff
         except ValueError:
             continue

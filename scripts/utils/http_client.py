@@ -111,18 +111,19 @@ def random_headers() -> dict[str, str]:
 # ═══════════════════════════════════════════════════════════════════════
 
 # Default RPS limits per ATS domain — tuned for maximum stealth (24/7 reliability)
+# Conservative limits to avoid bans during continuous scraping
 PLATFORM_RATE_LIMITS: dict[str, float] = {
-    # Public board APIs
-    "boards-api.greenhouse.io": 3.0,
-    "api.lever.co": 3.0,
-    "api.ashbyhq.com": 3.0,
-    "api.smartrecruiters.com": 2.0,
-    # Workday / Workable — aggressive WAFs, go slow
-    "myworkdayjobs.com": 1.0,
-    "apply.workable.com": 0.3,   # ~1 req / 3.3s — Workable 429s hard above this
-    # Others
-    "ats.rippling.com": 2.0,
-    "bamboohr.com": 2.0,
+    # Public board APIs — lowered for stealth
+    "boards-api.greenhouse.io": 1.5,  # 2,542 companies — be conservative
+    "api.lever.co": 1.0,              # Strict rate limiting
+    "api.ashbyhq.com": 1.0,           # Smaller platform
+    "api.smartrecruiters.com": 1.0,   # Enterprise platform
+    # Workday / Workable — aggressive WAFs, go very slow
+    "myworkdayjobs.com": 0.5,         # 1 req / 2s — Workday WAF is harsh
+    "apply.workable.com": 0.3,        # ~1 req / 3.3s — Workable 429s hard
+    # Others — conservative
+    "ats.rippling.com": 0.5,          # Stability issues at higher rates
+    "bamboohr.com": 0.5,              # Small platform, be nice
     # Enterprise endpoints
     "jobs.apple.com": 1.5,
     "www.amazon.jobs": 1.5,

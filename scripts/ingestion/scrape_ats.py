@@ -19,6 +19,7 @@ v4 improvements over v3:
 
 import asyncio
 import os
+import random
 import time
 import sys
 from collections import defaultdict
@@ -31,6 +32,9 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from scripts.utils.logger import _log
 from scripts.utils.http_client import RateLimiter, create_session
 from scripts.utils.response_cache import ResponseCache
+from scripts.utils.company_metadata import CompanyMetadata
+from scripts.utils.retry_queue import RetryQueue
+from scripts.utils.health_tracker import HealthTracker
 from scripts.ingestion.ats_adapters import fetch_company_jobs, NormalizedJob
 from scripts.ingestion.role_filter import matches_target_role
 from scripts.ingestion.us_filter import is_us_location
@@ -53,7 +57,7 @@ PLATFORM_WORKERS = {
     "smartrecruiters": 2,
     "workday": 2,            # Aggressive WAF — don't push past 2-3
     "workable": 1,            # Single worker — Workable 429s hard with concurrency
-    "rippling": 2,
+    "rippling": 1,            # 1,300+ companies — keep single worker to avoid crashes
     "bamboohr": 2,
 }
 DEFAULT_WORKERS = 3
@@ -109,12 +113,16 @@ async def _worker(
     results: list,
     errors: list,
     circuit_breaker: CircuitBreaker = None,
+    company_metadata: CompanyMetadata = None,
+    retry_queue: RetryQueue = None,
 ):
     """
     Worker coroutine: pulls companies from a queue until empty.
     Only N workers run per platform, bounding memory + concurrency.
     
     Uses circuit breaker to skip platforms with too many consecutive failures.
+    Uses company_metadata to update scrape history after each company.
+    Uses retry_queue to track failures for later retry.
     """
     while True:
         try:
@@ -154,16 +162,29 @@ async def _worker(
             results.append((cname, ats, slug, jobs, None))
             if circuit_breaker:
                 circuit_breaker.record_success(ats)
+            # Update company metadata with scrape results
+            if company_metadata:
+                job_ids = [j.job_id for j in jobs] if jobs else []
+                company_metadata.update_after_scrape(ats, slug, len(jobs), job_ids)
+            # Mark success in retry queue (removes from queue if present)
+            if retry_queue:
+                retry_queue.mark_success(ats, slug)
         except asyncio.TimeoutError:
             _log(f"[{ats}/{slug}] Hard timeout", "WARN")
             results.append((cname, ats, slug, [], "timeout"))
             if circuit_breaker:
                 circuit_breaker.record_failure(ats)
+            # Add to retry queue
+            if retry_queue:
+                retry_queue.add_failure(cname, ats, slug, "timeout")
         except Exception as e:
             _log(f"[{ats}/{slug}] Fetch failed: {e}", "ERROR")
             results.append((cname, ats, slug, [], str(e)))
             if circuit_breaker:
                 circuit_breaker.record_failure(ats)
+            # Add to retry queue
+            if retry_queue:
+                retry_queue.add_failure(cname, ats, slug, str(e))
 
         queue.task_done()
 
@@ -237,21 +258,44 @@ async def run_ats_scraper(
     rate_limiter = RateLimiter()
     cache = ResponseCache()
     breaker = CircuitBreaker(threshold=15)
+    company_metadata = CompanyMetadata()
+    retry_queue = RetryQueue()
+    health_tracker = HealthTracker()
+    health_tracker.start_run()
 
-    # Group companies by ATS platform, EXCEPT workday which requires OpenClaw
-    by_platform = defaultdict(list)
-    workday_companies = []
-    
+    # ── Process Retry Queue ───────────────────────────────────────────
+    # Get companies that are ready for retry and add them to the scrape list.
+    retry_companies = retry_queue.get_ready_retries()
+    if retry_companies:
+        _log(f"Retry queue: {len(retry_companies)} companies ready for retry")
+        # Merge with registry (avoid duplicates)
+        existing_keys = {f"{c['ats']}:{c['slug']}" for c in registry}
+        for rc in retry_companies:
+            key = f"{rc['ats']}:{rc['slug']}"
+            if key not in existing_keys:
+                registry.append(rc)
+    _log(retry_queue.get_queue_summary())
+
+    # ── Skip Unchanged Companies ──────────────────────────────────────
+    # Filter out companies that were recently scraped and haven't changed.
+    # This is the biggest optimization: 12k → ~2-3k companies per cycle.
+    companies_to_scrape = []
     for c in registry:
-        if c["ats"] == "workday":
-            workday_companies.append(c)
-        else:
-            by_platform[c["ats"]].append(c)
+        should_scrape, reason = company_metadata.should_scrape(c["ats"], c["slug"])
+        if should_scrape:
+            companies_to_scrape.append(c)
+    
+    skip_stats = company_metadata.get_stats()
+    _log(f"Skip-unchanged filter: {skip_stats['skipped']}/{skip_stats['checked']} skipped "
+         f"({skip_stats['skip_rate']}), {len(companies_to_scrape)} to scrape")
+
+    # Group companies by ATS platform (including Workday → WorkdayAdapter)
+    by_platform = defaultdict(list)
+    for c in companies_to_scrape:
+        by_platform[c["ats"]].append(c)
 
     platform_summary = ", ".join(f"{k}={len(v)}" for k, v in sorted(by_platform.items()))
     _log(f"Platform breakdown: {platform_summary}")
-    if workday_companies:
-        _log(f"Separated {len(workday_companies)} Workday companies for OpenClaw routing.")
 
     all_results = []
     errors = []
@@ -263,8 +307,12 @@ async def run_ats_scraper(
 
     async with create_session(rate_limiter, proxy=proxy) as session:
         # Build per-platform queues and launch bounded workers
+        # Shuffle companies within each platform for randomization (stealth)
         worker_tasks = []
         for platform, companies in by_platform.items():
+            # Shuffle to avoid predictable scraping patterns
+            random.shuffle(companies)
+            
             q = asyncio.Queue()
             for c in companies:
                 q.put_nowait(c)
@@ -277,12 +325,26 @@ async def run_ats_scraper(
                         q, session, rate_limiter, cache,
                         all_results, errors,
                         circuit_breaker=breaker,
+                        company_metadata=company_metadata,
+                        retry_queue=retry_queue,
                     )
                 )
                 worker_tasks.append(task)
 
         # Wait for all workers to drain their queues
         await asyncio.gather(*worker_tasks, return_exceptions=True)
+
+    # Save company metadata after scraping
+    company_metadata.save()
+    final_stats = company_metadata.get_stats()
+    _log(f"Company metadata: {final_stats['scraped']} companies scraped, metadata saved")
+
+    # Save retry queue and log stats
+    retry_queue.save()
+    retry_stats = retry_queue.get_stats()
+    _log(f"Retry queue: added={retry_stats['added']}, retried={retry_stats['retried']}, "
+         f"success={retry_stats['success']}, dropped={retry_stats['dropped']}, "
+         f"queue_size={retry_stats['queue_size']}")
 
     # Log circuit breaker health
     _log(f"Circuit breaker: {breaker.summary()}")
@@ -361,13 +423,41 @@ async def run_ats_scraper(
     finally:
         conn.close()
 
+    # ── Health Tracking ───────────────────────────────────────────────
+    # Record run metrics for monitoring and alerts
+    error_counts = {}
+    for err in errors:
+        # Categorize errors
+        if "429" in err or "rate" in err.lower():
+            error_counts["429"] = error_counts.get("429", 0) + 1
+        elif "timeout" in err.lower():
+            error_counts["timeout"] = error_counts.get("timeout", 0) + 1
+        else:
+            error_counts["other"] = error_counts.get("other", 0) + 1
+    
+    health_tracker.end_run(
+        companies_scraped=final_stats["scraped"],
+        companies_skipped=skip_stats["skipped"],
+        jobs_found=len(all_jobs),
+        new_jobs=new_jobs_inserted,
+        errors=error_counts,
+        retry_queue_size=retry_stats["queue_size"],
+    )
+    
+    # Check for alerts
+    alerts = health_tracker.get_alerts()
+    if alerts:
+        for alert in alerts:
+            level = "ERROR" if alert["level"] == "critical" else "WARN"
+            _log(f"HEALTH ALERT: {alert['message']}", level)
+
     _log(
         f">>> ATS Scraper Complete. "
         f"New={new_jobs_inserted}, Candidates={len(time_filtered)}, "
         f"Errors={len(errors)}, Duration={duration}s"
     )
 
-    return {"workday_companies": workday_companies}
+    return {"workday_companies": []}
 
 
 if __name__ == "__main__":

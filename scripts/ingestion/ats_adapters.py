@@ -408,6 +408,15 @@ class BambooHRAdapter:
         if not resp:
             return []
 
+        # Inactive companies redirect to BambooHR homepage (HTML).
+        # Detect non-JSON content-type to avoid parse errors.
+        ct = ""
+        if hasattr(resp, "headers"):
+            ct = (resp.headers.get("content-type") or "") if hasattr(resp.headers, "get") else ""
+        if ct and "json" not in ct and "javascript" not in ct:
+            _log(f"[bamboohr/{slug}] Non-JSON response (ct={ct}), company may have left BambooHR", "WARN")
+            return []
+
         try:
             data = await _parse_json(resp)
         except Exception as e:
@@ -453,6 +462,30 @@ class WorkdayAdapter:
     Example: "microsoft:5:Microsoft" → microsoft.wd5.myworkdayjobs.com/wday/cxs/microsoft/Microsoft/jobs
     """
 
+    # Common Workday site names to probe when the URL-derived site returns 422
+    _COMMON_SITES = ("External", "Jobs", "Careers", "careers", "external")
+
+    @staticmethod
+    async def _try_cxs(session, base_url, tenant, site, payload, rate_limiter):
+        """Attempt a single CXS API call. Returns (response_data, api_url) or (None, url)."""
+        api_url = f"{base_url}/wday/cxs/{tenant}/{site}/jobs"
+        resp = await fetch_with_retry(
+            session, "POST", api_url,
+            rate_limiter=rate_limiter,
+            log_tag=f"workday/{tenant}",
+            json=payload,
+            max_retries=0,  # Don't retry probes
+        )
+        if resp:
+            status = resp.status_code if hasattr(resp, "status_code") else resp.status
+            if status == 200:
+                try:
+                    data = await _parse_json(resp)
+                    return data, api_url
+                except Exception:
+                    pass
+        return None, api_url
+
     @staticmethod
     async def fetch(
         session,
@@ -467,7 +500,6 @@ class WorkdayAdapter:
         tenant, shard, site = parts
 
         base_url = f"https://{tenant}.wd{shard}.myworkdayjobs.com"
-        api_url = f"{base_url}/wday/cxs/{tenant}/{site}/jobs"
 
         payload = {
             "appliedFacets": {},
@@ -476,11 +508,38 @@ class WorkdayAdapter:
             "searchText": "",
         }
 
-        all_jobs = []
-        offset = 0
-        max_pages = 50  # Safety limit: 1000 jobs max
+        # First try the site from the slug
+        data, api_url = await WorkdayAdapter._try_cxs(
+            session, base_url, tenant, site, payload, rate_limiter,
+        )
 
-        while offset < max_pages * 20:
+        # If that failed and the site looks like a locale (en-us), probe common names
+        if data is None and site.lower().startswith("en-"):
+            for probe_site in WorkdayAdapter._COMMON_SITES:
+                data, api_url = await WorkdayAdapter._try_cxs(
+                    session, base_url, tenant, probe_site, payload, rate_limiter,
+                )
+                if data is not None:
+                    _log(f"[workday/{tenant}] Probed site '{probe_site}' succeeded")
+                    site = probe_site
+                    break
+            if data is None:
+                return []
+
+        if data is None:
+            return []
+
+        all_jobs = []
+
+        # Process first page (already fetched)
+        job_postings = data.get("jobPostings", [])
+        total = data.get("total", 0)
+        all_jobs.extend(WorkdayAdapter._parse_postings(job_postings, company, base_url, site))
+
+        # Fetch remaining pages
+        offset = 20
+        max_pages = 50
+        while offset < min(total, max_pages * 20) and job_postings:
             payload["offset"] = offset
             resp = await fetch_with_retry(
                 session, "POST", api_url,
@@ -500,34 +559,7 @@ class WorkdayAdapter:
             if not job_postings:
                 break
 
-            for j in job_postings:
-                title = j.get("title", "")
-                loc_parts = []
-                if j.get("locationsText"):
-                    loc_parts.append(j["locationsText"])
-                location = ", ".join(loc_parts) if loc_parts else "Unknown"
-
-                posted = j.get("postedOn", "")
-                bullet_fields = j.get("bulletFields", [])
-                if not posted and bullet_fields:
-                    for bf in bullet_fields:
-                        if "posted" in str(bf).lower() or "20" in str(bf):
-                            posted = str(bf)
-                            break
-
-                external_path = j.get("externalPath", "")
-                job_url = f"{base_url}/en-US/{site}{external_path}" if external_path else ""
-
-                job = NormalizedJob(
-                    title=title,
-                    company=company,
-                    location=location,
-                    url=job_url,
-                    date_posted=posted,
-                    source_ats="workday",
-                    job_id=external_path or title,
-                )
-                all_jobs.append(job)
+            all_jobs.extend(WorkdayAdapter._parse_postings(job_postings, company, base_url, site))
 
             total = data.get("total", 0)
             offset += 20
@@ -535,6 +567,40 @@ class WorkdayAdapter:
                 break
 
         return all_jobs
+
+    @staticmethod
+    def _parse_postings(job_postings, company, base_url, site):
+        """Parse a page of Workday job postings into NormalizedJob objects."""
+        jobs = []
+        for j in job_postings:
+            title = j.get("title", "")
+            loc_parts = []
+            if j.get("locationsText"):
+                loc_parts.append(j["locationsText"])
+            location = ", ".join(loc_parts) if loc_parts else "Unknown"
+
+            posted = j.get("postedOn", "")
+            bullet_fields = j.get("bulletFields", [])
+            if not posted and bullet_fields:
+                for bf in bullet_fields:
+                    if "posted" in str(bf).lower() or "20" in str(bf):
+                        posted = str(bf)
+                        break
+
+            external_path = j.get("externalPath", "")
+            job_url = f"{base_url}/en-US/{site}{external_path}" if external_path else ""
+
+            job = NormalizedJob(
+                title=title,
+                company=company,
+                location=location,
+                url=job_url,
+                date_posted=posted,
+                source_ats="workday",
+                job_id=external_path or title,
+            )
+            jobs.append(job)
+        return jobs
 
 
 # ═══════════════════════════════════════════════════════════════════════
