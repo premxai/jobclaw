@@ -1,0 +1,5 @@
+{
+  "_comment": "Failed companies pending retry",
+  "_schema_version": 1,
+  "queue": []
+}
