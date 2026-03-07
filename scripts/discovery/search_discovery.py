@@ -34,28 +34,29 @@ BRAVE_API_KEY = os.getenv("BRAVE_SEARCH_API_KEY", "")
 BRAVE_SEARCH_URL = "https://api.search.brave.com/res/v1/web/search"
 
 # ATS patterns for company slug extraction
+# Note: Queries include "careers" keyword to get better results from Brave
 ATS_DISCOVERY_PATTERNS = {
     "greenhouse": {
-        "search_query": "site:boards.greenhouse.io",
+        "search_query": "site:boards.greenhouse.io careers",
         "url_patterns": [
             r"boards\.greenhouse\.io/(\w+)",
             r"boards-api\.greenhouse\.io/v1/boards/(\w+)",
         ],
     },
     "lever": {
-        "search_query": "site:jobs.lever.co",
+        "search_query": "site:jobs.lever.co careers",
         "url_patterns": [
             r"jobs\.lever\.co/([\w-]+)",
         ],
     },
     "workable": {
-        "search_query": "site:apply.workable.com",
+        "search_query": "site:apply.workable.com careers",
         "url_patterns": [
             r"apply\.workable\.com/([\w-]+)",
         ],
     },
     "ashby": {
-        "search_query": "site:jobs.ashbyhq.com",
+        "search_query": "site:jobs.ashbyhq.com careers",
         "url_patterns": [
             r"jobs\.ashbyhq\.com/([\w-]+)",
         ],
@@ -102,7 +103,6 @@ async def search_brave(query: str, count: int = 20) -> list[dict]:
     params = {
         "q": query,
         "count": count,
-        "freshness": "pw",  # Past week
     }
     
     try:
@@ -130,7 +130,7 @@ async def discover_companies_for_ats(ats: str, existing_slugs: set) -> list[dict
         return []
     
     query = config["search_query"]
-    results = await search_brave(query, count=50)
+    results = await search_brave(query, count=20)  # Brave free tier limit
     
     discovered = []
     for result in results:
