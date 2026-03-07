@@ -62,13 +62,64 @@ function Register-MicroScraper {
         -Description $Description `
         -Force | Out-Null
         
-    Write-Host "âœ… $TaskName registered successfully."
+    Write-Host "✅ $TaskName registered successfully."
+}
+
+function Register-DailyTask {
+    param(
+        [string]$TaskName,
+        [string]$PythonScript,
+        [string]$TimeOfDay,  # e.g., "23:00"
+        [string]$Description
+    )
+    
+    $ScriptPath = Join-Path $ProjectRoot $PythonScript
+    Write-Host "Registering $TaskName (daily at $TimeOfDay)"
+    
+    # Remove existing
+    $existingTask = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
+    if ($existingTask) {
+        Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
+    }
+
+    # Action: Run Python headlessly
+    $action = New-ScheduledTaskAction `
+        -Execute "python.exe" `
+        -Argument "`"$ScriptPath`"" `
+        -WorkingDirectory $ProjectRoot
+
+    # Daily trigger at specified time
+    $trigger = New-ScheduledTaskTrigger -Daily -At $TimeOfDay
+
+    # Settings
+    $settings = New-ScheduledTaskSettingsSet `
+        -AllowStartIfOnBatteries `
+        -DontStopIfGoingOnBatteries `
+        -StartWhenAvailable `
+        -MultipleInstances IgnoreNew
+        
+    $principal = New-ScheduledTaskPrincipal `
+        -UserId ([System.Security.Principal.WindowsIdentity]::GetCurrent().Name) `
+        -LogonType Interactive `
+        -RunLevel Highest
+        
+    Register-ScheduledTask `
+        -TaskName $TaskName `
+        -Action $action `
+        -Trigger $trigger `
+        -Settings $settings `
+        -Principal $principal `
+        -Description $Description `
+        -Force | Out-Null
+        
+    Write-Host "✅ $TaskName registered successfully."
 }
 
 Write-Host "========== JOBCLAW SCHEDULER INSTALL =========="
 Register-MicroScraper -TaskName "JobClaw_ATS_Scraper" -PythonScript "scripts\ingestion\scrape_ats.py" -MinutesInterval 30 -Description "Scrapes Greenhouse, Lever, Workday APIs"
 Register-MicroScraper -TaskName "JobClaw_RSS_Scraper" -PythonScript "scripts\ingestion\scrape_rss.py" -MinutesInterval 60 -Description "Scrapes Aggregator RSS Feeds"
-Write-Host "========== CRON INSTALLATION COMPLETE =========="
-Write-Host "Note: To run the discord bot, please run 'python scripts/discord_bot.py' in a separate terminal."
 Register-MicroScraper -TaskName "JobClaw_GitHub_Scraper" -PythonScript "scripts\ingestion\scrape_github.py" -MinutesInterval 120 -Description "Scrapes GitHub Markdown tables"
 Register-MicroScraper -TaskName "JobClaw_OpenClaw_Scraper" -PythonScript "scripts\ingestion\scrape_openclaw.py" -MinutesInterval 240 -Description "Browser Automation Bypass"
+Register-DailyTask -TaskName "JobClaw_Discovery" -PythonScript "scripts\discovery\run_daily_discovery.py" -TimeOfDay "23:00" -Description "Daily ATS company discovery via Brave Search"
+Write-Host "========== SCHEDULER INSTALLATION COMPLETE =========="
+Write-Host "Note: To run the discord bot, please run 'python scripts/discord_bot.py' in a separate terminal."
