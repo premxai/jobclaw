@@ -1,11 +1,11 @@
 {
   "_comment": "Scraper health metrics for monitoring",
   "_schema_version": 1,
-  "last_run": "2026-03-06T04:31:37.003147Z",
-  "duration_seconds": 23.1,
-  "companies_scraped": 23,
+  "last_run": "2026-03-07T02:58:54.905536Z",
+  "duration_seconds": 4.3,
+  "companies_scraped": 2,
   "companies_skipped": 0,
-  "jobs_found": 155,
+  "jobs_found": 40,
   "new_jobs": 0,
   "errors": {},
   "retry_queue_size": 0

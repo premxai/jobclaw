@@ -2,140 +2,14 @@
   "_comment": "Per-company scrape metadata for skip-unchanged optimization",
   "_schema_version": 1,
   "companies": {
-    "lever:replit": {
-      "last_scraped": "2026-03-06T04:31:15.644742Z",
+    "workday:microsoft:5:Microsoft": {
+      "last_scraped": "2026-03-07T02:58:53.316624Z",
       "last_job_count": 0,
       "last_job_hash": "",
       "consecutive_empty": 1
     },
-    "lever:drata": {
-      "last_scraped": "2026-03-06T04:31:15.744042Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:montecarlodata": {
-      "last_scraped": "2026-03-06T04:31:17.727412Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:unity3d": {
-      "last_scraped": "2026-03-06T04:31:17.831358Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:spotify": {
-      "last_scraped": "2026-03-06T04:31:18.320534Z",
-      "last_job_count": 155,
-      "last_job_hash": "9e408c97ed87",
-      "consecutive_empty": 0
-    },
-    "lever:launchdarkly": {
-      "last_scraped": "2026-03-06T04:31:19.020259Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:crowdstrike": {
-      "last_scraped": "2026-03-06T04:31:20.304925Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:temporal": {
-      "last_scraped": "2026-03-06T04:31:26.188690Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:writer": {
-      "last_scraped": "2026-03-06T04:31:26.189282Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:cribl": {
-      "last_scraped": "2026-03-06T04:31:26.596957Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:daboratoiresbt": {
-      "last_scraped": "2026-03-06T04:31:27.417643Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:twitch": {
-      "last_scraped": "2026-03-06T04:31:27.419065Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:planetscale": {
-      "last_scraped": "2026-03-06T04:31:28.543792Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:miro": {
-      "last_scraped": "2026-03-06T04:31:28.546981Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:supabase": {
-      "last_scraped": "2026-03-06T04:31:29.760011Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:clickup": {
-      "last_scraped": "2026-03-06T04:31:29.821203Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:neon-inc": {
-      "last_scraped": "2026-03-06T04:31:30.898887Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:postman": {
-      "last_scraped": "2026-03-06T04:31:31.206287Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:sourcegraph": {
-      "last_scraped": "2026-03-06T04:31:32.550574Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:runwayml": {
-      "last_scraped": "2026-03-06T04:31:33.062844Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:kong": {
-      "last_scraped": "2026-03-06T04:31:33.771467Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:jasper": {
-      "last_scraped": "2026-03-06T04:31:34.096022Z",
-      "last_job_count": 0,
-      "last_job_hash": "",
-      "consecutive_empty": 1
-    },
-    "lever:netflix": {
-      "last_scraped": "2026-03-06T04:31:36.940274Z",
+    "workday:amazon:5:AmazonNew": {
+      "last_scraped": "2026-03-07T02:58:54.746721Z",
       "last_job_count": 0,
       "last_job_hash": "",
       "consecutive_empty": 1

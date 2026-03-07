@@ -119,20 +119,10 @@ async def run_all(
         tasks.append(_run_with_timing("GitHub Repos", run_github_scraper(window_hours)))
 
     # ── ATS boards (~10,500 companies with curl_cffi TLS impersonation) ──
-    # Pre-extract Workday companies because they require OpenClaw (Playwright)
-    # to bypass aggressive HTTP 422 Cloudflare/Akamai bot detection.
-    workday_companies = []
+    # All ATS platforms handled by direct API scraper with TLS impersonation
     if not skip_ats:
-        from scripts.ingestion.scrape_ats import load_registry
-        try:
-            full_reg = load_registry() or []
-            workday_companies = [c for c in full_reg if c.get("ats") == "workday"]
-        except Exception as e:
-            _log(f"[orchestrator] Failed to pre-load registry for Workday extraction: {e}", "WARN")
-
         from scripts.ingestion.scrape_ats import run_ats_scraper
         ats_skip = skip_platforms if skip_platforms is not None else set()
-        ats_skip.add("workday")  # Force skip in regular ATS scraper
         
         shard_label = f", shard={shard}/{total_shards}" if shard is not None else ""
         label = f"ATS Boards ({'filtered' if ats_skip else 'all'}{shard_label})"
@@ -146,18 +136,14 @@ async def run_all(
             )
         ))
 
-    # ── Deep Discovery (LinkedIn/Indeed/Glassdoor) + Workday Fallback ──────────
-    # Prefer Brave Search API (fast, reliable). Fall back to OpenClaw (browser).
-    # However, if we have Workday companies, we MUST use OpenClaw for them.
-    if not skip_openclaw or workday_companies:
+    # ── Deep Discovery (LinkedIn/Indeed/Glassdoor) ──────────────────────────────
+    # Browser automation for protected job boards (LinkedIn, Indeed, Glassdoor)
+    if not skip_openclaw:
         from scripts.ingestion.scrape_openclaw import run_openclaw_scraper
         
-        # If openclaw is skipped generally but we have workday companies, only run workday
-        openclaw_label = "OpenClaw Scraper (Workday Fallback)" if skip_openclaw else "OpenClaw Scraper (LinkedIn/Indeed/Glassdoor + Workday)"
-        
         tasks.append(_run_with_timing(
-            openclaw_label, 
-            run_openclaw_scraper(extra_companies=workday_companies)
+            "OpenClaw Scraper (LinkedIn/Indeed/Glassdoor)", 
+            run_openclaw_scraper()
         ))
         
         # Still run Brave for LinkedIn/Indeed if Openclaw is dedicated to Workday

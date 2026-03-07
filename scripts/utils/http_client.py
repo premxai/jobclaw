@@ -120,7 +120,7 @@ PLATFORM_RATE_LIMITS: dict[str, float] = {
     "api.smartrecruiters.com": 1.0,   # Enterprise platform
     # Workday / Workable — aggressive WAFs, go very slow
     "myworkdayjobs.com": 0.5,         # 1 req / 2s — Workday WAF is harsh
-    "apply.workable.com": 0.3,        # ~1 req / 3.3s — Workable 429s hard
+    "apply.workable.com": 0.15,       # ~1 req / 6.6s — Workable 429s very hard, go slow
     # Others — conservative
     "ats.rippling.com": 0.5,          # Stability issues at higher rates
     "bamboohr.com": 0.5,              # Small platform, be nice
