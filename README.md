@@ -1,7 +1,7 @@
-# JobClaw Architecture
+# Architecture
 Autonomous multi-threaded job scraping system designed to scale 5,000+ top tech companies safely. Uses decoupled, lightweight micro-scrapers coordinated by an OS-level Task Scheduler, pushing data concurrently to an SQLite database (`jobclaw.db`) with WAL mode enabled.
 
-## Enterprise Micro-Scraper Architecture
+## Micro-Scraper Architecture
 
 ```
 jobclaw/
