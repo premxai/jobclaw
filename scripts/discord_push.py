@@ -16,7 +16,7 @@ import json
 import os
 import sys
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -87,6 +87,44 @@ ATS_LABELS = {
 }
 
 
+def _urgency_color(date_posted: str, base_color: int) -> int:
+    """Override embed color based on how fresh the job is.
+
+    Green  = posted < 2 hours ago (hot/fresh)
+    Yellow = posted < 12 hours ago (recent)
+    default = category color (older)
+    """
+    try:
+        posted = datetime.fromisoformat(date_posted.replace("Z", "+00:00"))
+        age = datetime.now(timezone.utc) - posted
+        if age < timedelta(hours=2):
+            return 0x2ECC71   # Bright green — hot/fresh
+        if age < timedelta(hours=12):
+            return 0xF1C40F   # Yellow — recent
+    except (ValueError, TypeError, AttributeError):
+        pass
+    return base_color
+
+
+def _quality_score(job: dict) -> float:
+    """Score a job for Discord push priority. Higher score = pushed first."""
+    score = 0.0
+    date_str = job.get("date_posted") or job.get("first_seen", "")
+    try:
+        posted = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+        age_hours = (datetime.now(timezone.utc) - posted).total_seconds() / 3600
+        score += max(0.0, 24.0 - age_hours) * 2   # Up to +48 for < 1hr old
+    except (ValueError, TypeError, AttributeError):
+        pass
+    if job.get("salary_min") or job.get("salary_max"):
+        score += 15
+    if job.get("experience_years") is not None:
+        score += 5
+    if job.get("description"):
+        score += 3
+    return score
+
+
 def _get_category(job: dict) -> str:
     """Get the primary category for a job."""
     cats = job.get("keywords_matched", [])
@@ -128,7 +166,9 @@ def _build_job_embed(job: dict) -> dict:
     category = _get_category(job)
 
     emoji = CATEGORY_EMOJIS.get(category, "💼")
-    color = CATEGORY_COLORS.get(category, 0x546E7A)
+    base_color = CATEGORY_COLORS.get(category, 0x546E7A)
+    # Override color based on posting age (green = fresh, yellow = recent)
+    color = _urgency_color(date_posted, base_color)
     ats_label = ATS_LABELS.get(source_ats.lower(), source_ats) if source_ats else "Direct"
 
     # Truncate location if too long
@@ -167,6 +207,73 @@ def _build_job_embed(job: dict) -> dict:
             salary = f"Up to ${int(salary_max / 1000)}k"
         # Insert salary as the 3rd field (after Company, Location)
         embed["fields"].insert(2, {"name": "💰 Salary", "value": salary, "inline": True})
+
+    # Experience requirement if available (extracted during ATS ingestion)
+    experience_years = job.get("experience_years")
+    if experience_years is not None:
+        embed["fields"].append(
+            {"name": "🎯 Experience", "value": f"{experience_years}+ yrs", "inline": True}
+        )
+
+    # All matched categories (if more than one)
+    all_cats = job.get("keywords_matched") or []
+    if isinstance(all_cats, str):
+        try:
+            all_cats = json.loads(all_cats)
+        except (json.JSONDecodeError, TypeError):
+            all_cats = [all_cats] if all_cats else []
+    if len(all_cats) > 1:
+        embed["fields"].append(
+            {"name": "🏷️ Tags", "value": " · ".join(all_cats), "inline": False}
+        )
+
+    # Remote/hybrid/onsite indicator prepended to title
+    remote_ok = job.get("remote_ok")
+    if remote_ok == "remote":
+        embed["title"] = f"🌐 {embed['title']}"
+    elif remote_ok == "hybrid":
+        embed["title"] = f"🏠 {embed['title']}"
+
+    # Seniority badge
+    seniority = job.get("seniority_level")
+    _SENIORITY_DISPLAY = {
+        "intern": "Internship", "entry": "Entry Level", "mid": "Mid Level",
+        "senior": "Senior", "staff": "Staff", "principal": "Principal", "director": "Director"
+    }
+    if seniority and seniority in _SENIORITY_DISPLAY:
+        embed["fields"].append(
+            {"name": "📊 Level", "value": _SENIORITY_DISPLAY[seniority], "inline": True}
+        )
+
+    # Visa sponsorship signal
+    visa = job.get("visa_sponsorship")
+    if visa == 1:
+        embed["fields"].append(
+            {"name": "✈️ Visa", "value": "Sponsors H1B", "inline": True}
+        )
+    elif visa == 0:
+        embed["fields"].append(
+            {"name": "✈️ Visa", "value": "No sponsorship", "inline": True}
+        )
+
+    # Top 5 tech stack tags
+    stack = job.get("tech_stack")
+    if stack:
+        if isinstance(stack, str):
+            try:
+                stack = json.loads(stack)
+            except (json.JSONDecodeError, TypeError):
+                stack = []
+        if stack:
+            embed["fields"].append(
+                {"name": "🛠️ Stack", "value": " · ".join(stack[:5]), "inline": False}
+            )
+
+    # Description snippet (first 200 chars gives context before clicking Apply)
+    desc = (job.get("description") or "").strip()
+    if desc:
+        snippet = desc[:200] + ("…" if len(desc) > 200 else "")
+        embed["description"] = snippet
 
     return embed
 
@@ -278,7 +385,9 @@ async def push_new_jobs_to_discord():
             log("All jobs already posted in previous runs — nothing new.")
             return 0
 
-        log(f"Pushing {len(fresh_jobs)} new jobs to Discord as individual cards...")
+        # Sort by quality score — freshest + richest data first
+        fresh_jobs.sort(key=_quality_score, reverse=True)
+        log(f"Pushing {len(fresh_jobs)} new jobs to Discord as individual cards (sorted by quality)...")
         sent_hashes = []
 
         # Group jobs by target channel for efficient sending
