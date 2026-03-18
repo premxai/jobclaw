@@ -33,38 +33,101 @@ from scripts.utils.logger import _log
 BRAVE_API_KEY = os.getenv("BRAVE_SEARCH_API_KEY", "")
 BRAVE_SEARCH_URL = "https://api.search.brave.com/res/v1/web/search"
 
-# ATS patterns for company slug extraction
-# Note: Queries include "careers" keyword to get better results from Brave
+# ATS patterns for company slug extraction.
+# Each platform has multiple keyword-varied queries to maximize unique company discovery.
+# Budget: ~32 discovery queries/day × 20 results = ~640 candidates → 60-180 new companies/day.
+# Monthly usage: 30 (job scrape) + 32 (discovery) = 62/day = 1,860/month (free tier: 2,000).
 ATS_DISCOVERY_PATTERNS = {
     "greenhouse": {
-        "search_query": "site:boards.greenhouse.io careers",
+        "search_queries": [
+            "site:boards.greenhouse.io software engineer",
+            "site:boards.greenhouse.io machine learning engineer",
+            "site:boards.greenhouse.io data scientist",
+            "site:boards.greenhouse.io backend engineer",
+            "site:boards.greenhouse.io hiring 2026",
+        ],
         "url_patterns": [
             r"boards\.greenhouse\.io/(\w+)",
             r"boards-api\.greenhouse\.io/v1/boards/(\w+)",
+            r"job-boards\.greenhouse\.io/(\w+)",
         ],
     },
     "lever": {
-        "search_query": "site:jobs.lever.co careers",
+        "search_queries": [
+            "site:jobs.lever.co software engineer",
+            "site:jobs.lever.co machine learning",
+            "site:jobs.lever.co data engineer",
+            "site:jobs.lever.co hiring",
+        ],
         "url_patterns": [
             r"jobs\.lever\.co/([\w-]+)",
         ],
     },
-    "workable": {
-        "search_query": "site:apply.workable.com careers",
-        "url_patterns": [
-            r"apply\.workable\.com/([\w-]+)",
-        ],
-    },
     "ashby": {
-        "search_query": "site:jobs.ashbyhq.com careers",
+        "search_queries": [
+            "site:jobs.ashbyhq.com software engineer",
+            "site:jobs.ashbyhq.com engineer 2026",
+            "site:jobs.ashbyhq.com data",
+        ],
         "url_patterns": [
             r"jobs\.ashbyhq\.com/([\w-]+)",
         ],
     },
+    "workable": {
+        "search_queries": [
+            "site:apply.workable.com software engineer",
+            "site:apply.workable.com data engineer",
+        ],
+        "url_patterns": [
+            r"apply\.workable\.com/([\w-]+)",
+        ],
+    },
     "rippling": {
-        "search_query": "site:ats.rippling.com",
+        "search_queries": [
+            "site:ats.rippling.com software engineer",
+            "site:ats.rippling.com engineer",
+        ],
         "url_patterns": [
             r"ats\.rippling\.com/([\w-]+)",
+        ],
+    },
+    "smartrecruiters": {
+        "search_queries": [
+            "site:jobs.smartrecruiters.com software engineer",
+            "site:jobs.smartrecruiters.com data scientist",
+        ],
+        "url_patterns": [
+            r"jobs\.smartrecruiters\.com/([\w-]+)",
+        ],
+    },
+    "bamboohr": {
+        "search_queries": [
+            "site:bamboohr.com/careers software engineer",
+        ],
+        "url_patterns": [
+            r"([\w-]+)\.bamboohr\.com",
+        ],
+    },
+    "workday": {
+        "search_queries": [
+            "site:myworkdayjobs.com software engineer",
+            "site:myworkdayjobs.com data scientist",
+            "site:myworkdayjobs.com machine learning",
+            "site:myworkdayjobs.com data engineer",
+            "site:myworkdayjobs.com backend engineer",
+        ],
+        "url_patterns": [
+            r"([\w-]+)\.myworkdayjobs\.com",
+            r"([\w-]+)\.wd\d+\.myworkdayjobs\.com",
+        ],
+    },
+    "gem": {
+        "search_queries": [
+            "site:job-boards.gem.com software engineer",
+            "site:job-boards.gem.com data scientist",
+        ],
+        "url_patterns": [
+            r"job-boards\.gem\.com/([\w-]+)",
         ],
     },
 }
@@ -122,35 +185,43 @@ async def search_brave(query: str, count: int = 20) -> list[dict]:
 async def discover_companies_for_ats(ats: str, existing_slugs: set) -> list[dict]:
     """
     Discover new companies for a specific ATS platform.
-    
+
+    Runs all search_queries for the platform (1-second gap between calls to
+    respect Brave rate limits). Deduplicates against existing_slugs in-place.
+
     Returns list of new company dicts: {"company": name, "ats": ats, "slug": slug}
     """
     config = ATS_DISCOVERY_PATTERNS.get(ats)
     if not config:
         return []
-    
-    query = config["search_query"]
-    results = await search_brave(query, count=20)  # Brave free tier limit
-    
+
+    queries = config.get("search_queries", [])
+    if not queries:
+        return []
+
     discovered = []
-    for result in results:
-        url = result.get("url", "")
-        title = result.get("title", "")
-        
-        slug = extract_slug_from_url(url, ats)
-        if slug and slug not in existing_slugs:
-            # Extract company name from title if possible
-            company_name = title.split(" - ")[0].split(" | ")[0].strip()
-            if not company_name or len(company_name) < 2:
-                company_name = slug.replace("-", " ").title()
-            
-            discovered.append({
-                "company": company_name,
-                "ats": ats,
-                "slug": slug,
-            })
-            existing_slugs.add(slug)  # Avoid duplicates within run
-    
+    for i, query in enumerate(queries):
+        if i > 0:
+            await asyncio.sleep(1)  # 1 req/s — stay within Brave free tier
+
+        results = await search_brave(query, count=20)
+        for result in results:
+            url = result.get("url", "")
+            title = result.get("title", "")
+
+            slug = extract_slug_from_url(url, ats)
+            if slug and slug not in existing_slugs:
+                company_name = title.split(" - ")[0].split(" | ")[0].strip()
+                if not company_name or len(company_name) < 2:
+                    company_name = slug.replace("-", " ").title()
+
+                discovered.append({
+                    "company": company_name,
+                    "ats": ats,
+                    "slug": slug,
+                })
+                existing_slugs.add(slug)  # Avoid duplicates within this run
+
     return discovered
 
 
@@ -183,6 +254,7 @@ def load_existing_slugs() -> dict[str, set]:
         "workday": "workday_companies.csv",
         "rippling": "rippling_companies.csv",
         "ashby": "ashby_companies.csv",
+        "gem": "gem_companies.csv",
     }
     
     for ats, filename in csv_files.items():
