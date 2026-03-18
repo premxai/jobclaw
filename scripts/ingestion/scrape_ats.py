@@ -51,14 +51,15 @@ DEFAULT_SKIP_PLATFORMS: set[str] = set()
 # from a queue, so memory stays bounded regardless of registry size.
 # Workers per platform — lower bounds are better for 24/7 stealth scraping
 PLATFORM_WORKERS = {
-    "greenhouse": 3,
-    "lever": 3,
-    "ashby": 3,
-    "smartrecruiters": 2,
-    "workday": 2,            # Aggressive WAF — don't push past 2-3
+    "greenhouse": 5,          # Public REST API — very tolerant, increased from 3
+    "lever": 5,               # Public REST API — very tolerant, increased from 3
+    "ashby": 5,               # Clean API, smaller volume — increased from 3
+    "smartrecruiters": 3,     # Enterprise — leave headroom, increased from 2
+    "workday": 2,             # Aggressive WAF — don't push past 2-3
     "workable": 1,            # Single worker — Workable 429s hard with concurrency
-    "rippling": 1,            # 1,300+ companies — keep single worker to avoid crashes
+    "rippling": 2,            # Large registry — careful increase from 1
     "bamboohr": 2,
+    "gem": 3,                 # Mid-market ATS — clean JSON API
 }
 DEFAULT_WORKERS = 3
 
@@ -151,8 +152,8 @@ async def _worker(
                 pass  # Cache corrupt — fall through
 
         try:
-            # Workday is slow — give it more time
-            per_company_timeout = 180 if ats == "workday" else 120
+            # Workday is slow due to JS rendering — give it more time than others
+            per_company_timeout = 90 if ats == "workday" else 60
             jobs = await asyncio.wait_for(
                 fetch_company_jobs(session, cname, ats, slug, rate_limiter=rate_limiter),
                 timeout=per_company_timeout,

@@ -2,19 +2,12 @@
 ZERO-MISS Scraper Orchestrator — guaranteed full coverage.
 
 Strategy: EVERY tier scrapes ATS companies. Shard rotation guarantees
-all 11,822 companies are covered within 4 consecutive runs (~20 min).
+all companies are covered within 4 consecutive runs.
 
 Tiers:
-  fast:   RSS + GitHub + ATS (1 rotating shard)           ~2 min
-  medium: RSS + GitHub + Enterprise + ATS (1 shard)       ~4 min
-  deep:   Everything + Stealth (ALL shards, no rotation)  ~15 min
-
-With `fast` every 5 min:
-  Run 1 → shard 0 (~3,000 companies)
-  Run 2 → shard 1 (~3,000 companies)
-  Run 3 → shard 2 (~3,000 companies)
-  Run 4 → shard 3 (~3,000 companies)
-  = full 11,822 coverage every 20 minutes
+  fast:   RSS + GitHub + ATS (1 rotating shard)                ~2 min
+  medium: RSS + GitHub + Enterprise + ATS (1 shard)            ~4 min
+  deep:   Everything + Brave Search (ALL shards, no rotation)  ~15 min
 
 Usage:
     python scripts/ingestion/run_all_scrapers.py --tier fast
@@ -77,8 +70,8 @@ async def _run_with_timing(name: str, coro):
 
 async def run_all(
     skip_ats: bool = False,
-    skip_openclaw: bool = False,
     skip_github: bool = False,
+    run_brave: bool = False,
     window_hours: int = 24,
     skip_platforms: set = None,
     shard: int = None,
@@ -88,14 +81,14 @@ async def run_all(
     Launch all scrapers in parallel — ZERO-MISS coverage.
 
     Every tier includes ATS. Shard rotation guarantees full
-    11,822 company coverage every 4 runs (~20 min with fast tier).
+    company coverage every 4 runs.
 
     Priority order (by speed):
       1. RSS/Aggregators  (~30s)   -- cheapest, fastest signal
       2. GitHub repos     (~1-2m)  -- static markdown parsing
       3. Enterprise APIs  (~2-5m)  -- 8 companies, REST APIs
-      4. ATS boards       (~2-8m)  -- 3,000 companies per shard
-      5. Stealth scraper  (~3-5m)  -- LinkedIn/Indeed/Glassdoor
+      4. ATS boards       (~2-8m)  -- companies per shard
+      5. Brave Search     (~1m)    -- LinkedIn/Indeed/Glassdoor (deep tier only)
 
     All run concurrently — no scraper blocks another.
     """
@@ -136,21 +129,16 @@ async def run_all(
             )
         ))
 
-    # ── Deep Discovery (LinkedIn/Indeed/Glassdoor) ──────────────────────────────
-    # Browser automation for protected job boards (LinkedIn, Indeed, Glassdoor)
-    if not skip_openclaw:
-        from scripts.ingestion.scrape_openclaw import run_openclaw_scraper
-        
-        tasks.append(_run_with_timing(
-            "OpenClaw Scraper (LinkedIn/Indeed/Glassdoor)", 
-            run_openclaw_scraper()
-        ))
-        
-        # Still run Brave for LinkedIn/Indeed if Openclaw is dedicated to Workday
+    # ── Brave Search (LinkedIn/Indeed/Glassdoor) — deep tier only ──────
+    # Searches job boards that can't be scraped directly.
+    # Budget: 30 queries/day = 900/month (free tier: 2,000/month).
+    if run_brave:
         brave_key = os.getenv("BRAVE_SEARCH_API_KEY", "")
-        if brave_key and not skip_openclaw:
+        if brave_key:
             from scripts.ingestion.scrape_brave import run_brave_scraper
             tasks.append(_run_with_timing("Brave Search (LinkedIn/Indeed/Glassdoor)", run_brave_scraper()))
+        else:
+            _log("[orchestrator] BRAVE_SEARCH_API_KEY not set — skipping Brave Search")
 
     # NOTE: StreamingJobPusher disabled — no scraper currently calls pusher.push().
     # The batch push_new_jobs_to_discord() at the end handles all Discord notifications.
@@ -212,10 +200,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Tier presets (recommended):
-  --tier fast     RSS + GitHub only              (~30s,  schedule every 5 min)
-  --tier medium   + Enterprise APIs              (~3min, schedule every 30 min)
-  --tier heavy    + ATS boards (1/4 sharded)     (~4min, schedule every 1 hour)
-  --tier deep     Everything incl. OpenClaw      (~15min, schedule every 4 hours)
+  --tier fast     RSS + GitHub + ATS (1 shard)       (~2 min,  every hour)
+  --tier medium   + Enterprise APIs + ATS (1 shard)  (~4 min,  every hour)
+  --tier deep     Everything + Brave Search           (~15 min, daily)
 
 Legacy flags still work:
   --fast          Same as --tier fast
@@ -232,8 +219,6 @@ Legacy flags still work:
                         help="Legacy: 1hr window, skip slow platforms")
     parser.add_argument("--daily", action="store_true",
                         help="Legacy: 24hr window, all platforms")
-    parser.add_argument("--no-openclaw", "--skip-openclaw", dest="no_openclaw", action="store_true",
-                        help="Skip OpenClaw browser automation")
     parser.add_argument("--no-github", action="store_true",
                         help="Skip GitHub repo parsing")
     parser.add_argument("--skip-ats", dest="skip_ats", action="store_true",
@@ -261,9 +246,8 @@ Legacy flags still work:
 
     if tier == "fast":
         # RSS + GitHub + ATS (1 rotating shard) — ~2 min
-        # Full 11,822 coverage every 4 runs = every 20 minutes
         skip_ats = False
-        skip_openclaw = True
+        run_brave = False
         skip_github = False
         window = args.window or 4
         skip_platforms = set()
@@ -271,23 +255,23 @@ Legacy flags still work:
     elif tier == "medium":
         # RSS + GitHub + Enterprise + ATS (1 rotating shard) — ~4 min
         skip_ats = False
-        skip_openclaw = True
+        run_brave = False
         skip_github = False
         window = args.window or 8
         skip_platforms = set()
         shard_val = get_next_shard(total_shards)
     elif tier == "deep":
-        # Everything: ALL shards + Stealth scrapers — ~15 min
+        # Everything: ALL shards + Brave Search — ~15 min
         skip_ats = False
-        skip_openclaw = False
+        run_brave = True
         skip_github = False
         window = args.window or 24
         skip_platforms = set()
-        shard_val = None  # No sharding — full sweep of all 11,822
+        shard_val = None  # No sharding — full sweep of all companies
     else:
         # No tier specified — default to medium behavior
         skip_ats = False
-        skip_openclaw = args.no_openclaw
+        run_brave = False
         skip_github = args.no_github
         window = args.window or 24
         skip_platforms = None
@@ -300,26 +284,24 @@ Legacy flags still work:
         else:
             shard_val = int(args.shard)
 
-    # CLI flags can override tier defaults for skip flags
+    # CLI flags can override tier defaults
     if args.skip_ats:
         skip_ats = True
-    if args.no_openclaw:
-        skip_openclaw = True
     if args.no_github:
         skip_github = True
 
     _log(f"[orchestrator] Tier={tier or 'default'}, Window={window}hr, "
          f"Shard={shard_val if shard_val is not None else 'ALL'}/{total_shards}, "
          f"ATS={'OFF' if skip_ats else 'ON'}, "
-         f"Stealth={'ON' if not skip_openclaw else 'OFF'}")
+         f"Brave={'ON' if run_brave else 'OFF'}")
 
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
     asyncio.run(run_all(
         skip_ats=skip_ats,
-        skip_openclaw=skip_openclaw,
         skip_github=skip_github,
+        run_brave=run_brave,
         window_hours=window,
         skip_platforms=skip_platforms,
         shard=shard_val,

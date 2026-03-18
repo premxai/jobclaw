@@ -48,7 +48,6 @@ def check_imports():
         ("GitHub",     "scripts.ingestion.scrape_github",     "run_github_scraper"),
         ("ATS",        "scripts.ingestion.scrape_ats",        "run_ats_scraper"),
         ("Enterprise", "scripts.ingestion.scrape_enterprise", None),
-        ("OpenClaw",   "scripts.ingestion.scrape_openclaw",   "run_openclaw_scraper"),
         ("Discord",    "scripts.discord_push",                "push_new_jobs_to_discord"),
         ("DB Utils",   "scripts.database.db_utils",           "get_connection"),
         ("Role Filter","scripts.ingestion.role_filter",       "passes_role_filter"),

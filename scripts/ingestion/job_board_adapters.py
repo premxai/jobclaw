@@ -5,12 +5,10 @@ Fetches jobs from job board APIs and RSS feeds, normalizing them into
 NormalizedJob format compatible with the ATS adapter pipeline.
 
 Supported boards:
-  - RemoteOK       (remoteok.io/api)
-  - Remotive       (remotive.com/api/remote-jobs)
-  - WeWorkRemotely (weworkremotely.com RSS)
-  - Dice           (dice.com RSS)
-  - WorkingNomads  (workingnomads.com/api)
-  - BuiltIn        (builtin.com structured)
+  - RemoteOK        (remoteok.io/api)
+  - Remotive        (remotive.com/api/remote-jobs)
+  - WeWorkRemotely  (weworkremotely.com RSS)
+  - Dice            (dice.com RSS)
   - HN Who's Hiring (hn.algolia.com API)
 """
 
