@@ -27,9 +27,16 @@ def parse_url_for_ats(link: str) -> tuple[str, str, str]:
             return "lever", slug, slug.replace("-", " ").title()
             
         elif "myworkdayjobs.com" in link:
-            slug = link.split("//")[1].split(".")[0]
-            if slug in ("www", "wd1", "wd3", "wd5"): return None, None, None
-            return "workday", slug, slug.replace("-", " ").title()
+            # Extract tenant:shard:site — WorkdayAdapter requires this format
+            import re as _re
+            m = _re.match(r'https?://([\w-]+)\.(wd\d+)\.myworkdayjobs\.com/([^\s?#]+)', link)
+            if m:
+                tenant, shard_str, site = m.group(1), m.group(2), m.group(3).rstrip('/')
+                shard_num = _re.sub(r'\D', '', shard_str) or "5"
+                if tenant in ("www",): return None, None, None
+                slug = f"{tenant}:{shard_num}:{site}"
+                return "workday", slug, tenant.replace("-", " ").title()
+            return None, None, None
             
         elif "ashbyhq.com" in link:
             slug = link.split("ashbyhq.com/")[1].split("/")[0].split("?")[0]

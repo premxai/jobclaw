@@ -1,7 +1,7 @@
 name: "📋 Expand ATS Company Registry (Daily)"
 
 # ┌────────────────────────────────────────────────────────────────────┐
-# │  Runs once daily at 11 PM UTC                                     │
+# │  Runs once daily at 10 PM UTC (1 hr before deep scrape)           │
 # │  Auto-discovers new companies from:                               │
 # │    1. GitHub company lists (always runs)                          │
 # │    2. Brave Search API site: queries (if API key is set)          │
@@ -11,8 +11,11 @@ name: "📋 Expand ATS Company Registry (Daily)"
 
 on:
   schedule:
-    - cron: '0 23 * * *'   # 11 PM UTC daily (end of day)
+    - cron: '0 22 * * *'   # 10 PM UTC — runs 1 hour BEFORE deep scrape (avoids git push race)
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   expand-registry:
@@ -29,7 +32,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests aiohttp python-dotenv
+        run: pip install aiohttp python-dotenv requests
 
       - name: Run GitHub-based registry expansion
         run: python scripts/utils/expand_registry.py
@@ -41,17 +44,13 @@ jobs:
 
       - name: Commit expanded registry
         run: |
-          git config user.name "JobClaw Bot"
-          git config user.email "bot@jobclaw.dev"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add config/company_registry.json
-          # Only commit if there are actual changes
           if git diff --cached --quiet; then
             echo "No new companies discovered — registry unchanged."
           else
-            ADDED=$(git diff --cached --stat | tail -1)
-            git commit -m "chore(registry): auto-expand company registry [bot]
-
-          $ADDED"
+            git commit -m "chore(registry): auto-expand company registry [skip ci]"
             git push origin main
             echo "✅ Registry expanded and pushed."
           fi

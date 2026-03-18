@@ -20,10 +20,8 @@ async def main():
     """Run discovery for all ATS platforms."""
     _log(">>> Starting Daily Company Discovery")
     
-    # Run discovery for all supported platforms
-    platforms = ["greenhouse", "lever", "workable", "ashby", "rippling"]
-    
-    result = await run_discovery(platforms=platforms)
+    # Run discovery for all supported platforms (None = all defined in ATS_DISCOVERY_PATTERNS)
+    result = await run_discovery(platforms=None)
     
     total = result.get("discovered", 0)
     by_ats = result.get("by_ats", {})
