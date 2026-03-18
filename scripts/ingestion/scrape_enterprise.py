@@ -27,7 +27,7 @@ import time
 import asyncio
 from datetime import datetime, timezone
 
-from scripts.ingestion.ats_adapters import NormalizedJob, _strip_html, _enrich_job
+from scripts.ingestion.ats_adapters import NormalizedJob, _strip_html, _enrich_job, fetch_company_jobs
 from scripts.database.db_utils import get_connection, insert_job, log_scraper_run
 from scripts.ingestion.us_filter import is_us_location
 from scripts.ingestion.role_filter import is_target_role
@@ -869,6 +869,71 @@ async def _paginate_api(api, session: aiohttp.ClientSession, name: str,
     return all_jobs
 
 
+# ═══════════════════════════════════════════════════════════════════════
+# PRIORITY AI / HIGH-GROWTH COMPANIES
+# Scraped every run (not subject to shard rotation) via existing ATS adapters.
+# These are the highest-signal companies for AI/ML and SWE roles.
+# ═══════════════════════════════════════════════════════════════════════
+
+PRIORITY_COMPANIES = [
+    # AI/ML Frontier Labs
+    {"company": "OpenAI",        "ats": "greenhouse",     "slug": "openai"},
+    {"company": "Anthropic",     "ats": "lever",          "slug": "anthropic"},
+    {"company": "DeepMind",      "ats": "greenhouse",     "slug": "deepmind"},
+    {"company": "Cohere",        "ats": "lever",          "slug": "cohere"},
+    {"company": "Mistral AI",    "ats": "lever",          "slug": "mistral"},
+    {"company": "xAI",           "ats": "greenhouse",     "slug": "xai"},
+    {"company": "Perplexity AI", "ats": "greenhouse",     "slug": "perplexity"},
+    {"company": "Scale AI",      "ats": "greenhouse",     "slug": "scaleai"},
+    {"company": "Weights & Biases", "ats": "lever",       "slug": "wandb"},
+    {"company": "Hugging Face",  "ats": "workable",       "slug": "huggingface"},
+    {"company": "Runway ML",     "ats": "greenhouse",     "slug": "runwayml"},
+    {"company": "Together AI",   "ats": "greenhouse",     "slug": "together-ai"},
+    {"company": "Stability AI",  "ats": "lever",          "slug": "stability-ai"},
+    # High-Growth Tech
+    {"company": "Figma",         "ats": "greenhouse",     "slug": "figma"},
+    {"company": "Notion",        "ats": "greenhouse",     "slug": "notion"},
+    {"company": "Linear",        "ats": "ashby",          "slug": "linear"},
+    {"company": "Vercel",        "ats": "ashby",          "slug": "vercel"},
+    {"company": "Supabase",      "ats": "ashby",          "slug": "supabase"},
+    {"company": "Retool",        "ats": "greenhouse",     "slug": "retool"},
+    {"company": "Airtable",      "ats": "greenhouse",     "slug": "airtable"},
+    {"company": "Brex",          "ats": "greenhouse",     "slug": "brex"},
+    {"company": "Ramp",          "ats": "lever",          "slug": "ramp"},
+    {"company": "Stripe",        "ats": "greenhouse",     "slug": "stripe"},
+    {"company": "Plaid",         "ats": "lever",          "slug": "plaid"},
+    {"company": "Rippling",      "ats": "rippling",       "slug": "rippling"},
+]
+
+
+async def _fetch_priority_companies(session, rate_limiter) -> list[NormalizedJob]:
+    """
+    Scrape all PRIORITY_COMPANIES using the existing ATS adapter infrastructure.
+    Each is fetched concurrently with a 3-worker semaphore to avoid hammering.
+    """
+    sem = asyncio.Semaphore(3)
+    jobs = []
+
+    async def _fetch_one(entry):
+        async with sem:
+            try:
+                result = await fetch_company_jobs(
+                    session, entry["company"], entry["ats"], entry["slug"],
+                    rate_limiter=rate_limiter,
+                )
+                return result or []
+            except Exception as e:
+                log(f"[priority] {entry['company']} ({entry['ats']}) error: {e}", "WARN")
+                return []
+
+    results = await asyncio.gather(*[_fetch_one(e) for e in PRIORITY_COMPANIES])
+    for batch in results:
+        jobs.extend(batch)
+
+    log(f"[priority] Fetched {len(jobs)} raw jobs from {len(PRIORITY_COMPANIES)} priority companies.")
+    return jobs
+
+
 async def run_enterprise_scraper():
     log("=== Commencing Enterprise Architecture Scrape v2 ===")
     start_t = time.time()
@@ -892,7 +957,12 @@ async def run_enterprise_scraper():
         tesla_api = TeslaJobsAPI()
         cursor_api = CursorJobsAPI()
         
-        log("Fetching from Apple, Amazon, Microsoft, Google, Meta, TikTok, Nvidia, Uber, Tesla, Cursor...")
+        log("Fetching from Apple, Amazon, Microsoft, Google, Meta, TikTok, Nvidia, Uber, Tesla, Cursor + 25 priority AI/ML companies...")
+
+        # Priority AI/ML companies (always scraped, not subject to shard rotation)
+        priority_jobs = await _fetch_priority_companies(session, rate_limiter)
+        all_jobs.extend(priority_jobs)
+
         
         # Full pagination for all API companies (including Google via HTTP SSR)
         api_results = await asyncio.gather(
@@ -959,14 +1029,20 @@ async def run_enterprise_scraper():
                 "salary_max": getattr(job, "salary_max", None),
                 "salary_currency": getattr(job, "salary_currency", None),
                 "experience_years": getattr(job, "experience_years", None),
+                "remote_ok": getattr(job, "remote_ok", None),
+                "job_type": getattr(job, "job_type", None),
+                "seniority_level": getattr(job, "seniority_level", None),
+                "visa_sponsorship": getattr(job, "visa_sponsorship", None),
+                "tech_stack": getattr(job, "tech_stack", None),
             }
             if insert_job(conn, j_dict):
                 new_jobs_inserted += 1
 
+        total_companies = 10 + len(PRIORITY_COMPANIES)
         log_scraper_run(
             conn=conn,
             script_name="scrape_enterprise",
-            companies_fetched=10,
+            companies_fetched=total_companies,
             new_jobs=new_jobs_inserted,
             duration=round(time.time() - start_t, 2)
         )
