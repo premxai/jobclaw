@@ -1,28 +1,9 @@
-# Ruff linter configuration for JobClaw
-target-version = "py312"
 line-length = 120
+target-version = "py310"
 
 [lint]
-select = [
-    "E",     # pycodestyle errors
-    "W",     # pycodestyle warnings
-    "F",     # pyflakes
-    "I",     # isort
-    "UP",    # pyupgrade
-    "B",     # flake8-bugbear
-    "SIM",   # flake8-simplify
-]
-ignore = [
-    "E501",  # line too long (handled by formatter)
-    "B008",  # do not perform function calls in argument defaults
-    "B905",  # zip without strict=
-    "SIM108", # ternary operator
-]
+ignore = ["E402", "SIM105", "SIM117", "SIM102", "UP045", "UP006", "UP007", "UP035"]
 
 [lint.per-file-ignores]
-"__init__.py" = ["F401"]
-"scripts/ingestion/*.py" = ["E722"]  # bare except in scraper error handlers
-
-[format]
-quote-style = "double"
-indent-style = "space"
+"test_*.py" = ["E402", "F401", "I001"]
+"scripts/test_*.py" = ["E402", "F401"]

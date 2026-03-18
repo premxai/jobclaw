@@ -358,7 +358,7 @@ async def trigger_scraper(
         )
         return {"status": "started", "tier": tier, "pid": proc.pid}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 # ═══════════════════════════════════════════════════════════════════════

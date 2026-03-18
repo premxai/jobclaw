@@ -48,8 +48,8 @@ class LocalEmbedder:
                 from sentence_transformers import SentenceTransformer
 
                 self._model = SentenceTransformer(self.MODEL_NAME)
-            except ImportError:
-                raise ImportError("sentence-transformers required. Run: pip install sentence-transformers")
+            except ImportError as err:
+                raise ImportError("sentence-transformers required. Run: pip install sentence-transformers") from err
 
     def embed(self, text: str) -> np.ndarray:
         self._load()

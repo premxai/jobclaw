@@ -168,14 +168,16 @@ async def search_brave(query: str, count: int = 20) -> list[dict]:
     }
 
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(BRAVE_SEARCH_URL, headers=headers, params=params) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    return data.get("web", {}).get("results", [])
-                else:
-                    _log(f"Brave API error: {resp.status}", "WARN")
-                    return []
+        async with (
+            aiohttp.ClientSession() as session,
+            session.get(BRAVE_SEARCH_URL, headers=headers, params=params) as resp,
+        ):
+            if resp.status == 200:
+                data = await resp.json()
+                return data.get("web", {}).get("results", [])
+            else:
+                _log(f"Brave API error: {resp.status}", "WARN")
+                return []
     except Exception as e:
         _log(f"Brave search failed: {e}", "ERROR")
         return []

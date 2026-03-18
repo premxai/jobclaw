@@ -39,10 +39,9 @@ from scripts.utils.salary_parser import extract_experience, extract_salary, pars
 
 async def _parse_json(resp) -> Any:
     """Parse JSON from either a curl_cffi or aiohttp response."""
-    if HAS_CURL_CFFI:
+    if HAS_CURL_CFFI and hasattr(resp, "status_code"):
         # curl_cffi responses have .json() as a sync method
-        if hasattr(resp, "status_code"):
-            return resp.json()
+        return resp.json()
     # aiohttp responses have .json() as an async method
     return await resp.json()
 

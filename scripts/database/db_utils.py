@@ -56,8 +56,8 @@ def get_connection():
             conn = psycopg2.connect(DATABASE_URL)
             conn.autocommit = False
             return conn
-        except ImportError:
-            raise ImportError("psycopg2 required for PostgreSQL. Run: pip install psycopg2-binary")
+        except ImportError as err:
+            raise ImportError("psycopg2 required for PostgreSQL. Run: pip install psycopg2-binary") from err
 
     # Ensure the data directory exists
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -147,8 +147,8 @@ async def get_pg_pool():
     if _pg_pool is None:
         try:
             import asyncpg
-        except ImportError:
-            raise ImportError("asyncpg required for PostgreSQL. Run: pip install asyncpg")
+        except ImportError as err:
+            raise ImportError("asyncpg required for PostgreSQL. Run: pip install asyncpg") from err
 
         _pg_pool = await asyncpg.create_pool(
             DATABASE_URL,

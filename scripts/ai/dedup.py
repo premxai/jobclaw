@@ -124,7 +124,7 @@ class JobDeduplicator:
         self._use_minhash = False
 
         try:
-            from datasketch import MinHash, MinHashLSH
+            from datasketch import MinHash, MinHashLSH  # noqa: F401
 
             self._use_minhash = True
         except ImportError:

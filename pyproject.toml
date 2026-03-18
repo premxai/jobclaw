@@ -3,14 +3,15 @@ line-length = 120
 target-version = "py310"
 
 [tool.ruff.lint]
-# E402: Module-level imports not at top — intentional in scripts that need sys.path.insert
-# SIM105: contextlib.suppress — try/except/pass is more readable in scraper error handling
-# UP045: Optional[X] -> X | None — keeping Optional for Python 3.9 compat
-ignore = ["E402", "SIM105", "UP045", "UP006", "UP007", "UP035"]
+# E402: Module-level import not at top — every script does sys.path.insert() before
+#       local imports so it can be run standalone. This is intentional project-wide.
+# SIM105: try/except/pass — more readable in scraper error handling than contextlib.suppress
+# SIM117: nested with — sometimes clearer when contexts are logically separate
+# SIM102: nested if — sometimes clearer than a combined condition
+# UP045/UP006/UP007/UP035: Optional[X], List[X] etc — kept for Python 3.9 compat
+ignore = ["E402", "SIM105", "SIM117", "SIM102", "UP045", "UP006", "UP007", "UP035"]
 
 [tool.ruff.lint.per-file-ignores]
-# Test/debug scripts — loose import conventions are fine
+# Test/debug scripts — relaxed conventions
 "test_*.py" = ["E402", "F401", "I001"]
 "scripts/test_*.py" = ["E402", "F401"]
-# Conditional imports inside try/except — used via self._use_minhash guard
-"scripts/ai/dedup.py" = ["F401"]
