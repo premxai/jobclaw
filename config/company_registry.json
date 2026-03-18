@@ -64399,6 +64399,341 @@
       "company": "Zorrorx",
       "ats": "gem",
       "slug": "zorrorx"
+    },
+    {
+      "company": "Job Application for Software Engineering Manager at minware",
+      "ats": "greenhouse",
+      "slug": "minware"
+    },
+    {
+      "company": "Job Application for Software Engineer at Sixth Street",
+      "ats": "greenhouse",
+      "slug": "sixthstreet"
+    },
+    {
+      "company": "Senior Software Engineer",
+      "ats": "greenhouse",
+      "slug": "abnormalsecurity"
+    },
+    {
+      "company": "Job Application for Software Engineer at Octaura",
+      "ats": "greenhouse",
+      "slug": "octaura"
+    },
+    {
+      "company": "Job Details",
+      "ats": "greenhouse",
+      "slug": "hitachidigitalservices"
+    },
+    {
+      "company": "Job Application for Artificial Intelligence/Machine Learning Engineer at Foundry",
+      "ats": "greenhouse",
+      "slug": "foundrydigital"
+    },
+    {
+      "company": "Machine Learning Engineering Manager (Face Intelligence)",
+      "ats": "greenhouse",
+      "slug": "veriff"
+    },
+    {
+      "company": "1017- Senior Data Engineer / Machine Learning Engineer (Remote) ...",
+      "ats": "greenhouse",
+      "slug": "gofasti"
+    },
+    {
+      "company": "Job Application for Data Scientist at Forge Global",
+      "ats": "greenhouse",
+      "slug": "forgeglobal"
+    },
+    {
+      "company": "Job Application for Sr. Product Data Scientist at MyFitnessPal",
+      "ats": "greenhouse",
+      "slug": "myfitnesspal"
+    },
+    {
+      "company": "Senior Backend Engineer II (AI Feature Builder)",
+      "ats": "greenhouse",
+      "slug": "storyblok"
+    },
+    {
+      "company": "Senior Backend Engineer (m/f/d)",
+      "ats": "greenhouse",
+      "slug": "flipapp1"
+    },
+    {
+      "company": "Job Application for Backend Engineer at Valispace",
+      "ats": "greenhouse",
+      "slug": "valispace1"
+    },
+    {
+      "company": "Job Application for Senior Software Engineer, Backend (Developer",
+      "ats": "greenhouse",
+      "slug": "cdpjobs"
+    },
+    {
+      "company": "2025",
+      "ats": "greenhouse",
+      "slug": "elevatek12teachwithus"
+    },
+    {
+      "company": "Software Development Engineer II",
+      "ats": "greenhouse",
+      "slug": "esri"
+    },
+    {
+      "company": "Grant Street Group",
+      "ats": "lever",
+      "slug": "grantstreet"
+    },
+    {
+      "company": "Skillerszone",
+      "ats": "lever",
+      "slug": "skillerszone"
+    },
+    {
+      "company": "Satellite Innovations",
+      "ats": "lever",
+      "slug": "satelliteinnovations"
+    },
+    {
+      "company": "Software Engineer",
+      "ats": "ashby",
+      "slug": "meshy"
+    },
+    {
+      "company": "Software Engineer, New Grad (2026) @ Benchling",
+      "ats": "ashby",
+      "slug": "benchling"
+    },
+    {
+      "company": "Software Engineer II, Full Stack (Node, React) @ Teamworks",
+      "ats": "ashby",
+      "slug": "teamworks"
+    },
+    {
+      "company": "Software Engineer",
+      "ats": "ashby",
+      "slug": "swoop"
+    },
+    {
+      "company": "Intern, Power Electronics Engineer, Spring 2026/Summer 2026 @ Heron Power",
+      "ats": "ashby",
+      "slug": "heron-power"
+    },
+    {
+      "company": "Data Analyst @ Goody",
+      "ats": "ashby",
+      "slug": "goody"
+    },
+    {
+      "company": "Senior Data Analyst @ brightwheel",
+      "ats": "ashby",
+      "slug": "brightwheel"
+    },
+    {
+      "company": "Senior Data Analyst",
+      "ats": "ashby",
+      "slug": "scribdinc"
+    },
+    {
+      "company": "Principal Software Engineer (Cloud and AI Platforms)",
+      "ats": "workable",
+      "slug": "blueflag"
+    },
+    {
+      "company": "Senior Software Engineer",
+      "ats": "workable",
+      "slug": "anytime-mailbox"
+    },
+    {
+      "company": "Software Engineer",
+      "ats": "workable",
+      "slug": "docme360"
+    },
+    {
+      "company": "Software Engineer Intern",
+      "ats": "workable",
+      "slug": "convergent"
+    },
+    {
+      "company": "Senior Full Stack Software Engineer (.NET Core & Angular)",
+      "ats": "workable",
+      "slug": "flatgigs"
+    },
+    {
+      "company": "Software Engineer",
+      "ats": "workable",
+      "slug": "fuku"
+    },
+    {
+      "company": "Data Engineer",
+      "ats": "workable",
+      "slug": "rewardsco-3"
+    },
+    {
+      "company": "Cloud Data Engineer",
+      "ats": "workable",
+      "slug": "suppliedtalent"
+    },
+    {
+      "company": "Data Engineer",
+      "ats": "workable",
+      "slug": "money-fellows"
+    },
+    {
+      "company": "Data Engineer",
+      "ats": "workable",
+      "slug": "elvespeed"
+    },
+    {
+      "company": "AI/Data Engineer",
+      "ats": "workable",
+      "slug": "vesselbot-2"
+    },
+    {
+      "company": "Software Engineer III, Rating",
+      "ats": "rippling",
+      "slug": "shippo"
+    },
+    {
+      "company": "Senior Software Engineer",
+      "ats": "rippling",
+      "slug": "genlogs-corporation"
+    },
+    {
+      "company": "LinkedIn is looking for a Software Engineer Intern (First Play) \u2013 Summer 2026 (Mountain View, CA) in Mountain View, CA",
+      "ats": "smartrecruiters",
+      "slug": "linkedin3"
+    },
+    {
+      "company": "ServiceNow is looking for a Associate Software Engineer in 275 Wyman Street 275 Wyman Street 2nd Floor, Waltham, Massachusetts, United States",
+      "ats": "smartrecruiters",
+      "slug": "servicenow"
+    },
+    {
+      "company": "vTech Solution is looking for a Software Engineer in Palm Bay, FL",
+      "ats": "smartrecruiters",
+      "slug": "vtechsolution1"
+    },
+    {
+      "company": "Associate Software Engineer",
+      "ats": "smartrecruiters",
+      "slug": "oneclick-ui"
+    },
+    {
+      "company": "North Star Staffing Solutions is looking for a Software Engineer in Boston, MA",
+      "ats": "smartrecruiters",
+      "slug": "northstarstaffingsolutions1"
+    },
+    {
+      "company": "Western Digital is looking for a Early Career Talent",
+      "ats": "smartrecruiters",
+      "slug": "westerndigital"
+    },
+    {
+      "company": "Versant is looking for a Software Engineer II-Backend (C#, AWS, node.js) in 900 Sylvan Avenue, Englewood Cliffs, NEW JERSEY",
+      "ats": "smartrecruiters",
+      "slug": "versant3"
+    },
+    {
+      "company": "NBCUniversal is looking for a Associate Post Software Engineer in 10 Universal City Plaza, Universal City, CALIFORNIA",
+      "ats": "smartrecruiters",
+      "slug": "nbcuniversal3"
+    },
+    {
+      "company": "Endava is looking for a Senior Software Engineer (Full Stack) in Remote, United States",
+      "ats": "smartrecruiters",
+      "slug": "endava"
+    },
+    {
+      "company": "Dev is looking for a Senior Software Engineer, IOS in Annapolis, MARYLAND",
+      "ats": "smartrecruiters",
+      "slug": "dev2"
+    },
+    {
+      "company": "Eurofins is looking for a IT Software Engineer in Bengaluru, Karnataka, India",
+      "ats": "smartrecruiters",
+      "slug": "eurofins"
+    },
+    {
+      "company": "AbbVie is looking for a 2026 Business Technology Solutions Intern",
+      "ats": "smartrecruiters",
+      "slug": "abbvie"
+    },
+    {
+      "company": "Harvard University is looking for a Senior Data Scientist, Generative AI Products, HBS Foundry in Boston, Massachusetts, United States",
+      "ats": "smartrecruiters",
+      "slug": "harvarduniversity"
+    },
+    {
+      "company": "Quantum Dynamics, Inc. is looking for a Data Scientist I in Naval Information Warfare Center, San Diego, California, United States",
+      "ats": "smartrecruiters",
+      "slug": "quantumdynamicsinc"
+    },
+    {
+      "company": "NielsenIQ is looking for a Lead Data Scientist in 200 West Jackson Blvd., Chicago, IL",
+      "ats": "smartrecruiters",
+      "slug": "nielseniq"
+    },
+    {
+      "company": "Data Scientist",
+      "ats": "smartrecruiters",
+      "slug": "experian"
+    },
+    {
+      "company": "Sandisk is looking for a Data Scientist in Milpitas, CA",
+      "ats": "smartrecruiters",
+      "slug": "sandisk"
+    },
+    {
+      "company": "Red Bull is looking for a Data Scientist \u2013 TV-Insight in Elsbethen, Austria",
+      "ats": "smartrecruiters",
+      "slug": "redbull"
+    },
+    {
+      "company": "Vitol is looking for a Data Scientist in Geneva, Switzerland",
+      "ats": "smartrecruiters",
+      "slug": "vitol"
+    },
+    {
+      "company": "SIXT is looking for a Senior Data Scientist Reinforcement Learning \u2013 Offer intelligence (m/f/d) in Lisbon, Portugal",
+      "ats": "smartrecruiters",
+      "slug": "sixt"
+    },
+    {
+      "company": "Software Engineer (E)",
+      "ats": "workday",
+      "slug": "wd1"
+    },
+    {
+      "company": "Software Engineer",
+      "ats": "workday",
+      "slug": "wd5"
+    },
+    {
+      "company": "Software Engineer",
+      "ats": "workday",
+      "slug": "wd108"
+    },
+    {
+      "company": "Data Scientist",
+      "ats": "workday",
+      "slug": "wd3"
+    },
+    {
+      "company": "Senior Associate, Data Scientist",
+      "ats": "workday",
+      "slug": "wd12"
+    },
+    {
+      "company": "Summer 2026 Intern",
+      "ats": "workday",
+      "slug": "wd503"
+    },
+    {
+      "company": "Data Engineer",
+      "ats": "workday",
+      "slug": "wd103"
     }
   ],
   "greenhouse": [
