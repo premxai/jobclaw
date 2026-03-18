@@ -6509,6 +6509,131 @@
       "company": "Arena Intelligence, Inc. Jobs",
       "ats": "ashby",
       "slug": "arena"
+    },
+    {
+      "company": "Airtable",
+      "ats": "gem",
+      "slug": "airtable"
+    },
+    {
+      "company": "Discord",
+      "ats": "gem",
+      "slug": "discord"
+    },
+    {
+      "company": "Figma",
+      "ats": "gem",
+      "slug": "figma"
+    },
+    {
+      "company": "Notion",
+      "ats": "gem",
+      "slug": "notion"
+    },
+    {
+      "company": "Coinbase",
+      "ats": "gem",
+      "slug": "coinbase"
+    },
+    {
+      "company": "Robinhood",
+      "ats": "gem",
+      "slug": "robinhood"
+    },
+    {
+      "company": "Duolingo",
+      "ats": "gem",
+      "slug": "duolingo"
+    },
+    {
+      "company": "Canva",
+      "ats": "gem",
+      "slug": "canva"
+    },
+    {
+      "company": "Reddit",
+      "ats": "gem",
+      "slug": "reddit"
+    },
+    {
+      "company": "Twitch",
+      "ats": "gem",
+      "slug": "twitch"
+    },
+    {
+      "company": "Databricks",
+      "ats": "gem",
+      "slug": "databricks"
+    },
+    {
+      "company": "MongoDB",
+      "ats": "gem",
+      "slug": "mongodb"
+    },
+    {
+      "company": "Snowflake",
+      "ats": "gem",
+      "slug": "snowflake"
+    },
+    {
+      "company": "Okta",
+      "ats": "gem",
+      "slug": "okta"
+    },
+    {
+      "company": "Lyft",
+      "ats": "gem",
+      "slug": "lyft"
+    },
+    {
+      "company": "DoorDash",
+      "ats": "gem",
+      "slug": "doordash"
+    },
+    {
+      "company": "Instacart",
+      "ats": "gem",
+      "slug": "instacart"
+    },
+    {
+      "company": "Brex",
+      "ats": "gem",
+      "slug": "brex"
+    },
+    {
+      "company": "Ramp",
+      "ats": "gem",
+      "slug": "ramp"
+    },
+    {
+      "company": "Plaid",
+      "ats": "gem",
+      "slug": "plaid"
+    },
+    {
+      "company": "Affirm",
+      "ats": "gem",
+      "slug": "affirm"
+    },
+    {
+      "company": "Chime",
+      "ats": "gem",
+      "slug": "chime"
+    },
+    {
+      "company": "Navan",
+      "ats": "gem",
+      "slug": "navan"
+    },
+    {
+      "company": "Pendo",
+      "ats": "gem",
+      "slug": "pendo"
+    },
+    {
+      "company": "LaunchDarkly",
+      "ats": "gem",
+      "slug": "launchdarkly"
     }
   ],
   "greenhouse": [
