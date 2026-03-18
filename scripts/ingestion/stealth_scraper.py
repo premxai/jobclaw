@@ -14,7 +14,6 @@ Usage:
 """
 
 import asyncio
-import re
 import sys
 import time
 from pathlib import Path
@@ -24,11 +23,10 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from scrapling import Fetcher
 
-from scripts.utils.logger import _log
+from scripts.database.db_utils import get_connection, insert_job, log_scraper_run
 from scripts.ingestion.role_filter import matches_target_role
 from scripts.ingestion.us_filter import is_us_location
-from scripts.database.db_utils import get_connection, insert_job, log_scraper_run
-
+from scripts.utils.logger import _log
 
 # ═══════════════════════════════════════════════════════════════════════
 # TARGET DEFINITIONS
@@ -68,6 +66,7 @@ TARGETS = [
 # FETCHER — Scrapling with stealth headers
 # ═══════════════════════════════════════════════════════════════════════
 
+
 def create_fetcher():
     """Create a Scrapling Fetcher with anti-detection headers."""
     fetcher = Fetcher(auto_match=False)
@@ -98,6 +97,7 @@ def _safe_attr(element, attr: str) -> str:
 # PARSERS — one per job board
 # ═══════════════════════════════════════════════════════════════════════
 
+
 def parse_linkedin(page) -> list[dict]:
     """Parse LinkedIn guest jobs API response (HTML fragment)."""
     jobs = []
@@ -121,14 +121,16 @@ def parse_linkedin(page) -> list[dict]:
                 if title and url:
                     # Clean up LinkedIn tracking params from URL
                     url = url.split("?")[0] if "?" in url else url
-                    jobs.append({
-                        "title": title,
-                        "company": company or "Unknown",
-                        "location": location or "United States",
-                        "url": url,
-                        "job_id": url.split("/")[-1] if "/" in url else url,
-                        "date_posted": "",
-                    })
+                    jobs.append(
+                        {
+                            "title": title,
+                            "company": company or "Unknown",
+                            "location": location or "United States",
+                            "url": url,
+                            "job_id": url.split("/")[-1] if "/" in url else url,
+                            "date_posted": "",
+                        }
+                    )
             except Exception:
                 continue
     except Exception as e:
@@ -161,14 +163,16 @@ def parse_indeed(page) -> list[dict]:
                     href = f"https://www.indeed.com/viewjob?jk={jk}"
 
                 if title and href:
-                    jobs.append({
-                        "title": title,
-                        "company": company or "Unknown",
-                        "location": location or "United States",
-                        "url": href,
-                        "job_id": jk or href.split("jk=")[-1].split("&")[0] if "jk=" in href else href,
-                        "date_posted": "",
-                    })
+                    jobs.append(
+                        {
+                            "title": title,
+                            "company": company or "Unknown",
+                            "location": location or "United States",
+                            "url": href,
+                            "job_id": jk or href.split("jk=")[-1].split("&")[0] if "jk=" in href else href,
+                            "date_posted": "",
+                        }
+                    )
             except Exception:
                 continue
     except Exception as e:
@@ -197,14 +201,16 @@ def parse_glassdoor(page) -> list[dict]:
                     href = f"https://www.glassdoor.com{href}"
 
                 if title and href:
-                    jobs.append({
-                        "title": title,
-                        "company": company or "Unknown",
-                        "location": location or "United States",
-                        "url": href,
-                        "job_id": href.split("?")[0].split("-")[-1].replace(".htm", ""),
-                        "date_posted": "",
-                    })
+                    jobs.append(
+                        {
+                            "title": title,
+                            "company": company or "Unknown",
+                            "location": location or "United States",
+                            "url": href,
+                            "job_id": href.split("?")[0].split("-")[-1].replace(".htm", ""),
+                            "date_posted": "",
+                        }
+                    )
             except Exception:
                 continue
     except Exception as e:
@@ -223,6 +229,7 @@ PARSERS = {
 # ═══════════════════════════════════════════════════════════════════════
 # MAIN SCRAPER
 # ═══════════════════════════════════════════════════════════════════════
+
 
 async def fetch_target(fetcher: Fetcher, target: dict) -> list[dict]:
     """Fetch and parse a single target's job listings."""
@@ -298,7 +305,9 @@ async def run_stealth_scraper():
     finally:
         conn.close()
 
-    _log(f">>> Stealth Scraper Complete. {new_jobs_inserted} new jobs from {len(us_filtered)} candidates. ({duration}s)")
+    _log(
+        f">>> Stealth Scraper Complete. {new_jobs_inserted} new jobs from {len(us_filtered)} candidates. ({duration}s)"
+    )
     return new_jobs_inserted
 
 

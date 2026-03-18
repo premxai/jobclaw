@@ -19,19 +19,20 @@ import os
 import re
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.utils.logger import _log
+from scripts.database.db_utils import get_connection, insert_job, log_scraper_run
 from scripts.ingestion.role_filter import matches_target_role
 from scripts.ingestion.us_filter import is_us_location
-from scripts.database.db_utils import get_connection, insert_job, log_scraper_run
+from scripts.utils.logger import _log
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv(PROJECT_ROOT / ".env")
 except ImportError:
     pass
@@ -53,7 +54,6 @@ SEARCH_QUERIES = [
     {"q": "MLOps engineer ML platform jobs hiring USA", "category": "AI/ML"},
     {"q": "generative AI engineer jobs United States 2026", "category": "AI/ML"},
     {"q": "applied scientist machine learning jobs USA", "category": "AI/ML"},
-
     # ── SWE (7 queries) ──────────────────────────────────────────────
     {"q": "software engineer jobs United States hiring now", "category": "SWE"},
     {"q": "backend engineer Python Go jobs USA", "category": "SWE"},
@@ -62,47 +62,54 @@ SEARCH_QUERIES = [
     {"q": "DevOps SRE cloud engineer jobs United States", "category": "SWE"},
     {"q": "iOS Android mobile engineer jobs USA", "category": "SWE"},
     {"q": "platform infrastructure engineer jobs USA hiring", "category": "SWE"},
-
     # ── Data Science (3 queries) ─────────────────────────────────────
     {"q": "data scientist jobs United States hiring", "category": "Data Science"},
     {"q": "applied data scientist quantitative jobs USA", "category": "Data Science"},
     {"q": "decision scientist analytics jobs United States", "category": "Data Science"},
-
     # ── Data Engineering (3 queries) ─────────────────────────────────
     {"q": "data engineer jobs United States hiring", "category": "Data Engineering"},
     {"q": "analytics engineer data platform jobs USA", "category": "Data Engineering"},
     {"q": "ETL data pipeline engineer jobs USA cloud", "category": "Data Engineering"},
-
     # ── Data Analyst (3 queries) ─────────────────────────────────────
     {"q": "data analyst jobs United States entry level", "category": "Data Analyst"},
     {"q": "business intelligence analyst jobs USA", "category": "Data Analyst"},
     {"q": "product data analyst jobs United States", "category": "Data Analyst"},
-
     # ── New Grad / Internship (4 queries) ────────────────────────────
     {"q": "new grad software engineer 2026 jobs USA", "category": "New Grad"},
     {"q": "entry level software engineer jobs United States", "category": "New Grad"},
     {"q": "software engineering internship 2026 summer USA", "category": "New Grad"},
     {"q": "rotational program technology 2026 new grad", "category": "New Grad"},
-
     # ── Product (2 queries) ──────────────────────────────────────────
     {"q": "technical product manager jobs United States", "category": "Product"},
     {"q": "associate product manager tech jobs USA", "category": "Product"},
-
     # ── Research (1 query) ───────────────────────────────────────────
     {"q": "research scientist engineer AI jobs USA", "category": "Research"},
 ]
 
 # Domains that are job boards — used to identify and parse job listings
 JOB_BOARD_DOMAINS = {
-    "linkedin.com", "indeed.com", "glassdoor.com", "ziprecruiter.com",
-    "monster.com", "dice.com", "wellfound.com", "simplyhired.com",
-    "careerbuilder.com", "builtin.com", "levels.fyi",
+    "linkedin.com",
+    "indeed.com",
+    "glassdoor.com",
+    "ziprecruiter.com",
+    "monster.com",
+    "dice.com",
+    "wellfound.com",
+    "simplyhired.com",
+    "careerbuilder.com",
+    "builtin.com",
+    "levels.fyi",
 }
 
 # ATS domains we already scrape — skip these to avoid duplicates
 ATS_DOMAINS = {
-    "greenhouse.io", "lever.co", "myworkdayjobs.com", "ashbyhq.com",
-    "workable.com", "rippling.com", "smartrecruiters.com",
+    "greenhouse.io",
+    "lever.co",
+    "myworkdayjobs.com",
+    "ashbyhq.com",
+    "workable.com",
+    "rippling.com",
+    "smartrecruiters.com",
 }
 
 
@@ -118,10 +125,7 @@ def _is_job_board_url(url: str) -> bool:
         if domain in url_lower:
             return False
     # Check if it's a job board
-    for domain in JOB_BOARD_DOMAINS:
-        if domain in url_lower:
-            return True
-    return False
+    return any(domain in url_lower for domain in JOB_BOARD_DOMAINS)
 
 
 def _extract_job_from_result(result: dict, category: str) -> dict | None:
@@ -152,8 +156,8 @@ def _extract_job_from_result(result: dict, category: str) -> dict | None:
     # "Data Scientist - Meta - New York, NY | Glassdoor"
 
     # Remove site suffixes
-    title_clean = re.sub(r'\s*\|\s*(LinkedIn|Indeed\.com|Glassdoor|ZipRecruiter|Dice|Wellfound).*$', '', title_raw)
-    title_clean = re.sub(r'\s*-\s*(LinkedIn|Indeed|Glassdoor).*$', '', title_clean)
+    title_clean = re.sub(r"\s*\|\s*(LinkedIn|Indeed\.com|Glassdoor|ZipRecruiter|Dice|Wellfound).*$", "", title_raw)
+    title_clean = re.sub(r"\s*-\s*(LinkedIn|Indeed|Glassdoor).*$", "", title_clean)
 
     # Try to extract company and location from the title
     company = "Unknown"
@@ -185,10 +189,7 @@ def _extract_job_from_result(result: dict, category: str) -> dict | None:
     # Try to extract location from description if not in title
     if not location and description:
         # Look for common US location patterns
-        loc_match = re.search(
-            r'(?:in|location[:\s]+)\s*([A-Z][a-z]+(?:\s[A-Z][a-z]+)*,\s*[A-Z]{2})',
-            description
-        )
+        loc_match = re.search(r"(?:in|location[:\s]+)\s*([A-Z][a-z]+(?:\s[A-Z][a-z]+)*,\s*[A-Z]{2})", description)
         if loc_match:
             location = loc_match.group(1)
 
@@ -213,7 +214,7 @@ def _extract_job_from_result(result: dict, category: str) -> dict | None:
         "location": location,
         "url": url,
         "source_ats": source_ats,
-        "date_posted": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "date_posted": datetime.now(UTC).strftime("%Y-%m-%d"),
         "keywords_matched": json.dumps([category]),
         "description": description[:500] if description else "",
     }
@@ -221,7 +222,6 @@ def _extract_job_from_result(result: dict, category: str) -> dict | None:
 
 async def _search_brave(session, query: str, count: int = 20) -> list[dict]:
     """Execute a single Brave Search API query."""
-    import aiohttp
 
     params = {
         "q": query,
@@ -282,7 +282,7 @@ async def run_brave_scraper() -> int:
                 query = sq["q"]
                 category = sq["category"]
 
-                _log_brave(f"[{i+1}/{len(SEARCH_QUERIES)}] Searching: {query}")
+                _log_brave(f"[{i + 1}/{len(SEARCH_QUERIES)}] Searching: {query}")
                 results = await _search_brave(session, query)
                 _log_brave(f"  → {len(results)} results")
 

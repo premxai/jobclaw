@@ -44,13 +44,13 @@ def check_imports():
     print()
     print("Module import checks:")
     checks = [
-        ("RSS",        "scripts.ingestion.scrape_rss",        "run_rss_scraper"),
-        ("GitHub",     "scripts.ingestion.scrape_github",     "run_github_scraper"),
-        ("ATS",        "scripts.ingestion.scrape_ats",        "run_ats_scraper"),
+        ("RSS", "scripts.ingestion.scrape_rss", "run_rss_scraper"),
+        ("GitHub", "scripts.ingestion.scrape_github", "run_github_scraper"),
+        ("ATS", "scripts.ingestion.scrape_ats", "run_ats_scraper"),
         ("Enterprise", "scripts.ingestion.scrape_enterprise", None),
-        ("Discord",    "scripts.discord_push",                "push_new_jobs_to_discord"),
-        ("DB Utils",   "scripts.database.db_utils",           "get_connection"),
-        ("Role Filter","scripts.ingestion.role_filter",       "passes_role_filter"),
+        ("Discord", "scripts.discord_push", "push_new_jobs_to_discord"),
+        ("DB Utils", "scripts.database.db_utils", "get_connection"),
+        ("Role Filter", "scripts.ingestion.role_filter", "passes_role_filter"),
     ]
     for name, mod, fn in checks:
         try:

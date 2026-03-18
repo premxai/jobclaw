@@ -15,25 +15,24 @@ Usage:
 
 import asyncio
 import json
-import hashlib
-from datetime import datetime, timezone, timedelta
+import re
+import sys
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
-import sys
-import re
 import aiohttp
 
 # Fix imports for both standalone and module usage
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.ingestion.ats_adapters import fetch_company_jobs, NormalizedJob
+from scripts.ingestion.aggregator_adapters import fetch_all_aggregators
+from scripts.ingestion.ats_adapters import NormalizedJob, fetch_company_jobs
+from scripts.ingestion.job_board_adapters import fetch_all_job_boards
 from scripts.ingestion.role_filter import matches_target_role
 from scripts.ingestion.us_filter import is_us_location
-from scripts.ingestion.job_board_adapters import fetch_all_job_boards
-from scripts.ingestion.github_parser import fetch_all_github_repos
-from scripts.ingestion.aggregator_adapters import fetch_all_aggregators
+
 CONFIG_DIR = PROJECT_ROOT / "config"
 DATA_DIR = PROJECT_ROOT / "data"
 LOGS_DIR = PROJECT_ROOT / "logs"
@@ -41,10 +40,10 @@ REGISTRY_FILE = CONFIG_DIR / "company_registry.json"
 JOBS_DB_FILE = DATA_DIR / "jobs.json"
 
 # ── Tuning ────────────────────────────────────────────────────────────
-MAX_CONCURRENT = 25        # Max parallel HTTP requests
-REQUEST_TIMEOUT = 30       # Seconds per request
-MAX_RETRIES = 2            # Retry failed fetches
-RETRY_DELAY = 2            # Seconds between retries
+MAX_CONCURRENT = 25  # Max parallel HTTP requests
+REQUEST_TIMEOUT = 30  # Seconds per request
+MAX_RETRIES = 2  # Retry failed fetches
+RETRY_DELAY = 2  # Seconds between retries
 
 
 def _log(msg: str, level: str = "INFO") -> None:
@@ -60,6 +59,7 @@ def _log(msg: str, level: str = "INFO") -> None:
 # REGISTRY
 # ═══════════════════════════════════════════════════════════════════════
 
+
 def load_registry() -> list[dict[str, str]]:
     """Load company registry from config/company_registry.json."""
     if not REGISTRY_FILE.exists():
@@ -67,15 +67,23 @@ def load_registry() -> list[dict[str, str]]:
         return []
     try:
         data = json.loads(REGISTRY_FILE.read_text(encoding="utf-8"))
-        
+
         flat_registry = []
         if isinstance(data, list):
             # Direct list of {company, ats, slug}
             return data
 
         # Known ATS platform keys in the grouped sections
-        _ATS_PLATFORMS = {"greenhouse", "lever", "ashby", "workday", "workable",
-                          "rippling", "smartrecruiters", "bamboohr"}
+        _ATS_PLATFORMS = {
+            "greenhouse",
+            "lever",
+            "ashby",
+            "workday",
+            "workable",
+            "rippling",
+            "smartrecruiters",
+            "bamboohr",
+        }
 
         # Handle {"companies": [...]} format (explicit company/ats/slug entries)
         if "companies" in data and isinstance(data["companies"], list):
@@ -84,11 +92,7 @@ def load_registry() -> list[dict[str, str]]:
                 ats = c.get("ats", "")
                 slug = c.get("slug", "")
                 if name and ats and slug:
-                    flat_registry.append({
-                        "company": name,
-                        "ats": ats.lower(),
-                        "slug": slug
-                    })
+                    flat_registry.append({"company": name, "ats": ats.lower(), "slug": slug})
 
         # Also handle platform-grouped sections {platform: [{name, slug}]}
         for platform, companies in data.items():
@@ -109,6 +113,7 @@ def load_registry() -> list[dict[str, str]]:
                 #   → microsoft:5:Microsoft
                 if ats_key == "workday" and "myworkdayjobs.com" in slug:
                     import re as _re
+
                     m = _re.match(
                         r"https?://([^.]+)\.wd(\d+)\.myworkdayjobs\.com/(?:en-[A-Za-z]{2}/)?(.+?)/?$",
                         slug,
@@ -119,11 +124,7 @@ def load_registry() -> list[dict[str, str]]:
                         _log(f"Workday URL parse failed: {slug}", "WARN")
                         continue
 
-                flat_registry.append({
-                    "company": name,
-                    "ats": ats_key,
-                    "slug": slug
-                })
+                flat_registry.append({"company": name, "ats": ats_key, "slug": slug})
 
         return flat_registry
     except (json.JSONDecodeError, OSError) as e:
@@ -134,6 +135,7 @@ def load_registry() -> list[dict[str, str]]:
 # ═══════════════════════════════════════════════════════════════════════
 # DEDUP ENGINE
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def load_known_jobs() -> dict[str, Any]:
     """Load the jobs database with known job IDs."""
@@ -169,6 +171,7 @@ def dedup_jobs(
 # 24HR TIME FILTER
 # ═══════════════════════════════════════════════════════════════════════
 
+
 def is_within_window(date_str: str, window_hours: int = 24) -> bool:
     """Check if a date string is within the specified time window.
 
@@ -180,19 +183,24 @@ def is_within_window(date_str: str, window_hours: int = 24) -> bool:
     """
     if not date_str:
         return True
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=window_hours)
+    cutoff = datetime.now(UTC) - timedelta(hours=window_hours)
 
     # Try ISO format
-    for fmt in ("%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ",
-                "%Y-%m-%dT%H:%M:%S%z", "%Y-%m-%dT%H:%M:%S.%f%z",
-                "%Y-%m-%d", "%Y-%m-%dT%H:%M:%S", 
-                "%a, %d %b %Y %H:%M:%S %z",
-                "%a, %d %b %Y %H:%M:%S %Z",
-                "%a, %d %b %Y %H:%M:%S GMT"):
+    for fmt in (
+        "%Y-%m-%dT%H:%M:%S.%fZ",
+        "%Y-%m-%dT%H:%M:%SZ",
+        "%Y-%m-%dT%H:%M:%S%z",
+        "%Y-%m-%dT%H:%M:%S.%f%z",
+        "%Y-%m-%d",
+        "%Y-%m-%dT%H:%M:%S",
+        "%a, %d %b %Y %H:%M:%S %z",
+        "%a, %d %b %Y %H:%M:%S %Z",
+        "%a, %d %b %Y %H:%M:%S GMT",
+    ):
         try:
             parsed = datetime.strptime(date_str, fmt)
             if parsed.tzinfo is None:
-                parsed = parsed.replace(tzinfo=timezone.utc)
+                parsed = parsed.replace(tzinfo=UTC)
             # Date-only strings (e.g. "2025-03-05") parse as midnight UTC.
             # Treat them as end-of-day so they pass the 24h window on the
             # same calendar day.
@@ -207,19 +215,19 @@ def is_within_window(date_str: str, window_hours: int = 24) -> bool:
         ts = float(date_str)
         if ts > 1e12:
             ts = ts / 1000
-        return datetime.fromtimestamp(ts, tz=timezone.utc) >= cutoff
+        return datetime.fromtimestamp(ts, tz=UTC) >= cutoff
     except (ValueError, OSError):
         pass
 
     # Basic relative date parsing (e.g., "30+ Days Ago", "3 days ago")
     date_str_lower = date_str.lower()
-    
+
     # Anything with month/year is definitely out of the 24h window
     if "month" in date_str_lower or "year" in date_str_lower:
         return window_hours >= 720  # True only if window >= 30 days
 
     # Extract days (handles "3 days", "30+ days", etc)
-    match = re.search(r'(\d+)\+?\s*day', date_str_lower)
+    match = re.search(r"(\d+)\+?\s*day", date_str_lower)
     if match:
         days = int(match.group(1))
         return (days * 24) <= window_hours
@@ -231,6 +239,7 @@ def is_within_window(date_str: str, window_hours: int = 24) -> bool:
 # ═══════════════════════════════════════════════════════════════════════
 # PARALLEL WORKER
 # ═══════════════════════════════════════════════════════════════════════
+
 
 async def _fetch_with_retry(
     session: aiohttp.ClientSession,
@@ -283,9 +292,16 @@ async def run_cycle(window_hours: int = 24) -> dict[str, Any]:
     registry = load_registry()
     if not registry:
         _log("Empty registry — nothing to ingest.", "WARN")
-        return {"new_jobs": [], "total_fetched": 0, "total_filtered": 0,
-                "total_new": 0, "companies_succeeded": 0, "companies_failed": 0,
-                "errors": ["Empty registry"], "duration_seconds": 0}
+        return {
+            "new_jobs": [],
+            "total_fetched": 0,
+            "total_filtered": 0,
+            "total_new": 0,
+            "companies_succeeded": 0,
+            "companies_failed": 0,
+            "errors": ["Empty registry"],
+            "duration_seconds": 0,
+        }
 
     _log(f"Registry loaded: {len(registry)} companies")
 
@@ -299,10 +315,7 @@ async def run_cycle(window_hours: int = 24) -> dict[str, Any]:
     failed = 0
 
     async with aiohttp.ClientSession(connector=connector) as session:
-        tasks = [
-            _fetch_with_retry(session, semaphore, company)
-            for company in registry
-        ]
+        tasks = [_fetch_with_retry(session, semaphore, company) for company in registry]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         for result in results:
@@ -370,7 +383,7 @@ async def run_cycle(window_hours: int = 24) -> dict[str, Any]:
     _log(f"Dedup: {total_new} new jobs (skipped {len(recent) - total_new} duplicates)")
 
     # 6. Store
-    ts = datetime.now(timezone.utc).isoformat()
+    ts = datetime.now(UTC).isoformat()
     for job in new_jobs:
         job.first_seen = ts
         db["jobs"][job.dedup_key] = job.to_dict()
@@ -416,10 +429,11 @@ async def run_cycle(window_hours: int = 24) -> dict[str, Any]:
 
 if __name__ == "__main__":
     import sys
+
     # Fix imports when running standalone
     sys.path.insert(0, str(PROJECT_ROOT))
     result = asyncio.run(run_cycle())
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(f"Companies succeeded: {result['companies_succeeded']}")
     print(f"Companies failed:    {result['companies_failed']}")
     print(f"Total fetched:       {result['total_fetched']}")

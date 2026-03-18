@@ -14,13 +14,13 @@ Usage:
     python scripts/ingestion/run_all_scrapers.py --tier deep
 """
 
+import argparse
 import asyncio
 import os
 import sys
 import time
-import argparse
+from datetime import UTC, datetime
 from pathlib import Path
-from datetime import datetime, timezone
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -33,7 +33,7 @@ SHARD_COUNTER_FILE = PROJECT_ROOT / "data" / ".shard_counter"
 
 def get_next_shard(total_shards: int = 4) -> int:
     """Deterministic shard rotation: 0 → 1 → 2 → 3 → 0 → ...
-    
+
     Uses a file-based counter so it persists across runs.
     Guarantees full registry coverage every `total_shards` runs.
     """
@@ -43,13 +43,13 @@ def get_next_shard(total_shards: int = 4) -> int:
             current = int(SHARD_COUNTER_FILE.read_text().strip())
         except (ValueError, OSError):
             current = 0
-    
+
     shard = current % total_shards
-    
+
     # Increment for next run
     SHARD_COUNTER_FILE.parent.mkdir(parents=True, exist_ok=True)
     SHARD_COUNTER_FILE.write_text(str(current + 1))
-    
+
     _log(f"[shard-rotation] Shard {shard}/{total_shards} (run #{current + 1})")
     return shard
 
@@ -93,41 +93,47 @@ async def run_all(
     All run concurrently — no scraper blocks another.
     """
     start_time = time.time()
-    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+    ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
     _log(f"[orchestrator] === SPEED SCRAPE STARTED at {ts} (window={window_hours}hr) ===")
 
     tasks = []
 
     # ── Always run: RSS (fastest) ───────────────────────────────────
     from scripts.ingestion.scrape_rss import run_rss_scraper
+
     tasks.append(_run_with_timing("RSS/Aggregators", run_rss_scraper(window_hours)))
 
     # ── Always run: Enterprise (8 big companies) ────────────────────
     from scripts.ingestion.scrape_enterprise import run_enterprise_scraper
+
     tasks.append(_run_with_timing("Enterprise (Apple/Amazon/Google...)", run_enterprise_scraper()))
 
     # ── GitHub repos ────────────────────────────────────────────────
     if not skip_github:
         from scripts.ingestion.scrape_github import run_github_scraper
+
         tasks.append(_run_with_timing("GitHub Repos", run_github_scraper(window_hours)))
 
     # ── ATS boards (~10,500 companies with curl_cffi TLS impersonation) ──
     # All ATS platforms handled by direct API scraper with TLS impersonation
     if not skip_ats:
         from scripts.ingestion.scrape_ats import run_ats_scraper
+
         ats_skip = skip_platforms if skip_platforms is not None else set()
-        
+
         shard_label = f", shard={shard}/{total_shards}" if shard is not None else ""
         label = f"ATS Boards ({'filtered' if ats_skip else 'all'}{shard_label})"
-        tasks.append(_run_with_timing(
-            label,
-            run_ats_scraper(
-                window_hours,
-                skip_platforms=ats_skip,
-                shard=shard,
-                total_shards=total_shards,
+        tasks.append(
+            _run_with_timing(
+                label,
+                run_ats_scraper(
+                    window_hours,
+                    skip_platforms=ats_skip,
+                    shard=shard,
+                    total_shards=total_shards,
+                ),
             )
-        ))
+        )
 
     # ── Brave Search (LinkedIn/Indeed/Glassdoor) — deep tier only ──────
     # Searches job boards that can't be scraped directly.
@@ -136,6 +142,7 @@ async def run_all(
         brave_key = os.getenv("BRAVE_SEARCH_API_KEY", "")
         if brave_key:
             from scripts.ingestion.scrape_brave import run_brave_scraper
+
             tasks.append(_run_with_timing("Brave Search (LinkedIn/Indeed/Glassdoor)", run_brave_scraper()))
         else:
             _log("[orchestrator] BRAVE_SEARCH_API_KEY not set — skipping Brave Search")
@@ -151,7 +158,7 @@ async def run_all(
             asyncio.gather(*tasks, return_exceptions=True),
             timeout=20 * 60,  # 20 minutes max
         )
-    except asyncio.TimeoutError:
+    except TimeoutError:
         _log("[orchestrator] GLOBAL TIMEOUT after 20 minutes -- aborting remaining scrapers", "ERROR")
         results = []
 
@@ -178,11 +185,12 @@ async def run_all(
     jobs_pushed = 0
     try:
         from scripts.discord_push import push_new_jobs_to_discord
+
         jobs_pushed = await push_new_jobs_to_discord()
         if jobs_pushed:
             _log(f"[orchestrator] >> Pushed {jobs_pushed} new jobs to Discord INSTANTLY.")
         else:
-            _log(f"[orchestrator] No new unposted jobs to push.")
+            _log("[orchestrator] No new unposted jobs to push.")
     except Exception as e:
         _log(f"[orchestrator] Discord push failed (non-fatal): {e}", "WARN")
 
@@ -210,25 +218,23 @@ Legacy flags still work:
   --daily         24hr window for everything
         """,
     )
-    parser.add_argument("--tier", type=str, default=None,
-                        choices=["fast", "medium", "heavy", "deep"],
-                        help="Scheduling tier preset (fast/medium/heavy/deep)")
-    parser.add_argument("--fast", action="store_true",
-                        help="Legacy: same as --tier fast")
-    parser.add_argument("--hourly", action="store_true",
-                        help="Legacy: 1hr window, skip slow platforms")
-    parser.add_argument("--daily", action="store_true",
-                        help="Legacy: 24hr window, all platforms")
-    parser.add_argument("--no-github", action="store_true",
-                        help="Skip GitHub repo parsing")
-    parser.add_argument("--skip-ats", dest="skip_ats", action="store_true",
-                        help="Skip all ATS board scrapers (Greenhouse, Lever, etc.)")
-    parser.add_argument("--window", type=int, default=None,
-                        help="Time window in hours (overrides tier default)")
-    parser.add_argument("--shard", type=str, default=None,
-                        help="ATS shard: 0-3 or 'auto' for time-based rotation")
-    parser.add_argument("--total-shards", type=int, default=4,
-                        help="Number of registry shards (default: 4)")
+    parser.add_argument(
+        "--tier",
+        type=str,
+        default=None,
+        choices=["fast", "medium", "heavy", "deep"],
+        help="Scheduling tier preset (fast/medium/heavy/deep)",
+    )
+    parser.add_argument("--fast", action="store_true", help="Legacy: same as --tier fast")
+    parser.add_argument("--hourly", action="store_true", help="Legacy: 1hr window, skip slow platforms")
+    parser.add_argument("--daily", action="store_true", help="Legacy: 24hr window, all platforms")
+    parser.add_argument("--no-github", action="store_true", help="Skip GitHub repo parsing")
+    parser.add_argument(
+        "--skip-ats", dest="skip_ats", action="store_true", help="Skip all ATS board scrapers (Greenhouse, Lever, etc.)"
+    )
+    parser.add_argument("--window", type=int, default=None, help="Time window in hours (overrides tier default)")
+    parser.add_argument("--shard", type=str, default=None, help="ATS shard: 0-3 or 'auto' for time-based rotation")
+    parser.add_argument("--total-shards", type=int, default=4, help="Number of registry shards (default: 4)")
     args = parser.parse_args()
 
     # ── Tier-based presets (ZERO-MISS: every tier includes ATS) ────────
@@ -279,7 +285,7 @@ Legacy flags still work:
 
     # Override shard from CLI if explicitly set
     if args.shard is not None:
-        if args.shard.lower() == 'auto':
+        if args.shard.lower() == "auto":
             shard_val = get_next_shard(total_shards)
         else:
             shard_val = int(args.shard)
@@ -290,23 +296,27 @@ Legacy flags still work:
     if args.no_github:
         skip_github = True
 
-    _log(f"[orchestrator] Tier={tier or 'default'}, Window={window}hr, "
-         f"Shard={shard_val if shard_val is not None else 'ALL'}/{total_shards}, "
-         f"ATS={'OFF' if skip_ats else 'ON'}, "
-         f"Brave={'ON' if run_brave else 'OFF'}")
+    _log(
+        f"[orchestrator] Tier={tier or 'default'}, Window={window}hr, "
+        f"Shard={shard_val if shard_val is not None else 'ALL'}/{total_shards}, "
+        f"ATS={'OFF' if skip_ats else 'ON'}, "
+        f"Brave={'ON' if run_brave else 'OFF'}"
+    )
 
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    asyncio.run(run_all(
-        skip_ats=skip_ats,
-        skip_github=skip_github,
-        run_brave=run_brave,
-        window_hours=window,
-        skip_platforms=skip_platforms,
-        shard=shard_val,
-        total_shards=args.total_shards,
-    ))
+    asyncio.run(
+        run_all(
+            skip_ats=skip_ats,
+            skip_github=skip_github,
+            run_brave=run_brave,
+            window_hours=window,
+            skip_platforms=skip_platforms,
+            shard=shard_val,
+            total_shards=args.total_shards,
+        )
+    )
 
 
 if __name__ == "__main__":

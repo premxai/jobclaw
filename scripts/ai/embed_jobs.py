@@ -15,22 +15,23 @@ Usage:
     embedder = JobEmbedder()
     vec = embedder.embed_text("Senior ML Engineer building LLM pipelines")
     # → numpy array of shape (384,)
-    
+
     # Batch embed all un-embedded jobs
     embedder.embed_all_jobs()
 """
 
 import json
 import os
-import numpy as np
 from pathlib import Path
 
-from scripts.database.db_utils import get_connection, is_postgres
+import numpy as np
 
+from scripts.database.db_utils import get_connection, is_postgres
 
 # ═══════════════════════════════════════════════════════════════════════
 # EMBEDDING BACKENDS
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class LocalEmbedder:
     """Sentence Transformer embedding (free, local, fast)."""
@@ -45,11 +46,10 @@ class LocalEmbedder:
         if self._model is None:
             try:
                 from sentence_transformers import SentenceTransformer
+
                 self._model = SentenceTransformer(self.MODEL_NAME)
             except ImportError:
-                raise ImportError(
-                    "sentence-transformers required. Run: pip install sentence-transformers"
-                )
+                raise ImportError("sentence-transformers required. Run: pip install sentence-transformers")
 
     def embed(self, text: str) -> np.ndarray:
         self._load()
@@ -77,12 +77,14 @@ class OpenAIEmbedder:
 
     def embed(self, text: str) -> np.ndarray:
         import openai
+
         client = openai.OpenAI(api_key=self.api_key)
         resp = client.embeddings.create(input=[text], model=self.MODEL_NAME)
         return np.array(resp.data[0].embedding, dtype=np.float32)
 
     def embed_batch(self, texts: list[str], batch_size: int = 100) -> np.ndarray:
         import openai
+
         client = openai.OpenAI(api_key=self.api_key)
         all_embeddings = []
         for i in range(0, len(texts), batch_size):
@@ -101,10 +103,11 @@ class OpenAIEmbedder:
 # JOB EMBEDDER
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class JobEmbedder:
     """
     High-level job embedding pipeline.
-    
+
     Auto-selects backend:
       - OpenAI if OPENAI_API_KEY is set
       - Local sentence-transformers otherwise
@@ -155,7 +158,7 @@ class JobEmbedder:
         """
         Batch-embed all jobs that don't have embeddings yet.
         Stores embeddings as JSON-encoded numpy arrays in the DB.
-        
+
         Returns count of jobs embedded.
         """
         conn = get_connection()
@@ -171,13 +174,16 @@ class JobEmbedder:
 
             # Get jobs without embeddings
             cursor = conn.cursor()
-            cursor.execute(f"""
+            cursor.execute(
+                f"""
                 SELECT internal_hash, title, company, location, description, keywords_matched
                 FROM jobs
                 WHERE embedding_json IS NULL AND is_active = 1
                 ORDER BY first_seen DESC
                 LIMIT {ph}
-            """, (limit,))
+            """,
+                (limit,),
+            )
             cols = [desc[0] for desc in cursor.description]
             rows = cursor.fetchall()
 
@@ -196,10 +202,7 @@ class JobEmbedder:
             # Store in DB
             for i, (hash_val, emb) in enumerate(zip(hashes, embeddings)):
                 emb_json = json.dumps(emb.tolist())
-                conn.execute(
-                    f"UPDATE jobs SET embedding_json = {ph} WHERE internal_hash = {ph}",
-                    (emb_json, hash_val)
-                )
+                conn.execute(f"UPDATE jobs SET embedding_json = {ph} WHERE internal_hash = {ph}", (emb_json, hash_val))
                 if (i + 1) % 500 == 0:
                     conn.commit()
                     print(f"  Stored {i + 1}/{len(hashes)} embeddings...")
@@ -236,14 +239,16 @@ class JobEmbedder:
                 try:
                     emb = np.array(json.loads(row["embedding_json"]), dtype=np.float32)
                     sim = float(np.dot(query_vec, emb))  # Already normalized → cosine sim
-                    results.append({
-                        "internal_hash": row["internal_hash"],
-                        "title": row["title"],
-                        "company": row["company"],
-                        "location": row["location"],
-                        "url": row["url"],
-                        "similarity": round(sim, 4),
-                    })
+                    results.append(
+                        {
+                            "internal_hash": row["internal_hash"],
+                            "title": row["title"],
+                            "company": row["company"],
+                            "location": row["location"],
+                            "url": row["url"],
+                            "similarity": round(sim, 4),
+                        }
+                    )
                 except Exception:
                     continue
 
@@ -260,6 +265,7 @@ class JobEmbedder:
 
 if __name__ == "__main__":
     import sys
+
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
     embedder = JobEmbedder()

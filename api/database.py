@@ -23,6 +23,7 @@ def get_db():
     if _is_pg():
         import psycopg2
         import psycopg2.extras
+
         conn = psycopg2.connect(DATABASE_URL)
         conn.cursor_factory = psycopg2.extras.RealDictCursor
         return conn
@@ -137,13 +138,16 @@ def get_companies(ats: str = None) -> list[dict]:
     try:
         cursor = conn.cursor()
         if ats:
-            cursor.execute(f"""
+            cursor.execute(
+                f"""
                 SELECT company, source_ats, COUNT(*) as job_count,
                        MAX(first_seen) as latest_job
                 FROM jobs WHERE LOWER(source_ats) = LOWER({p}) AND is_active = {active}
                 GROUP BY company, source_ats
                 ORDER BY job_count DESC
-            """, (ats,))
+            """,
+                (ats,),
+            )
         else:
             cursor.execute(f"""
                 SELECT company, source_ats, COUNT(*) as job_count,

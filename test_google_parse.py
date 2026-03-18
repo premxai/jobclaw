@@ -1,8 +1,10 @@
 """Extract Google Careers job data from HTML SSR (no Playwright)."""
+
 import asyncio
-import sys
-import re
 import json
+import re
+import sys
+
 
 async def test():
     from curl_cffi.requests import AsyncSession
@@ -52,6 +54,7 @@ async def test():
                     print(f"       url={entry[2]}")
                     if len(entry) > 9:
                         print(f"       locations={entry[9]}")
+
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

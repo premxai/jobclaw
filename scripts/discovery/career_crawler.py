@@ -15,7 +15,6 @@ import asyncio
 import re
 import sys
 from pathlib import Path
-from typing import Optional, Tuple
 from urllib.parse import urlparse
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -108,10 +107,10 @@ ATS_DETECTION_PATTERNS = {
 }
 
 
-def detect_ats_from_url(url: str) -> Optional[Tuple[str, str]]:
+def detect_ats_from_url(url: str) -> tuple[str, str] | None:
     """
     Detect ATS and extract slug from URL.
-    
+
     Returns: (ats_name, slug) or None
     """
     for ats, config in ATS_DETECTION_PATTERNS.items():
@@ -123,10 +122,10 @@ def detect_ats_from_url(url: str) -> Optional[Tuple[str, str]]:
     return None
 
 
-def detect_ats_from_content(html: str) -> Optional[Tuple[str, str]]:
+def detect_ats_from_content(html: str) -> tuple[str, str] | None:
     """
     Detect ATS from page content (embedded scripts, iframes).
-    
+
     Returns: (ats_name, slug) or None
     """
     for ats, config in ATS_DETECTION_PATTERNS.items():
@@ -143,30 +142,30 @@ def detect_ats_from_content(html: str) -> Optional[Tuple[str, str]]:
     return None
 
 
-async def check_career_page(domain: str, timeout: float = 10.0) -> Optional[dict]:
+async def check_career_page(domain: str, timeout: float = 10.0) -> dict | None:
     """
     Check a company domain for career page and detect ATS.
-    
+
     Returns: {"company": name, "ats": ats, "slug": slug, "career_url": url} or None
     """
     try:
         import aiohttp
     except ImportError:
         return None
-    
+
     # Normalize domain
     if not domain.startswith(("http://", "https://")):
         domain = f"https://{domain}"
-    
+
     parsed = urlparse(domain)
     base_url = f"{parsed.scheme}://{parsed.netloc}"
     company_name = parsed.netloc.replace("www.", "").split(".")[0].title()
-    
+
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
         "Accept": "text/html,application/xhtml+xml",
     }
-    
+
     async with aiohttp.ClientSession() as session:
         for path in CAREER_PATHS:
             url = f"{base_url}{path}"
@@ -179,10 +178,10 @@ async def check_career_page(domain: str, timeout: float = 10.0) -> Optional[dict
                 ) as resp:
                     if resp.status != 200:
                         continue
-                    
+
                     final_url = str(resp.url)
                     html = await resp.text()
-                    
+
                     # Check final URL first (handles redirects to ATS)
                     result = detect_ats_from_url(final_url)
                     if result:
@@ -193,7 +192,7 @@ async def check_career_page(domain: str, timeout: float = 10.0) -> Optional[dict
                             "slug": slug,
                             "career_url": final_url,
                         }
-                    
+
                     # Check page content
                     result = detect_ats_from_content(html)
                     if result:
@@ -204,33 +203,33 @@ async def check_career_page(domain: str, timeout: float = 10.0) -> Optional[dict
                             "slug": slug,
                             "career_url": final_url,
                         }
-            
-            except asyncio.TimeoutError:
+
+            except TimeoutError:
                 continue
             except Exception:
                 continue
-    
+
     return None
 
 
 async def crawl_domains(domains: list[str], concurrency: int = 5) -> list[dict]:
     """
     Crawl multiple domains for ATS detection.
-    
+
     Returns list of detected companies.
     """
     semaphore = asyncio.Semaphore(concurrency)
-    
-    async def check_with_semaphore(domain: str) -> Optional[dict]:
+
+    async def check_with_semaphore(domain: str) -> dict | None:
         async with semaphore:
             result = await check_career_page(domain)
             if result:
                 _log(f"[{domain}] Detected {result['ats']}: {result['slug']}")
             return result
-    
+
     tasks = [check_with_semaphore(d) for d in domains]
     results = await asyncio.gather(*tasks, return_exceptions=True)
-    
+
     # Filter out errors and None results
     return [r for r in results if isinstance(r, dict)]
 
@@ -242,31 +241,31 @@ async def run_career_crawler(
 ) -> dict:
     """
     Run career page crawler on provided domains.
-    
+
     Args:
         domains: List of company domains to check
         domains_file: Path to file with domains (one per line)
         concurrency: Max concurrent requests
-    
+
     Returns:
         {"discovered": int, "companies": list}
     """
     if domains_file:
         path = Path(domains_file)
         if path.exists():
-            with open(path, "r") as f:
+            with open(path) as f:
                 domains = [line.strip() for line in f if line.strip()]
-    
+
     if not domains:
         _log("No domains provided", "WARN")
         return {"discovered": 0, "companies": []}
-    
+
     _log(f">>> Crawling {len(domains)} domains for ATS detection")
-    
+
     companies = await crawl_domains(domains, concurrency)
-    
+
     _log(f">>> Detected ATS for {len(companies)} companies")
-    
+
     return {
         "discovered": len(companies),
         "companies": companies,
@@ -279,27 +278,27 @@ async def run_career_crawler(
 
 if __name__ == "__main__":
     import sys
-    
+
     # Usage: python career_crawler.py domain1.com domain2.com
     # Or: python career_crawler.py --file domains.txt
-    
+
     if len(sys.argv) < 2:
         print("Usage: python career_crawler.py domain1.com domain2.com")
         print("   Or: python career_crawler.py --file domains.txt")
         sys.exit(1)
-    
+
     if sys.argv[1] == "--file" and len(sys.argv) > 2:
         domains = None
         domains_file = sys.argv[2]
     else:
         domains = sys.argv[1:]
         domains_file = None
-    
+
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    
+
     result = asyncio.run(run_career_crawler(domains=domains, domains_file=domains_file))
-    
+
     print(f"\nDiscovered {result['discovered']} companies:")
     for c in result["companies"]:
         print(f"  {c['company']}: {c['ats']} ({c['slug']})")

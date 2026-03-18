@@ -22,11 +22,57 @@ _EXCLUDE = [p.lower() for p in _config.get("exclude_patterns", [])]
 
 # Pre-compile word-boundary patterns for 2-letter state codes to avoid false matches
 _STATE_CODES = {
-    "al", "ak", "az", "ar", "ca", "co", "ct", "de", "fl", "ga",
-    "hi", "id", "il", "in", "ia", "ks", "ky", "la", "me", "md",
-    "ma", "mi", "mn", "ms", "mo", "mt", "ne", "nv", "nh", "nj",
-    "nm", "ny", "nc", "nd", "oh", "ok", "or", "pa", "ri", "sc",
-    "sd", "tn", "tx", "ut", "vt", "va", "wa", "wv", "wi", "wy", "dc",
+    "al",
+    "ak",
+    "az",
+    "ar",
+    "ca",
+    "co",
+    "ct",
+    "de",
+    "fl",
+    "ga",
+    "hi",
+    "id",
+    "il",
+    "in",
+    "ia",
+    "ks",
+    "ky",
+    "la",
+    "me",
+    "md",
+    "ma",
+    "mi",
+    "mn",
+    "ms",
+    "mo",
+    "mt",
+    "ne",
+    "nv",
+    "nh",
+    "nj",
+    "nm",
+    "ny",
+    "nc",
+    "nd",
+    "oh",
+    "ok",
+    "or",
+    "pa",
+    "ri",
+    "sc",
+    "sd",
+    "tn",
+    "tx",
+    "ut",
+    "vt",
+    "va",
+    "wa",
+    "wv",
+    "wi",
+    "wy",
+    "dc",
 }
 
 
@@ -52,7 +98,7 @@ def is_us_location(location: str) -> bool:
     for exc in _EXCLUDE:
         # Use word-boundary matching to avoid false positives
         # e.g., "UK" should not match "Duke"
-        if re.search(r'\b' + re.escape(exc) + r'\b', loc_lower):
+        if re.search(r"\b" + re.escape(exc) + r"\b", loc_lower):
             return False
 
     # Check for US patterns (longer strings first for accuracy)
@@ -62,7 +108,7 @@ def is_us_location(location: str) -> bool:
 
     # Check 2-letter state codes with word boundary
     # e.g., "San Francisco, CA" → match "CA"
-    words = re.findall(r'\b[A-Za-z]{2}\b', location)
+    words = re.findall(r"\b[A-Za-z]{2}\b", location)
     for word in words:
         if word.lower() in _STATE_CODES:
             return True

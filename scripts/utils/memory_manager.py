@@ -12,12 +12,13 @@ Design rules:
   - All directories auto-created on first use
 """
 
+import contextlib
 import json
 import os
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 # Resolve project root (two levels up from scripts/utils/)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -41,18 +42,14 @@ def _atomic_write(path: Path, content: str) -> None:
     This ensures a crash mid-write doesn't corrupt the target file.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp_path = tempfile.mkstemp(
-        dir=str(path.parent), suffix=".tmp", prefix=path.stem
-    )
+    fd, tmp_path = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp", prefix=path.stem)
     try:
         os.write(fd, content.encode("utf-8"))
         os.close(fd)
         os.replace(tmp_path, str(path))
     except Exception:
-        try:
+        with contextlib.suppress(OSError):
             os.close(fd)
-        except OSError:
-            pass
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
         raise
@@ -61,6 +58,7 @@ def _atomic_write(path: Path, content: str) -> None:
 # ═══════════════════════════════════════════════════════════════════════
 # SESSION LOGS
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def create_session_log(
     attempted: str,
@@ -75,7 +73,7 @@ def create_session_log(
         Path to the created session file.
     """
     _ensure_dirs()
-    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    ts = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     filename = f"session_{ts}.md"
     path = SESSIONS_DIR / filename
 
@@ -91,7 +89,7 @@ def create_session_log(
 
 ## Files Created
 
-{chr(10).join(f'- `{f}`' for f in files_created) if files_created else '_None_'}
+{chr(10).join(f"- `{f}`" for f in files_created) if files_created else "_None_"}
 
 ## Current System Status
 
@@ -108,6 +106,7 @@ def create_session_log(
 # ═══════════════════════════════════════════════════════════════════════
 # CHECKPOINTS
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def load_checkpoint() -> dict[str, Any]:
     """Load current checkpoint. Returns empty dict if none exists or corrupted."""
@@ -134,7 +133,7 @@ def update_checkpoint(updates: dict[str, Any]) -> dict[str, Any]:
     _ensure_dirs()
     previous = load_checkpoint()
     merged = {**previous, **updates}
-    merged["last_updated"] = datetime.now(timezone.utc).isoformat()
+    merged["last_updated"] = datetime.now(UTC).isoformat()
     _atomic_write(CHECKPOINT_FILE, json.dumps(merged, indent=2))
     return merged
 
@@ -142,6 +141,7 @@ def update_checkpoint(updates: dict[str, Any]) -> dict[str, Any]:
 # ═══════════════════════════════════════════════════════════════════════
 # SUMMARIES
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def update_summary(
     architecture_status: str,
@@ -156,7 +156,7 @@ def update_summary(
         Path to the summary file.
     """
     _ensure_dirs()
-    ts = datetime.now(timezone.utc).isoformat()
+    ts = datetime.now(UTC).isoformat()
 
     completed_lines = "\n".join(f"- [x] {c}" for c in completed) if completed else "_None yet._"
     pending_lines = "\n".join(f"- [ ] {p}" for p in pending) if pending else "_All complete._"
@@ -192,6 +192,7 @@ _Updated: {ts}_
 # ═══════════════════════════════════════════════════════════════════════
 # RESUME STATE
 # ═══════════════════════════════════════════════════════════════════════
+
 
 def get_resume_state() -> dict[str, Any]:
     """Get the resume state for a new session.

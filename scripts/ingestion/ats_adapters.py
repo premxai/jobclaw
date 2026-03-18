@@ -28,21 +28,20 @@ Supported platforms:
 import hashlib
 import html
 import re
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone, timedelta
-from typing import Any, Optional
+from dataclasses import asdict, dataclass, field
+from datetime import UTC, datetime
+from typing import Any
 
-from scripts.utils.http_client import fetch_with_retry, RateLimiter, HAS_CURL_CFFI
-from scripts.utils.salary_parser import extract_salary, extract_experience, parse_salary_range
+from scripts.utils.http_client import HAS_CURL_CFFI, RateLimiter, fetch_with_retry
 from scripts.utils.logger import _log
+from scripts.utils.salary_parser import extract_experience, extract_salary, parse_salary_range
 
 
 async def _parse_json(resp) -> Any:
     """Parse JSON from either a curl_cffi or aiohttp response."""
     if HAS_CURL_CFFI:
-        from curl_cffi.requests import AsyncSession as CffiSession
         # curl_cffi responses have .json() as a sync method
-        if hasattr(resp, 'status_code'):
+        if hasattr(resp, "status_code"):
             return resp.json()
     # aiohttp responses have .json() as an async method
     return await resp.json()
@@ -51,25 +50,26 @@ async def _parse_json(resp) -> Any:
 @dataclass
 class NormalizedJob:
     """Common job format across all ATS platforms."""
+
     title: str
     company: str
     location: str
     url: str
-    date_posted: str            # ISO string or relative ("3 hours ago")
-    source_ats: str             # greenhouse, lever, ashby, etc.
-    job_id: str                 # Unique ID (from ATS or generated hash)
-    first_seen: str = ""        # When we first ingested it
+    date_posted: str  # ISO string or relative ("3 hours ago")
+    source_ats: str  # greenhouse, lever, ashby, etc.
+    job_id: str  # Unique ID (from ATS or generated hash)
+    first_seen: str = ""  # When we first ingested it
     keywords_matched: list[str] = field(default_factory=list)
-    description: Optional[str] = None
-    salary_min: Optional[float] = None
-    salary_max: Optional[float] = None
-    salary_currency: Optional[str] = None
-    experience_years: Optional[int] = None
-    remote_ok: Optional[str] = None          # 'remote' | 'hybrid' | 'onsite'
-    job_type: Optional[str] = None           # 'full_time' | 'contract' | 'internship' | 'part_time'
-    seniority_level: Optional[str] = None    # 'intern' | 'entry' | 'mid' | 'senior' | 'staff' | 'principal' | 'director'
-    visa_sponsorship: Optional[int] = None   # 1=yes, 0=no, None=unknown
-    tech_stack: Optional[list] = None        # ["Python", "React", "AWS"]
+    description: str | None = None
+    salary_min: float | None = None
+    salary_max: float | None = None
+    salary_currency: str | None = None
+    experience_years: int | None = None
+    remote_ok: str | None = None  # 'remote' | 'hybrid' | 'onsite'
+    job_type: str | None = None  # 'full_time' | 'contract' | 'internship' | 'part_time'
+    seniority_level: str | None = None  # 'intern' | 'entry' | 'mid' | 'senior' | 'staff' | 'principal' | 'director'
+    visa_sponsorship: int | None = None  # 1=yes, 0=no, None=unknown
+    tech_stack: list | None = None  # ["Python", "React", "AWS"]
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -84,68 +84,115 @@ class NormalizedJob:
 # ── Pre-compiled enrichment patterns ────────────────────────────────
 
 _REMOTE_PATTERNS = [
-    (re.compile(r'\bfully[\s-]remote\b', re.I), 'remote'),
-    (re.compile(r'\bremote[\s-]first\b', re.I), 'remote'),
-    (re.compile(r'\bwork from home\b|\bwfh\b', re.I), 'remote'),
-    (re.compile(r'\b100%\s*remote\b', re.I), 'remote'),
-    (re.compile(r'\bhybrid\b', re.I), 'hybrid'),
-    (re.compile(r'\bonsite\b|\bon[\s-]site\b|\bin[\s-]office\b', re.I), 'onsite'),
+    (re.compile(r"\bfully[\s-]remote\b", re.I), "remote"),
+    (re.compile(r"\bremote[\s-]first\b", re.I), "remote"),
+    (re.compile(r"\bwork from home\b|\bwfh\b", re.I), "remote"),
+    (re.compile(r"\b100%\s*remote\b", re.I), "remote"),
+    (re.compile(r"\bhybrid\b", re.I), "hybrid"),
+    (re.compile(r"\bonsite\b|\bon[\s-]site\b|\bin[\s-]office\b", re.I), "onsite"),
 ]
 
 _SENIORITY_MAP = [
-    (re.compile(r'\bintern\b|\binternship\b', re.I), 'intern'),
-    (re.compile(r'\bjunior\b|\bjr\.?\b|\bentry[\s-]level\b|\bnew\s+grad\b', re.I), 'entry'),
-    (re.compile(r'\bprincipal\b', re.I), 'principal'),
-    (re.compile(r'\bstaff\b', re.I), 'staff'),
-    (re.compile(r'\bdirector\b', re.I), 'director'),
-    (re.compile(r'\bsenior\b|\bsr\.?\b|\blead\b', re.I), 'senior'),
+    (re.compile(r"\bintern\b|\binternship\b", re.I), "intern"),
+    (re.compile(r"\bjunior\b|\bjr\.?\b|\bentry[\s-]level\b|\bnew\s+grad\b", re.I), "entry"),
+    (re.compile(r"\bprincipal\b", re.I), "principal"),
+    (re.compile(r"\bstaff\b", re.I), "staff"),
+    (re.compile(r"\bdirector\b", re.I), "director"),
+    (re.compile(r"\bsenior\b|\bsr\.?\b|\blead\b", re.I), "senior"),
 ]
 
 _JOB_TYPE_PATTERNS = [
-    (re.compile(r'\binternship\b|\bintern\b', re.I), 'internship'),
-    (re.compile(r'\bcontract\b|\bcontractor\b|\bcontract[\s-]to[\s-]hire\b', re.I), 'contract'),
-    (re.compile(r'\bpart[\s-]time\b', re.I), 'part_time'),
-    (re.compile(r'\bfull[\s-]time\b', re.I), 'full_time'),
+    (re.compile(r"\binternship\b|\bintern\b", re.I), "internship"),
+    (re.compile(r"\bcontract\b|\bcontractor\b|\bcontract[\s-]to[\s-]hire\b", re.I), "contract"),
+    (re.compile(r"\bpart[\s-]time\b", re.I), "part_time"),
+    (re.compile(r"\bfull[\s-]time\b", re.I), "full_time"),
 ]
 
 _NO_SPONSORSHIP = re.compile(
-    r'(not\s+able|unable|will\s+not|cannot|do\s+not|does\s+not|won\'t|cannot)\s+'
-    r'(to\s+)?(provide|offer|sponsor|support)',
-    re.I
+    r"(not\s+able|unable|will\s+not|cannot|do\s+not|does\s+not|won\'t|cannot)\s+"
+    r"(to\s+)?(provide|offer|sponsor|support)",
+    re.I,
 )
 _SPONSORSHIP_YES = re.compile(
-    r'(visa\s+(sponsorship|support|assistance|available)|'
-    r'sponsor\s+(h[\s-]?1[\s-]?b|work\s+visa|visa)|'
-    r'we\s+(do\s+)?sponsor|h[\s-]?1[\s-]?b\s+transfer|'
-    r'candidates\s+who\s+(require|need)\s+(visa|sponsorship))',
-    re.I
+    r"(visa\s+(sponsorship|support|assistance|available)|"
+    r"sponsor\s+(h[\s-]?1[\s-]?b|work\s+visa|visa)|"
+    r"we\s+(do\s+)?sponsor|h[\s-]?1[\s-]?b\s+transfer|"
+    r"candidates\s+who\s+(require|need)\s+(visa|sponsorship))",
+    re.I,
 )
 
 # Top-60 tech vocabulary for exact-word matching
 _TECH_VOCAB = {
     # Languages
-    'Python', 'TypeScript', 'JavaScript', 'Go', 'Rust', 'Java', 'Scala',
-    'C++', 'C#', 'Ruby', 'Swift', 'Kotlin', 'R', 'MATLAB', 'Julia',
+    "Python",
+    "TypeScript",
+    "JavaScript",
+    "Go",
+    "Rust",
+    "Java",
+    "Scala",
+    "C++",
+    "C#",
+    "Ruby",
+    "Swift",
+    "Kotlin",
+    "R",
+    "MATLAB",
+    "Julia",
     # ML / AI
-    'PyTorch', 'TensorFlow', 'JAX', 'Keras', 'LangChain', 'LlamaIndex',
-    'scikit-learn', 'XGBoost', 'Spark', 'Hadoop', 'MLflow', 'Ray', 'Triton',
-    'Databricks', 'Hugging Face',
+    "PyTorch",
+    "TensorFlow",
+    "JAX",
+    "Keras",
+    "LangChain",
+    "LlamaIndex",
+    "scikit-learn",
+    "XGBoost",
+    "Spark",
+    "Hadoop",
+    "MLflow",
+    "Ray",
+    "Triton",
+    "Databricks",
+    "Hugging Face",
     # Cloud / DevOps
-    'AWS', 'GCP', 'Azure', 'Kubernetes', 'Docker', 'Terraform', 'Airflow',
+    "AWS",
+    "GCP",
+    "Azure",
+    "Kubernetes",
+    "Docker",
+    "Terraform",
+    "Airflow",
     # Databases
-    'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Elasticsearch', 'Snowflake',
-    'BigQuery', 'Redshift', 'DynamoDB', 'Cassandra', 'Pinecone', 'Weaviate',
+    "PostgreSQL",
+    "MySQL",
+    "MongoDB",
+    "Redis",
+    "Elasticsearch",
+    "Snowflake",
+    "BigQuery",
+    "Redshift",
+    "DynamoDB",
+    "Cassandra",
+    "Pinecone",
+    "Weaviate",
     # Frameworks / Other
-    'React', 'Next.js', 'FastAPI', 'Django', 'Flask', 'Spring', 'Rails',
-    'GraphQL', 'dbt', 'Kafka', 'Flink', 'Spark',
+    "React",
+    "Next.js",
+    "FastAPI",
+    "Django",
+    "Flask",
+    "Spring",
+    "Rails",
+    "GraphQL",
+    "dbt",
+    "Kafka",
+    "Flink",
 }
 # Build case-insensitive lookup: lowercase → canonical form
 _TECH_LOWER = {t.lower(): t for t in _TECH_VOCAB}
 # Pre-compiled word-boundary pattern for each term
-_TECH_PATTERNS = [
-    (re.compile(r'\b' + re.escape(t) + r'\b', re.I), canonical)
-    for t, canonical in _TECH_LOWER.items()
-]
+_TECH_PATTERNS = [(re.compile(r"\b" + re.escape(t) + r"\b", re.I), canonical) for t, canonical in _TECH_LOWER.items()]
 
 
 def _extract_enrichments(job: NormalizedJob) -> NormalizedJob:
@@ -177,16 +224,16 @@ def _extract_enrichments(job: NormalizedJob) -> NormalizedJob:
                 job.job_type = value
                 break
         if not job.job_type:
-            job.job_type = 'full_time'   # default assumption
+            job.job_type = "full_time"  # default assumption
 
     # ── Seniority level ────────────────────────────────────────────
     if not job.seniority_level:
         for pattern, value in _SENIORITY_MAP:
-            if pattern.search(title):   # title only — more reliable
+            if pattern.search(title):  # title only — more reliable
                 job.seniority_level = value
                 break
         if not job.seniority_level:
-            job.seniority_level = 'mid'   # default when not specified
+            job.seniority_level = "mid"  # default when not specified
 
     # ── Visa sponsorship ───────────────────────────────────────────
     if job.visa_sponsorship is None and desc:
@@ -244,6 +291,7 @@ def _strip_html(text: str) -> str:
 # GREENHOUSE ADAPTER
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class GreenhouseAdapter:
     """Greenhouse Boards API: boards-api.greenhouse.io/v1/boards/{slug}/jobs"""
 
@@ -254,11 +302,13 @@ class GreenhouseAdapter:
         session,
         slug: str,
         company: str,
-        rate_limiter: Optional[RateLimiter] = None,
+        rate_limiter: RateLimiter | None = None,
     ) -> list[NormalizedJob]:
         url = GreenhouseAdapter.BASE_URL.format(slug=slug)
         resp = await fetch_with_retry(
-            session, "GET", url,
+            session,
+            "GET",
+            url,
             rate_limiter=rate_limiter,
             log_tag=f"greenhouse/{slug}",
             params={"content": "true"},
@@ -301,6 +351,7 @@ class GreenhouseAdapter:
 # LEVER ADAPTER
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class LeverAdapter:
     """Lever Postings API: api.lever.co/v0/postings/{slug}"""
 
@@ -311,11 +362,13 @@ class LeverAdapter:
         session,
         slug: str,
         company: str,
-        rate_limiter: Optional[RateLimiter] = None,
+        rate_limiter: RateLimiter | None = None,
     ) -> list[NormalizedJob]:
         url = LeverAdapter.BASE_URL.format(slug=slug)
         resp = await fetch_with_retry(
-            session, "GET", url,
+            session,
+            "GET",
+            url,
             rate_limiter=rate_limiter,
             log_tag=f"lever/{slug}",
         )
@@ -365,9 +418,7 @@ class LeverAdapter:
                 company=company,
                 location=location,
                 url=j.get("hostedUrl", ""),
-                date_posted=datetime.fromtimestamp(
-                    created_at / 1000, tz=timezone.utc
-                ).isoformat() if created_at else "",
+                date_posted=datetime.fromtimestamp(created_at / 1000, tz=UTC).isoformat() if created_at else "",
                 source_ats="lever",
                 job_id=j.get("id", ""),
                 description=description,
@@ -381,6 +432,7 @@ class LeverAdapter:
 # ASHBY ADAPTER
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class AshbyAdapter:
     """Ashby Job Board API: api.ashbyhq.com/posting-api/job-board/{slug}"""
 
@@ -391,11 +443,13 @@ class AshbyAdapter:
         session,
         slug: str,
         company: str,
-        rate_limiter: Optional[RateLimiter] = None,
+        rate_limiter: RateLimiter | None = None,
     ) -> list[NormalizedJob]:
         url = AshbyAdapter.BASE_URL.format(slug=slug)
         resp = await fetch_with_retry(
-            session, "GET", url,
+            session,
+            "GET",
+            url,
             rate_limiter=rate_limiter,
             log_tag=f"ashby/{slug}",
         )
@@ -437,6 +491,7 @@ class AshbyAdapter:
 # SMARTRECRUITERS ADAPTER
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class SmartRecruitersAdapter:
     """SmartRecruiters API: api.smartrecruiters.com/v1/companies/{slug}/postings"""
 
@@ -447,7 +502,7 @@ class SmartRecruitersAdapter:
         session,
         slug: str,
         company: str,
-        rate_limiter: Optional[RateLimiter] = None,
+        rate_limiter: RateLimiter | None = None,
     ) -> list[NormalizedJob]:
         url = SmartRecruitersAdapter.BASE_URL.format(slug=slug)
         all_jobs = []
@@ -456,7 +511,9 @@ class SmartRecruitersAdapter:
 
         while True:
             resp = await fetch_with_retry(
-                session, "GET", url,
+                session,
+                "GET",
+                url,
                 rate_limiter=rate_limiter,
                 log_tag=f"smartrecruiters/{slug}",
                 params={"limit": limit, "offset": offset},
@@ -522,6 +579,7 @@ class SmartRecruitersAdapter:
 # BAMBOOHR ADAPTER
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class BambooHRAdapter:
     """BambooHR: {slug}.bamboohr.com/careers/list"""
 
@@ -532,11 +590,13 @@ class BambooHRAdapter:
         session,
         slug: str,
         company: str,
-        rate_limiter: Optional[RateLimiter] = None,
+        rate_limiter: RateLimiter | None = None,
     ) -> list[NormalizedJob]:
         url = BambooHRAdapter.BASE_URL.format(slug=slug)
         resp = await fetch_with_retry(
-            session, "GET", url,
+            session,
+            "GET",
+            url,
             rate_limiter=rate_limiter,
             log_tag=f"bamboohr/{slug}",
             headers={"Accept": "application/json"},
@@ -591,6 +651,7 @@ class BambooHRAdapter:
 # WORKDAY ADAPTER
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class WorkdayAdapter:
     """Workday CXS API: {tenant}.wd{shard}.myworkdayjobs.com/wday/cxs/{tenant}/{site}/jobs
 
@@ -606,7 +667,9 @@ class WorkdayAdapter:
         """Attempt a single CXS API call. Returns (response_data, api_url) or (None, url)."""
         api_url = f"{base_url}/wday/cxs/{tenant}/{site}/jobs"
         resp = await fetch_with_retry(
-            session, "POST", api_url,
+            session,
+            "POST",
+            api_url,
             rate_limiter=rate_limiter,
             log_tag=f"workday/{tenant}",
             json=payload,
@@ -627,7 +690,7 @@ class WorkdayAdapter:
         session,
         slug: str,
         company: str,
-        rate_limiter: Optional[RateLimiter] = None,
+        rate_limiter: RateLimiter | None = None,
     ) -> list[NormalizedJob]:
         parts = slug.split(":")
         if len(parts) != 3:
@@ -646,14 +709,24 @@ class WorkdayAdapter:
 
         # First try the site from the slug
         data, api_url = await WorkdayAdapter._try_cxs(
-            session, base_url, tenant, site, payload, rate_limiter,
+            session,
+            base_url,
+            tenant,
+            site,
+            payload,
+            rate_limiter,
         )
 
         # If that failed and the site looks like a locale (en-us), probe common names
         if data is None and site.lower().startswith("en-"):
             for probe_site in WorkdayAdapter._COMMON_SITES:
                 data, api_url = await WorkdayAdapter._try_cxs(
-                    session, base_url, tenant, probe_site, payload, rate_limiter,
+                    session,
+                    base_url,
+                    tenant,
+                    probe_site,
+                    payload,
+                    rate_limiter,
                 )
                 if data is not None:
                     _log(f"[workday/{tenant}] Probed site '{probe_site}' succeeded")
@@ -678,7 +751,9 @@ class WorkdayAdapter:
         while offset < min(total, max_pages * 20) and job_postings:
             payload["offset"] = offset
             resp = await fetch_with_retry(
-                session, "POST", api_url,
+                session,
+                "POST",
+                api_url,
                 rate_limiter=rate_limiter,
                 log_tag=f"workday/{tenant}",
                 json=payload,
@@ -743,6 +818,7 @@ class WorkdayAdapter:
 # WORKABLE ADAPTER
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class WorkableAdapter:
     """Workable API: apply.workable.com/api/v3/accounts/{slug}/jobs"""
 
@@ -753,7 +829,7 @@ class WorkableAdapter:
         session,
         slug: str,
         company: str,
-        rate_limiter: Optional[RateLimiter] = None,
+        rate_limiter: RateLimiter | None = None,
     ) -> list[NormalizedJob]:
         url = WorkableAdapter.BASE_URL.format(slug=slug)
         all_jobs = []
@@ -772,7 +848,9 @@ class WorkableAdapter:
                 payload["token"] = token
 
             resp = await fetch_with_retry(
-                session, "POST", url,
+                session,
+                "POST",
+                url,
                 rate_limiter=rate_limiter,
                 log_tag=f"workable/{slug}",
                 json=payload,
@@ -795,7 +873,7 @@ class WorkableAdapter:
                 country = location_obj.get("country")
                 if country:
                     location += f", {country}" if location else country
-                
+
                 if not location:
                     location = "Unknown"
 
@@ -828,6 +906,7 @@ class WorkableAdapter:
 # RIPPLING ADAPTER
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class RipplingAdapter:
     """Rippling API: api.rippling.com/ats/api/v1/board/{slug}/jobs"""
 
@@ -838,11 +917,13 @@ class RipplingAdapter:
         session,
         slug: str,
         company: str,
-        rate_limiter: Optional[RateLimiter] = None,
+        rate_limiter: RateLimiter | None = None,
     ) -> list[NormalizedJob]:
         url = RipplingAdapter.BASE_URL.format(slug=slug)
         resp = await fetch_with_retry(
-            session, "GET", url,
+            session,
+            "GET",
+            url,
             rate_limiter=rate_limiter,
             log_tag=f"rippling/{slug}",
         )
@@ -891,6 +972,7 @@ class RipplingAdapter:
 # GEM ATS ADAPTER
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class GemAdapter:
     """Gem Job Board API: job-boards.gem.com/{slug}/jobs"""
 
@@ -901,11 +983,13 @@ class GemAdapter:
         session,
         slug: str,
         company: str,
-        rate_limiter: Optional[RateLimiter] = None,
+        rate_limiter: RateLimiter | None = None,
     ) -> list[NormalizedJob]:
         url = GemAdapter.BASE_URL.format(slug=slug)
         resp = await fetch_with_retry(
-            session, "GET", url,
+            session,
+            "GET",
+            url,
             rate_limiter=rate_limiter,
             log_tag=f"gem/{slug}",
         )
@@ -936,15 +1020,9 @@ class GemAdapter:
                 location = ", ".join(p for p in parts if p) or "Unknown"
 
             job_id = str(j.get("id", "") or j.get("req_id", ""))
-            apply_url = (
-                j.get("apply_url")
-                or j.get("url")
-                or f"https://job-boards.gem.com/{slug}/jobs/{job_id}"
-            )
+            apply_url = j.get("apply_url") or j.get("url") or f"https://job-boards.gem.com/{slug}/jobs/{job_id}"
 
-            description = _strip_html(
-                j.get("description", "") or j.get("content", "")
-            ) or None
+            description = _strip_html(j.get("description", "") or j.get("content", "")) or None
 
             job = NormalizedJob(
                 title=j.get("title", "") or j.get("name", ""),
@@ -983,7 +1061,7 @@ async def fetch_company_jobs(
     company: str,
     ats: str,
     slug: str,
-    rate_limiter: Optional[RateLimiter] = None,
+    rate_limiter: RateLimiter | None = None,
 ) -> list[NormalizedJob]:
     """Fetch jobs for a single company using the appropriate adapter."""
     adapter = ADAPTERS.get(ats)

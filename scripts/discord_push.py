@@ -16,18 +16,19 @@ import json
 import os
 import sys
 from collections import defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.utils.logger import _log
 from scripts.database.db_utils import get_connection, get_unposted_jobs, mark_jobs_posted
-from scripts.utils.dedup_file import load_posted_hashes, save_posted_hashes, is_already_posted, mark_as_posted
+from scripts.utils.dedup_file import is_already_posted, load_posted_hashes, mark_as_posted, save_posted_hashes
+from scripts.utils.logger import _log
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv(PROJECT_ROOT / ".env")
 except ImportError:
     pass
@@ -47,43 +48,62 @@ GENERAL_CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID")
 
 # Category → Channel ID mapping
 CATEGORY_CHANNELS = {
-    "AI/ML":             os.getenv("DISCORD_CHANNEL_AI"),
-    "Data Science":      os.getenv("DISCORD_CHANNEL_DATA"),
-    "Data Engineering":  os.getenv("DISCORD_CHANNEL_DATA"),
-    "Data Analyst":      os.getenv("DISCORD_CHANNEL_DATA"),
-    "SWE":               os.getenv("DISCORD_CHANNEL_SWE"),
-    "New Grad":          os.getenv("DISCORD_CHANNEL_NEWGRAD"),
-    "Product":           os.getenv("DISCORD_CHANNEL_PRODUCT"),
-    "Research":          os.getenv("DISCORD_CHANNEL_RESEARCH"),
+    "AI/ML": os.getenv("DISCORD_CHANNEL_AI"),
+    "Data Science": os.getenv("DISCORD_CHANNEL_DATA"),
+    "Data Engineering": os.getenv("DISCORD_CHANNEL_DATA"),
+    "Data Analyst": os.getenv("DISCORD_CHANNEL_DATA"),
+    "SWE": os.getenv("DISCORD_CHANNEL_SWE"),
+    "New Grad": os.getenv("DISCORD_CHANNEL_NEWGRAD"),
+    "Product": os.getenv("DISCORD_CHANNEL_PRODUCT"),
+    "Research": os.getenv("DISCORD_CHANNEL_RESEARCH"),
 }
 
 CATEGORY_EMOJIS = {
-    "AI/ML": "🤖", "Data Science": "🔬", "Data Engineering": "🔧",
-    "Data Analyst": "📊", "SWE": "💻", "New Grad": "🎓",
-    "Product": "📦", "Research": "🧪", "Uncategorized": "💼",
+    "AI/ML": "🤖",
+    "Data Science": "🔬",
+    "Data Engineering": "🔧",
+    "Data Analyst": "📊",
+    "SWE": "💻",
+    "New Grad": "🎓",
+    "Product": "📦",
+    "Research": "🧪",
+    "Uncategorized": "💼",
 }
 
 CATEGORY_COLORS = {
-    "AI/ML": 0x9B59B6,        # Purple
+    "AI/ML": 0x9B59B6,  # Purple
     "Data Science": 0x3498DB,  # Blue
-    "Data Engineering": 0x1ABC9C, # Teal
+    "Data Engineering": 0x1ABC9C,  # Teal
     "Data Analyst": 0x2ECC71,  # Green
-    "SWE": 0xE67E22,           # Orange
-    "New Grad": 0xF1C40F,      # Yellow
-    "Product": 0xE74C3C,       # Red
-    "Research": 0x95A5A6,      # Gray
-    "Uncategorized": 0x546E7A, # Dark gray
+    "SWE": 0xE67E22,  # Orange
+    "New Grad": 0xF1C40F,  # Yellow
+    "Product": 0xE74C3C,  # Red
+    "Research": 0x95A5A6,  # Gray
+    "Uncategorized": 0x546E7A,  # Dark gray
 }
 
 ATS_LABELS = {
-    "greenhouse": "Greenhouse", "lever": "Lever", "workday": "Workday",
-    "ashby": "Ashby", "smartrecruiters": "SmartRecruiters",
-    "rippling": "Rippling", "workable": "Workable", "icims": "iCIMS",
-    "github-swe-newgrad": "GitHub", "github-ai-newgrad": "GitHub",
-    "github-internship": "GitHub", "github-new-grad": "GitHub",
-    "remoteok": "RemoteOK", "remotive": "Remotive", "wwr": "WWR",
-    "dice": "Dice", "wellfound": "Wellfound", "ycombinator": "Y Combinator",
-    "linkedin": "LinkedIn", "indeed": "Indeed", "glassdoor": "Glassdoor",
+    "greenhouse": "Greenhouse",
+    "lever": "Lever",
+    "workday": "Workday",
+    "ashby": "Ashby",
+    "smartrecruiters": "SmartRecruiters",
+    "rippling": "Rippling",
+    "workable": "Workable",
+    "icims": "iCIMS",
+    "github-swe-newgrad": "GitHub",
+    "github-ai-newgrad": "GitHub",
+    "github-internship": "GitHub",
+    "github-new-grad": "GitHub",
+    "remoteok": "RemoteOK",
+    "remotive": "Remotive",
+    "wwr": "WWR",
+    "dice": "Dice",
+    "wellfound": "Wellfound",
+    "ycombinator": "Y Combinator",
+    "linkedin": "LinkedIn",
+    "indeed": "Indeed",
+    "glassdoor": "Glassdoor",
 }
 
 
@@ -96,11 +116,11 @@ def _urgency_color(date_posted: str, base_color: int) -> int:
     """
     try:
         posted = datetime.fromisoformat(date_posted.replace("Z", "+00:00"))
-        age = datetime.now(timezone.utc) - posted
+        age = datetime.now(UTC) - posted
         if age < timedelta(hours=2):
-            return 0x2ECC71   # Bright green — hot/fresh
+            return 0x2ECC71  # Bright green — hot/fresh
         if age < timedelta(hours=12):
-            return 0xF1C40F   # Yellow — recent
+            return 0xF1C40F  # Yellow — recent
     except (ValueError, TypeError, AttributeError):
         pass
     return base_color
@@ -112,8 +132,8 @@ def _quality_score(job: dict) -> float:
     date_str = job.get("date_posted") or job.get("first_seen", "")
     try:
         posted = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-        age_hours = (datetime.now(timezone.utc) - posted).total_seconds() / 3600
-        score += max(0.0, 24.0 - age_hours) * 2   # Up to +48 for < 1hr old
+        age_hours = (datetime.now(UTC) - posted).total_seconds() / 3600
+        score += max(0.0, 24.0 - age_hours) * 2  # Up to +48 for < 1hr old
     except (ValueError, TypeError, AttributeError):
         pass
     if job.get("salary_min") or job.get("salary_max"):
@@ -186,14 +206,12 @@ def _build_job_embed(job: dict) -> dict:
             {"name": "🏷️ Category", "value": category, "inline": True},
         ],
         "footer": {"text": f"JobClaw • {ats_label}"},
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": datetime.now(UTC).isoformat(),
     }
 
     if url:
         embed["url"] = url
-        embed["fields"].append(
-            {"name": "📎 Apply", "value": f"[Click here to apply]({url})", "inline": False}
-        )
+        embed["fields"].append({"name": "📎 Apply", "value": f"[Click here to apply]({url})", "inline": False})
 
     # Salary if available
     salary_min = job.get("salary_min")
@@ -211,9 +229,7 @@ def _build_job_embed(job: dict) -> dict:
     # Experience requirement if available (extracted during ATS ingestion)
     experience_years = job.get("experience_years")
     if experience_years is not None:
-        embed["fields"].append(
-            {"name": "🎯 Experience", "value": f"{experience_years}+ yrs", "inline": True}
-        )
+        embed["fields"].append({"name": "🎯 Experience", "value": f"{experience_years}+ yrs", "inline": True})
 
     # All matched categories (if more than one)
     all_cats = job.get("keywords_matched") or []
@@ -223,9 +239,7 @@ def _build_job_embed(job: dict) -> dict:
         except (json.JSONDecodeError, TypeError):
             all_cats = [all_cats] if all_cats else []
     if len(all_cats) > 1:
-        embed["fields"].append(
-            {"name": "🏷️ Tags", "value": " · ".join(all_cats), "inline": False}
-        )
+        embed["fields"].append({"name": "🏷️ Tags", "value": " · ".join(all_cats), "inline": False})
 
     # Remote/hybrid/onsite indicator prepended to title
     remote_ok = job.get("remote_ok")
@@ -237,24 +251,23 @@ def _build_job_embed(job: dict) -> dict:
     # Seniority badge
     seniority = job.get("seniority_level")
     _SENIORITY_DISPLAY = {
-        "intern": "Internship", "entry": "Entry Level", "mid": "Mid Level",
-        "senior": "Senior", "staff": "Staff", "principal": "Principal", "director": "Director"
+        "intern": "Internship",
+        "entry": "Entry Level",
+        "mid": "Mid Level",
+        "senior": "Senior",
+        "staff": "Staff",
+        "principal": "Principal",
+        "director": "Director",
     }
     if seniority and seniority in _SENIORITY_DISPLAY:
-        embed["fields"].append(
-            {"name": "📊 Level", "value": _SENIORITY_DISPLAY[seniority], "inline": True}
-        )
+        embed["fields"].append({"name": "📊 Level", "value": _SENIORITY_DISPLAY[seniority], "inline": True})
 
     # Visa sponsorship signal
     visa = job.get("visa_sponsorship")
     if visa == 1:
-        embed["fields"].append(
-            {"name": "✈️ Visa", "value": "Sponsors H1B", "inline": True}
-        )
+        embed["fields"].append({"name": "✈️ Visa", "value": "Sponsors H1B", "inline": True})
     elif visa == 0:
-        embed["fields"].append(
-            {"name": "✈️ Visa", "value": "No sponsorship", "inline": True}
-        )
+        embed["fields"].append({"name": "✈️ Visa", "value": "No sponsorship", "inline": True})
 
     # Top 5 tech stack tags
     stack = job.get("tech_stack")
@@ -265,9 +278,7 @@ def _build_job_embed(job: dict) -> dict:
             except (json.JSONDecodeError, TypeError):
                 stack = []
         if stack:
-            embed["fields"].append(
-                {"name": "🛠️ Stack", "value": " · ".join(stack[:5]), "inline": False}
-            )
+            embed["fields"].append({"name": "🛠️ Stack", "value": " · ".join(stack[:5]), "inline": False})
 
     # Description snippet (first 200 chars gives context before clicking Apply)
     desc = (job.get("description") or "").strip()
@@ -292,6 +303,7 @@ _DISCORD_HEADERS = {
 async def _send_card_via_bot(session, channel_id: str, embed: dict) -> bool:
     """Send a single job card to a specific channel via Bot API (3-retry exponential backoff)."""
     import asyncio
+
     url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
     headers = {
         **_DISCORD_HEADERS,
@@ -310,7 +322,7 @@ async def _send_card_via_bot(session, channel_id: str, embed: dict) -> bool:
                 wait = data.get("retry_after", 2.0)
             except Exception:
                 wait = 2.0
-            backoff = max(wait, 2.0) * (2 ** attempt)
+            backoff = max(wait, 2.0) * (2**attempt)
             log(f"Rate limited — waiting {backoff:.1f}s (attempt {attempt + 1}/3)", "WARN")
             await asyncio.sleep(backoff)
             continue
@@ -338,7 +350,7 @@ async def _send_card_via_webhook(session, embed: dict) -> bool:
                 wait = data.get("retry_after", 2.0)
             except Exception:
                 wait = 2.0
-            backoff = max(wait, 2.0) * (2 ** attempt)
+            backoff = max(wait, 2.0) * (2**attempt)
             log(f"Rate limited — waiting {backoff:.1f}s (attempt {attempt + 1}/3)", "WARN")
             await asyncio.sleep(backoff)
             continue
@@ -354,6 +366,7 @@ async def _send_card_via_webhook(session, embed: dict) -> bool:
 # MAIN PUSH FUNCTION
 # ═══════════════════════════════════════════════════════════════════════
 
+
 async def push_new_jobs_to_discord():
     """
     Called by the orchestrator IMMEDIATELY after scraping finishes.
@@ -362,6 +375,7 @@ async def push_new_jobs_to_discord():
     Returns the number of jobs posted.
     """
     import asyncio
+
     import aiohttp
 
     # Load persistent dedup hashes from git-tracked file
@@ -380,7 +394,7 @@ async def push_new_jobs_to_discord():
         skipped = len(jobs) - len(fresh_jobs)
         if skipped > 0:
             log(f"Skipped {skipped} already-posted jobs (dedup file).")
-        
+
         if not fresh_jobs:
             log("All jobs already posted in previous runs — nothing new.")
             return 0
@@ -436,11 +450,11 @@ async def push_new_jobs_to_discord():
         if sent_hashes:
             mark_jobs_posted(conn, sent_hashes)
             log(f"Marked {len(sent_hashes)}/{len(fresh_jobs)} jobs as posted in DB.")
-        
+
         # Persist dedup hashes to disk for cross-run dedup
         save_posted_hashes(posted_hashes)
         log(f"Saved {len(posted_hashes)} hashes to dedup file.")
-        
+
         return sent_count
 
     except Exception as e:
@@ -499,6 +513,7 @@ class StreamingJobPusher:
             return
 
         import aiohttp
+
         log("🌊 Streaming waterfall started — jobs will hit Discord in real-time.")
 
         async with aiohttp.ClientSession() as session:
@@ -506,7 +521,7 @@ class StreamingJobPusher:
                 # Wait for a job or stop signal
                 try:
                     job = await _asyncio.wait_for(self._queue.get(), timeout=10.0)
-                except _asyncio.TimeoutError:
+                except TimeoutError:
                     if self._stop.is_set() and self._queue.empty():
                         break
                     continue
@@ -544,6 +559,7 @@ class StreamingJobPusher:
 if __name__ == "__main__":
     """Test: push any unposted jobs right now."""
     import asyncio
+
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     count = asyncio.run(push_new_jobs_to_discord())

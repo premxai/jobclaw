@@ -30,7 +30,7 @@ import json
 import os
 import time
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from scripts.utils.logger import _log
 
@@ -49,23 +49,23 @@ else:
 # These are tuned based on how often each platform's job listings change.
 # Fast-moving boards get shorter TTLs; enterprise pages get longer.
 PLATFORM_TTL: dict[str, int] = {
-    "greenhouse": 1 * 3600,       # 1 hour — catch jobs fast
-    "lever": 1 * 3600,            # 1 hour
-    "ashby": 1 * 3600,            # 1 hour
-    "workable": 2 * 3600,         # 2 hours — WAF, slightly longer
-    "workday": 2 * 3600,          # 2 hours — WAF
+    "greenhouse": 1 * 3600,  # 1 hour — catch jobs fast
+    "lever": 1 * 3600,  # 1 hour
+    "ashby": 1 * 3600,  # 1 hour
+    "workable": 2 * 3600,  # 2 hours — WAF, slightly longer
+    "workday": 2 * 3600,  # 2 hours — WAF
     "smartrecruiters": 1 * 3600,  # 1 hour
-    "bamboohr": 2 * 3600,         # 2 hours
-    "rippling": 1 * 3600,         # 1 hour
+    "bamboohr": 2 * 3600,  # 2 hours
+    "rippling": 1 * 3600,  # 1 hour
     # Enterprise
-    "apple": 30 * 60,             # 30 min (fast-moving, high value)
-    "amazon": 30 * 60,            # 30 min
-    "microsoft": 1 * 3600,        # 1 hour
-    "google": 1 * 3600,           # 1 hour
-    "meta": 1 * 3600,             # 1 hour
-    "tiktok": 1 * 3600,           # 1 hour
-    "nvidia": 1 * 3600,           # 1 hour
-    "uber": 1 * 3600,             # 1 hour
+    "apple": 30 * 60,  # 30 min (fast-moving, high value)
+    "amazon": 30 * 60,  # 30 min
+    "microsoft": 1 * 3600,  # 1 hour
+    "google": 1 * 3600,  # 1 hour
+    "meta": 1 * 3600,  # 1 hour
+    "tiktok": 1 * 3600,  # 1 hour
+    "nvidia": 1 * 3600,  # 1 hour
+    "uber": 1 * 3600,  # 1 hour
 }
 
 DEFAULT_TTL = 1 * 3600  # 1 hour
@@ -73,6 +73,7 @@ DEFAULT_TTL = 1 * 3600  # 1 hour
 
 class CacheStats:
     """Track cache hit/miss/expired/not_modified stats per run."""
+
     def __init__(self):
         self.hits = 0
         self.misses = 0
@@ -92,7 +93,7 @@ class CacheStats:
 class ResponseCache:
     """Disk-backed JSON response cache with per-platform TTLs."""
 
-    def __init__(self, cache_dir: Optional[Path] = None, ttl_overrides: Optional[dict[str, int]] = None):
+    def __init__(self, cache_dir: Path | None = None, ttl_overrides: dict[str, int] | None = None):
         self.cache_dir = cache_dir or CACHE_DIR
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.ttls = {**PLATFORM_TTL}
@@ -116,7 +117,7 @@ class ResponseCache:
     def _ttl_for(self, platform: str) -> int:
         return self.ttls.get(platform, DEFAULT_TTL)
 
-    def get(self, platform: str, slug: str) -> Optional[Any]:
+    def get(self, platform: str, slug: str) -> Any | None:
         """
         Read cached response if it exists and hasn't expired.
 

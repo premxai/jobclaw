@@ -20,8 +20,8 @@ v4 improvements over v3:
 import asyncio
 import os
 import random
-import time
 import sys
+import time
 from collections import defaultdict
 from pathlib import Path
 
@@ -29,17 +29,17 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.utils.logger import _log
-from scripts.utils.http_client import RateLimiter, create_session
-from scripts.utils.response_cache import ResponseCache
-from scripts.utils.company_metadata import CompanyMetadata
-from scripts.utils.retry_queue import RetryQueue
-from scripts.utils.health_tracker import HealthTracker
-from scripts.ingestion.ats_adapters import fetch_company_jobs, NormalizedJob
+from scripts.database.db_utils import get_connection, insert_job, log_scraper_run, mark_stale_jobs
+from scripts.ingestion.ats_adapters import NormalizedJob, fetch_company_jobs
+from scripts.ingestion.parallel_ingestor import is_within_window, load_registry
 from scripts.ingestion.role_filter import matches_target_role
 from scripts.ingestion.us_filter import is_us_location
-from scripts.ingestion.parallel_ingestor import load_registry, is_within_window
-from scripts.database.db_utils import get_connection, insert_job, log_scraper_run, mark_stale_jobs
+from scripts.utils.company_metadata import CompanyMetadata
+from scripts.utils.health_tracker import HealthTracker
+from scripts.utils.http_client import RateLimiter, create_session
+from scripts.utils.logger import _log
+from scripts.utils.response_cache import ResponseCache
+from scripts.utils.retry_queue import RetryQueue
 
 # ── Platforms to skip by default ───────────────────────────────────────
 # v4: Workday and Workable are now scrapable via curl_cffi TLS impersonation.
@@ -51,15 +51,15 @@ DEFAULT_SKIP_PLATFORMS: set[str] = set()
 # from a queue, so memory stays bounded regardless of registry size.
 # Workers per platform — lower bounds are better for 24/7 stealth scraping
 PLATFORM_WORKERS = {
-    "greenhouse": 5,          # Public REST API — very tolerant, increased from 3
-    "lever": 5,               # Public REST API — very tolerant, increased from 3
-    "ashby": 5,               # Clean API, smaller volume — increased from 3
-    "smartrecruiters": 3,     # Enterprise — leave headroom, increased from 2
-    "workday": 2,             # Aggressive WAF — don't push past 2-3
-    "workable": 1,            # Single worker — Workable 429s hard with concurrency
-    "rippling": 2,            # Large registry — careful increase from 1
+    "greenhouse": 5,  # Public REST API — very tolerant, increased from 3
+    "lever": 5,  # Public REST API — very tolerant, increased from 3
+    "ashby": 5,  # Clean API, smaller volume — increased from 3
+    "smartrecruiters": 3,  # Enterprise — leave headroom, increased from 2
+    "workday": 2,  # Aggressive WAF — don't push past 2-3
+    "workable": 1,  # Single worker — Workable 429s hard with concurrency
+    "rippling": 2,  # Large registry — careful increase from 1
     "bamboohr": 2,
-    "gem": 3,                 # Mid-market ATS — clean JSON API
+    "gem": 3,  # Mid-market ATS — clean JSON API
 }
 DEFAULT_WORKERS = 3
 
@@ -68,33 +68,34 @@ DEFAULT_WORKERS = 3
 # If too many consecutive failures happen on a platform, skip remaining
 # companies to avoid wasting time on unresponsive hosts.
 
+
 class CircuitBreaker:
     """Per-platform circuit breaker for ATS scraping.
-    
+
     Opens (skips) after `threshold` consecutive errors on a platform.
     Tracks per-platform failure counts and provides skip decisions.
     """
-    
+
     def __init__(self, threshold: int = 15):
         self.threshold = threshold
         self._failures: dict[str, int] = defaultdict(int)
         self._total_skipped: dict[str, int] = defaultdict(int)
-    
+
     def record_failure(self, platform: str) -> None:
         """Record a failure for a platform."""
         self._failures[platform] += 1
-    
+
     def record_success(self, platform: str) -> None:
         """Reset failure count on success (half-open → closed)."""
         self._failures[platform] = 0
-    
+
     def should_skip(self, platform: str) -> bool:
         """Check if the platform circuit is open (too many failures)."""
         if self._failures[platform] >= self.threshold:
             self._total_skipped[platform] += 1
             return True
         return False
-    
+
     def summary(self) -> str:
         """Log summary of circuit breaker state."""
         opened = {p: f for p, f in self._failures.items() if f >= self.threshold}
@@ -102,7 +103,6 @@ class CircuitBreaker:
         if opened:
             return f"Circuit breakers OPEN: {opened}, skipped: {skipped}"
         return "All circuit breakers closed (healthy)"
-
 
 
 async def _worker(
@@ -120,7 +120,7 @@ async def _worker(
     """
     Worker coroutine: pulls companies from a queue until empty.
     Only N workers run per platform, bounding memory + concurrency.
-    
+
     Uses circuit breaker to skip platforms with too many consecutive failures.
     Uses company_metadata to update scrape history after each company.
     Uses retry_queue to track failures for later retry.
@@ -170,7 +170,7 @@ async def _worker(
             # Mark success in retry queue (removes from queue if present)
             if retry_queue:
                 retry_queue.mark_success(ats, slug)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             _log(f"[{ats}/{slug}] Hard timeout", "WARN")
             results.append((cname, ats, slug, [], "timeout"))
             if circuit_breaker:
@@ -190,7 +190,6 @@ async def _worker(
         queue.task_done()
 
 
-
 async def run_ats_scraper(
     window_hours: int = 24,
     skip_platforms: set = None,
@@ -199,7 +198,7 @@ async def run_ats_scraper(
 ):
     """
     Micro-scraper exclusively for Direct ATS APIs (Greenhouse, Lever, etc.)
-    
+
     Pipeline:
       1. Load registry (~11,800 companies)
       2. Apply shard filter (optional: split registry into N rotating chunks)
@@ -243,9 +242,10 @@ async def run_ats_scraper(
         if shard == -1:
             # Auto-detect shard from current time
             import datetime
+
             now_min = datetime.datetime.now().minute
             shard = (now_min // 15) % total_shards
-        
+
         chunk_size = len(registry) // total_shards
         remainder = len(registry) % total_shards
         start_idx = shard * chunk_size + min(shard, remainder)
@@ -285,10 +285,12 @@ async def run_ats_scraper(
         should_scrape, reason = company_metadata.should_scrape(c["ats"], c["slug"])
         if should_scrape:
             companies_to_scrape.append(c)
-    
+
     skip_stats = company_metadata.get_stats()
-    _log(f"Skip-unchanged filter: {skip_stats['skipped']}/{skip_stats['checked']} skipped "
-         f"({skip_stats['skip_rate']}), {len(companies_to_scrape)} to scrape")
+    _log(
+        f"Skip-unchanged filter: {skip_stats['skipped']}/{skip_stats['checked']} skipped "
+        f"({skip_stats['skip_rate']}), {len(companies_to_scrape)} to scrape"
+    )
 
     # Group companies by ATS platform (including Workday → WorkdayAdapter)
     by_platform = defaultdict(list)
@@ -313,7 +315,7 @@ async def run_ats_scraper(
         for platform, companies in by_platform.items():
             # Shuffle to avoid predictable scraping patterns
             random.shuffle(companies)
-            
+
             q = asyncio.Queue()
             for c in companies:
                 q.put_nowait(c)
@@ -323,8 +325,12 @@ async def run_ats_scraper(
                 task = asyncio.create_task(
                     _worker(
                         f"{platform}-worker-{i}",
-                        q, session, rate_limiter, cache,
-                        all_results, errors,
+                        q,
+                        session,
+                        rate_limiter,
+                        cache,
+                        all_results,
+                        errors,
                         circuit_breaker=breaker,
                         company_metadata=company_metadata,
                         retry_queue=retry_queue,
@@ -343,9 +349,11 @@ async def run_ats_scraper(
     # Save retry queue and log stats
     retry_queue.save()
     retry_stats = retry_queue.get_stats()
-    _log(f"Retry queue: added={retry_stats['added']}, retried={retry_stats['retried']}, "
-         f"success={retry_stats['success']}, dropped={retry_stats['dropped']}, "
-         f"queue_size={retry_stats['queue_size']}")
+    _log(
+        f"Retry queue: added={retry_stats['added']}, retried={retry_stats['retried']}, "
+        f"success={retry_stats['success']}, dropped={retry_stats['dropped']}, "
+        f"queue_size={retry_stats['queue_size']}"
+    )
 
     # Log circuit breaker health
     _log(f"Circuit breaker: {breaker.summary()}")
@@ -354,7 +362,7 @@ async def run_ats_scraper(
     all_jobs = []
     company_job_ids = defaultdict(set)  # (ats, company) → {job_id, ...}
 
-    for name, ats, slug, jobs, err in all_results:
+    for name, ats, _slug, jobs, err in all_results:
         if err:
             errors.append(f"{name}: {err}")
         for job in jobs:
@@ -435,7 +443,7 @@ async def run_ats_scraper(
             error_counts["timeout"] = error_counts.get("timeout", 0) + 1
         else:
             error_counts["other"] = error_counts.get("other", 0) + 1
-    
+
     health_tracker.end_run(
         companies_scraped=final_stats["scraped"],
         companies_skipped=skip_stats["skipped"],
@@ -444,7 +452,7 @@ async def run_ats_scraper(
         errors=error_counts,
         retry_queue_size=retry_stats["queue_size"],
     )
-    
+
     # Check for alerts
     alerts = health_tracker.get_alerts()
     if alerts:

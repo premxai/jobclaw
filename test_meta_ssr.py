@@ -1,8 +1,9 @@
 """Check Meta Careers SSR data in HTML."""
+
 import asyncio
-import sys
 import re
-import json
+import sys
+
 
 async def test():
     from curl_cffi.requests import AsyncSession
@@ -12,9 +13,9 @@ async def test():
         text = r.text
 
         # Search for job_search data in scripts
-        scripts = re.findall(r'<script[^>]*>(.*?)</script>', text, re.DOTALL)
+        scripts = re.findall(r"<script[^>]*>(.*?)</script>", text, re.DOTALL)
         print(f"Script tags: {len(scripts)}")
-        
+
         for i, script in enumerate(scripts):
             if "job_search" in script or "jobSearch" in script:
                 print(f"\n  Script {i} has job_search ({len(script)} chars)")
@@ -25,10 +26,10 @@ async def test():
                 # Show context around job_search
                 idx = script.find("job_search")
                 if idx >= 0:
-                    print(f"    Context: ...{script[max(0,idx-50):idx+200]}...")
+                    print(f"    Context: ...{script[max(0, idx - 50) : idx + 200]}...")
 
         # Also search for relay store
-        relay = re.findall(r'__relay_store\s*=\s*(.*?);', text, re.DOTALL | re.IGNORECASE)
+        relay = re.findall(r"__relay_store\s*=\s*(.*?);", text, re.DOTALL | re.IGNORECASE)
         if relay:
             print(f"\nRelay store found: {len(relay[0])} chars")
 
@@ -47,7 +48,8 @@ async def test():
             if needle in text:
                 idx = text.find(needle)
                 print(f"\nFound '{needle}' at index {idx}")
-                print(f"  Context: ...{text[max(0,idx-20):idx+100]}...")
+                print(f"  Context: ...{text[max(0, idx - 20) : idx + 100]}...")
+
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

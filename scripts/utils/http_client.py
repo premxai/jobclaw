@@ -21,17 +21,18 @@ Usage:
 """
 
 import asyncio
+import os
 import random
 import time
-import os
 from dataclasses import dataclass, field
-from typing import Optional, Any
+from typing import Any
 
 from scripts.utils.logger import _log
 
 # Try curl_cffi first (TLS impersonation), fall back to aiohttp
 try:
     from curl_cffi.requests import AsyncSession as CffiAsyncSession
+
     HAS_CURL_CFFI = True
 except ImportError:
     HAS_CURL_CFFI = False
@@ -52,8 +53,10 @@ _IMPERSONATE_TARGETS = [
     "safari15_3",
 ]
 
+
 def _random_impersonate() -> str:
     return random.choice(_IMPERSONATE_TARGETS)
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # USER-AGENT ROTATION POOL — real browser fingerprints (Chrome/Firefox/Safari)
@@ -115,15 +118,15 @@ def random_headers() -> dict[str, str]:
 PLATFORM_RATE_LIMITS: dict[str, float] = {
     # Public board APIs — lowered for stealth
     "boards-api.greenhouse.io": 1.5,  # 2,542 companies — be conservative
-    "api.lever.co": 1.0,              # Strict rate limiting
-    "api.ashbyhq.com": 1.0,           # Smaller platform
-    "api.smartrecruiters.com": 1.0,   # Enterprise platform
+    "api.lever.co": 1.0,  # Strict rate limiting
+    "api.ashbyhq.com": 1.0,  # Smaller platform
+    "api.smartrecruiters.com": 1.0,  # Enterprise platform
     # Workday / Workable — aggressive WAFs, go very slow
-    "myworkdayjobs.com": 0.5,         # 1 req / 2s — Workday WAF is harsh
-    "apply.workable.com": 0.15,       # ~1 req / 6.6s — Workable 429s very hard, go slow
+    "myworkdayjobs.com": 0.5,  # 1 req / 2s — Workday WAF is harsh
+    "apply.workable.com": 0.15,  # ~1 req / 6.6s — Workable 429s very hard, go slow
     # Others — conservative
-    "ats.rippling.com": 0.5,          # Stability issues at higher rates
-    "bamboohr.com": 0.5,              # Small platform, be nice
+    "ats.rippling.com": 0.5,  # Stability issues at higher rates
+    "bamboohr.com": 0.5,  # Small platform, be nice
     # Enterprise endpoints
     "jobs.apple.com": 1.5,
     "www.amazon.jobs": 1.5,
@@ -139,6 +142,7 @@ _DEFAULT_RPS = 1.5
 @dataclass
 class _HostBucket:
     """Token bucket for a single host with adaptive 429 backoff."""
+
     rps: float
     tokens: float = 0.0
     last_refill: float = field(default_factory=time.monotonic)
@@ -192,7 +196,7 @@ class _HostBucket:
 class RateLimiter:
     """Per-host rate limiter using token buckets."""
 
-    def __init__(self, overrides: Optional[dict[str, float]] = None):
+    def __init__(self, overrides: dict[str, float] | None = None):
         self._buckets: dict[str, _HostBucket] = {}
         self._rates = {**PLATFORM_RATE_LIMITS}
         if overrides:
@@ -201,6 +205,7 @@ class RateLimiter:
     def _host_key(self, url: str) -> str:
         """Extract the rate-limit key from a URL. Groups subdomains for Workday."""
         from urllib.parse import urlparse
+
         parsed = urlparse(url)
         host = parsed.hostname or ""
         if "myworkdayjobs.com" in host:
@@ -240,11 +245,17 @@ RETRYABLE_STATUS_CODES = {403, 429, 500, 502, 503, 504}
 MAX_RETRIES = 3
 BASE_BACKOFF = 1.5  # seconds
 
+
 # Sentinel returned by fetch_with_retry() on HTTP 304 Not Modified
 class _NotModified:
     """Sentinel for 304 Not Modified — data hasn't changed since last fetch."""
-    def __bool__(self): return True  # Truthy so `if resp:` works
-    def __repr__(self): return "NOT_MODIFIED"
+
+    def __bool__(self):
+        return True  # Truthy so `if resp:` works
+
+    def __repr__(self):
+        return "NOT_MODIFIED"
+
 
 NOT_MODIFIED = _NotModified()
 
@@ -253,7 +264,7 @@ async def fetch_with_retry(
     session,  # aiohttp.ClientSession OR curl_cffi AsyncSession
     method: str,
     url: str,
-    rate_limiter: Optional[RateLimiter] = None,
+    rate_limiter: RateLimiter | None = None,
     max_retries: int = MAX_RETRIES,
     timeout: int = 30,
     log_tag: str = "",
@@ -320,17 +331,16 @@ async def fetch_with_retry(
                     try:
                         wait = min(float(retry_after), 120.0)
                     except ValueError:
-                        wait = BASE_BACKOFF * (2 ** attempt)
+                        wait = BASE_BACKOFF * (2**attempt)
                 else:
-                    wait = BASE_BACKOFF * (2 ** attempt)
+                    wait = BASE_BACKOFF * (2**attempt)
 
                 jitter = random.uniform(0.5, 1.5)
                 total_wait = min(wait * jitter, 45.0)
 
                 tag = f"[{log_tag}] " if log_tag else ""
                 _log(
-                    f"{tag}HTTP {status} on {url} — retry {attempt + 1}/{max_retries} "
-                    f"in {total_wait:.1f}s",
+                    f"{tag}HTTP {status} on {url} — retry {attempt + 1}/{max_retries} in {total_wait:.1f}s",
                     "WARN",
                 )
                 if not is_cffi:
@@ -346,10 +356,10 @@ async def fetch_with_retry(
                 await resp.release()
             return None
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             tag = f"[{log_tag}] " if log_tag else ""
             if attempt < max_retries:
-                wait = BASE_BACKOFF * (2 ** attempt) * random.uniform(0.8, 1.2)
+                wait = BASE_BACKOFF * (2**attempt) * random.uniform(0.8, 1.2)
                 _log(f"{tag}Timeout on {url} — retry {attempt + 1}/{max_retries} in {wait:.1f}s", "WARN")
                 await asyncio.sleep(wait)
             else:
@@ -359,7 +369,7 @@ async def fetch_with_retry(
         except Exception as e:
             tag = f"[{log_tag}] " if log_tag else ""
             if attempt < max_retries:
-                wait = BASE_BACKOFF * (2 ** attempt) * random.uniform(0.8, 1.2)
+                wait = BASE_BACKOFF * (2**attempt) * random.uniform(0.8, 1.2)
                 _log(f"{tag}{type(e).__name__} on {url} — retry {attempt + 1}/{max_retries} in {wait:.1f}s", "WARN")
                 await asyncio.sleep(wait)
             else:
@@ -376,18 +386,28 @@ async def _cffi_request(session, method: str, url: str, headers: dict, timeout: 
 
     if method.upper() == "GET":
         return await session.get(
-            url, headers=headers, timeout=timeout,
-            impersonate=impersonate, **kwargs,
+            url,
+            headers=headers,
+            timeout=timeout,
+            impersonate=impersonate,
+            **kwargs,
         )
     elif method.upper() == "POST":
         return await session.post(
-            url, headers=headers, timeout=timeout,
-            impersonate=impersonate, **kwargs,
+            url,
+            headers=headers,
+            timeout=timeout,
+            impersonate=impersonate,
+            **kwargs,
         )
     else:
         return await session.request(
-            method, url, headers=headers, timeout=timeout,
-            impersonate=impersonate, **kwargs,
+            method,
+            url,
+            headers=headers,
+            timeout=timeout,
+            impersonate=impersonate,
+            **kwargs,
         )
 
 
@@ -408,6 +428,7 @@ async def _aiohttp_request(session, method: str, url: str, headers: dict, timeou
 # ═══════════════════════════════════════════════════════════════════════
 # UNIFIED RESPONSE WRAPPER — normalizes curl_cffi and aiohttp responses
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class UnifiedResponse:
     """
@@ -448,6 +469,7 @@ class UnifiedResponse:
 # SESSION FACTORY
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class SessionManager:
     """
     Async context manager that creates the best available HTTP session.
@@ -460,10 +482,10 @@ class SessionManager:
 
     def __init__(
         self,
-        rate_limiter: Optional[RateLimiter] = None,
+        rate_limiter: RateLimiter | None = None,
         max_connections: int = 100,
         max_per_host: int = 10,
-        proxy: Optional[str] = None,
+        proxy: str | None = None,
     ):
         self.rate_limiter = rate_limiter
         self.max_connections = max_connections
@@ -509,14 +531,14 @@ class SessionManager:
 
 
 def create_session(
-    rate_limiter: Optional[RateLimiter] = None,
+    rate_limiter: RateLimiter | None = None,
     max_connections: int = 100,
     max_per_host: int = 10,
-    proxy: Optional[str] = None,
+    proxy: str | None = None,
 ) -> SessionManager:
     """
     Create an async HTTP session context manager.
-    
+
     Prefers curl_cffi (TLS impersonation, defeats Cloudflare/WAF).
     Falls back to aiohttp if curl_cffi is not installed.
 

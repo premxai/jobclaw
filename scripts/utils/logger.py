@@ -16,11 +16,10 @@ Usage:
 import json
 import logging
 import sys
-import time
 import threading
-from datetime import datetime, timezone
+import time
+from datetime import UTC, datetime
 from pathlib import Path
-
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 LOGS_DIR = PROJECT_ROOT / "logs"
@@ -34,6 +33,7 @@ _log_lock = threading.Lock()
 
 # ── Legacy _log() — backward compatible ───────────────────────────────
 
+
 def _log(msg: str, level: str = "INFO", tag: str = "ingestor") -> None:
     """Legacy log function — writes to console + system.log."""
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -42,19 +42,19 @@ def _log(msg: str, level: str = "INFO", tag: str = "ingestor") -> None:
         print(entry)
     except UnicodeEncodeError:
         print(entry.encode("ascii", errors="replace").decode("ascii"))
-    with _log_lock:
-        with open(LOGS_DIR / "system.log", "a", encoding="utf-8") as f:
-            f.write(entry + "\n")
+    with _log_lock, open(LOGS_DIR / "system.log", "a", encoding="utf-8") as f:
+        f.write(entry + "\n")
 
 
 # ── Structured Logger ─────────────────────────────────────────────────
+
 
 class JSONFormatter(logging.Formatter):
     """Emit structured JSON log lines for machine parsing."""
 
     def format(self, record):
         log_entry = {
-            "ts": datetime.now(timezone.utc).isoformat(),
+            "ts": datetime.now(UTC).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "msg": record.getMessage(),
@@ -141,9 +141,7 @@ def get_logger(name: str = "jobclaw") -> StructuredLogger:
 
         text_handler = logging.FileHandler(TEXT_LOG_FILE, encoding="utf-8")
         text_handler.setLevel(logging.INFO)
-        text_handler.setFormatter(logging.Formatter(
-            "%(asctime)s | %(levelname)-7s | %(name)s | %(message)s"
-        ))
+        text_handler.setFormatter(logging.Formatter("%(asctime)s | %(levelname)-7s | %(name)s | %(message)s"))
         logger.addHandler(text_handler)
 
         _initialized = True
@@ -153,7 +151,7 @@ def get_logger(name: str = "jobclaw") -> StructuredLogger:
 
 class ScrapeTimer:
     """Context manager for timing scraper operations.
-    
+
     Usage:
         log = get_logger("scrape_ats")
         with ScrapeTimer(log, "greenhouse", companies=500):
@@ -176,11 +174,14 @@ class ScrapeTimer:
         if exc_type:
             self.logger.error(
                 f"Failed {self.operation}",
-                duration_s=elapsed, error=str(exc_val), **self.extra,
+                duration_s=elapsed,
+                error=str(exc_val),
+                **self.extra,
             )
         else:
             self.logger.info(
                 f"Completed {self.operation}",
-                duration_s=elapsed, **self.extra,
+                duration_s=elapsed,
+                **self.extra,
             )
         return False

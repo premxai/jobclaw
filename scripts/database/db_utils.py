@@ -20,7 +20,7 @@ For async PostgreSQL:
 import json
 import os
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 DB_PATH = Path(__file__).parent.parent.parent / "data" / "jobclaw.db"
@@ -31,6 +31,7 @@ DATABASE_URL = os.environ.get("DATABASE_URL", "")
 # BACKEND DETECTION
 # ═══════════════════════════════════════════════════════════════════════
 
+
 def is_postgres() -> bool:
     """Check if PostgreSQL backend is configured."""
     return DATABASE_URL.startswith("postgres")
@@ -40,9 +41,10 @@ def is_postgres() -> bool:
 # SQLITE BACKEND (default — backward compatible)
 # ═══════════════════════════════════════════════════════════════════════
 
+
 def get_connection():
     """Get a SQLite connection. Falls back to SQLite if no DATABASE_URL.
-    
+
     Auto-initializes the schema (jobs + runs tables) on first access
     so GitHub Actions runners don't crash with 'no such table'.
     """
@@ -50,19 +52,20 @@ def get_connection():
         # For sync code that needs a connection, create a psycopg2 connection
         try:
             import psycopg2
+
             conn = psycopg2.connect(DATABASE_URL)
             conn.autocommit = False
             return conn
         except ImportError:
             raise ImportError("psycopg2 required for PostgreSQL. Run: pip install psycopg2-binary")
-    
+
     # Ensure the data directory exists
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    
+
     needs_init = not DB_PATH.exists()
     conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.execute("PRAGMA journal_mode=WAL")
-    
+
     if needs_init:
         _ensure_sqlite_schema(conn)
     else:
@@ -71,7 +74,7 @@ def get_connection():
         cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='jobs'")
         if not cursor.fetchone():
             _ensure_sqlite_schema(conn)
-    
+
     return conn
 
 
@@ -111,7 +114,7 @@ def _ensure_sqlite_schema(conn):
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_company ON jobs(company)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_source_ats ON jobs(source_ats)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_is_active ON jobs(is_active)")
-    
+
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS runs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -132,9 +135,10 @@ def _ensure_sqlite_schema(conn):
 
 _pg_pool = None
 
+
 async def get_pg_pool():
     """Get or create an asyncpg connection pool.
-    
+
     Pool sizes:
       - min: 5 connections (scrapers + API baseline)
       - max: 25 connections (burst capacity)
@@ -145,7 +149,7 @@ async def get_pg_pool():
             import asyncpg
         except ImportError:
             raise ImportError("asyncpg required for PostgreSQL. Run: pip install asyncpg")
-        
+
         _pg_pool = await asyncpg.create_pool(
             DATABASE_URL,
             min_size=5,
@@ -167,6 +171,7 @@ async def close_pg_pool():
 # CORE OPERATIONS — work with both backends
 # ═══════════════════════════════════════════════════════════════════════
 
+
 def _make_hash(job_dict: dict) -> str:
     """Create the dedup hash from job dict."""
     company_norm = job_dict.get("company", "Unknown").lower().strip()
@@ -182,7 +187,7 @@ def insert_job(conn, job_dict: dict) -> bool:
     """
     internal_hash = _make_hash(job_dict)
     keywords = json.dumps(job_dict.get("keywords_matched", []))
-    first_seen = datetime.now(timezone.utc).isoformat()
+    first_seen = datetime.now(UTC).isoformat()
 
     if is_postgres():
         return _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen)
@@ -195,7 +200,8 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
     cursor = conn.cursor()
     try:
         tech_stack_json = json.dumps(job_dict["tech_stack"]) if job_dict.get("tech_stack") else None
-        cursor.execute("""
+        cursor.execute(
+            """
             INSERT INTO jobs (
                 internal_hash, job_id, title, company, location, url,
                 date_posted, source_ats, first_seen, status, keywords_matched,
@@ -203,41 +209,47 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
                 experience_years, remote_ok, job_type, seniority_level,
                 visa_sponsorship, tech_stack, is_active, last_seen_at
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'unposted', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
-        """, (
-            internal_hash,
-            job_dict.get("job_id", ""),
-            job_dict.get("title", ""),
-            job_dict.get("company", ""),
-            job_dict.get("location", ""),
-            job_dict.get("url", ""),
-            job_dict.get("date_posted", ""),
-            job_dict.get("source_ats", ""),
-            first_seen,
-            keywords,
-            job_dict.get("description"),
-            job_dict.get("salary_min"),
-            job_dict.get("salary_max"),
-            job_dict.get("salary_currency"),
-            job_dict.get("experience_years"),
-            job_dict.get("remote_ok"),
-            job_dict.get("job_type"),
-            job_dict.get("seniority_level"),
-            job_dict.get("visa_sponsorship"),
-            tech_stack_json,
-            first_seen,
-        ))
+        """,
+            (
+                internal_hash,
+                job_dict.get("job_id", ""),
+                job_dict.get("title", ""),
+                job_dict.get("company", ""),
+                job_dict.get("location", ""),
+                job_dict.get("url", ""),
+                job_dict.get("date_posted", ""),
+                job_dict.get("source_ats", ""),
+                first_seen,
+                keywords,
+                job_dict.get("description"),
+                job_dict.get("salary_min"),
+                job_dict.get("salary_max"),
+                job_dict.get("salary_currency"),
+                job_dict.get("experience_years"),
+                job_dict.get("remote_ok"),
+                job_dict.get("job_type"),
+                job_dict.get("seniority_level"),
+                job_dict.get("visa_sponsorship"),
+                tech_stack_json,
+                first_seen,
+            ),
+        )
         conn.commit()
         return True
     except sqlite3.IntegrityError:
         try:
-            cursor.execute("""
+            cursor.execute(
+                """
                 UPDATE jobs
                 SET last_seen_at = ?, is_active = 1
                 WHERE internal_hash = ?
-            """, (first_seen, internal_hash))
+            """,
+                (first_seen, internal_hash),
+            )
             if job_dict.get("description"):
                 tech_stack_json = json.dumps(job_dict["tech_stack"]) if job_dict.get("tech_stack") else None
-                cursor.execute("""
+                cursor.execute(
+                    """
                     UPDATE jobs
                     SET description = ?, salary_min = COALESCE(salary_min, ?),
                         salary_max = COALESCE(salary_max, ?),
@@ -249,19 +261,21 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
                         visa_sponsorship = COALESCE(visa_sponsorship, ?),
                         tech_stack = COALESCE(tech_stack, ?)
                     WHERE internal_hash = ? AND (description IS NULL OR description = '')
-                """, (
-                    job_dict.get("description"),
-                    job_dict.get("salary_min"),
-                    job_dict.get("salary_max"),
-                    job_dict.get("salary_currency"),
-                    job_dict.get("experience_years"),
-                    job_dict.get("remote_ok"),
-                    job_dict.get("job_type"),
-                    job_dict.get("seniority_level"),
-                    job_dict.get("visa_sponsorship"),
-                    tech_stack_json,
-                    internal_hash,
-                ))
+                """,
+                    (
+                        job_dict.get("description"),
+                        job_dict.get("salary_min"),
+                        job_dict.get("salary_max"),
+                        job_dict.get("salary_currency"),
+                        job_dict.get("experience_years"),
+                        job_dict.get("remote_ok"),
+                        job_dict.get("job_type"),
+                        job_dict.get("seniority_level"),
+                        job_dict.get("visa_sponsorship"),
+                        tech_stack_json,
+                        internal_hash,
+                    ),
+                )
             conn.commit()
         except Exception:
             pass
@@ -272,7 +286,8 @@ def _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
     """PostgreSQL insert with ON CONFLICT upsert."""
     cursor = conn.cursor()
     tech_stack_json = json.dumps(job_dict["tech_stack"]) if job_dict.get("tech_stack") else None
-    cursor.execute("""
+    cursor.execute(
+        """
         INSERT INTO jobs (
             internal_hash, job_id, title, company, location, url,
             date_posted, source_ats, first_seen, status, keywords_matched,
@@ -294,29 +309,31 @@ def _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
             visa_sponsorship = COALESCE(jobs.visa_sponsorship, EXCLUDED.visa_sponsorship),
             tech_stack = COALESCE(jobs.tech_stack, EXCLUDED.tech_stack)
         RETURNING (xmax = 0) AS is_new
-    """, (
-        internal_hash,
-        job_dict.get("job_id", ""),
-        job_dict.get("title", ""),
-        job_dict.get("company", ""),
-        job_dict.get("location", ""),
-        job_dict.get("url", ""),
-        job_dict.get("date_posted", ""),
-        job_dict.get("source_ats", ""),
-        first_seen,
-        keywords,
-        job_dict.get("description"),
-        job_dict.get("salary_min"),
-        job_dict.get("salary_max"),
-        job_dict.get("salary_currency"),
-        job_dict.get("experience_years"),
-        job_dict.get("remote_ok"),
-        job_dict.get("job_type"),
-        job_dict.get("seniority_level"),
-        job_dict.get("visa_sponsorship"),
-        tech_stack_json,
-        first_seen,
-    ))
+    """,
+        (
+            internal_hash,
+            job_dict.get("job_id", ""),
+            job_dict.get("title", ""),
+            job_dict.get("company", ""),
+            job_dict.get("location", ""),
+            job_dict.get("url", ""),
+            job_dict.get("date_posted", ""),
+            job_dict.get("source_ats", ""),
+            first_seen,
+            keywords,
+            job_dict.get("description"),
+            job_dict.get("salary_min"),
+            job_dict.get("salary_max"),
+            job_dict.get("salary_currency"),
+            job_dict.get("experience_years"),
+            job_dict.get("remote_ok"),
+            job_dict.get("job_type"),
+            job_dict.get("seniority_level"),
+            job_dict.get("visa_sponsorship"),
+            tech_stack_json,
+            first_seen,
+        ),
+    )
     result = cursor.fetchone()
     conn.commit()
     return result[0] if result else False
@@ -326,36 +343,36 @@ def mark_stale_jobs(conn, source_ats: str, company: str, active_job_ids: set[str
     """Mark jobs as inactive if not in the latest scrape."""
     if not active_job_ids:
         return 0
-    
-    now = datetime.now(timezone.utc).isoformat()
+
+    now = datetime.now(UTC).isoformat()
     cursor = conn.cursor()
-    
+
     company_norm = company.lower().strip()
     ats_norm = source_ats.lower().strip()
-    
+
     active_hashes = set()
     for jid in active_job_ids:
         jid_norm = str(jid).lower().strip()
         active_hashes.add(f"{ats_norm}::{company_norm}::{jid_norm}")
-    
+
     placeholder = "%s" if is_postgres() else "?"
-    
+
     cursor.execute(
         f"SELECT internal_hash FROM jobs WHERE source_ats = {placeholder} AND LOWER(company) = {placeholder} AND is_active = {'TRUE' if is_postgres() else '1'}",
-        (ats_norm, company_norm)
+        (ats_norm, company_norm),
     )
     all_hashes = {row[0] for row in cursor.fetchall()}
     stale_hashes = all_hashes - active_hashes
-    
+
     if stale_hashes:
         qs = ",".join(placeholder for _ in stale_hashes)
         params = [now] + list(stale_hashes)
         cursor.execute(
             f"UPDATE jobs SET is_active = {'FALSE' if is_postgres() else '0'}, last_seen_at = {placeholder} WHERE internal_hash IN ({qs})",
-            params
+            params,
         )
         conn.commit()
-    
+
     return len(stale_hashes)
 
 
@@ -408,17 +425,13 @@ def log_scraper_run(conn, script_name: str, companies_fetched: int, new_jobs: in
     """Log the performance metrics of a micro-scraper."""
     cursor = conn.cursor()
     placeholder = "%s" if is_postgres() else "?"
-    cursor.execute(f"""
+    cursor.execute(
+        f"""
         INSERT INTO runs (script_name, timestamp, companies_fetched, new_jobs_found, duration_s, errors)
         VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
-    """, (
-        script_name,
-        datetime.now(timezone.utc).isoformat(),
-        companies_fetched,
-        new_jobs,
-        duration,
-        errors
-    ))
+    """,
+        (script_name, datetime.now(UTC).isoformat(), companies_fetched, new_jobs, duration, errors),
+    )
     conn.commit()
 
 
@@ -426,15 +439,17 @@ def log_scraper_run(conn, script_name: str, companies_fetched: int, new_jobs: in
 # ASYNC POSTGRESQL OPERATIONS
 # ═══════════════════════════════════════════════════════════════════════
 
+
 async def async_insert_job(pool, job_dict: dict) -> bool:
     """Async PostgreSQL job insert with upsert."""
     internal_hash = _make_hash(job_dict)
     keywords = json.dumps(job_dict.get("keywords_matched", []))
-    first_seen = datetime.now(timezone.utc).isoformat()
+    first_seen = datetime.now(UTC).isoformat()
 
     async with pool.acquire() as conn:
         tech_stack_json = json.dumps(job_dict["tech_stack"]) if job_dict.get("tech_stack") else None
-        result = await conn.fetchrow("""
+        result = await conn.fetchrow(
+            """
             INSERT INTO jobs (
                 internal_hash, job_id, title, company, location, url,
                 date_posted, source_ats, first_seen, status, keywords_matched,
@@ -484,13 +499,17 @@ async def async_insert_job(pool, job_dict: dict) -> bool:
 async def async_full_text_search(pool, query: str, limit: int = 50) -> list[dict]:
     """PostgreSQL full-text search with ranking."""
     async with pool.acquire() as conn:
-        rows = await conn.fetch("""
-            SELECT *, 
+        rows = await conn.fetch(
+            """
+            SELECT *,
                    ts_rank(search_vector, websearch_to_tsquery('english', $1)) AS rank
             FROM jobs
             WHERE search_vector @@ websearch_to_tsquery('english', $1)
               AND is_active = TRUE
             ORDER BY rank DESC, first_seen DESC
             LIMIT $2
-        """, query, limit)
+        """,
+            query,
+            limit,
+        )
         return [dict(row) for row in rows]

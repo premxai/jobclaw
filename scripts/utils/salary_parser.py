@@ -17,10 +17,8 @@ Usage:
     # 130900.0, 177100.0, "USD"
 """
 
-import re
 import html
-from typing import Optional, Tuple
-
+import re
 
 # ═══════════════════════════════════════════════════════════════════════
 # FALSE-POSITIVE FILTERS
@@ -37,10 +35,7 @@ _FALSE_POSITIVE_PATTERNS = [
 def _is_false_positive(context: str) -> bool:
     """Check if salary match is actually company revenue or valuation."""
     context_lower = context.lower()
-    for pattern in _FALSE_POSITIVE_PATTERNS:
-        if re.search(pattern, context_lower):
-            return True
-    return False
+    return any(re.search(pattern, context_lower) for pattern in _FALSE_POSITIVE_PATTERNS)
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -64,7 +59,7 @@ _SALARY_PATTERNS = [
 ]
 
 
-def extract_salary(description: str) -> Tuple[Optional[str], Optional[str]]:
+def extract_salary(description: str) -> tuple[str | None, str | None]:
     """
     Extract salary from a job description.
 
@@ -98,10 +93,10 @@ def extract_salary(description: str) -> Tuple[Optional[str], Optional[str]]:
             min_val_str = match.group(1).replace(",", "")
             max_val_str = match.group(2).replace(",", "")
             # Handle European-style numbers like '82.952.900' (periods as thousands separators)
-            if min_val_str.count('.') > 1:
-                min_val_str = min_val_str.replace('.', '')
-            if max_val_str.count('.') > 1:
-                max_val_str = max_val_str.replace('.', '')
+            if min_val_str.count(".") > 1:
+                min_val_str = min_val_str.replace(".", "")
+            if max_val_str.count(".") > 1:
+                max_val_str = max_val_str.replace(".", "")
             try:
                 min_val = float(min_val_str)
                 max_val = float(max_val_str)
@@ -120,7 +115,9 @@ def extract_salary(description: str) -> Tuple[Optional[str], Optional[str]]:
             if min_val > max_val:
                 continue
 
-            currency = "$" if "$" in matched_text else ("€" if "€" in matched_text else ("£" if "£" in matched_text else "$"))
+            currency = (
+                "$" if "$" in matched_text else ("€" if "€" in matched_text else ("£" if "£" in matched_text else "$"))
+            )
 
             # Short context for return
             short_start = max(0, match.start() - 50)
@@ -132,7 +129,7 @@ def extract_salary(description: str) -> Tuple[Optional[str], Optional[str]]:
     return None, None
 
 
-def parse_salary_range(salary_str: Optional[str]) -> Tuple[Optional[float], Optional[float], str]:
+def parse_salary_range(salary_str: str | None) -> tuple[float | None, float | None, str]:
     """
     Parse a salary string like "$130,900-$177,100" into components.
 
@@ -205,7 +202,7 @@ _EXPERIENCE_PATTERNS = [
 ]
 
 
-def extract_experience(description: str) -> Tuple[Optional[int], Optional[str]]:
+def extract_experience(description: str) -> tuple[int | None, str | None]:
     """
     Extract minimum years of experience from a job description.
 

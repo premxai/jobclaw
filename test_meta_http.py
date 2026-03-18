@@ -1,8 +1,9 @@
 """Check if Meta Careers has an API or SSR data."""
+
 import asyncio
-import sys
 import re
-import json
+import sys
+
 
 async def test():
     from curl_cffi.requests import AsyncSession
@@ -11,18 +12,18 @@ async def test():
         # Try the main page
         r = await s.get("https://www.metacareers.com/jobs", timeout=15)
         print(f"Main page: {r.status_code} len={len(r.text)}")
-        
+
         # Check for GraphQL data in HTML
         if "graphql" in r.text.lower():
             print("Found graphql reference")
         if "job_search" in r.text:
             print("Found job_search reference")
-        
+
         # Look for __NEXT_DATA__ or similar SSR payloads
         for pattern_name, pattern in [
             ("__NEXT_DATA__", r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>'),
-            ("window.__data", r'window\.__data\s*=\s*(\{.*?\});'),
-            ("__RELAY_STORE__", r'__RELAY_STORE__.*?(\{.*?\})</script>'),
+            ("window.__data", r"window\.__data\s*=\s*(\{.*?\});"),
+            ("__RELAY_STORE__", r"__RELAY_STORE__.*?(\{.*?\})</script>"),
         ]:
             match = re.search(pattern, r.text, re.DOTALL)
             if match:
@@ -69,6 +70,7 @@ async def test():
                         print(f"  data keys: {list(data['data'].keys())[:5]}")
                 except Exception:
                     print(f"  body[:200]: {r2.text[:200]}")
+
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

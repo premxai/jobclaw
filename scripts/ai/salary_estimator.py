@@ -14,13 +14,11 @@ Usage:
     # → {"min": 140000, "max": 185000, "currency": "USD", "confidence": 0.82, "sample_size": 47}
 """
 
-import re
 from collections import defaultdict
 from pathlib import Path
-
-from scripts.database.db_utils import get_connection, is_postgres
 from statistics import mean, median, stdev
 
+from scripts.database.db_utils import get_connection, is_postgres
 
 # ── Location Normalization ───────────────────────────────────────────
 
@@ -75,16 +73,40 @@ def normalize_location(loc: str) -> str:
 # ── Role Category Detection ─────────────────────────────────────────
 
 ROLE_CATEGORIES = {
-    "ai_ml": ["machine learning", "ml ", "ai ", "deep learning", "nlp", "computer vision",
-              "llm", "generative ai", "data scientist", "applied scientist", "research scientist"],
-    "swe": ["software engineer", "software developer", "full stack", "fullstack",
-            "backend engineer", "frontend engineer", "web developer", "mobile developer"],
-    "data_eng": ["data engineer", "data platform", "etl", "pipeline engineer",
-                 "analytics engineer", "dbt", "airflow"],
-    "devops": ["devops", "sre", "site reliability", "infrastructure", "cloud engineer",
-               "platform engineer", "kubernetes"],
-    "management": ["engineering manager", "tech lead", "director of engineering",
-                   "vp engineering", "head of"],
+    "ai_ml": [
+        "machine learning",
+        "ml ",
+        "ai ",
+        "deep learning",
+        "nlp",
+        "computer vision",
+        "llm",
+        "generative ai",
+        "data scientist",
+        "applied scientist",
+        "research scientist",
+    ],
+    "swe": [
+        "software engineer",
+        "software developer",
+        "full stack",
+        "fullstack",
+        "backend engineer",
+        "frontend engineer",
+        "web developer",
+        "mobile developer",
+    ],
+    "data_eng": ["data engineer", "data platform", "etl", "pipeline engineer", "analytics engineer", "dbt", "airflow"],
+    "devops": [
+        "devops",
+        "sre",
+        "site reliability",
+        "infrastructure",
+        "cloud engineer",
+        "platform engineer",
+        "kubernetes",
+    ],
+    "management": ["engineering manager", "tech lead", "director of engineering", "vp engineering", "head of"],
 }
 
 
@@ -118,10 +140,11 @@ def detect_seniority(title: str) -> str:
 # ESTIMATOR
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class SalaryEstimator:
     """
     Predicts salary ranges using aggregated data from the jobs database.
-    
+
     Strategy: Groups known salaries by (role_category, seniority, metro)
     and uses the group statistics to estimate undisclosed salaries.
     Falls back to broader groups when specific data is sparse.
@@ -139,10 +162,10 @@ class SalaryEstimator:
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT title, location, salary_min, salary_max, salary_currency
-                FROM jobs 
-                WHERE salary_min IS NOT NULL 
-                AND salary_min > 10000 
-                AND salary_max IS NOT NULL 
+                FROM jobs
+                WHERE salary_min IS NOT NULL
+                AND salary_min > 10000
+                AND salary_max IS NOT NULL
                 AND salary_max > 10000
                 AND salary_currency = 'USD'
                 AND is_active = 1
@@ -156,9 +179,7 @@ class SalaryEstimator:
                 seniority = detect_seniority(row["title"])
                 metro = normalize_location(row["location"] or "")
 
-                self.salary_data[role][seniority][metro].append(
-                    (row["salary_min"], row["salary_max"])
-                )
+                self.salary_data[role][seniority][metro].append((row["salary_min"], row["salary_max"]))
                 count += 1
 
             self._trained = True
@@ -169,7 +190,7 @@ class SalaryEstimator:
     def predict(self, title: str, location: str = "") -> dict | None:
         """
         Predict salary range for a job title + location.
-        
+
         Returns: {min, max, currency, confidence, sample_size, method}
         Returns None if insufficient data.
         """
@@ -256,7 +277,7 @@ class SalaryEstimator:
             cursor = conn.cursor()
             cursor.execute("""
                 SELECT internal_hash, title, location
-                FROM jobs 
+                FROM jobs
                 WHERE (salary_min IS NULL OR salary_min = 0)
                 AND is_active = 1
                 LIMIT 5000
@@ -267,16 +288,19 @@ class SalaryEstimator:
             for row in rows:
                 estimate = self.predict(row["title"], row["location"] or "")
                 if estimate and estimate["confidence"] >= 0.5:
-                    conn.execute(f"""
-                        UPDATE jobs 
+                    conn.execute(
+                        f"""
+                        UPDATE jobs
                         SET salary_min = {ph}, salary_max = {ph}, salary_currency = {ph}
                         WHERE internal_hash = {ph} AND (salary_min IS NULL OR salary_min = 0)
-                    """, (
-                        estimate["salary_min"],
-                        estimate["salary_max"],
-                        estimate["currency"],
-                        row["internal_hash"],
-                    ))
+                    """,
+                        (
+                            estimate["salary_min"],
+                            estimate["salary_max"],
+                            estimate["currency"],
+                            row["internal_hash"],
+                        ),
+                    )
                     updated += 1
 
             conn.commit()
@@ -291,6 +315,7 @@ class SalaryEstimator:
 
 if __name__ == "__main__":
     import sys
+
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
     estimator = SalaryEstimator()
@@ -309,7 +334,9 @@ if __name__ == "__main__":
     for title, loc in test_cases:
         result = estimator.predict(title, loc)
         if result:
-            print(f"  {title} @ {loc}: ${result['salary_min']:,}-${result['salary_max']:,} "
-                  f"(confidence={result['confidence']}, n={result['sample_size']}, method={result['method']})")
+            print(
+                f"  {title} @ {loc}: ${result['salary_min']:,}-${result['salary_max']:,} "
+                f"(confidence={result['confidence']}, n={result['sample_size']}, method={result['method']})"
+            )
         else:
             print(f"  {title} @ {loc}: insufficient data")

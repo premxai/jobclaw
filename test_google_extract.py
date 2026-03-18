@@ -1,8 +1,10 @@
 """Extract Google Careers data with proper bounds."""
+
 import asyncio
-import sys
-import re
 import json
+import re
+import sys
+
 
 async def test():
     from curl_cffi.requests import AsyncSession
@@ -33,7 +35,7 @@ async def test():
             raw = match.group(1)
 
         print(f"Data length: {len(raw)}")
-        
+
         data = json.loads(raw)
         entries = data[0] if isinstance(data, list) and isinstance(data[0], list) else data
         print(f"Total entries: {len(entries)}")
@@ -41,7 +43,7 @@ async def test():
         for i, e in enumerate(entries[:5]):
             if isinstance(e, list) and len(e) > 2:
                 title = e[1] if len(e) > 1 else "?"
-                url = e[2] if len(e) > 2 else "?"
+                e[2] if len(e) > 2 else "?"
                 company = e[7] if len(e) > 7 else "Google"
                 locs = e[9] if len(e) > 9 else []
                 print(f"  [{i}] {title}")
@@ -49,6 +51,7 @@ async def test():
                 print(f"       locations={locs}")
 
         print(f"\nTotal job entries extracted: {len([e for e in entries if isinstance(e, list) and len(e) > 2])}")
+
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

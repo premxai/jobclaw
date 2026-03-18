@@ -15,7 +15,8 @@ Usage:
 """
 
 import os
-from fastapi import Request, HTTPException
+
+from fastapi import HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
 # Public routes that don't require auth

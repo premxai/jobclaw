@@ -8,10 +8,11 @@ Manages persistent storage of job listings with:
   - Change history tracking
 """
 
+import contextlib
 import json
 import os
 import tempfile
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -24,18 +25,14 @@ RAW_FILE = DATA_DIR / "google_jobs_raw.json"
 def _atomic_write(path: Path, content: str) -> None:
     """Atomic file write: temp file + rename."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp_path = tempfile.mkstemp(
-        dir=str(path.parent), suffix=".tmp", prefix=path.stem
-    )
+    fd, tmp_path = tempfile.mkstemp(dir=str(path.parent), suffix=".tmp", prefix=path.stem)
     try:
         os.write(fd, content.encode("utf-8"))
         os.close(fd)
         os.replace(tmp_path, str(path))
     except Exception:
-        try:
+        with contextlib.suppress(OSError):
             os.close(fd)
-        except OSError:
-            pass
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
         raise
@@ -160,7 +157,7 @@ def store_jobs(new_jobs: list[dict[str, Any]]) -> dict[str, Any]:
     unique_new, _ = detect_duplicates(new_jobs, existing)
 
     # Add timestamp to new jobs
-    ts = datetime.now(timezone.utc).isoformat()
+    ts = datetime.now(UTC).isoformat()
     for job in unique_new:
         job["first_seen"] = ts
 
@@ -203,6 +200,8 @@ if __name__ == "__main__":
         print("No raw results found in data/google_jobs_raw.json")
     else:
         changes = store_jobs(raw)
-        print(f"Storage complete: {changes['new_count']} new, "
-              f"{changes['duplicate_count']} duplicates, "
-              f"{changes['removed_count']} removed")
+        print(
+            f"Storage complete: {changes['new_count']} new, "
+            f"{changes['duplicate_count']} duplicates, "
+            f"{changes['removed_count']} removed"
+        )

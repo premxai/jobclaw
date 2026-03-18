@@ -18,8 +18,8 @@ Usage:
 """
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
-from datetime import datetime, timezone
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 DEDUP_FILE = PROJECT_ROOT / "data" / "posted_hashes.json"
@@ -33,20 +33,20 @@ def load_posted_hashes() -> dict[str, str]:
     if not DEDUP_FILE.exists():
         return {}
     try:
-        with open(DEDUP_FILE, "r", encoding="utf-8") as f:
+        with open(DEDUP_FILE, encoding="utf-8") as f:
             data = json.load(f)
         # Handle both old format (list of hashes) and new format (dict of hash:timestamp)
         if isinstance(data, list):
-            now = datetime.now(timezone.utc).isoformat()
+            now = datetime.now(UTC).isoformat()
             return {h: now for h in data}
         return data
-    except (json.JSONDecodeError, IOError):
+    except (OSError, json.JSONDecodeError):
         return {}
 
 
 def save_posted_hashes(hashes: dict[str, str]) -> None:
     """Save the dedup file, pruning entries older than MAX_AGE_DAYS."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     pruned = {}
     for h, ts in hashes.items():
         try:
@@ -69,4 +69,4 @@ def is_already_posted(hashes: dict[str, str], internal_hash: str) -> bool:
 
 def mark_as_posted(hashes: dict[str, str], internal_hash: str) -> None:
     """Mark a hash as posted with the current timestamp."""
-    hashes[internal_hash] = datetime.now(timezone.utc).isoformat()
+    hashes[internal_hash] = datetime.now(UTC).isoformat()

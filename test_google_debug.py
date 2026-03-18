@@ -1,7 +1,9 @@
 """Debug Google SSR data extraction."""
+
 import asyncio
-import sys
 import re
+import sys
+
 
 async def test():
     from curl_cffi.requests import AsyncSession
@@ -18,7 +20,7 @@ async def test():
             key_match = re.search(r"key:\s*'([^']+)'", cb)
             key = key_match.group(1) if key_match else "?"
             print(f"  [{i}] key={key} len={len(cb)}")
-            
+
             if key == "ds:1":
                 # Find the data part
                 data_match = re.search(r"data:(\[.+)", cb, re.DOTALL)
@@ -27,6 +29,7 @@ async def test():
                     print(f"    data[0:300]: {raw[:300]}")
                     # Try JSON parse
                     import json
+
                     try:
                         data = json.loads(raw)
                         entries = data[0] if isinstance(data, list) and isinstance(data[0], list) else data
@@ -37,6 +40,7 @@ async def test():
                     except json.JSONDecodeError as e:
                         print(f"    JSON fail: {e}")
                         print(f"    raw[-50:]: {raw[-50:]}")
+
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

@@ -1,8 +1,10 @@
 """Test Google Careers pagination via HTTP."""
+
 import asyncio
-import sys
-import re
 import json
+import re
+import sys
+
 
 async def extract_page(s, page_num):
     """Fetch a page of Google jobs results."""
@@ -36,6 +38,7 @@ async def extract_page(s, page_num):
 
     return entries, total
 
+
 async def test():
     from curl_cffi.requests import AsyncSession
 
@@ -50,6 +53,7 @@ async def test():
                     print(f"  Last:  {titles[-1]}")
             else:
                 print(f"Page {page}: no data")
+
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

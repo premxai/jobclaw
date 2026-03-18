@@ -12,18 +12,14 @@ Supported:
   - Y Combinator Work at a Startup (HTTP)
 """
 
-import json
-import re
-from datetime import datetime, timezone
-from typing import Optional
 import aiohttp
 
 from scripts.ingestion.ats_adapters import NormalizedJob
 
-
 # ═══════════════════════════════════════════════════════════════════════
 # HIRING CAFE
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class HiringCafeAdapter:
     """HiringCafe internal search API.
@@ -60,15 +56,13 @@ class HiringCafeAdapter:
                 }
 
                 async with session.post(
-                    HiringCafeAdapter.SEARCH_URL, json=payload,
-                    headers=headers, timeout=aiohttp.ClientTimeout(total=30)
+                    HiringCafeAdapter.SEARCH_URL, json=payload, headers=headers, timeout=aiohttp.ClientTimeout(total=30)
                 ) as resp:
                     if resp.status != 200:
                         # Try GET endpoint fallback
                         get_url = f"https://hiring.cafe/api/jobs?q={query.replace(' ', '+')}&location=US&limit=50"
                         async with session.get(
-                            get_url, headers=headers,
-                            timeout=aiohttp.ClientTimeout(total=30)
+                            get_url, headers=headers, timeout=aiohttp.ClientTimeout(total=30)
                         ) as get_resp:
                             if get_resp.status != 200:
                                 continue
@@ -82,15 +76,17 @@ class HiringCafeAdapter:
                 for j in jobs_list:
                     if not isinstance(j, dict):
                         continue
-                    all_jobs.append(NormalizedJob(
-                        title=j.get("title", j.get("job_title", "")),
-                        company=j.get("company", j.get("company_name", "Unknown")),
-                        location=j.get("location", "Unknown"),
-                        url=j.get("url", j.get("apply_url", j.get("link", ""))),
-                        date_posted=j.get("date_posted", j.get("posted_date", j.get("date", ""))),
-                        source_ats="hiringcafe",
-                        job_id=str(j.get("id", j.get("job_id", f"{j.get('title','')}-{j.get('company','')}"))),
-                    ))
+                    all_jobs.append(
+                        NormalizedJob(
+                            title=j.get("title", j.get("job_title", "")),
+                            company=j.get("company", j.get("company_name", "Unknown")),
+                            location=j.get("location", "Unknown"),
+                            url=j.get("url", j.get("apply_url", j.get("link", ""))),
+                            date_posted=j.get("date_posted", j.get("posted_date", j.get("date", ""))),
+                            source_ats="hiringcafe",
+                            job_id=str(j.get("id", j.get("job_id", f"{j.get('title', '')}-{j.get('company', '')}"))),
+                        )
+                    )
             except Exception:
                 continue
 
@@ -100,6 +96,7 @@ class HiringCafeAdapter:
 # ═══════════════════════════════════════════════════════════════════════
 # JOBRIGHT.AI
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class JobrightAdapter:
     """Jobright.ai internal API adapter.
@@ -135,27 +132,30 @@ class JobrightAdapter:
                 }
 
                 async with session.get(
-                    JobrightAdapter.API_URL, params=params,
-                    headers=headers, timeout=aiohttp.ClientTimeout(total=30)
+                    JobrightAdapter.API_URL, params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=30)
                 ) as resp:
                     if resp.status != 200:
                         continue
                     data = await resp.json(content_type=None)
 
-                jobs_list = data if isinstance(data, list) else data.get("jobs", data.get("results", data.get("data", [])))
+                jobs_list = (
+                    data if isinstance(data, list) else data.get("jobs", data.get("results", data.get("data", [])))
+                )
 
                 for j in jobs_list:
                     if not isinstance(j, dict):
                         continue
-                    all_jobs.append(NormalizedJob(
-                        title=j.get("title", j.get("job_title", "")),
-                        company=j.get("company", j.get("company_name", "Unknown")),
-                        location=j.get("location", "Unknown"),
-                        url=j.get("url", j.get("apply_url", "")),
-                        date_posted=j.get("date_posted", j.get("posted_date", "")),
-                        source_ats="jobright",
-                        job_id=str(j.get("id", j.get("job_id", ""))),
-                    ))
+                    all_jobs.append(
+                        NormalizedJob(
+                            title=j.get("title", j.get("job_title", "")),
+                            company=j.get("company", j.get("company_name", "Unknown")),
+                            location=j.get("location", "Unknown"),
+                            url=j.get("url", j.get("apply_url", "")),
+                            date_posted=j.get("date_posted", j.get("posted_date", "")),
+                            source_ats="jobright",
+                            job_id=str(j.get("id", j.get("job_id", ""))),
+                        )
+                    )
             except Exception:
                 continue
 
@@ -165,6 +165,7 @@ class JobrightAdapter:
 # ═══════════════════════════════════════════════════════════════════════
 # Y COMBINATOR - Work at a Startup API
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class YCWorkAtStartupAdapter:
     """Y Combinator 'Work at a Startup' internal API.
@@ -190,8 +191,7 @@ class YCWorkAtStartupAdapter:
             }
 
             async with session.get(
-                YCWorkAtStartupAdapter.API_URL, params=params,
-                headers=headers, timeout=aiohttp.ClientTimeout(total=30)
+                YCWorkAtStartupAdapter.API_URL, params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=30)
             ) as resp:
                 if resp.status != 200:
                     return []
@@ -207,15 +207,17 @@ class YCWorkAtStartupAdapter:
                 if not url and hit.get("slug"):
                     url = f"https://www.workatastartup.com/jobs/{hit['slug']}"
 
-                jobs.append(NormalizedJob(
-                    title=title,
-                    company=company,
-                    location=locations if isinstance(locations, str) else ", ".join(locations),
-                    url=url,
-                    date_posted=hit.get("created_at", ""),
-                    source_ats="yc-startup",
-                    job_id=str(hit.get("objectID", hit.get("id", f"{company}-{title}"))),
-                ))
+                jobs.append(
+                    NormalizedJob(
+                        title=title,
+                        company=company,
+                        location=locations if isinstance(locations, str) else ", ".join(locations),
+                        url=url,
+                        date_posted=hit.get("created_at", ""),
+                        source_ats="yc-startup",
+                        job_id=str(hit.get("objectID", hit.get("id", f"{company}-{title}"))),
+                    )
+                )
             return jobs
         except Exception:
             return []

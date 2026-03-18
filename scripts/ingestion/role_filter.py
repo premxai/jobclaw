@@ -35,7 +35,6 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
     ("applied scientist", "AI/ML"),
     ("ai scientist", "AI/ML"),
     ("machine learning", "AI/ML"),
-
     # ── AI/ML Specialized ─────────────────────────────────────────────
     ("prompt engineer", "AI/ML"),
     ("rag engineer", "AI/ML"),
@@ -59,7 +58,6 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
     ("quantum software engineer", "AI/ML"),
     ("quantum computing engineer", "AI/ML"),
     ("ai infrastructure engineer", "AI/ML"),
-
     # ── Data Science Core ─────────────────────────────────────────────
     ("data scientist", "Data Science"),
     ("associate data scientist", "Data Science"),
@@ -68,7 +66,6 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
     ("research data scientist", "Data Science"),
     ("applied data scientist", "Data Science"),
     ("data science analyst", "Data Science"),
-
     # ── Data Science Specialized ──────────────────────────────────────
     ("business intelligence data scientist", "Data Science"),
     ("optimization data scientist", "Data Science"),
@@ -78,7 +75,6 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
     ("analytics scientist", "Data Science"),
     ("predictive modeler", "Data Science"),
     ("statistical analyst", "Data Science"),
-
     # ── Data Engineering Core ─────────────────────────────────────────
     ("data engineer", "Data Engineering"),
     ("junior data engineer", "Data Engineering"),
@@ -87,7 +83,6 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
     ("cloud data engineer", "Data Engineering"),
     ("data platform engineer", "Data Engineering"),
     ("analytics engineer", "Data Engineering"),
-
     # ── Data Engineering Specialized ──────────────────────────────────
     ("etl developer", "Data Engineering"),
     ("data pipeline engineer", "Data Engineering"),
@@ -108,7 +103,6 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
     ("streaming data engineer", "Data Engineering"),
     ("lakehouse engineer", "Data Engineering"),
     ("data reliability engineer", "Data Engineering"),
-
     # ── Data Analyst Core ─────────────────────────────────────────────
     ("data analyst", "Data Analyst"),
     ("junior data analyst", "Data Analyst"),
@@ -117,7 +111,6 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
     ("business data analyst", "Data Analyst"),
     ("operations data analyst", "Data Analyst"),
     ("marketing data analyst", "Data Analyst"),
-
     # ── Data Analyst Specialized ──────────────────────────────────────
     ("business intelligence analyst", "Data Analyst"),
     ("analytics analyst", "Data Analyst"),
@@ -134,7 +127,6 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
     ("quantitative analyst", "Data Analyst"),
     ("data visualization analyst", "Data Analyst"),
     ("business analyst", "Data Analyst"),
-
     # ── SWE Core ──────────────────────────────────────────────────────
     ("software engineer", "SWE"),
     ("software developer", "SWE"),
@@ -143,7 +135,6 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
     ("entry level software engineer", "SWE"),
     ("new grad software engineer", "SWE"),
     ("graduate software engineer", "SWE"),
-
     # ── SWE Frontend/Backend/Full-Stack ───────────────────────────────
     ("frontend engineer", "SWE"),
     ("backend engineer", "SWE"),
@@ -154,7 +145,6 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
     ("mobile engineer", "SWE"),
     ("ios engineer", "SWE"),
     ("android engineer", "SWE"),
-
     # ── SWE Specialized ───────────────────────────────────────────────
     ("cloud engineer", "SWE"),
     ("devops engineer", "SWE"),
@@ -183,7 +173,6 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
     ("mixed reality engineer", "SWE"),
     ("firmware engineer", "SWE"),
     ("embedded systems engineer", "SWE"),
-
     # ── New Grad / Early Career ───────────────────────────────────────
     ("new college grad", "New Grad"),
     ("rotational program", "New Grad"),
@@ -199,7 +188,6 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
     ("engineering analyst", "New Grad"),
     ("campus hire", "New Grad"),
     ("early career engineer", "New Grad"),
-
     # ── Product & Research ────────────────────────────────────────────
     ("associate product manager", "Product"),
     ("technical product manager", "Product"),
@@ -210,8 +198,7 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
 
 # Pre-compile patterns for performance
 _COMPILED_PATTERNS: list[tuple[re.Pattern, str]] = [
-    (re.compile(re.escape(kw), re.IGNORECASE), cat)
-    for kw, cat in ROLE_KEYWORDS
+    (re.compile(re.escape(kw), re.IGNORECASE), cat) for kw, cat in ROLE_KEYWORDS
 ]
 
 

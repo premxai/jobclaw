@@ -14,16 +14,16 @@ Supported repos:
 """
 
 import re
-from datetime import datetime, timezone, timedelta
-from typing import Optional
+from datetime import UTC, datetime
+
 import aiohttp
 
 from scripts.ingestion.ats_adapters import NormalizedJob
 
-
 # ═══════════════════════════════════════════════════════════════════════
 # SIMPLIFY JOBS (JSON backend)
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class SimplifyJobsParser:
     """Parses listings.json from SimplifyJobs repos (New-Grad + Internships).
@@ -58,9 +58,7 @@ class SimplifyJobsParser:
                 f".github/scripts/listings.json"
             )
             try:
-                async with session.get(
-                    url, timeout=aiohttp.ClientTimeout(total=60)
-                ) as resp:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=60)) as resp:
                     if resp.status != 200:
                         continue
                     data = await resp.json(content_type=None)
@@ -87,8 +85,7 @@ class SimplifyJobsParser:
                     if isinstance(date_posted, (int, float)):
                         try:
                             date_posted = datetime.fromtimestamp(
-                                date_posted / 1000 if date_posted > 1e12 else date_posted,
-                                tz=timezone.utc
+                                date_posted / 1000 if date_posted > 1e12 else date_posted, tz=UTC
                             ).isoformat()
                         except (ValueError, OSError):
                             date_posted = ""
@@ -101,15 +98,17 @@ class SimplifyJobsParser:
                     if not job_url and j.get("id"):
                         job_url = f"https://simplify.jobs/p/{j['id']}"
 
-                    all_jobs.append(NormalizedJob(
-                        title=title,
-                        company=company,
-                        location=location,
-                        url=job_url,
-                        date_posted=date_posted,
-                        source_ats=f"github-{repo_info['label']}",
-                        job_id=str(j.get("id", f"{company}-{title}")),
-                    ))
+                    all_jobs.append(
+                        NormalizedJob(
+                            title=title,
+                            company=company,
+                            location=location,
+                            url=job_url,
+                            date_posted=date_posted,
+                            source_ats=f"github-{repo_info['label']}",
+                            job_id=str(j.get("id", f"{company}-{title}")),
+                        )
+                    )
 
             except Exception:
                 continue
@@ -120,6 +119,7 @@ class SimplifyJobsParser:
 # ═══════════════════════════════════════════════════════════════════════
 # MARKDOWN TABLE REPOS
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class MarkdownTableParser:
     """Parses markdown table format from various repos.
@@ -157,9 +157,7 @@ class MarkdownTableParser:
                 f"{repo_info['repo']}/{repo_info['branch']}/{repo_info['file']}"
             )
             try:
-                async with session.get(
-                    url, timeout=aiohttp.ClientTimeout(total=30)
-                ) as resp:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
                     if resp.status != 200:
                         continue
                     text = await resp.text()
@@ -222,29 +220,41 @@ def _parse_markdown_table(markdown: str, label: str) -> list[NormalizedJob]:
 
         company = cells[header_indices.get("company", 0)] if header_indices.get("company") is not None else ""
         title = cells[header_indices.get("title", 1)] if header_indices.get("title") is not None else ""
-        location = cells[header_indices.get("location", 2)] if header_indices.get("location") is not None and len(cells) > header_indices["location"] else "Unknown"
-        date = cells[header_indices.get("date", -1)] if header_indices.get("date") is not None and len(cells) > header_indices["date"] else ""
+        location = (
+            cells[header_indices.get("location", 2)]
+            if header_indices.get("location") is not None and len(cells) > header_indices["location"]
+            else "Unknown"
+        )
+        date = (
+            cells[header_indices.get("date", -1)]
+            if header_indices.get("date") is not None and len(cells) > header_indices["date"]
+            else ""
+        )
 
         # Extract URL from markdown link [text](url)
-        url_cell = cells[header_indices.get("url", 3)] if header_indices.get("url") is not None and len(cells) > header_indices["url"] else ""
-        url_match = re.search(r'\[([^\]]*)\]\(([^)]+)\)', url_cell)
+        url_cell = (
+            cells[header_indices.get("url", 3)]
+            if header_indices.get("url") is not None and len(cells) > header_indices["url"]
+            else ""
+        )
+        url_match = re.search(r"\[([^\]]*)\]\(([^)]+)\)", url_cell)
         job_url = url_match.group(2) if url_match else ""
 
         # Also check for URLs in company/title cells
         if not job_url:
             for cell in cells:
-                url_match = re.search(r'\[([^\]]*)\]\(([^)]+)\)', cell)
+                url_match = re.search(r"\[([^\]]*)\]\(([^)]+)\)", cell)
                 if url_match and ("http" in url_match.group(2)):
                     job_url = url_match.group(2)
                     break
 
         # Strip HTML tags
-        company = re.sub(r'<[^>]+>', '', company)
-        title = re.sub(r'<[^>]+>', '', title)
+        company = re.sub(r"<[^>]+>", "", company)
+        title = re.sub(r"<[^>]+>", "", title)
 
         # Clean markdown from company/title
-        company = re.sub(r'\[([^\]]*)\]\([^)]+\)', r'\1', company).strip()
-        title = re.sub(r'\[([^\]]*)\]\([^)]+\)', r'\1', title).strip()
+        company = re.sub(r"\[([^\]]*)\]\([^)]+\)", r"\1", company).strip()
+        title = re.sub(r"\[([^\]]*)\]\([^)]+\)", r"\1", title).strip()
 
         if not company and not title:
             continue
@@ -253,15 +263,17 @@ def _parse_markdown_table(markdown: str, label: str) -> list[NormalizedJob]:
         if "~~" in line or "🔒" in line:
             continue
 
-        jobs.append(NormalizedJob(
-            title=title or "New Grad Position",
-            company=company or "Unknown",
-            location=location,
-            url=job_url,
-            date_posted=date,
-            source_ats=f"github-{label}",
-            job_id=f"{company}-{title}-{label}",
-        ))
+        jobs.append(
+            NormalizedJob(
+                title=title or "New Grad Position",
+                company=company or "Unknown",
+                location=location,
+                url=job_url,
+                date_posted=date,
+                source_ats=f"github-{label}",
+                job_id=f"{company}-{title}-{label}",
+            )
+        )
 
     return jobs
 
@@ -269,6 +281,7 @@ def _parse_markdown_table(markdown: str, label: str) -> list[NormalizedJob]:
 # ═══════════════════════════════════════════════════════════════════════
 # COMBINED FETCHER
 # ═══════════════════════════════════════════════════════════════════════
+
 
 async def fetch_all_github_repos(session: aiohttp.ClientSession) -> tuple[list[NormalizedJob], list[str]]:
     """Fetch jobs from all GitHub repo sources.

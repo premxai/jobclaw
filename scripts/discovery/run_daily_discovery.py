@@ -12,27 +12,27 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.utils.logger import _log
 from scripts.discovery import run_discovery
+from scripts.utils.logger import _log
 
 
 async def main():
     """Run discovery for all ATS platforms."""
     _log(">>> Starting Daily Company Discovery")
-    
+
     # Run discovery for all supported platforms (None = all defined in ATS_DISCOVERY_PATTERNS)
     result = await run_discovery(platforms=None)
-    
+
     total = result.get("discovered", 0)
     by_ats = result.get("by_ats", {})
-    
+
     if total > 0:
         _log(f">>> Discovery complete: {total} new companies found")
         for ats, count in by_ats.items():
             _log(f"    {ats}: +{count}")
     else:
         _log(">>> Discovery complete: No new companies found")
-    
+
     return result
 
 

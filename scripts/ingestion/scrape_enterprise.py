@@ -18,31 +18,31 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-import aiohttp
-import json
-import re
-from typing import List, Optional
-import os
-import time
 import asyncio
-from datetime import datetime, timezone
+import json
+import os
+import re
+import time
+from datetime import UTC, datetime
 
-from scripts.ingestion.ats_adapters import NormalizedJob, _strip_html, _enrich_job, fetch_company_jobs
+import aiohttp
+
 from scripts.database.db_utils import get_connection, insert_job, log_scraper_run
-from scripts.ingestion.us_filter import is_us_location
-from scripts.ingestion.role_filter import is_target_role
+from scripts.ingestion.ats_adapters import NormalizedJob, _enrich_job, _strip_html, fetch_company_jobs
 from scripts.ingestion.parallel_ingestor import is_within_window
+from scripts.ingestion.role_filter import is_target_role
+from scripts.ingestion.us_filter import is_us_location
+from scripts.utils.http_client import HAS_CURL_CFFI, RateLimiter, create_session, fetch_with_retry, random_headers
 from scripts.utils.logger import _log
-from scripts.utils.http_client import random_headers, RateLimiter, fetch_with_retry, create_session
 from scripts.utils.response_cache import ResponseCache
-from scripts.utils.http_client import HAS_CURL_CFFI
 
 
 async def _parse_resp_json(resp):
     """Parse JSON from either curl_cffi or aiohttp response."""
-    if HAS_CURL_CFFI and hasattr(resp, 'status_code'):
+    if HAS_CURL_CFFI and hasattr(resp, "status_code"):
         return resp.json()
     return await resp.json()
+
 
 class AppleJobsAPI:
     BASE_URL = "https://jobs.apple.com"
@@ -50,59 +50,59 @@ class AppleJobsAPI:
 
     def __init__(self, locale: str = "en-us"):
         self.locale = locale
-        self._csrf_token: Optional[str] = None
+        self._csrf_token: str | None = None
 
     def _make_headers(self) -> dict:
         """Build Apple-specific headers with rotated UA."""
         h = random_headers()
-        h.update({
-            'Origin': self.BASE_URL,
-            'Referer': f'{self.BASE_URL}/{self.locale}/search',
-            'Content-Type': 'application/json',
-            'browserlocale': self.locale,
-            'locale': self.locale.replace('-', '_').upper(),
-            'sec-fetch-dest': 'empty',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'same-origin',
-        })
+        h.update(
+            {
+                "Origin": self.BASE_URL,
+                "Referer": f"{self.BASE_URL}/{self.locale}/search",
+                "Content-Type": "application/json",
+                "browserlocale": self.locale,
+                "locale": self.locale.replace("-", "_").upper(),
+                "sec-fetch-dest": "empty",
+                "sec-fetch-mode": "cors",
+                "sec-fetch-site": "same-origin",
+            }
+        )
         if self._csrf_token:
-            h['x-apple-csrf-token'] = self._csrf_token
+            h["x-apple-csrf-token"] = self._csrf_token
         return h
 
     async def _ensure_csrf_token(self, session, rate_limiter=None):
         """Fetch CSRF token — works with both curl_cffi and aiohttp."""
         if not self._csrf_token:
             resp = await fetch_with_retry(
-                session, "GET", f"{self.API_BASE}/CSRFToken",
+                session,
+                "GET",
+                f"{self.API_BASE}/CSRFToken",
                 rate_limiter=rate_limiter,
                 log_tag="apple-csrf",
                 headers=self._make_headers(),
             )
             if resp:
-                self._csrf_token = resp.headers.get('x-apple-csrf-token')
+                self._csrf_token = resp.headers.get("x-apple-csrf-token")
 
-    async def fetch_jobs(self, session, page: int = 1,
-                        rate_limiter: Optional[RateLimiter] = None) -> List[NormalizedJob]:
+    async def fetch_jobs(self, session, page: int = 1, rate_limiter: RateLimiter | None = None) -> list[NormalizedJob]:
         await self._ensure_csrf_token(session, rate_limiter)
 
         payload = {
             "query": "",
-            "filters": {
-                "postLocation": ["postLocation-USA"]
-            },
+            "filters": {"postLocation": ["postLocation-USA"]},
             "page": page,
             "locale": self.locale,
             "sort": "postingDate",
-            "format": {
-                "longDate": "MMMM D, YYYY",
-                "mediumDate": "MMM D, YYYY"
-            }
+            "format": {"longDate": "MMMM D, YYYY", "mediumDate": "MMM D, YYYY"},
         }
 
         normalized = []
         try:
             resp = await fetch_with_retry(
-                session, "POST", f"{self.API_BASE}/search",
+                session,
+                "POST",
+                f"{self.API_BASE}/search",
                 rate_limiter=rate_limiter,
                 log_tag="apple",
                 json=payload,
@@ -113,52 +113,53 @@ class AppleJobsAPI:
 
             try:
                 from scripts.utils.http_client import HAS_CURL_CFFI
-                if HAS_CURL_CFFI and hasattr(resp, 'status_code'):
+
+                if HAS_CURL_CFFI and hasattr(resp, "status_code"):
                     data = resp.json()
                 else:
                     data = await resp.json()
             except Exception:
                 return []
 
-            results = data.get('res', {}).get('searchResults', [])
-            
+            results = data.get("res", {}).get("searchResults", [])
+
             for job in results:
-                title = job.get('postingTitle', '')
+                title = job.get("postingTitle", "")
                 company = "Apple"
-                
-                locations = job.get('locations', [])
-                loc_name = locations[0].get('name', 'United States') if locations else 'United States'
-                
-                pos_id = job.get('positionId', '')
-                transformed_title = job.get('transformedPostingTitle', '')
+
+                locations = job.get("locations", [])
+                loc_name = locations[0].get("name", "United States") if locations else "United States"
+
+                pos_id = job.get("positionId", "")
+                transformed_title = job.get("transformedPostingTitle", "")
                 url = f"https://jobs.apple.com/en-us/details/{pos_id}/{transformed_title}"
 
                 # Apple includes jobSummary in search results
-                description = job.get('jobSummary') or job.get('description') or None
+                description = job.get("jobSummary") or job.get("description") or None
                 if description:
                     description = _strip_html(description)
-                
+
                 nj = NormalizedJob(
                     title=title,
                     company=company,
                     location=loc_name,
                     url=url,
-                    date_posted=job.get('postingDate', ''),
-                    source_ats='apple',
-                    job_id=str(job.get('id', pos_id)),
+                    date_posted=job.get("postingDate", ""),
+                    source_ats="apple",
+                    job_id=str(job.get("id", pos_id)),
                     description=description,
                 )
                 normalized.append(_enrich_job(nj))
         except Exception as e:
             _log(f"Error fetching Apple Page {page}: {e}", "ERROR")
-            
+
         return normalized
+
 
 class AmazonJobsAPI:
     API_URL = "https://www.amazon.jobs/api/jobs/search"
 
-    async def fetch_jobs(self, session, page: int = 1,
-                        rate_limiter: Optional[RateLimiter] = None) -> List[NormalizedJob]:
+    async def fetch_jobs(self, session, page: int = 1, rate_limiter: RateLimiter | None = None) -> list[NormalizedJob]:
         size = 100
         start_offset = (page - 1) * size
 
@@ -169,11 +170,13 @@ class AmazonJobsAPI:
             "sort_by": "Recent",
             "country": ["US"],
         }
-        
+
         normalized = []
         try:
             resp = await fetch_with_retry(
-                session, "POST", self.API_URL,
+                session,
+                "POST",
+                self.API_URL,
                 rate_limiter=rate_limiter,
                 log_tag="amazon",
                 json=payload,
@@ -190,18 +193,20 @@ class AmazonJobsAPI:
             except Exception:
                 return []
 
-            hits = data.get('searchHits', [])
-            
+            hits = data.get("searchHits", [])
+
             for hit in hits:
-                fields = hit.get('fields', {})
-                def first(arr): return arr[0] if isinstance(arr, list) and arr else None
-                
+                fields = hit.get("fields", {})
+
+                def first(arr):
+                    return arr[0] if isinstance(arr, list) and arr else None
+
                 title = first(fields.get("title")) or ""
                 location = first(fields.get("location")) or "United States"
                 date_posted = first(fields.get("createdDate")) or ""
                 job_id = first(fields.get("icimsJobId")) or first(fields.get("jobCode")) or ""
                 url = first(fields.get("urlNextStep")) or f"https://www.amazon.jobs/en/jobs/{job_id}"
-                
+
                 desc_parts = []
                 raw_desc = first(fields.get("description"))
                 if raw_desc:
@@ -210,7 +215,7 @@ class AmazonJobsAPI:
                 if basic_quals:
                     desc_parts.append(_strip_html(basic_quals))
                 description = "\n\n".join(desc_parts) if desc_parts else None
-                
+
                 if title and job_id:
                     nj = NormalizedJob(
                         title=title,
@@ -225,26 +230,24 @@ class AmazonJobsAPI:
                     normalized.append(_enrich_job(nj))
         except Exception as e:
             _log(f"Error fetching Amazon Page {page}: {e}", "ERROR")
-            
+
         return normalized
+
 
 class MicrosoftJobsAPI:
     SEARCH_ENDPOINT = "https://apply.careers.microsoft.com/api/pcsx/search"
     PAGE_SIZE = 20
 
-    async def fetch_jobs(self, session, page: int = 1,
-                        rate_limiter: Optional[RateLimiter] = None) -> List[NormalizedJob]:
+    async def fetch_jobs(self, session, page: int = 1, rate_limiter: RateLimiter | None = None) -> list[NormalizedJob]:
         start = (page - 1) * self.PAGE_SIZE
-        params = {
-            "domain": "microsoft.com",
-            "start": str(start),
-            "sort_by": "timestamp"
-        }
-        
+        params = {"domain": "microsoft.com", "start": str(start), "sort_by": "timestamp"}
+
         normalized = []
         try:
             resp = await fetch_with_retry(
-                session, "GET", self.SEARCH_ENDPOINT,
+                session,
+                "GET",
+                self.SEARCH_ENDPOINT,
                 rate_limiter=rate_limiter,
                 log_tag="microsoft",
                 params=params,
@@ -258,22 +261,22 @@ class MicrosoftJobsAPI:
                 return []
 
             positions = data.get("data", {}).get("positions", [])
-            
+
             for p in positions:
                 title = p.get("name", "")
                 locs = p.get("locations", [])
                 location = locs[0] if locs else "United States"
-                
+
                 ts = p.get("postedTs")
                 date_posted = ""
                 if ts:
-                    date_posted = datetime.fromtimestamp(ts, timezone.utc).isoformat()
-                    
+                    date_posted = datetime.fromtimestamp(ts, UTC).isoformat()
+
                 url = "https://apply.careers.microsoft.com" + p.get("positionUrl", "")
                 job_id = p.get("id", "")
-                
+
                 description = _strip_html(p.get("description", "")) or None
-                
+
                 if title and job_id:
                     nj = NormalizedJob(
                         title=title,
@@ -288,14 +291,14 @@ class MicrosoftJobsAPI:
                     normalized.append(_enrich_job(nj))
         except Exception as e:
             _log(f"Error fetching Microsoft Page {page}: {e}", "ERROR")
-            
+
         return normalized
+
 
 class TikTokJobsAPI:
     API_URL = "https://api.lifeattiktok.com/api/v1/public/supplier/search/job/posts"
 
-    async def fetch_jobs(self, session, page: int = 1,
-                        rate_limiter: Optional[RateLimiter] = None) -> List[NormalizedJob]:
+    async def fetch_jobs(self, session, page: int = 1, rate_limiter: RateLimiter | None = None) -> list[NormalizedJob]:
         limit = 12
         offset = (page - 1) * limit
         payload = {
@@ -307,11 +310,13 @@ class TikTokJobsAPI:
             "limit": limit,
             "offset": offset,
         }
-        
+
         normalized = []
         try:
             resp = await fetch_with_retry(
-                session, "POST", self.API_URL,
+                session,
+                "POST",
+                self.API_URL,
                 rate_limiter=rate_limiter,
                 log_tag="tiktok",
                 json=payload,
@@ -330,11 +335,11 @@ class TikTokJobsAPI:
                 return []
 
             job_list = data.get("data", {}).get("job_post_list", [])
-            
+
             for job in job_list:
                 job_id = job.get("id")
                 title = job.get("title")
-                
+
                 # Null-safe city_info traversal
                 city_info = job.get("city_info") or {}
                 city = city_info.get("en_name") if isinstance(city_info, dict) else None
@@ -343,41 +348,41 @@ class TikTokJobsAPI:
                 country = grandparent.get("en_name") if isinstance(grandparent, dict) else None
                 locs = [x for x in [city, country] if x]
                 location = ", ".join(locs) if locs else "United States"
-                
+
                 url = f"https://lifeattiktok.com/search/{job_id}" if job_id else ""
-                
+
                 if title and job_id:
-                    normalized.append(NormalizedJob(
-                        title=title,
-                        company="TikTok",
-                        location=location,
-                        url=url,
-                        date_posted="",
-                        source_ats="tiktok",
-                        job_id=str(job_id)
-                    ))
+                    normalized.append(
+                        NormalizedJob(
+                            title=title,
+                            company="TikTok",
+                            location=location,
+                            url=url,
+                            date_posted="",
+                            source_ats="tiktok",
+                            job_id=str(job_id),
+                        )
+                    )
         except Exception as e:
             _log(f"Error fetching TikTok Page {page}: {e}", "ERROR")
-            
+
         return normalized
+
 
 class NvidiaJobsAPI:
     SEARCH_ENDPOINT = "https://nvidia.eightfold.ai/api/pcsx/search"
     PAGE_SIZE = 20
 
-    async def fetch_jobs(self, session, page: int = 1,
-                        rate_limiter: Optional[RateLimiter] = None) -> List[NormalizedJob]:
+    async def fetch_jobs(self, session, page: int = 1, rate_limiter: RateLimiter | None = None) -> list[NormalizedJob]:
         start = (page - 1) * self.PAGE_SIZE
-        params = {
-            "domain": "nvidia.com",
-            "start": str(start),
-            "sort_by": "timestamp"
-        }
-        
+        params = {"domain": "nvidia.com", "start": str(start), "sort_by": "timestamp"}
+
         normalized = []
         try:
             resp = await fetch_with_retry(
-                session, "GET", self.SEARCH_ENDPOINT,
+                session,
+                "GET",
+                self.SEARCH_ENDPOINT,
                 rate_limiter=rate_limiter,
                 log_tag="nvidia",
                 params=params,
@@ -391,22 +396,22 @@ class NvidiaJobsAPI:
                 return []
 
             positions = data.get("data", {}).get("positions", [])
-            
+
             for p in positions:
                 title = p.get("name", "")
                 locs = p.get("locations", [])
                 location = locs[0] if locs else "United States"
-                
+
                 ts = p.get("postedTs")
                 date_posted = ""
                 if ts:
-                    date_posted = datetime.fromtimestamp(ts, timezone.utc).isoformat()
-                    
+                    date_posted = datetime.fromtimestamp(ts, UTC).isoformat()
+
                 url = "https://nvidia.eightfold.ai" + p.get("positionUrl", "")
                 job_id = p.get("id", "")
-                
+
                 description = _strip_html(p.get("description", "")) or None
-                
+
                 if title and job_id:
                     nj = NormalizedJob(
                         title=title,
@@ -421,42 +426,44 @@ class NvidiaJobsAPI:
                     normalized.append(_enrich_job(nj))
         except Exception as e:
             _log(f"Error fetching Nvidia Page {page}: {e}", "ERROR")
-            
+
         return normalized
+
 
 class UberJobsAPI:
     SEARCH_ENDPOINT = "https://www.uber.com/api/loadSearchJobsResults"
 
-    async def fetch_jobs(self, session, page: int = 1,
-                        rate_limiter: Optional[RateLimiter] = None) -> List[NormalizedJob]:
+    async def fetch_jobs(self, session, page: int = 1, rate_limiter: RateLimiter | None = None) -> list[NormalizedJob]:
         limit = 10
         page_idx = page - 1
-        
+
         request_body = {
-            'limit': limit,
-            'page': page_idx,
-            'params': {
-                'department': [],
-                'lineOfBusinessName': [],
-                'location': [],
-                'programAndPlatform': [],
-                'team': []
-            }
+            "limit": limit,
+            "page": page_idx,
+            "params": {
+                "department": [],
+                "lineOfBusinessName": [],
+                "location": [],
+                "programAndPlatform": [],
+                "team": [],
+            },
         }
 
-        query_params = {'localeCode': 'en'}
+        query_params = {"localeCode": "en"}
         normalized = []
         try:
             resp = await fetch_with_retry(
-                session, "POST", self.SEARCH_ENDPOINT,
+                session,
+                "POST",
+                self.SEARCH_ENDPOINT,
                 rate_limiter=rate_limiter,
                 log_tag="uber",
                 json=request_body,
                 params=query_params,
                 headers={
-                    'Origin': 'https://www.uber.com',
-                    'Referer': 'https://www.uber.com/us/en/careers/',
-                    'x-csrf-token': 'x',
+                    "Origin": "https://www.uber.com",
+                    "Referer": "https://www.uber.com/us/en/careers/",
+                    "x-csrf-token": "x",
                 },
             )
             if not resp:
@@ -467,52 +474,56 @@ class UberJobsAPI:
             except Exception:
                 return []
 
-            results = data.get('data', {}).get('results', [])
-            
+            results = data.get("data", {}).get("results", [])
+
             for job in results:
-                title = job.get('title', '')
-                job_id = job.get('id', '')
-                
-                loc_data = job.get('location', {})
-                city = loc_data.get('city')
-                region = loc_data.get('region')
-                country = loc_data.get('countryName')
-                
+                title = job.get("title", "")
+                job_id = job.get("id", "")
+
+                loc_data = job.get("location", {})
+                city = loc_data.get("city")
+                region = loc_data.get("region")
+                country = loc_data.get("countryName")
+
                 loc_parts = [x for x in [city, region, country] if x]
                 location = ", ".join(loc_parts) if loc_parts else "United States"
-                
+
                 url = f"https://www.uber.com/global/en/careers/list/{job_id}/" if job_id else ""
-                
+
                 if title and job_id:
-                    normalized.append(NormalizedJob(
-                        title=title,
-                        company="Uber",
-                        location=location,
-                        url=url,
-                        date_posted=job.get('creationDate', ''),
-                        source_ats="uber",
-                        job_id=str(job_id)
-                    ))
+                    normalized.append(
+                        NormalizedJob(
+                            title=title,
+                            company="Uber",
+                            location=location,
+                            url=url,
+                            date_posted=job.get("creationDate", ""),
+                            source_ats="uber",
+                            job_id=str(job_id),
+                        )
+                    )
         except Exception as e:
             _log(f"Error fetching Uber Page {page}: {e}", "ERROR")
-            
+
         return normalized
 
 
 class TeslaJobsAPI:
     """Tesla Careers API. Protected by Akamai — uses curl_cffi TLS impersonation.
     May fail silently if Akamai blocks the request; non-fatal."""
+
     API_URL = "https://www.tesla.com/cua-api/apps/careers/state"
 
-    async def fetch_jobs(self, session, page: int = 1,
-                        rate_limiter: Optional[RateLimiter] = None) -> List[NormalizedJob]:
+    async def fetch_jobs(self, session, page: int = 1, rate_limiter: RateLimiter | None = None) -> list[NormalizedJob]:
         if page > 1:
             return []  # Tesla API returns all jobs in one call
 
         normalized = []
         try:
             resp = await fetch_with_retry(
-                session, "GET", self.API_URL,
+                session,
+                "GET",
+                self.API_URL,
                 rate_limiter=rate_limiter,
                 log_tag="tesla",
                 headers={
@@ -532,11 +543,7 @@ class TeslaJobsAPI:
             # Tesla returns jobs under various keys depending on API version
             job_list = []
             if isinstance(data, dict):
-                job_list = (
-                    data.get("results", [])
-                    or data.get("listings", [])
-                    or data.get("jobs", [])
-                )
+                job_list = data.get("results", []) or data.get("listings", []) or data.get("jobs", [])
             elif isinstance(data, list):
                 job_list = data
 
@@ -554,15 +561,17 @@ class TeslaJobsAPI:
                 url = f"https://www.tesla.com/careers/search/job/{job_id}" if job_id else ""
 
                 if title and job_id:
-                    normalized.append(NormalizedJob(
-                        title=title,
-                        company="Tesla",
-                        location=location,
-                        url=url,
-                        date_posted=job.get("postedDate", ""),
-                        source_ats="tesla",
-                        job_id=job_id,
-                    ))
+                    normalized.append(
+                        NormalizedJob(
+                            title=title,
+                            company="Tesla",
+                            location=location,
+                            url=url,
+                            date_posted=job.get("postedDate", ""),
+                            source_ats="tesla",
+                            job_id=job_id,
+                        )
+                    )
         except Exception as e:
             _log(f"Error fetching Tesla jobs: {e}", "WARN")
 
@@ -571,17 +580,19 @@ class TeslaJobsAPI:
 
 class CursorJobsAPI:
     """Cursor.com careers page scraper — simple HTML parsing."""
+
     CAREERS_URL = "https://cursor.com/careers"
 
-    async def fetch_jobs(self, session, page: int = 1,
-                        rate_limiter: Optional[RateLimiter] = None) -> List[NormalizedJob]:
+    async def fetch_jobs(self, session, page: int = 1, rate_limiter: RateLimiter | None = None) -> list[NormalizedJob]:
         if page > 1:
             return []  # Single page
 
         normalized = []
         try:
             resp = await fetch_with_retry(
-                session, "GET", self.CAREERS_URL,
+                session,
+                "GET",
+                self.CAREERS_URL,
                 rate_limiter=rate_limiter,
                 log_tag="cursor",
             )
@@ -589,7 +600,7 @@ class CursorJobsAPI:
                 return []
 
             try:
-                if HAS_CURL_CFFI and hasattr(resp, 'status_code'):
+                if HAS_CURL_CFFI and hasattr(resp, "status_code"):
                     html = resp.text
                 else:
                     html = await resp.text()
@@ -598,14 +609,12 @@ class CursorJobsAPI:
 
             # Parse job links from careers page
             import re
+
             # Find all career links: /careers/SLUG
             links = re.findall(r'href="(/careers/[^"]+)"', html)
             # Extract job titles from link context
             # Pattern: title text followed by location info
-            job_blocks = re.findall(
-                r'href="(/careers/[^"]+)"[^>]*>.*?>(.*?)</.*?</a>',
-                html, re.DOTALL
-            )
+            re.findall(r'href="(/careers/[^"]+)"[^>]*>.*?>(.*?)</.*?</a>', html, re.DOTALL)
 
             seen = set()
             for link in links:
@@ -622,19 +631,22 @@ class CursorJobsAPI:
                 title = slug.replace("-", " ").title()
                 url = f"https://cursor.com{link}"
 
-                normalized.append(NormalizedJob(
-                    title=title,
-                    company="Cursor",
-                    location="San Francisco, CA",  # Cursor HQ
-                    url=url,
-                    date_posted="",
-                    source_ats="cursor",
-                    job_id=slug,
-                ))
+                normalized.append(
+                    NormalizedJob(
+                        title=title,
+                        company="Cursor",
+                        location="San Francisco, CA",  # Cursor HQ
+                        url=url,
+                        date_posted="",
+                        source_ats="cursor",
+                        job_id=slug,
+                    )
+                )
         except Exception as e:
             _log(f"Error fetching Cursor jobs: {e}", "WARN")
 
         return normalized
+
 
 CHUNK_CAPTURE_INIT = """
 (() => {
@@ -655,6 +667,7 @@ CHUNK_CAPTURE_INIT = """
 })();
 """
 
+
 class GoogleJobsAPI:
     URL = "https://www.google.com/about/careers/applications/jobs/results/"
 
@@ -670,7 +683,7 @@ class GoogleJobsAPI:
         except (json.JSONDecodeError, ValueError):
             return None
 
-    def _parse_ds1(self, ds1_payload) -> List[NormalizedJob]:
+    def _parse_ds1(self, ds1_payload) -> list[NormalizedJob]:
         """Parse Google's ds:1 data chunk. Wrapped in try/except for resilience
         against Google changing their internal data structure indices."""
         jobs = []
@@ -687,14 +700,15 @@ class GoogleJobsAPI:
                 try:
                     if not isinstance(entry, list) or not entry:
                         continue
-                    def get(idx):
-                        return entry[idx] if idx < len(entry) else None
-                    
+
+                    def get(idx, _entry=entry):
+                        return _entry[idx] if idx < len(_entry) else None
+
                     ats_id = str(get(0) or "").strip()
                     title = str(get(1) or "").strip()
                     url = str(get(2) or "").strip()
                     company = str(get(7) or "Google").strip()
-                    
+
                     raw_locs = get(9)
                     locations = []
                     if isinstance(raw_locs, list):
@@ -705,19 +719,21 @@ class GoogleJobsAPI:
                                 for sub in r:
                                     if isinstance(sub, str) and sub.strip():
                                         locations.append(sub.strip())
-                    
+
                     loc_name = locations[0] if locations else "United States"
-                    
+
                     if ats_id or url:
-                        jobs.append(NormalizedJob(
-                            title=title,
-                            company=company,
-                            location=loc_name,
-                            url=url,
-                            date_posted="", 
-                            source_ats="google",
-                            job_id=ats_id or url
-                        ))
+                        jobs.append(
+                            NormalizedJob(
+                                title=title,
+                                company=company,
+                                location=loc_name,
+                                url=url,
+                                date_posted="",
+                                source_ats="google",
+                                job_id=ats_id or url,
+                            )
+                        )
                 except (IndexError, TypeError, ValueError) as e:
                     _log(f"[google] Skipping malformed job entry: {e}", "DEBUG")
                     continue
@@ -725,16 +741,18 @@ class GoogleJobsAPI:
             _log(f"[google] ds:1 structure changed or malformed: {e}", "WARN")
         return jobs
 
-    async def fetch_all_jobs(self, max_pages: int = 5,
-                             session=None,
-                             rate_limiter: Optional[RateLimiter] = None) -> List[NormalizedJob]:
+    async def fetch_all_jobs(
+        self, max_pages: int = 5, session=None, rate_limiter: RateLimiter | None = None
+    ) -> list[NormalizedJob]:
         """Fetch Google jobs via HTTP SSR extraction (no Playwright needed)."""
         all_jobs = []
 
         for page in range(1, max_pages + 1):
             url = f"{self.URL}?page={page}"
             resp = await fetch_with_retry(
-                session, "GET", url,
+                session,
+                "GET",
+                url,
                 rate_limiter=rate_limiter,
                 log_tag="google",
             )
@@ -765,10 +783,11 @@ class GoogleJobsAPI:
         _log(f"[google] Extracted {len(all_jobs)} jobs from {min(page, max_pages)} pages")
         return all_jobs
 
+
 class MetaJobsAPI:
     URL = "https://www.metacareers.com/jobs"
 
-    async def fetch_all_jobs(self) -> List[NormalizedJob]:
+    async def fetch_all_jobs(self) -> list[NormalizedJob]:
         try:
             from playwright.async_api import async_playwright
         except ImportError:
@@ -781,7 +800,9 @@ class MetaJobsAPI:
         try:
             async with async_playwright() as p:
                 browser = await p.chromium.launch(headless=True)
-                context = await browser.new_context(user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")
+                context = await browser.new_context(
+                    user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
+                )
                 page = await context.new_page()
 
                 async def handle_response(response):
@@ -794,10 +815,10 @@ class MetaJobsAPI:
 
                 page.on("response", handle_response)
                 await page.goto(self.URL, wait_until="domcontentloaded", timeout=60000)
-                
+
                 # Sleep briefly to ensure GraphQL finishes caching
                 await asyncio.sleep(8)
-                
+
                 for gql_response in graphql_data:
                     try:
                         data = gql_response.get("data", {})
@@ -813,43 +834,46 @@ class MetaJobsAPI:
                                 )
                                 if job_results:
                                     break
-                        
+
                         for job in job_results:
                             job_id = job.get("id")
                             title = job.get("title", "")
-                            
+
                             locs = job.get("locations", [])
                             location = locs[0] if locs else "United States"
-                            
+
                             url = f"https://www.metacareers.com/jobs/{job_id}/" if job_id else ""
-                            
+
                             if title and job_id:
-                                all_jobs.append(NormalizedJob(
-                                    title=title,
-                                    company="Meta",
-                                    location=location,
-                                    url=url,
-                                    date_posted="",
-                                    source_ats="meta",
-                                    job_id=str(job_id)
-                                ))
+                                all_jobs.append(
+                                    NormalizedJob(
+                                        title=title,
+                                        company="Meta",
+                                        location=location,
+                                        url=url,
+                                        date_posted="",
+                                        source_ats="meta",
+                                        job_id=str(job_id),
+                                    )
+                                )
                     except (KeyError, TypeError, AttributeError) as e:
                         _log(f"[meta] Error parsing GraphQL response: {e}", "DEBUG")
-                
+
                 await context.close()
                 await browser.close()
         except Exception as e:
             _log(f"Error fetching Meta jobs via Playwright: {e}", "ERROR")
-            
+
         return all_jobs
+
 
 def log(msg: str, level: str = "INFO"):
     _log(msg, level, "enterprise")
 
 
-async def _paginate_api(api, session: aiohttp.ClientSession, name: str,
-                        rate_limiter: Optional[RateLimiter] = None,
-                        max_pages: int = 25) -> List[NormalizedJob]:
+async def _paginate_api(
+    api, session: aiohttp.ClientSession, name: str, rate_limiter: RateLimiter | None = None, max_pages: int = 25
+) -> list[NormalizedJob]:
     """
     Paginate an enterprise API until it returns empty results.
     No more arbitrary page-5 cap — we iterate until the API is exhausted.
@@ -877,32 +901,32 @@ async def _paginate_api(api, session: aiohttp.ClientSession, name: str,
 
 PRIORITY_COMPANIES = [
     # AI/ML Frontier Labs
-    {"company": "OpenAI",        "ats": "greenhouse",     "slug": "openai"},
-    {"company": "Anthropic",     "ats": "lever",          "slug": "anthropic"},
-    {"company": "DeepMind",      "ats": "greenhouse",     "slug": "deepmind"},
-    {"company": "Cohere",        "ats": "lever",          "slug": "cohere"},
-    {"company": "Mistral AI",    "ats": "lever",          "slug": "mistral"},
-    {"company": "xAI",           "ats": "greenhouse",     "slug": "xai"},
-    {"company": "Perplexity AI", "ats": "greenhouse",     "slug": "perplexity"},
-    {"company": "Scale AI",      "ats": "greenhouse",     "slug": "scaleai"},
-    {"company": "Weights & Biases", "ats": "lever",       "slug": "wandb"},
-    {"company": "Hugging Face",  "ats": "workable",       "slug": "huggingface"},
-    {"company": "Runway ML",     "ats": "greenhouse",     "slug": "runwayml"},
-    {"company": "Together AI",   "ats": "greenhouse",     "slug": "together-ai"},
-    {"company": "Stability AI",  "ats": "lever",          "slug": "stability-ai"},
+    {"company": "OpenAI", "ats": "greenhouse", "slug": "openai"},
+    {"company": "Anthropic", "ats": "lever", "slug": "anthropic"},
+    {"company": "DeepMind", "ats": "greenhouse", "slug": "deepmind"},
+    {"company": "Cohere", "ats": "lever", "slug": "cohere"},
+    {"company": "Mistral AI", "ats": "lever", "slug": "mistral"},
+    {"company": "xAI", "ats": "greenhouse", "slug": "xai"},
+    {"company": "Perplexity AI", "ats": "greenhouse", "slug": "perplexity"},
+    {"company": "Scale AI", "ats": "greenhouse", "slug": "scaleai"},
+    {"company": "Weights & Biases", "ats": "lever", "slug": "wandb"},
+    {"company": "Hugging Face", "ats": "workable", "slug": "huggingface"},
+    {"company": "Runway ML", "ats": "greenhouse", "slug": "runwayml"},
+    {"company": "Together AI", "ats": "greenhouse", "slug": "together-ai"},
+    {"company": "Stability AI", "ats": "lever", "slug": "stability-ai"},
     # High-Growth Tech
-    {"company": "Figma",         "ats": "greenhouse",     "slug": "figma"},
-    {"company": "Notion",        "ats": "greenhouse",     "slug": "notion"},
-    {"company": "Linear",        "ats": "ashby",          "slug": "linear"},
-    {"company": "Vercel",        "ats": "ashby",          "slug": "vercel"},
-    {"company": "Supabase",      "ats": "ashby",          "slug": "supabase"},
-    {"company": "Retool",        "ats": "greenhouse",     "slug": "retool"},
-    {"company": "Airtable",      "ats": "greenhouse",     "slug": "airtable"},
-    {"company": "Brex",          "ats": "greenhouse",     "slug": "brex"},
-    {"company": "Ramp",          "ats": "lever",          "slug": "ramp"},
-    {"company": "Stripe",        "ats": "greenhouse",     "slug": "stripe"},
-    {"company": "Plaid",         "ats": "lever",          "slug": "plaid"},
-    {"company": "Rippling",      "ats": "rippling",       "slug": "rippling"},
+    {"company": "Figma", "ats": "greenhouse", "slug": "figma"},
+    {"company": "Notion", "ats": "greenhouse", "slug": "notion"},
+    {"company": "Linear", "ats": "ashby", "slug": "linear"},
+    {"company": "Vercel", "ats": "ashby", "slug": "vercel"},
+    {"company": "Supabase", "ats": "ashby", "slug": "supabase"},
+    {"company": "Retool", "ats": "greenhouse", "slug": "retool"},
+    {"company": "Airtable", "ats": "greenhouse", "slug": "airtable"},
+    {"company": "Brex", "ats": "greenhouse", "slug": "brex"},
+    {"company": "Ramp", "ats": "lever", "slug": "ramp"},
+    {"company": "Stripe", "ats": "greenhouse", "slug": "stripe"},
+    {"company": "Plaid", "ats": "lever", "slug": "plaid"},
+    {"company": "Rippling", "ats": "rippling", "slug": "rippling"},
 ]
 
 
@@ -918,7 +942,10 @@ async def _fetch_priority_companies(session, rate_limiter) -> list[NormalizedJob
         async with sem:
             try:
                 result = await fetch_company_jobs(
-                    session, entry["company"], entry["ats"], entry["slug"],
+                    session,
+                    entry["company"],
+                    entry["ats"],
+                    entry["slug"],
                     rate_limiter=rate_limiter,
                 )
                 return result or []
@@ -938,7 +965,7 @@ async def run_enterprise_scraper():
     log("=== Commencing Enterprise Architecture Scrape v2 ===")
     start_t = time.time()
     all_jobs = []
-    cache = ResponseCache()
+    ResponseCache()
     rate_limiter = RateLimiter()
 
     proxy = os.environ.get("PROXY_URL")
@@ -956,14 +983,15 @@ async def run_enterprise_scraper():
         uber_api = UberJobsAPI()
         tesla_api = TeslaJobsAPI()
         cursor_api = CursorJobsAPI()
-        
-        log("Fetching from Apple, Amazon, Microsoft, Google, Meta, TikTok, Nvidia, Uber, Tesla, Cursor + 25 priority AI/ML companies...")
+
+        log(
+            "Fetching from Apple, Amazon, Microsoft, Google, Meta, TikTok, Nvidia, Uber, Tesla, Cursor + 25 priority AI/ML companies..."
+        )
 
         # Priority AI/ML companies (always scraped, not subject to shard rotation)
         priority_jobs = await _fetch_priority_companies(session, rate_limiter)
         all_jobs.extend(priority_jobs)
 
-        
         # Full pagination for all API companies (including Google via HTTP SSR)
         api_results = await asyncio.gather(
             _paginate_api(apple_api, session, "Apple", rate_limiter=rate_limiter, max_pages=15),
@@ -978,7 +1006,7 @@ async def run_enterprise_scraper():
             meta_api.fetch_all_jobs(session=session, rate_limiter=rate_limiter),
             return_exceptions=True,
         )
-        
+
         api_names = ["Apple", "Amazon", "Microsoft", "TikTok", "Nvidia", "Uber", "Tesla", "Cursor", "Google", "Meta"]
         for name, result in zip(api_names, api_results):
             if isinstance(result, Exception):
@@ -999,7 +1027,7 @@ async def run_enterprise_scraper():
 
     us_jobs = [j for j in valid_roles if is_us_location(j.location)]
     log(f"US filter: {len(us_jobs)}/{len(valid_roles)} in United States.")
-    
+
     # Midnight sweep: skip 24hr filter to catch any backlog
     now = time.localtime()
     is_midnight = now.tm_hour == 0
@@ -1044,13 +1072,15 @@ async def run_enterprise_scraper():
             script_name="scrape_enterprise",
             companies_fetched=total_companies,
             new_jobs=new_jobs_inserted,
-            duration=round(time.time() - start_t, 2)
+            duration=round(time.time() - start_t, 2),
         )
     finally:
         conn.close()
 
     total_time = round(time.time() - start_t, 2)
-    log(f">>> Enterprise Scraper Complete. New={new_jobs_inserted}, Candidates={len(final_jobs)}, Duration={total_time}s")
+    log(
+        f">>> Enterprise Scraper Complete. New={new_jobs_inserted}, Candidates={len(final_jobs)}, Duration={total_time}s"
+    )
 
 
 if __name__ == "__main__":

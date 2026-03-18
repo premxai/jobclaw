@@ -13,9 +13,8 @@ import os
 import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Optional
 
-from fastapi import FastAPI, Query, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -23,25 +22,36 @@ from fastapi.responses import JSONResponse
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from api.models import (
-    JobResponse, JobListResponse, CompanyResponse,
-    StatsOverview, ScraperRunResponse, HealthResponse,
-)
 from api.database import (
-    get_jobs, get_job_by_hash, get_companies,
-    get_stats, get_scraper_runs, get_db, _ph, _is_pg,
+    _is_pg,
+    _ph,
+    get_companies,
+    get_db,
+    get_job_by_hash,
+    get_jobs,
+    get_scraper_runs,
+    get_stats,
 )
-
+from api.models import (
+    CompanyResponse,
+    HealthResponse,
+    JobListResponse,
+    JobResponse,
+    ScraperRunResponse,
+    StatsOverview,
+)
 
 # ═══════════════════════════════════════════════════════════════════════
 # APP LIFECYCLE
 # ═══════════════════════════════════════════════════════════════════════
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup/shutdown hooks."""
     # Validate DB exists
     from api.database import DB_PATH
+
     if not DB_PATH.exists():
         print(f"⚠️  Database not found at {DB_PATH}")
         print("   Run the scraper first: python scripts/ingestion/run_all_scrapers.py")
@@ -66,7 +76,9 @@ async def lifespan(app: FastAPI):
     elif bot_token and channel_id:
         print("✅ Discord: bot token + channel ID configured (fallback mode)")
     else:
-        print("⚠️  Discord: NOT configured — set DISCORD_WEBHOOK_URL (or DISCORD_BOT_TOKEN + DISCORD_CHANNEL_ID) in .env")
+        print(
+            "⚠️  Discord: NOT configured — set DISCORD_WEBHOOK_URL (or DISCORD_BOT_TOKEN + DISCORD_CHANNEL_ID) in .env"
+        )
         print("   See .env.example for setup instructions.")
 
     yield
@@ -81,8 +93,7 @@ app = FastAPI(
 
 # CORS — lock to frontend origins; wildcard + credentials=True is a spec violation
 _allowed_origins = os.getenv(
-    "CORS_ORIGINS",
-    "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001"
+    "CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001"
 ).split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -94,6 +105,7 @@ app.add_middleware(
 
 # API Key auth — disabled if JOBCLAW_API_KEY not set
 from api.auth import APIKeyMiddleware
+
 app.add_middleware(APIKeyMiddleware)
 
 
@@ -101,10 +113,13 @@ app.add_middleware(APIKeyMiddleware)
 # STATIC DASHBOARD ROUTE
 # ═══════════════════════════════════════════════════════════════════════
 
-from fastapi.staticfiles import StaticFiles
+from datetime import UTC
+
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 WEB_DIR = PROJECT_ROOT / "web"
+
 
 @app.get("/", include_in_schema=False)
 async def root():
@@ -114,9 +129,11 @@ async def root():
         return FileResponse(index)
     return JSONResponse({"status": "ok", "message": "JobClaw API — see /docs"})
 
+
 # ═══════════════════════════════════════════════════════════════════════
 # HEALTH
 # ═══════════════════════════════════════════════════════════════════════
+
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])
 async def health_check():
@@ -193,19 +210,20 @@ async def deep_health_check():
 # JOBS
 # ═══════════════════════════════════════════════════════════════════════
 
+
 @app.get("/jobs", response_model=JobListResponse, tags=["Jobs"])
 async def list_jobs(
     page: int = Query(1, ge=1, description="Page number"),
     per_page: int = Query(50, ge=1, le=200, description="Results per page"),
-    company: Optional[str] = Query(None, description="Filter by company name"),
-    ats: Optional[str] = Query(None, description="Filter by ATS platform"),
-    keyword: Optional[str] = Query(None, description="Filter by keyword category"),
-    search: Optional[str] = Query(None, description="Full-text search in title/company/description"),
+    company: str | None = Query(None, description="Filter by company name"),
+    ats: str | None = Query(None, description="Filter by ATS platform"),
+    keyword: str | None = Query(None, description="Filter by keyword category"),
+    search: str | None = Query(None, description="Full-text search in title/company/description"),
     active: bool = Query(True, description="Only active (non-filled) jobs"),
 ):
     """
     List jobs with pagination and filtering.
-    
+
     Supports filtering by company, ATS platform, keyword category, and full-text search.
     Results are ordered by most recently discovered first.
     """
@@ -257,9 +275,10 @@ async def search_jobs(
 # COMPANIES
 # ═══════════════════════════════════════════════════════════════════════
 
+
 @app.get("/companies", response_model=list[CompanyResponse], tags=["Companies"])
 async def list_companies(
-    ats: Optional[str] = Query(None, description="Filter by ATS platform"),
+    ats: str | None = Query(None, description="Filter by ATS platform"),
 ):
     """
     List all companies with their active job counts.
@@ -290,6 +309,7 @@ async def company_jobs(
 # STATS
 # ═══════════════════════════════════════════════════════════════════════
 
+
 @app.get("/stats", response_model=StatsOverview, tags=["Stats"])
 async def stats_overview():
     """System-wide statistics: job counts, platform breakdown, recent trends."""
@@ -309,6 +329,7 @@ async def scraper_runs(
 # SCRAPER CONTROL
 # ═══════════════════════════════════════════════════════════════════════
 
+
 @app.post("/scraper/trigger", tags=["Scraper"])
 async def trigger_scraper(
     tier: str = Query("fast", description="Tier: fast/medium/heavy/deep"),
@@ -319,15 +340,14 @@ async def trigger_scraper(
     """
     VALID_TIERS = {"fast", "medium", "heavy", "deep"}
     if tier not in VALID_TIERS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid tier '{tier}'. Must be one of: {', '.join(VALID_TIERS)}"
-        )
+        raise HTTPException(status_code=400, detail=f"Invalid tier '{tier}'. Must be one of: {', '.join(VALID_TIERS)}")
     import subprocess
+
     cmd = [
         sys.executable,
         str(PROJECT_ROOT / "scripts" / "ingestion" / "run_all_scrapers.py"),
-        "--tier", tier,  # safe — tier validated against allowlist above
+        "--tier",
+        tier,  # safe — tier validated against allowlist above
     ]
     try:
         proc = subprocess.Popen(
@@ -392,7 +412,7 @@ async def broadcast_job(job_dict: dict):
             await ws.send_text(message)
         except Exception:
             disconnected.add(ws)
-    _ws_clients -= disconnected
+    _ws_clients.difference_update(disconnected)
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -401,12 +421,14 @@ async def broadcast_job(job_dict: dict):
 
 _salary_estimator = None
 
+
 @app.get("/salary/estimate")
 async def estimate_salary(title: str, location: str = ""):
     """Predict salary range for a job title + location."""
     global _salary_estimator
     if _salary_estimator is None:
         from scripts.ai.salary_estimator import SalaryEstimator
+
         _salary_estimator = SalaryEstimator()
         _salary_estimator.train()
 
@@ -422,12 +444,14 @@ async def estimate_salary(title: str, location: str = ""):
 
 _job_embedder = None
 
+
 @app.get("/jobs/similar")
 async def similar_jobs(query: str, top_k: int = 10):
     """Find jobs semantically similar to a text query."""
     global _job_embedder
     if _job_embedder is None:
         from scripts.ai.embed_jobs import JobEmbedder
+
         _job_embedder = JobEmbedder()
 
     results = _job_embedder.find_similar(query, top_k=top_k)
@@ -441,6 +465,7 @@ async def resume_match(resume_text: str = "", top_k: int = 20):
         raise HTTPException(status_code=400, detail="resume_text is required")
 
     from scripts.ai.match_score import ResumeMatcher
+
     matcher = ResumeMatcher()
     matcher.load_resume(resume_text)
     matches = matcher.score_jobs(top_k=top_k)
@@ -451,6 +476,7 @@ async def resume_match(resume_text: str = "", top_k: int = 20):
 async def run_dedup(threshold: float = 0.6, dry_run: bool = True):
     """Find and optionally merge duplicate job listings."""
     from scripts.ai.dedup import JobDeduplicator
+
     dedup = JobDeduplicator(threshold=threshold)
     clusters = dedup.find_duplicates()
 
@@ -472,6 +498,7 @@ async def run_dedup(threshold: float = 0.6, dry_run: bool = True):
 # ═══════════════════════════════════════════════════════════════════════
 
 VALID_STAGES = ["saved", "applied", "phone_screen", "onsite", "offer", "rejected", "withdrawn"]
+
 
 def _ensure_applications_table():
     """Create applications table if it doesn't exist (SQLite and PostgreSQL)."""
@@ -511,6 +538,7 @@ def _ensure_applications_table():
     finally:
         conn.close()
 
+
 # Deferred — called in lifespan instead of at import time
 # _ensure_applications_table()
 
@@ -523,21 +551,27 @@ async def list_applications(stage: str = None, user_id: str = "default"):
     try:
         cursor = conn.cursor()
         if stage:
-            cursor.execute(f"""
+            cursor.execute(
+                f"""
                 SELECT a.*, j.title, j.company, j.location, j.url, j.salary_min, j.salary_max
                 FROM applications a
                 LEFT JOIN jobs j ON a.job_hash = j.internal_hash
                 WHERE a.user_id = {p} AND a.stage = {p}
                 ORDER BY a.updated_at DESC
-            """, (user_id, stage))
+            """,
+                (user_id, stage),
+            )
         else:
-            cursor.execute(f"""
+            cursor.execute(
+                f"""
                 SELECT a.*, j.title, j.company, j.location, j.url, j.salary_min, j.salary_max
                 FROM applications a
                 LEFT JOIN jobs j ON a.job_hash = j.internal_hash
                 WHERE a.user_id = {p}
                 ORDER BY a.updated_at DESC
-            """, (user_id,))
+            """,
+                (user_id,),
+            )
         rows = cursor.fetchall()
         cols = [desc[0] for desc in cursor.description]
         return {"applications": [dict(zip(cols, r)) for r in rows], "count": len(rows)}
@@ -550,18 +584,22 @@ async def create_application(job_hash: str, stage: str = "saved", notes: str = "
     """Save a job to the application tracker."""
     if stage not in VALID_STAGES:
         raise HTTPException(status_code=400, detail=f"Invalid stage. Must be one of: {VALID_STAGES}")
-    
-    from datetime import datetime, timezone
-    now = datetime.now(timezone.utc).isoformat()
-    
+
+    from datetime import datetime
+
+    now = datetime.now(UTC).isoformat()
+
     conn = get_db()
     p = _ph()
     try:
         cursor = conn.cursor()
-        cursor.execute(f"""
+        cursor.execute(
+            f"""
             INSERT INTO applications (job_hash, user_id, stage, notes, updated_at, applied_at)
             VALUES ({p}, {p}, {p}, {p}, {p}, {p})
-        """, (job_hash, user_id, stage, notes, now, now if stage == "applied" else None))
+        """,
+            (job_hash, user_id, stage, notes, now, now if stage == "applied" else None),
+        )
         conn.commit()
         app_id = cursor.lastrowid
         return {"id": app_id, "job_hash": job_hash, "stage": stage, "created": True}
@@ -574,19 +612,23 @@ async def update_application_stage(app_id: int, stage: str):
     """Move an application to a different Kanban stage."""
     if stage not in VALID_STAGES:
         raise HTTPException(status_code=400, detail=f"Invalid stage. Must be one of: {VALID_STAGES}")
-    
-    from datetime import datetime, timezone
-    now = datetime.now(timezone.utc).isoformat()
-    
+
+    from datetime import datetime
+
+    now = datetime.now(UTC).isoformat()
+
     conn = get_db()
     p = _ph()
     try:
         cursor = conn.cursor()
-        cursor.execute(f"""
+        cursor.execute(
+            f"""
             UPDATE applications SET stage = {p}, updated_at = {p},
                 applied_at = CASE WHEN {p} = 'applied' AND applied_at IS NULL THEN {p} ELSE applied_at END
             WHERE id = {p}
-        """, (stage, now, stage, now, app_id))
+        """,
+            (stage, now, stage, now, app_id),
+        )
         conn.commit()
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Application not found")
@@ -596,12 +638,14 @@ async def update_application_stage(app_id: int, stage: str):
 
 
 @app.put("/applications/{app_id}")
-async def update_application(app_id: int, notes: str = None, interview_date: str = None,
-                              contact_name: str = None, contact_email: str = None):
+async def update_application(
+    app_id: int, notes: str = None, interview_date: str = None, contact_name: str = None, contact_email: str = None
+):
     """Update application details (notes, interview date, contacts)."""
-    from datetime import datetime, timezone
-    now = datetime.now(timezone.utc).isoformat()
-    
+    from datetime import datetime
+
+    now = datetime.now(UTC).isoformat()
+
     conn = get_db()
     p = _ph()
     try:
@@ -619,7 +663,7 @@ async def update_application(app_id: int, notes: str = None, interview_date: str
         if contact_email is not None:
             updates.append(f"contact_email = {p}")
             params.append(contact_email)
-        
+
         params.append(app_id)
         cursor = conn.cursor()
         cursor.execute(f"UPDATE applications SET {', '.join(updates)} WHERE id = {p}", params)
@@ -654,12 +698,15 @@ async def application_stats(user_id: str = "default"):
     p = _ph()
     try:
         cursor = conn.cursor()
-        cursor.execute(f"""
+        cursor.execute(
+            f"""
             SELECT stage, COUNT(*) as count
             FROM applications
             WHERE user_id = {p}
             GROUP BY stage
-        """, (user_id,))
+        """,
+            (user_id,),
+        )
         stages = {r[0]: r[1] for r in cursor.fetchall()}
         total = sum(stages.values())
         return {"stages": stages, "total": total}
@@ -733,4 +780,5 @@ if WEB_DIR.exists():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("api.main:app", host="0.0.0.0", port=8000, reload=True)

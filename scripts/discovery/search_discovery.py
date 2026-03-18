@@ -15,15 +15,14 @@ import json
 import os
 import re
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
-from typing import Optional
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv(PROJECT_ROOT / ".env")
 except ImportError:
     pass
@@ -133,7 +132,7 @@ ATS_DISCOVERY_PATTERNS = {
 }
 
 
-def extract_slug_from_url(url: str, ats: str) -> Optional[str]:
+def extract_slug_from_url(url: str, ats: str) -> str | None:
     """Extract company slug from ATS URL."""
     patterns = ATS_DISCOVERY_PATTERNS.get(ats, {}).get("url_patterns", [])
     for pattern in patterns:
@@ -152,13 +151,13 @@ async def search_brave(query: str, count: int = 20) -> list[dict]:
     if not BRAVE_API_KEY:
         _log("BRAVE_SEARCH_API_KEY not set — skipping discovery", "WARN")
         return []
-    
+
     try:
         import aiohttp
     except ImportError:
         _log("aiohttp not installed — skipping discovery", "WARN")
         return []
-    
+
     headers = {
         "Accept": "application/json",
         "X-Subscription-Token": BRAVE_API_KEY,
@@ -167,7 +166,7 @@ async def search_brave(query: str, count: int = 20) -> list[dict]:
         "q": query,
         "count": count,
     }
-    
+
     try:
         async with aiohttp.ClientSession() as session:
             async with session.get(BRAVE_SEARCH_URL, headers=headers, params=params) as resp:
@@ -215,11 +214,13 @@ async def discover_companies_for_ats(ats: str, existing_slugs: set) -> list[dict
                 if not company_name or len(company_name) < 2:
                     company_name = slug.replace("-", " ").title()
 
-                discovered.append({
-                    "company": company_name,
-                    "ats": ats,
-                    "slug": slug,
-                })
+                discovered.append(
+                    {
+                        "company": company_name,
+                        "ats": ats,
+                        "slug": slug,
+                    }
+                )
                 existing_slugs.add(slug)  # Avoid duplicates within this run
 
     return discovered
@@ -228,12 +229,12 @@ async def discover_companies_for_ats(ats: str, existing_slugs: set) -> list[dict
 def load_existing_slugs() -> dict[str, set]:
     """Load existing company slugs from registry and CSV files."""
     slugs_by_ats = {}
-    
+
     # Load from company_registry.json
     registry_path = PROJECT_ROOT / "config" / "company_registry.json"
     if registry_path.exists():
         try:
-            with open(registry_path, "r", encoding="utf-8") as f:
+            with open(registry_path, encoding="utf-8") as f:
                 data = json.load(f)
                 for company in data.get("companies", []):
                     ats = company.get("ats", "").lower()
@@ -244,9 +245,10 @@ def load_existing_slugs() -> dict[str, set]:
                         slugs_by_ats[ats].add(slug)
         except (json.JSONDecodeError, KeyError):
             pass
-    
+
     # Load from CSV files
     import csv
+
     csv_files = {
         "greenhouse": "greenhouse_companies.csv",
         "lever": "lever_companies.csv",
@@ -256,12 +258,12 @@ def load_existing_slugs() -> dict[str, set]:
         "ashby": "ashby_companies.csv",
         "gem": "gem_companies.csv",
     }
-    
+
     for ats, filename in csv_files.items():
         csv_path = PROJECT_ROOT / "data" / filename
         if csv_path.exists():
             try:
-                with open(csv_path, "r", encoding="utf-8") as f:
+                with open(csv_path, encoding="utf-8") as f:
                     reader = csv.DictReader(f)
                     for row in reader:
                         # Extract slug from URL
@@ -273,30 +275,30 @@ def load_existing_slugs() -> dict[str, set]:
                             slugs_by_ats[ats].add(slug)
             except Exception:
                 pass
-    
+
     return slugs_by_ats
 
 
 def save_discoveries(discoveries: list[dict]) -> int:
     """
     Save discovered companies to the registry.
-    
+
     Returns number of companies added.
     """
     if not discoveries:
         return 0
-    
+
     registry_path = PROJECT_ROOT / "config" / "company_registry.json"
-    
+
     try:
-        with open(registry_path, "r", encoding="utf-8") as f:
+        with open(registry_path, encoding="utf-8") as f:
             data = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         data = {"companies": []}
-    
+
     # Build existing key set
     existing = {f"{c['ats']}:{c['slug']}" for c in data.get("companies", [])}
-    
+
     added = 0
     for company in discoveries:
         key = f"{company['ats']}:{company['slug']}"
@@ -304,54 +306,54 @@ def save_discoveries(discoveries: list[dict]) -> int:
             data["companies"].append(company)
             existing.add(key)
             added += 1
-    
+
     if added > 0:
         with open(registry_path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
-    
+
     return added
 
 
 async def run_discovery(platforms: list[str] = None) -> dict:
     """
     Run company discovery for specified ATS platforms.
-    
+
     Args:
         platforms: List of ATS names to discover. Default: all discoverable.
-    
+
     Returns:
         {"discovered": int, "by_ats": {ats: count}}
     """
     if platforms is None:
         platforms = list(ATS_DISCOVERY_PATTERNS.keys())
-    
+
     _log(f">>> Starting ATS Company Discovery for: {', '.join(platforms)}")
-    
+
     existing = load_existing_slugs()
     total_existing = sum(len(s) for s in existing.values())
     _log(f"Loaded {total_existing} existing company slugs")
-    
+
     all_discoveries = []
     by_ats = {}
-    
+
     for ats in platforms:
         existing_for_ats = existing.get(ats, set())
         discoveries = await discover_companies_for_ats(ats, existing_for_ats)
-        
+
         if discoveries:
             _log(f"[{ats}] Discovered {len(discoveries)} new companies")
             all_discoveries.extend(discoveries)
             by_ats[ats] = len(discoveries)
         else:
             _log(f"[{ats}] No new companies found")
-        
+
         # Rate limit between searches
         await asyncio.sleep(1)
-    
+
     # Save to registry
     added = save_discoveries(all_discoveries)
     _log(f">>> Discovery complete: {added} new companies added to registry")
-    
+
     return {
         "discovered": added,
         "by_ats": by_ats,
@@ -364,14 +366,14 @@ async def run_discovery(platforms: list[str] = None) -> dict:
 
 if __name__ == "__main__":
     import sys
-    
+
     platforms = sys.argv[1:] if len(sys.argv) > 1 else None
-    
+
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-    
+
     result = asyncio.run(run_discovery(platforms))
     print(f"\nDiscovered {result['discovered']} new companies")
-    if result['by_ats']:
-        for ats, count in result['by_ats'].items():
+    if result["by_ats"]:
+        for ats, count in result["by_ats"].items():
             print(f"  {ats}: {count}")

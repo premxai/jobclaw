@@ -12,18 +12,17 @@ Supported boards:
   - HN Who's Hiring (hn.algolia.com API)
 """
 
-import xml.etree.ElementTree as ET
-from datetime import datetime, timezone
-from typing import Optional
-import aiohttp
 import re
+import xml.etree.ElementTree as ET
+
+import aiohttp
 
 from scripts.ingestion.ats_adapters import NormalizedJob
-
 
 # ═══════════════════════════════════════════════════════════════════════
 # REMOTEOK
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class RemoteOKAdapter:
     """RemoteOK free JSON API: https://remoteok.io/api (24hr delayed)"""
@@ -35,8 +34,7 @@ class RemoteOKAdapter:
         headers = {"User-Agent": "JobClaw/2.0 (job aggregator bot)"}
         try:
             async with session.get(
-                RemoteOKAdapter.URL, headers=headers,
-                timeout=aiohttp.ClientTimeout(total=30)
+                RemoteOKAdapter.URL, headers=headers, timeout=aiohttp.ClientTimeout(total=30)
             ) as resp:
                 if resp.status != 200:
                     return []
@@ -60,15 +58,17 @@ class RemoteOKAdapter:
                 if isinstance(tags, list):
                     tags = ", ".join(tags)
 
-                jobs.append(NormalizedJob(
-                    title=j.get("position", ""),
-                    company=j.get("company", "Unknown"),
-                    location=location,
-                    url=j.get("url", f"https://remoteok.io/remote-jobs/{j.get('slug', '')}"),
-                    date_posted=date_str,
-                    source_ats="remoteok",
-                    job_id=str(j.get("id", j.get("slug", ""))),
-                ))
+                jobs.append(
+                    NormalizedJob(
+                        title=j.get("position", ""),
+                        company=j.get("company", "Unknown"),
+                        location=location,
+                        url=j.get("url", f"https://remoteok.io/remote-jobs/{j.get('slug', '')}"),
+                        date_posted=date_str,
+                        source_ats="remoteok",
+                        job_id=str(j.get("id", j.get("slug", ""))),
+                    )
+                )
             return jobs
         except Exception:
             return []
@@ -78,6 +78,7 @@ class RemoteOKAdapter:
 # REMOTIVE
 # ═══════════════════════════════════════════════════════════════════════
 
+
 class RemotiveAdapter:
     """Remotive API: https://remotive.com/api/remote-jobs"""
 
@@ -86,10 +87,7 @@ class RemotiveAdapter:
     @staticmethod
     async def fetch(session: aiohttp.ClientSession) -> list[NormalizedJob]:
         try:
-            async with session.get(
-                RemotiveAdapter.URL,
-                timeout=aiohttp.ClientTimeout(total=30)
-            ) as resp:
+            async with session.get(RemotiveAdapter.URL, timeout=aiohttp.ClientTimeout(total=30)) as resp:
                 if resp.status != 200:
                     return []
                 data = await resp.json()
@@ -100,15 +98,17 @@ class RemotiveAdapter:
                 if not location:
                     location = "Remote"
 
-                jobs.append(NormalizedJob(
-                    title=j.get("title", ""),
-                    company=j.get("company_name", "Unknown"),
-                    location=location,
-                    url=j.get("url", ""),
-                    date_posted=j.get("publication_date", ""),
-                    source_ats="remotive",
-                    job_id=str(j.get("id", "")),
-                ))
+                jobs.append(
+                    NormalizedJob(
+                        title=j.get("title", ""),
+                        company=j.get("company_name", "Unknown"),
+                        location=location,
+                        url=j.get("url", ""),
+                        date_posted=j.get("publication_date", ""),
+                        source_ats="remotive",
+                        job_id=str(j.get("id", "")),
+                    )
+                )
             return jobs
         except Exception:
             return []
@@ -117,6 +117,7 @@ class RemotiveAdapter:
 # ═══════════════════════════════════════════════════════════════════════
 # WE WORK REMOTELY (RSS)
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class WeWorkRemotelyAdapter:
     """We Work Remotely RSS feed: weworkremotely.com/categories/remote-*-jobs.rss"""
@@ -132,9 +133,7 @@ class WeWorkRemotelyAdapter:
         all_jobs = []
         for feed_url in WeWorkRemotelyAdapter.FEEDS:
             try:
-                async with session.get(
-                    feed_url, timeout=aiohttp.ClientTimeout(total=30)
-                ) as resp:
+                async with session.get(feed_url, timeout=aiohttp.ClientTimeout(total=30)) as resp:
                     if resp.status != 200:
                         continue
                     xml_text = await resp.text()
@@ -157,15 +156,17 @@ class WeWorkRemotelyAdapter:
                         company = parts[0].strip()
                         title = parts[1].strip()
 
-                    all_jobs.append(NormalizedJob(
-                        title=title,
-                        company=company,
-                        location="Remote",
-                        url=link_el.text if link_el is not None else "",
-                        date_posted=pub_el.text if pub_el is not None else "",
-                        source_ats="weworkremotely",
-                        job_id=link_el.text if link_el is not None else title,
-                    ))
+                    all_jobs.append(
+                        NormalizedJob(
+                            title=title,
+                            company=company,
+                            location="Remote",
+                            url=link_el.text if link_el is not None else "",
+                            date_posted=pub_el.text if pub_el is not None else "",
+                            source_ats="weworkremotely",
+                            job_id=link_el.text if link_el is not None else title,
+                        )
+                    )
             except Exception:
                 continue
         return all_jobs
@@ -174,6 +175,7 @@ class WeWorkRemotelyAdapter:
 # ═══════════════════════════════════════════════════════════════════════
 # DICE (RSS)
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class DiceAdapter:
     """Dice RSS feed for tech jobs."""
@@ -185,8 +187,7 @@ class DiceAdapter:
         # Dice may not have a public RSS anymore, fallback approach
         try:
             async with session.get(
-                DiceAdapter.URL, timeout=aiohttp.ClientTimeout(total=30),
-                headers={"User-Agent": "JobClaw/2.0"}
+                DiceAdapter.URL, timeout=aiohttp.ClientTimeout(total=30), headers={"User-Agent": "JobClaw/2.0"}
             ) as resp:
                 if resp.status != 200:
                     return []
@@ -203,15 +204,17 @@ class DiceAdapter:
                 link = item.find("link")
                 pub = item.find("pubDate")
 
-                jobs.append(NormalizedJob(
-                    title=title.text if title is not None else "",
-                    company="Unknown",
-                    location="Unknown",
-                    url=link.text if link is not None else "",
-                    date_posted=pub.text if pub is not None else "",
-                    source_ats="dice",
-                    job_id=link.text if link is not None else "",
-                ))
+                jobs.append(
+                    NormalizedJob(
+                        title=title.text if title is not None else "",
+                        company="Unknown",
+                        location="Unknown",
+                        url=link.text if link is not None else "",
+                        date_posted=pub.text if pub is not None else "",
+                        source_ats="dice",
+                        job_id=link.text if link is not None else "",
+                    )
+                )
             return jobs
         except Exception:
             return []
@@ -220,6 +223,7 @@ class DiceAdapter:
 # ═══════════════════════════════════════════════════════════════════════
 # HN WHO'S HIRING (Algolia API)
 # ═══════════════════════════════════════════════════════════════════════
+
 
 class HNWhoIsHiringAdapter:
     """Hacker News Who's Hiring via Algolia API.
@@ -241,8 +245,7 @@ class HNWhoIsHiringAdapter:
                 "hitsPerPage": 1,
             }
             async with session.get(
-                HNWhoIsHiringAdapter.SEARCH_URL, params=params,
-                timeout=aiohttp.ClientTimeout(total=30)
+                HNWhoIsHiringAdapter.SEARCH_URL, params=params, timeout=aiohttp.ClientTimeout(total=30)
             ) as resp:
                 if resp.status != 200:
                     return []
@@ -258,8 +261,7 @@ class HNWhoIsHiringAdapter:
 
             # 2. Fetch thread comments
             async with session.get(
-                f"{HNWhoIsHiringAdapter.ITEMS_URL}/{thread_id}",
-                timeout=aiohttp.ClientTimeout(total=30)
+                f"{HNWhoIsHiringAdapter.ITEMS_URL}/{thread_id}", timeout=aiohttp.ClientTimeout(total=30)
             ) as resp:
                 if resp.status != 200:
                     return []
@@ -288,15 +290,17 @@ class HNWhoIsHiringAdapter:
 
                 created = child.get("created_at", "")
 
-                jobs.append(NormalizedJob(
-                    title=title,
-                    company=company,
-                    location=location,
-                    url=f"https://news.ycombinator.com/item?id={child.get('id', '')}",
-                    date_posted=created,
-                    source_ats="hackernews",
-                    job_id=str(child.get("id", "")),
-                ))
+                jobs.append(
+                    NormalizedJob(
+                        title=title,
+                        company=company,
+                        location=location,
+                        url=f"https://news.ycombinator.com/item?id={child.get('id', '')}",
+                        date_posted=created,
+                        source_ats="hackernews",
+                        job_id=str(child.get("id", "")),
+                    )
+                )
             return jobs
         except Exception:
             return []

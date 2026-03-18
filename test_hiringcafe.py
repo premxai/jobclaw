@@ -1,6 +1,7 @@
 import asyncio
+
 import aiohttp
-from scripts.ingestion.aggregator_adapters import HiringCafeAdapter
+
 
 async def main():
     async with aiohttp.ClientSession() as session:
@@ -18,6 +19,7 @@ async def main():
         async with session.post("https://hiring.cafe/api/search", json=payload, headers=headers) as resp:
             print(f"Status: {resp.status}")
             print(f"Body: {await resp.text()}")
+
 
 if __name__ == "__main__":
     if __import__("sys").platform == "win32":
