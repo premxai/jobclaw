@@ -39,6 +39,11 @@ def init_db():
         salary_max REAL,
         salary_currency TEXT,
         experience_years INTEGER,
+        remote_ok TEXT,
+        job_type TEXT,
+        seniority_level TEXT,
+        visa_sponsorship INTEGER,
+        tech_stack TEXT,
         is_active INTEGER DEFAULT 1,
         last_seen_at TEXT
     )
@@ -85,6 +90,11 @@ def _migrate_schema(conn):
         ("salary_max", "REAL"),
         ("salary_currency", "TEXT"),
         ("experience_years", "INTEGER"),
+        ("remote_ok", "TEXT"),
+        ("job_type", "TEXT"),
+        ("seniority_level", "TEXT"),
+        ("visa_sponsorship", "INTEGER"),
+        ("tech_stack", "TEXT"),
         ("is_active", "INTEGER DEFAULT 1"),
         ("last_seen_at", "TEXT"),
     ]

@@ -97,6 +97,11 @@ def _ensure_sqlite_schema(conn):
         salary_max REAL,
         salary_currency TEXT,
         experience_years INTEGER,
+        remote_ok TEXT,
+        job_type TEXT,
+        seniority_level TEXT,
+        visa_sponsorship INTEGER,
+        tech_stack TEXT,
         is_active INTEGER DEFAULT 1,
         last_seen_at TEXT
     )
@@ -189,13 +194,15 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
     """SQLite insert with IntegrityError-based dedup."""
     cursor = conn.cursor()
     try:
+        tech_stack_json = json.dumps(job_dict["tech_stack"]) if job_dict.get("tech_stack") else None
         cursor.execute("""
             INSERT INTO jobs (
-                internal_hash, job_id, title, company, location, url, 
+                internal_hash, job_id, title, company, location, url,
                 date_posted, source_ats, first_seen, status, keywords_matched,
                 description, salary_min, salary_max, salary_currency,
-                experience_years, is_active, last_seen_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'unposted', ?, ?, ?, ?, ?, ?, 1, ?)
+                experience_years, remote_ok, job_type, seniority_level,
+                visa_sponsorship, tech_stack, is_active, last_seen_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'unposted', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
         """, (
             internal_hash,
             job_dict.get("job_id", ""),
@@ -212,6 +219,11 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
             job_dict.get("salary_max"),
             job_dict.get("salary_currency"),
             job_dict.get("experience_years"),
+            job_dict.get("remote_ok"),
+            job_dict.get("job_type"),
+            job_dict.get("seniority_level"),
+            job_dict.get("visa_sponsorship"),
+            tech_stack_json,
             first_seen,
         ))
         conn.commit()
@@ -219,17 +231,23 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
     except sqlite3.IntegrityError:
         try:
             cursor.execute("""
-                UPDATE jobs 
-                SET last_seen_at = ?, is_active = 1 
+                UPDATE jobs
+                SET last_seen_at = ?, is_active = 1
                 WHERE internal_hash = ?
             """, (first_seen, internal_hash))
             if job_dict.get("description"):
+                tech_stack_json = json.dumps(job_dict["tech_stack"]) if job_dict.get("tech_stack") else None
                 cursor.execute("""
-                    UPDATE jobs 
+                    UPDATE jobs
                     SET description = ?, salary_min = COALESCE(salary_min, ?),
                         salary_max = COALESCE(salary_max, ?),
                         salary_currency = COALESCE(salary_currency, ?),
-                        experience_years = COALESCE(experience_years, ?)
+                        experience_years = COALESCE(experience_years, ?),
+                        remote_ok = COALESCE(remote_ok, ?),
+                        job_type = COALESCE(job_type, ?),
+                        seniority_level = COALESCE(seniority_level, ?),
+                        visa_sponsorship = COALESCE(visa_sponsorship, ?),
+                        tech_stack = COALESCE(tech_stack, ?)
                     WHERE internal_hash = ? AND (description IS NULL OR description = '')
                 """, (
                     job_dict.get("description"),
@@ -237,6 +255,11 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
                     job_dict.get("salary_max"),
                     job_dict.get("salary_currency"),
                     job_dict.get("experience_years"),
+                    job_dict.get("remote_ok"),
+                    job_dict.get("job_type"),
+                    job_dict.get("seniority_level"),
+                    job_dict.get("visa_sponsorship"),
+                    tech_stack_json,
                     internal_hash,
                 ))
             conn.commit()
@@ -248,13 +271,15 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
 def _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
     """PostgreSQL insert with ON CONFLICT upsert."""
     cursor = conn.cursor()
+    tech_stack_json = json.dumps(job_dict["tech_stack"]) if job_dict.get("tech_stack") else None
     cursor.execute("""
         INSERT INTO jobs (
-            internal_hash, job_id, title, company, location, url, 
+            internal_hash, job_id, title, company, location, url,
             date_posted, source_ats, first_seen, status, keywords_matched,
             description, salary_min, salary_max, salary_currency,
-            experience_years, is_active, last_seen_at
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'unposted', %s, %s, %s, %s, %s, %s, TRUE, %s)
+            experience_years, remote_ok, job_type, seniority_level,
+            visa_sponsorship, tech_stack, is_active, last_seen_at
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'unposted', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE, %s)
         ON CONFLICT (internal_hash) DO UPDATE SET
             last_seen_at = EXCLUDED.last_seen_at,
             is_active = TRUE,
@@ -262,7 +287,12 @@ def _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
             salary_min = COALESCE(jobs.salary_min, EXCLUDED.salary_min),
             salary_max = COALESCE(jobs.salary_max, EXCLUDED.salary_max),
             salary_currency = COALESCE(jobs.salary_currency, EXCLUDED.salary_currency),
-            experience_years = COALESCE(jobs.experience_years, EXCLUDED.experience_years)
+            experience_years = COALESCE(jobs.experience_years, EXCLUDED.experience_years),
+            remote_ok = COALESCE(jobs.remote_ok, EXCLUDED.remote_ok),
+            job_type = COALESCE(jobs.job_type, EXCLUDED.job_type),
+            seniority_level = COALESCE(jobs.seniority_level, EXCLUDED.seniority_level),
+            visa_sponsorship = COALESCE(jobs.visa_sponsorship, EXCLUDED.visa_sponsorship),
+            tech_stack = COALESCE(jobs.tech_stack, EXCLUDED.tech_stack)
         RETURNING (xmax = 0) AS is_new
     """, (
         internal_hash,
@@ -280,6 +310,11 @@ def _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
         job_dict.get("salary_max"),
         job_dict.get("salary_currency"),
         job_dict.get("experience_years"),
+        job_dict.get("remote_ok"),
+        job_dict.get("job_type"),
+        job_dict.get("seniority_level"),
+        job_dict.get("visa_sponsorship"),
+        tech_stack_json,
         first_seen,
     ))
     result = cursor.fetchone()
@@ -398,19 +433,27 @@ async def async_insert_job(pool, job_dict: dict) -> bool:
     first_seen = datetime.now(timezone.utc).isoformat()
 
     async with pool.acquire() as conn:
+        tech_stack_json = json.dumps(job_dict["tech_stack"]) if job_dict.get("tech_stack") else None
         result = await conn.fetchrow("""
             INSERT INTO jobs (
-                internal_hash, job_id, title, company, location, url, 
+                internal_hash, job_id, title, company, location, url,
                 date_posted, source_ats, first_seen, status, keywords_matched,
                 description, salary_min, salary_max, salary_currency,
-                experience_years, is_active, last_seen_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'unposted', $10, $11, $12, $13, $14, $15, TRUE, $16)
+                experience_years, remote_ok, job_type, seniority_level,
+                visa_sponsorship, tech_stack, is_active, last_seen_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'unposted', $10,
+                      $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, TRUE, $21)
             ON CONFLICT (internal_hash) DO UPDATE SET
                 last_seen_at = EXCLUDED.last_seen_at,
                 is_active = TRUE,
                 description = COALESCE(NULLIF(jobs.description, ''), EXCLUDED.description),
                 salary_min = COALESCE(jobs.salary_min, EXCLUDED.salary_min),
-                salary_max = COALESCE(jobs.salary_max, EXCLUDED.salary_max)
+                salary_max = COALESCE(jobs.salary_max, EXCLUDED.salary_max),
+                remote_ok = COALESCE(jobs.remote_ok, EXCLUDED.remote_ok),
+                job_type = COALESCE(jobs.job_type, EXCLUDED.job_type),
+                seniority_level = COALESCE(jobs.seniority_level, EXCLUDED.seniority_level),
+                visa_sponsorship = COALESCE(jobs.visa_sponsorship, EXCLUDED.visa_sponsorship),
+                tech_stack = COALESCE(jobs.tech_stack, EXCLUDED.tech_stack)
             RETURNING (xmax = 0) AS is_new
         """,
             internal_hash,
@@ -428,6 +471,11 @@ async def async_insert_job(pool, job_dict: dict) -> bool:
             float(job_dict["salary_max"]) if job_dict.get("salary_max") else None,
             job_dict.get("salary_currency"),
             int(job_dict["experience_years"]) if job_dict.get("experience_years") else None,
+            job_dict.get("remote_ok"),
+            job_dict.get("job_type"),
+            job_dict.get("seniority_level"),
+            job_dict.get("visa_sponsorship"),
+            tech_stack_json,
             first_seen,
         )
         return result["is_new"] if result else False
