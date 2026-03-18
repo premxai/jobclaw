@@ -22,6 +22,7 @@ Supported platforms:
   - Workday         ({tenant}.wd{shard}.myworkdayjobs.com)
   - Workable        (apply.workable.com)
   - Rippling        (ats.rippling.com)
+  - Gem             (job-boards.gem.com)
 """
 
 import hashlib
@@ -64,6 +65,11 @@ class NormalizedJob:
     salary_max: Optional[float] = None
     salary_currency: Optional[str] = None
     experience_years: Optional[int] = None
+    remote_ok: Optional[str] = None          # 'remote' | 'hybrid' | 'onsite'
+    job_type: Optional[str] = None           # 'full_time' | 'contract' | 'internship' | 'part_time'
+    seniority_level: Optional[str] = None    # 'intern' | 'entry' | 'mid' | 'senior' | 'staff' | 'principal' | 'director'
+    visa_sponsorship: Optional[int] = None   # 1=yes, 0=no, None=unknown
+    tech_stack: Optional[list] = None        # ["Python", "React", "AWS"]
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -75,9 +81,138 @@ class NormalizedJob:
         return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
 
+# ── Pre-compiled enrichment patterns ────────────────────────────────
+
+_REMOTE_PATTERNS = [
+    (re.compile(r'\bfully[\s-]remote\b', re.I), 'remote'),
+    (re.compile(r'\bremote[\s-]first\b', re.I), 'remote'),
+    (re.compile(r'\bwork from home\b|\bwfh\b', re.I), 'remote'),
+    (re.compile(r'\b100%\s*remote\b', re.I), 'remote'),
+    (re.compile(r'\bhybrid\b', re.I), 'hybrid'),
+    (re.compile(r'\bonsite\b|\bon[\s-]site\b|\bin[\s-]office\b', re.I), 'onsite'),
+]
+
+_SENIORITY_MAP = [
+    (re.compile(r'\bintern\b|\binternship\b', re.I), 'intern'),
+    (re.compile(r'\bjunior\b|\bjr\.?\b|\bentry[\s-]level\b|\bnew\s+grad\b', re.I), 'entry'),
+    (re.compile(r'\bprincipal\b', re.I), 'principal'),
+    (re.compile(r'\bstaff\b', re.I), 'staff'),
+    (re.compile(r'\bdirector\b', re.I), 'director'),
+    (re.compile(r'\bsenior\b|\bsr\.?\b|\blead\b', re.I), 'senior'),
+]
+
+_JOB_TYPE_PATTERNS = [
+    (re.compile(r'\binternship\b|\bintern\b', re.I), 'internship'),
+    (re.compile(r'\bcontract\b|\bcontractor\b|\bcontract[\s-]to[\s-]hire\b', re.I), 'contract'),
+    (re.compile(r'\bpart[\s-]time\b', re.I), 'part_time'),
+    (re.compile(r'\bfull[\s-]time\b', re.I), 'full_time'),
+]
+
+_NO_SPONSORSHIP = re.compile(
+    r'(not\s+able|unable|will\s+not|cannot|do\s+not|does\s+not|won\'t|cannot)\s+'
+    r'(to\s+)?(provide|offer|sponsor|support)',
+    re.I
+)
+_SPONSORSHIP_YES = re.compile(
+    r'(visa\s+(sponsorship|support|assistance|available)|'
+    r'sponsor\s+(h[\s-]?1[\s-]?b|work\s+visa|visa)|'
+    r'we\s+(do\s+)?sponsor|h[\s-]?1[\s-]?b\s+transfer|'
+    r'candidates\s+who\s+(require|need)\s+(visa|sponsorship))',
+    re.I
+)
+
+# Top-60 tech vocabulary for exact-word matching
+_TECH_VOCAB = {
+    # Languages
+    'Python', 'TypeScript', 'JavaScript', 'Go', 'Rust', 'Java', 'Scala',
+    'C++', 'C#', 'Ruby', 'Swift', 'Kotlin', 'R', 'MATLAB', 'Julia',
+    # ML / AI
+    'PyTorch', 'TensorFlow', 'JAX', 'Keras', 'LangChain', 'LlamaIndex',
+    'scikit-learn', 'XGBoost', 'Spark', 'Hadoop', 'MLflow', 'Ray', 'Triton',
+    'Databricks', 'Hugging Face',
+    # Cloud / DevOps
+    'AWS', 'GCP', 'Azure', 'Kubernetes', 'Docker', 'Terraform', 'Airflow',
+    # Databases
+    'PostgreSQL', 'MySQL', 'MongoDB', 'Redis', 'Elasticsearch', 'Snowflake',
+    'BigQuery', 'Redshift', 'DynamoDB', 'Cassandra', 'Pinecone', 'Weaviate',
+    # Frameworks / Other
+    'React', 'Next.js', 'FastAPI', 'Django', 'Flask', 'Spring', 'Rails',
+    'GraphQL', 'dbt', 'Kafka', 'Flink', 'Spark',
+}
+# Build case-insensitive lookup: lowercase → canonical form
+_TECH_LOWER = {t.lower(): t for t in _TECH_VOCAB}
+# Pre-compiled word-boundary pattern for each term
+_TECH_PATTERNS = [
+    (re.compile(r'\b' + re.escape(t) + r'\b', re.I), canonical)
+    for t, canonical in _TECH_LOWER.items()
+]
+
+
+def _extract_enrichments(job: NormalizedJob) -> NormalizedJob:
+    """
+    Extract remote_ok, job_type, seniority_level, visa_sponsorship, and
+    tech_stack from the job title + description. Called from _enrich_job().
+    """
+    title = job.title or ""
+    desc = job.description or ""
+    location = job.location or ""
+    combined = f"{title} {desc}"
+
+    # ── Remote status ──────────────────────────────────────────────
+    # Check location string first (most reliable), then description
+    if not job.remote_ok:
+        loc_lower = location.lower()
+        if "remote" in loc_lower:
+            job.remote_ok = "hybrid" if "hybrid" in loc_lower else "remote"
+        else:
+            for pattern, value in _REMOTE_PATTERNS:
+                if pattern.search(combined):
+                    job.remote_ok = value
+                    break
+
+    # ── Job type ───────────────────────────────────────────────────
+    if not job.job_type:
+        for pattern, value in _JOB_TYPE_PATTERNS:
+            if pattern.search(combined):
+                job.job_type = value
+                break
+        if not job.job_type:
+            job.job_type = 'full_time'   # default assumption
+
+    # ── Seniority level ────────────────────────────────────────────
+    if not job.seniority_level:
+        for pattern, value in _SENIORITY_MAP:
+            if pattern.search(title):   # title only — more reliable
+                job.seniority_level = value
+                break
+        if not job.seniority_level:
+            job.seniority_level = 'mid'   # default when not specified
+
+    # ── Visa sponsorship ───────────────────────────────────────────
+    if job.visa_sponsorship is None and desc:
+        if _NO_SPONSORSHIP.search(desc):
+            job.visa_sponsorship = 0
+        elif _SPONSORSHIP_YES.search(desc):
+            job.visa_sponsorship = 1
+
+    # ── Tech stack ─────────────────────────────────────────────────
+    if not job.tech_stack and desc:
+        found = []
+        seen = set()
+        for pattern, canonical in _TECH_PATTERNS:
+            if canonical not in seen and pattern.search(desc):
+                found.append(canonical)
+                seen.add(canonical)
+        job.tech_stack = found if found else None
+
+    return job
+
+
 def _enrich_job(job: NormalizedJob) -> NormalizedJob:
-    """Extract salary and experience from the job description."""
+    """Extract salary, experience, and classification signals from the job description."""
     if not job.description:
+        # Still extract seniority from title even without description
+        _extract_enrichments(job)
         return job
 
     salary_str, _ = extract_salary(job.description)
@@ -91,6 +226,7 @@ def _enrich_job(job: NormalizedJob) -> NormalizedJob:
     if years is not None:
         job.experience_years = years
 
+    _extract_enrichments(job)
     return job
 
 
@@ -752,6 +888,80 @@ class RipplingAdapter:
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# GEM ATS ADAPTER
+# ═══════════════════════════════════════════════════════════════════════
+
+class GemAdapter:
+    """Gem Job Board API: job-boards.gem.com/{slug}/jobs"""
+
+    BASE_URL = "https://job-boards.gem.com/{slug}/jobs"
+
+    @staticmethod
+    async def fetch(
+        session,
+        slug: str,
+        company: str,
+        rate_limiter: Optional[RateLimiter] = None,
+    ) -> list[NormalizedJob]:
+        url = GemAdapter.BASE_URL.format(slug=slug)
+        resp = await fetch_with_retry(
+            session, "GET", url,
+            rate_limiter=rate_limiter,
+            log_tag=f"gem/{slug}",
+        )
+        if not resp:
+            return []
+
+        try:
+            data = await _parse_json(resp)
+        except Exception as e:
+            _log(f"[gem/{slug}] JSON decode error: {e}", "WARN")
+            return []
+
+        if not isinstance(data, dict):
+            return []
+
+        raw_jobs = data.get("jobs", data.get("data", []))
+        if not isinstance(raw_jobs, list):
+            return []
+
+        jobs = []
+        for j in raw_jobs:
+            if not isinstance(j, dict):
+                continue
+
+            location = j.get("location", "") or j.get("city", "") or "Unknown"
+            if isinstance(location, dict):
+                parts = [location.get("city", ""), location.get("state", ""), location.get("country", "")]
+                location = ", ".join(p for p in parts if p) or "Unknown"
+
+            job_id = str(j.get("id", "") or j.get("req_id", ""))
+            apply_url = (
+                j.get("apply_url")
+                or j.get("url")
+                or f"https://job-boards.gem.com/{slug}/jobs/{job_id}"
+            )
+
+            description = _strip_html(
+                j.get("description", "") or j.get("content", "")
+            ) or None
+
+            job = NormalizedJob(
+                title=j.get("title", "") or j.get("name", ""),
+                company=company,
+                location=location,
+                url=apply_url,
+                date_posted=j.get("created_at", "") or j.get("posted_at", ""),
+                source_ats="gem",
+                job_id=job_id,
+                description=description,
+            )
+            jobs.append(_enrich_job(job))
+
+        return jobs
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # ADAPTER REGISTRY
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -764,6 +974,7 @@ ADAPTERS = {
     "workday": WorkdayAdapter,
     "workable": WorkableAdapter,
     "rippling": RipplingAdapter,
+    "gem": GemAdapter,
 }
 
 
