@@ -1,5 +1,5 @@
 """
-Role Keyword Filter — Complete Taxonomy (142+ titles).
+Role Keyword Filter — Complete Taxonomy (165+ titles).
 
 Filters job listings to AI/ML, Data Science, Data Engineering,
 Data Analysis, Software Engineering, New Grad, and Emerging roles.
@@ -51,6 +51,14 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
     ("embeddings engineer", "AI/ML"),
     ("ai ethics researcher", "AI/ML"),
     ("ai automation engineer", "AI/ML"),
+    ("ml safety engineer", "AI/ML"),
+    ("ai safety researcher", "AI/ML"),
+    ("ai alignment researcher", "AI/ML"),
+    ("autonomous systems engineer", "AI/ML"),
+    ("self-driving engineer", "AI/ML"),
+    ("quantum software engineer", "AI/ML"),
+    ("quantum computing engineer", "AI/ML"),
+    ("ai infrastructure engineer", "AI/ML"),
 
     # ── Data Science Core ─────────────────────────────────────────────
     ("data scientist", "Data Science"),
@@ -97,6 +105,9 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
     ("azure data engineer", "Data Engineering"),
     ("aws data engineer", "Data Engineering"),
     ("gcp data engineer", "Data Engineering"),
+    ("streaming data engineer", "Data Engineering"),
+    ("lakehouse engineer", "Data Engineering"),
+    ("data reliability engineer", "Data Engineering"),
 
     # ── Data Analyst Core ─────────────────────────────────────────────
     ("data analyst", "Data Analyst"),
@@ -164,6 +175,14 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
     ("sdet", "SWE"),
     ("security engineer", "SWE"),
     ("cybersecurity analyst", "SWE"),
+    ("developer relations engineer", "SWE"),
+    ("devrel engineer", "SWE"),
+    ("ar engineer", "SWE"),
+    ("vr engineer", "SWE"),
+    ("xr engineer", "SWE"),
+    ("mixed reality engineer", "SWE"),
+    ("firmware engineer", "SWE"),
+    ("embedded systems engineer", "SWE"),
 
     # ── New Grad / Early Career ───────────────────────────────────────
     ("new college grad", "New Grad"),
@@ -178,6 +197,8 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
     ("associate data professional", "New Grad"),
     ("technology analyst", "New Grad"),
     ("engineering analyst", "New Grad"),
+    ("campus hire", "New Grad"),
+    ("early career engineer", "New Grad"),
 
     # ── Product & Research ────────────────────────────────────────────
     ("associate product manager", "Product"),
