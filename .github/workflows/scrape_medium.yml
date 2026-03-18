@@ -71,8 +71,7 @@ jobs:
           python scripts/ingestion/run_all_scrapers.py \
             --tier medium \
             --window 6 \
-            --shard $SHARD \
-            --skip-openclaw
+            --shard $SHARD
 
       - name: Commit dedup file
         if: always()

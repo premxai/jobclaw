@@ -52,8 +52,7 @@ jobs:
           python scripts/ingestion/run_all_scrapers.py \
             --tier fast \
             --window 24 \
-            --skip-ats \
-            --skip-openclaw
+            --skip-ats
 
       - name: Commit dedup file
         if: always()

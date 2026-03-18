@@ -1,11 +1,10 @@
 name: "🔍 Deep Tier — LinkedIn, Indeed, Glassdoor via Brave Search (Daily)"
 
 # ┌────────────────────────────────────────────────────────────────────┐
-# │  DEEP TIER — runs daily at 6 PM EST (11 PM UTC)                │
+# │  DEEP TIER — runs daily at 6 PM EST (11 PM UTC)                   │
 # │  Scraper: Brave Search API (LinkedIn, Indeed, Glassdoor)          │
-# │           Falls back to OpenClaw if no BRAVE_SEARCH_API_KEY set   │
-# │  + RSS + GitHub for fresh baseline                                │
-# │  Duration: ~1-2 minutes (Brave) or ~15-30 minutes (OpenClaw)     │
+# │           + full ATS sweep (all shards, no rotation)              │
+# │  Duration: ~5-15 minutes                                          │
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
@@ -33,15 +32,6 @@ jobs:
 
       - name: Install Python dependencies
         run: pip install -r requirements.txt
-
-      # Only install Node/Playwright if falling back to OpenClaw
-      - name: Install OpenClaw (fallback only)
-        if: ${{ !env.BRAVE_SEARCH_API_KEY }}
-        run: |
-          npm install -g @openclaw/cli || true
-          pip install playwright && playwright install chromium --with-deps || true
-        env:
-          BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
 
       - name: Run deep-tier scrapers
         env:
