@@ -198,6 +198,7 @@ async def run_ats_scraper(
     skip_platforms: set = None,
     shard: int = -1,
     total_shards: int = 4,
+    tier: str = None,
 ):
     """
     Micro-scraper exclusively for Direct ATS APIs (Greenhouse, Lever, etc.)
@@ -369,6 +370,17 @@ async def run_ats_scraper(
         f"queue_size={retry_stats['queue_size']}"
     )
 
+    # Flatten jobs + collect lifecycle data
+    all_jobs = []
+    company_job_ids = defaultdict(set)  # (ats, company) → {job_id, ...}
+
+    for name, ats, _slug, jobs, err in all_results:
+        if err:
+            errors.append(f"{name}: {err}")
+        for job in jobs:
+            all_jobs.append(job)
+            company_job_ids[(ats, name)].add(job.job_id)
+
     # ── Database Tracking & Lifecycle ─────────────────────────────────
     conn = get_connection()
     try:
@@ -381,17 +393,6 @@ async def run_ats_scraper(
 
     # Log circuit breaker health
     _log(f"Circuit breaker: {breaker.summary()}")
-
-    # Flatten jobs + collect lifecycle data
-    all_jobs = []
-    company_job_ids = defaultdict(set)  # (ats, company) → {job_id, ...}
-
-    for name, ats, _slug, jobs, err in all_results:
-        if err:
-            errors.append(f"{name}: {err}")
-        for job in jobs:
-            all_jobs.append(job)
-            company_job_ids[(ats, name)].add(job.job_id)
 
     cache.log_stats()
     _log(f"Fetched {len(all_jobs)} total raw jobs from ATS APIs.")

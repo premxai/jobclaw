@@ -26,7 +26,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.utils.logger import _log
-from scripts.database.db_utils import get_connection, get_next_shard_from_db, is_postgres
+from scripts.database.db_utils import get_connection, get_next_shard_from_db
 
 def get_next_shard(scraper_name: str, total_shards: int = 4) -> int:
     """Read shard from DB to ensure rotation persists even in ephemeral runners."""
@@ -61,6 +61,7 @@ async def run_all(
     skip_platforms: set = None,
     shard: int = None,
     total_shards: int = 4,
+    tier: str = None,
 ):
     """
     Launch all scrapers in parallel — ZERO-MISS coverage.
@@ -116,6 +117,7 @@ async def run_all(
                     skip_platforms=ats_skip,
                     shard=shard,
                     total_shards=total_shards,
+                    tier=tier,
                 ),
             )
         )
@@ -261,6 +263,7 @@ Legacy flags still work:
         window = args.window or 24
         skip_platforms = set()
         shard_val = None  # No sharding — full sweep of all companies
+        db_tier = None
     else:
         # No tier specified — default to medium behavior
         skip_ats = False
@@ -303,6 +306,7 @@ Legacy flags still work:
             skip_platforms=skip_platforms,
             shard=shard_val,
             total_shards=args.total_shards,
+            tier=db_tier,
         )
     )
 

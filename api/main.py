@@ -285,7 +285,6 @@ async def match_jobs(
 
     Example: `GET /jobs/match?q=machine learning engineer building LLM pipelines at AI startup`
     """
-    import json as _json
     from datetime import UTC, datetime
 
     try:
@@ -321,7 +320,6 @@ async def match_jobs(
             ).fetchone()
             if not row:
                 continue
-            cols = [d[0] for d in conn.execute("SELECT * FROM jobs LIMIT 0").description or []]
             # Compute freshness
             first_seen = row["first_seen"] if hasattr(row, "keys") else None
             freshness_min = None

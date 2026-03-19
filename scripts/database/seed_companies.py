@@ -1,5 +1,3 @@
-import json
-import os
 import sys
 from pathlib import Path
 
@@ -23,8 +21,6 @@ def seed_companies():
 
     conn = get_connection()
     cursor = conn.cursor()
-    
-    placeholder = "%s" if is_postgres() else "?"
     
     count = 0
     hot_tagged = 0

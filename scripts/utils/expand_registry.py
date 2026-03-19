@@ -388,7 +388,7 @@ def fetch_and_merge():
     with open(REGISTRY_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
 
-    print(f"\n✅ Registry Expansion Complete.")
+    print("\n✅ Registry Expansion Complete.")
     print(f"   Added:    {added_count} new companies")
     print(f"   Before:   {initial_count}")
     print(f"   After:    {len(registry)}")
