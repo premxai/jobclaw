@@ -55,6 +55,7 @@ def get_connection():
 
             conn = psycopg2.connect(DATABASE_URL)
             conn.autocommit = False
+            _ensure_postgres_schema(conn)
             return conn
         except ImportError as err:
             raise ImportError("psycopg2 required for PostgreSQL. Run: pip install psycopg2-binary") from err
@@ -76,6 +77,69 @@ def get_connection():
             _ensure_sqlite_schema(conn)
 
     return conn
+
+
+def _ensure_postgres_schema(conn):
+    """Create core tables on Postgres if they don't exist."""
+    cursor = conn.cursor()
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS jobs (
+        id SERIAL PRIMARY KEY,
+        internal_hash TEXT UNIQUE NOT NULL,
+        job_id TEXT,
+        title TEXT NOT NULL,
+        company TEXT NOT NULL,
+        location TEXT,
+        url TEXT NOT NULL,
+        date_posted TEXT,
+        source_ats TEXT NOT NULL,
+        first_seen TEXT NOT NULL DEFAULT now()::text,
+        status TEXT DEFAULT 'unposted',
+        keywords_matched TEXT,
+        description TEXT,
+        salary_min REAL,
+        salary_max REAL,
+        salary_currency TEXT,
+        experience_years TEXT,
+        remote_ok TEXT,
+        job_type TEXT,
+        seniority_level TEXT,
+        visa_sponsorship INTEGER,
+        tech_stack TEXT,
+        is_active INTEGER DEFAULT 1,
+        last_seen_at TEXT,
+        discord_posted INTEGER DEFAULT 0,
+        embedding_json TEXT
+    )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_pg_status ON jobs(status)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_pg_first_seen ON jobs(first_seen)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_pg_company ON jobs(company)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_pg_source_ats ON jobs(source_ats)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_pg_is_active ON jobs(is_active)")
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS runs (
+        id SERIAL PRIMARY KEY,
+        scraper TEXT NOT NULL,
+        companies INTEGER DEFAULT 0,
+        new_jobs INTEGER DEFAULT 0,
+        duration_secs REAL DEFAULT 0,
+        errors TEXT DEFAULT '',
+        run_at TEXT DEFAULT now()::text
+    )
+    """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS scraper_runs (
+        id SERIAL PRIMARY KEY,
+        scraper TEXT NOT NULL,
+        companies_scraped INTEGER DEFAULT 0,
+        new_jobs INTEGER DEFAULT 0,
+        duration_seconds REAL DEFAULT 0,
+        errors TEXT DEFAULT '',
+        run_at TEXT DEFAULT now()::text
+    )
+    """)
+    conn.commit()
 
 
 def _ensure_sqlite_schema(conn):
