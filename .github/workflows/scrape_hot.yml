@@ -1,0 +1,62 @@
+name: "🔥 Hot Company Fast Scraper (every 5 min)"
+
+# ┌──────────────────────────────────────────────────────────────────────┐
+# │  Runs every 5 minutes 24/7 — scrapes ~200 high-signal companies     │
+# │  and fires instant Discord alerts for any new jobs discovered.      │
+# │  Target: make users consistently be in first 5-10 applicants.      │
+# └──────────────────────────────────────────────────────────────────────┘
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # Every 5 minutes
+  workflow_dispatch:         # Manual trigger for testing
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hot-scraper
+  cancel-in-progress: true  # Cancel older run if next 5-min trigger fires
+
+jobs:
+  hot-scrape:
+    name: Hot Scraper Run
+    runs-on: ubuntu-latest
+    timeout-minutes: 4       # Must complete in under 5 min
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Playwright browsers (for Workday fallback)
+        run: |
+          pip install playwright
+          python -m playwright install chromium --with-deps
+        continue-on-error: true   # Non-fatal — pure curl_cffi handles most ATS
+
+      - name: Run hot company scraper
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+        run: python scripts/ingestion/scrape_hot.py
+
+      - name: Commit updated posted_hashes (if changed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/posted_hashes.json || true
+          if git diff --cached --quiet; then
+            echo "No hash updates."
+          else
+            git commit -m "chore: update posted_hashes.json [skip ci]"
+            git push origin main
+          fi

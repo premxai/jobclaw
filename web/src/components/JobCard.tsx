@@ -17,6 +17,8 @@ export interface Job {
     description?: string;
     first_seen?: string;
     status?: string;
+    freshness_minutes?: number | null;  // computed by /jobs/match
+    match_score?: number | null;        // cosine similarity 0-1
 }
 
 function timeAgo(dateStr: string): string {
@@ -31,6 +33,15 @@ function timeAgo(dateStr: string): string {
     if (diffDays === 1) return "1 day ago";
     if (diffDays < 30) return `${diffDays} days ago`;
     return dateStr;
+}
+
+function getFreshnessLabel(minutes?: number | null): { emoji: string; color: string } | null {
+    if (minutes === null || minutes === undefined) return null;
+    if (minutes < 5)  return { emoji: "🔥🔥🔥", color: "text-red-500 font-bold" };
+    if (minutes < 15) return { emoji: "🔥🔥",   color: "text-orange-500 font-bold" };
+    if (minutes < 60) return { emoji: "🔥",     color: "text-orange-400 font-semibold" };
+    if (minutes < 240) return { emoji: "⚡",    color: "text-yellow-500 font-medium" };
+    return null;  // older than 4h — no badge needed
 }
 
 function formatSalary(min?: number | null, max?: number | null): string | null {
@@ -86,6 +97,8 @@ export default function JobCard({ job, onSave, saved = false }: JobCardProps) {
     const salary = formatSalary(job.salary_min, job.salary_max);
     const category = getCategory(job.keywords_matched);
     const time = timeAgo(job.date_posted || job.first_seen || "");
+    const freshness = getFreshnessLabel(job.freshness_minutes);
+    const matchPct = job.match_score != null ? Math.round(job.match_score * 100) : null;
 
     return (
         <div className="job-card">
@@ -118,6 +131,20 @@ export default function JobCard({ job, onSave, saved = false }: JobCardProps) {
 
             {/* Tags — fixed height area */}
             <div className="flex flex-wrap gap-1.5 mb-4 min-h-[2rem]">
+                {/* Freshness badge — highest priority, shown first */}
+                {freshness && (
+                    <span className={`pill ${freshness.color} bg-red-50 border-red-200 border text-xs`}>
+                        {freshness.emoji} {job.freshness_minutes! < 60
+                            ? `${job.freshness_minutes}m ago`
+                            : `${Math.round(job.freshness_minutes! / 60)}h ago`
+                        }
+                    </span>
+                )}
+                {matchPct !== null && (
+                    <span className="pill bg-accent/10 text-accent border border-accent/30 text-xs font-bold">
+                        {matchPct}% match
+                    </span>
+                )}
                 {category && <span className="pill pill-accent">{category}</span>}
                 {job.location && (
                     <span className="pill pill-white">{job.location.length > 22 ? job.location.slice(0, 22) + "…" : job.location}</span>

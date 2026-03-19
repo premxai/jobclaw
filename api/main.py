@@ -271,6 +271,82 @@ async def search_jobs(
     )
 
 
+@app.get("/jobs/match", tags=["Jobs"])
+async def match_jobs(
+    q: str = Query(..., description="Your profile, skills, or job description to match against"),
+    top_k: int = Query(20, ge=1, le=100, description="Number of matched jobs to return"),
+    hot_only: bool = Query(False, description="Only return jobs from hot-company watchlist"),
+):
+    """
+    Semantic job matching — returns jobs ranked by cosine similarity to your query.
+
+    Pass your resume summary, target role description, or skill list.
+    The backend uses sentence-transformer embeddings (local, free, private).
+
+    Example: `GET /jobs/match?q=machine learning engineer building LLM pipelines at AI startup`
+    """
+    import json as _json
+    from datetime import UTC, datetime
+
+    try:
+        from scripts.ai.embed_jobs import JobEmbedder
+        embedder = JobEmbedder()
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Embedding backend unavailable: {e}") from e
+
+    # Load hot company slugs for optional hot_only filter
+    hot_slugs: set = set()
+    if hot_only:
+        try:
+            import json as _j
+            hot_cfg = PROJECT_ROOT / "config" / "hot_companies.json"
+            if hot_cfg.exists():
+                data = _j.loads(hot_cfg.read_text(encoding="utf-8"))
+                hot_slugs = {c["slug"] for c in data.get("companies", [])}
+        except Exception:
+            pass
+
+    results = embedder.find_similar(q, top_k=min(top_k * 3, 300))  # over-fetch then filter
+
+    conn = get_db()
+    enriched = []
+    try:
+        for r in results:
+            if hot_only and r.get("slug") not in hot_slugs:
+                continue
+            # Fetch full job record
+            row = conn.execute(
+                "SELECT * FROM jobs WHERE internal_hash = ? AND is_active = 1",
+                (r["internal_hash"],)
+            ).fetchone()
+            if not row:
+                continue
+            cols = [d[0] for d in conn.execute("SELECT * FROM jobs LIMIT 0").description or []]
+            # Compute freshness
+            first_seen = row["first_seen"] if hasattr(row, "keys") else None
+            freshness_min = None
+            if first_seen:
+                try:
+                    dt = datetime.fromisoformat(str(first_seen).replace("Z", "+00:00"))
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=UTC)
+                    freshness_min = round((datetime.now(UTC) - dt).total_seconds() / 60)
+                except Exception:
+                    pass
+
+            job_dict = dict(row) if hasattr(row, "keys") else dict(zip([d[0] for d in conn.execute("PRAGMA table_info(jobs)").fetchall()], row))
+            job_dict["match_score"] = r["similarity"]
+            job_dict["freshness_minutes"] = freshness_min
+            enriched.append(job_dict)
+
+            if len(enriched) >= top_k:
+                break
+    finally:
+        conn.close()
+
+    return {"results": enriched, "query": q, "total": len(enriched)}
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # COMPANIES
 # ═══════════════════════════════════════════════════════════════════════
