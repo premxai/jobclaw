@@ -22,7 +22,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.database.db_utils import get_connection, get_unposted_jobs, mark_jobs_posted
+from scripts.database.db_utils import get_connection, get_unposted_jobs, mark_jobs_posted, get_hot_slugs
 from scripts.utils.dedup_file import is_already_posted, load_posted_hashes, mark_as_posted, save_posted_hashes
 from scripts.utils.logger import _log
 
@@ -127,22 +127,8 @@ def _urgency_color(date_posted: str, base_color: int) -> int:
 
 
 def _quality_score(job: dict) -> float:
-    """Score a job for Discord push priority. Higher score = pushed first."""
-    score = 0.0
-    date_str = job.get("date_posted") or job.get("first_seen", "")
-    try:
-        posted = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-        age_hours = (datetime.now(UTC) - posted).total_seconds() / 3600
-        score += max(0.0, 24.0 - age_hours) * 2  # Up to +48 for < 1hr old
-    except (ValueError, TypeError, AttributeError):
-        pass
-    if job.get("salary_min") or job.get("salary_max"):
-        score += 15
-    if job.get("experience_years") is not None:
-        score += 5
-    if job.get("description"):
-        score += 3
-    return score
+    """Return the quality score from the DB, or a basic calculation if missing."""
+    return float(job.get("quality_score", 0))
 
 
 def _get_category(job: dict) -> str:
@@ -183,10 +169,21 @@ def _build_job_embed(job: dict) -> dict:
     url = job.get("url", "")
     date_posted = job.get("date_posted") or job.get("first_seen", "")
     source_ats = job.get("source_ats", "")
+    hot_slugs = get_hot_slugs()
+    is_hot = source_ats.lower() in hot_slugs or company.lower().strip() in hot_slugs
+    
+    # Categorization (Phase 3 matching)
     category = _get_category(job)
-
+    
     emoji = CATEGORY_EMOJIS.get(category, "💼")
+    if is_hot:
+        emoji = "🔥"
+        
     base_color = CATEGORY_COLORS.get(category, 0x546E7A)
+    # Brighten color for hot companies
+    if is_hot:
+        base_color = 0xF1C40F  # Gold/Yellow
+        
     # Override color based on posting age (green = fresh, yellow = recent)
     color = _urgency_color(date_posted, base_color)
     ats_label = ATS_LABELS.get(source_ats.lower(), source_ats) if source_ats else "Direct"
@@ -195,17 +192,20 @@ def _build_job_embed(job: dict) -> dict:
     if location and len(location) > 40:
         location = location[:37] + "..."
 
+    quality_score = job.get("quality_score", 0)
+    
     embed = {
-        "title": f"{emoji}  {title}",
+        "title": f"{emoji} {title}",
         "color": color,
         "fields": [
-            {"name": "🏢 Company", "value": company, "inline": True},
+            {"name": "🏢 Company", "value": f"**{company}** {' ✅' if is_hot else ''}", "inline": True},
             {"name": "📍 Location", "value": location or "Remote", "inline": True},
             {"name": "📅 Posted", "value": _format_date(date_posted), "inline": True},
             {"name": "🔗 Source", "value": ats_label, "inline": True},
             {"name": "🏷️ Category", "value": category, "inline": True},
+            {"name": "📊 Match Score", "value": f"`{int(quality_score)}/100`", "inline": True},
         ],
-        "footer": {"text": f"JobClaw • {ats_label}"},
+        "footer": {"text": f"JobClaw • {ats_label} • {datetime.now(UTC).strftime('%H:%M UTC')}"},
         "timestamp": datetime.now(UTC).isoformat(),
     }
 
@@ -389,19 +389,22 @@ async def push_new_jobs_to_discord():
             log("No unposted jobs — nothing to push.")
             return 0
 
-        # Filter out jobs we already posted in previous runs
-        fresh_jobs = [j for j in jobs if not is_already_posted(posted_hashes, j["internal_hash"])]
-        skipped = len(jobs) - len(fresh_jobs)
-        if skipped > 0:
-            log(f"Skipped {skipped} already-posted jobs (dedup file).")
-
+        # Filter out jobs we already posted in previous runs (disk-based dedup)
+        # AND filter by Quality Threshold (Phase 1 gate)
+        QUALITY_THRESHOLD = 30
+        fresh_jobs = [
+            j for j in jobs 
+            if not is_already_posted(j["internal_hash"], posted_hashes) 
+            and float(j.get("quality_score", 0)) >= QUALITY_THRESHOLD
+        ]
+        
         if not fresh_jobs:
-            log("All jobs already posted in previous runs — nothing new.")
+            log(f"All {len(jobs)} unposted jobs failed the quality threshold (>= 30).")
             return 0
 
         # Sort by quality score — freshest + richest data first
         fresh_jobs.sort(key=_quality_score, reverse=True)
-        log(f"Pushing {len(fresh_jobs)} new jobs to Discord as individual cards (sorted by quality)...")
+        log(f"Pushing {len(fresh_jobs)} new jobs to Discord (quality filtered, sorted by score)...")
         sent_hashes = []
 
         # Group jobs by target channel for efficient sending

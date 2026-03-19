@@ -186,10 +186,13 @@ class _HostBucket:
 
             if self.tokens < 1.0:
                 wait_time = (1.0 - self.tokens) / self.rps
-                jitter = wait_time * random.uniform(0.1, 0.3)
+                # Add human-like jitter (0.5s - 1.5s base)
+                jitter = random.uniform(0.5, 1.5)
                 await asyncio.sleep(wait_time + jitter)
                 self.tokens = 0.0
             else:
+                # Even if we have tokens, add a tiny bit of jitter for stealth
+                await asyncio.sleep(random.uniform(0.1, 0.3))
                 self.tokens -= 1.0
 
 

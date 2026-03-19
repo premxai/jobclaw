@@ -26,32 +26,17 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.utils.logger import _log
+from scripts.database.db_utils import get_connection, get_next_shard_from_db, is_postgres
 
-# ── Shard Rotation Counter ───────────────────────────────────────────
-SHARD_COUNTER_FILE = PROJECT_ROOT / "data" / ".shard_counter"
-
-
-def get_next_shard(total_shards: int = 4) -> int:
-    """Deterministic shard rotation: 0 → 1 → 2 → 3 → 0 → ...
-
-    Uses a file-based counter so it persists across runs.
-    Guarantees full registry coverage every `total_shards` runs.
-    """
-    current = 0
-    if SHARD_COUNTER_FILE.exists():
-        try:
-            current = int(SHARD_COUNTER_FILE.read_text().strip())
-        except (ValueError, OSError):
-            current = 0
-
-    shard = current % total_shards
-
-    # Increment for next run
-    SHARD_COUNTER_FILE.parent.mkdir(parents=True, exist_ok=True)
-    SHARD_COUNTER_FILE.write_text(str(current + 1))
-
-    _log(f"[shard-rotation] Shard {shard}/{total_shards} (run #{current + 1})")
-    return shard
+def get_next_shard(scraper_name: str, total_shards: int = 4) -> int:
+    """Read shard from DB to ensure rotation persists even in ephemeral runners."""
+    conn = get_connection()
+    try:
+        shard = get_next_shard_from_db(conn, scraper_name, total_shards)
+        _log(f"[shard-rotation] {scraper_name} -> Shard {shard}/{total_shards}")
+        return shard
+    finally:
+        conn.close()
 
 
 async def _run_with_timing(name: str, coro):
@@ -257,7 +242,8 @@ Legacy flags still work:
         skip_github = False
         window = args.window or 4
         skip_platforms = set()
-        shard_val = get_next_shard(total_shards)  # Deterministic rotation
+        shard_val = get_next_shard("fast_ats", total_shards)  # Deterministic rotation
+        db_tier = "P0"
     elif tier == "medium":
         # RSS + GitHub + Enterprise + ATS (1 rotating shard) — ~4 min
         skip_ats = False
@@ -265,7 +251,8 @@ Legacy flags still work:
         skip_github = False
         window = args.window or 8
         skip_platforms = set()
-        shard_val = get_next_shard(total_shards)
+        shard_val = get_next_shard("medium_ats", total_shards)
+        db_tier = "P1"
     elif tier == "deep":
         # Everything: ALL shards + Brave Search — ~15 min
         skip_ats = False
@@ -281,12 +268,13 @@ Legacy flags still work:
         skip_github = args.no_github
         window = args.window or 24
         skip_platforms = None
-        shard_val = get_next_shard(total_shards)
+        shard_val = get_next_shard("custom_ats", total_shards)
+        db_tier = "P2"
 
     # Override shard from CLI if explicitly set
     if args.shard is not None:
         if args.shard.lower() == "auto":
-            shard_val = get_next_shard(total_shards)
+            shard_val = get_next_shard("cli_auto_ats", total_shards)
         else:
             shard_val = int(args.shard)
 

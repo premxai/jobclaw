@@ -202,6 +202,23 @@ _COMPILED_PATTERNS: list[tuple[re.Pattern, str]] = [
 ]
 
 
+ROLE_WEIGHTS: dict[str, float] = {
+    "AI/ML": 1.0,
+    "Software Engineering": 1.0,
+    "Data Engineering": 0.8,
+    "Data Science": 0.8,
+    "Infrastructure": 0.8,
+    "Security": 0.7,
+    "Backend": 0.9,
+    "Frontend": 0.7,
+    "Product": 0.6,
+    "General Tech": 0.5,
+}
+
+def get_role_weight(category: str) -> float:
+    """Return the semantic weight for a category (0.0 - 1.0)."""
+    return ROLE_WEIGHTS.get(category, 0.5)
+
 def matches_target_role(title: str) -> list[str]:
     """Check if a job title matches any target role keywords.
 

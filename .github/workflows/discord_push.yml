@@ -1,0 +1,58 @@
+name: "🚀 Discord Alert Push (Every 15 min)"
+
+# ┌──────────────────────────────────────────────────────────────────────┐
+# │  Decoupled Discord Push Workflow — runs every 15 minutes            │
+# │  Strategy: Filters unposted jobs by quality_score >= 30,             │
+# │  sorts by score, and pushes to category channels.                   │
+# │  Decoupling ensures alerts are consistent even if scrapers fail.     │
+# └──────────────────────────────────────────────────────────────────────┘
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'   # Every 15 minutes
+  workflow_dispatch:         # Manual trigger
+
+permissions:
+  contents: write
+
+jobs:
+  discord-push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Discord push script
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+          DISCORD_CHANNEL_AI: ${{ secrets.DISCORD_CHANNEL_AI }}
+          DISCORD_CHANNEL_SWE: ${{ secrets.DISCORD_CHANNEL_SWE }}
+          DISCORD_CHANNEL_DATA: ${{ secrets.DISCORD_CHANNEL_DATA }}
+          DISCORD_CHANNEL_NEWGRAD: ${{ secrets.DISCORD_CHANNEL_NEWGRAD }}
+          DISCORD_CHANNEL_PRODUCT: ${{ secrets.DISCORD_CHANNEL_PRODUCT }}
+          DISCORD_CHANNEL_RESEARCH: ${{ secrets.DISCORD_CHANNEL_RESEARCH }}
+        run: python scripts/discord_push.py
+
+      - name: Commit updated posted_hashes (if changed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/posted_hashes.json || true
+          if git diff --cached --quiet; then
+            echo "No hash updates."
+          else
+            git commit -m "chore: update posted_hashes.json [skip ci]"
+            git push origin main
+          fi

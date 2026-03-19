@@ -29,7 +29,10 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.database.db_utils import get_connection, insert_job, log_scraper_run, mark_stale_jobs
+from scripts.database.db_utils import (
+    get_connection, insert_job, log_scraper_run, mark_stale_jobs,
+    get_companies_by_tier, update_company_last_scraped
+)
 from scripts.ingestion.ats_adapters import NormalizedJob, fetch_company_jobs
 from scripts.ingestion.parallel_ingestor import is_within_window, load_registry
 from scripts.ingestion.role_filter import matches_target_role
@@ -216,6 +219,7 @@ async def run_ats_scraper(
                -1 = auto-detect based on current 15-minute time slot.
                None = no sharding (process entire registry).
         total_shards: Number of shards to split registry into (default 4).
+        tier: Optional DB tier to fetch (P0, P1, P2). If provided, registry is ignored.
     """
     start_time = time.time()
     _log(">>> Starting ATS Micro-Scraper v4 (curl_cffi TLS impersonation)")
@@ -223,17 +227,27 @@ async def run_ats_scraper(
     if skip_platforms is None:
         skip_platforms = DEFAULT_SKIP_PLATFORMS
 
-    registry = load_registry()
-    if not registry:
-        _log("Empty registry — nothing to ingest.", "WARN")
-        return
+    if tier:
+        conn = get_connection()
+        try:
+            registry = get_companies_by_tier(conn, tier, shard, total_shards)
+            _log(f"Fetched {len(registry)} companies for Tier {tier} (Shard {shard}/{total_shards}) from DB.")
+        finally:
+            conn.close()
+        # No further sharding needed if fetched from DB
+        shard = None
+    else:
+        registry = load_registry()
+        if not registry:
+            _log("Empty registry — nothing to ingest.", "WARN")
+            return
 
-    # Filter out broken/rate-limited platforms
-    before_count = len(registry)
-    registry = [c for c in registry if c.get("ats", "").lower() not in skip_platforms]
-    skipped = before_count - len(registry)
-    if skipped:
-        _log(f"Skipping {skipped} companies on platforms: {', '.join(sorted(skip_platforms))}")
+        # Filter out broken/rate-limited platforms
+        before_count = len(registry)
+        registry = [c for c in registry if c.get("ats", "").lower() not in skip_platforms]
+        skipped = before_count - len(registry)
+        if skipped:
+            _log(f"Skipping {skipped} companies on platforms: {', '.join(sorted(skip_platforms))}")
 
     # ── Registry Sharding ──────────────────────────────────────────────
     # Split 10k+ companies into N rotating shards for shorter runs.
@@ -355,6 +369,16 @@ async def run_ats_scraper(
         f"queue_size={retry_stats['queue_size']}"
     )
 
+    # ── Database Tracking & Lifecycle ─────────────────────────────────
+    conn = get_connection()
+    try:
+        # Update last_scraped_at for all companies we tried
+        for c in registry:
+            found_any = len(company_job_ids.get((c["ats"], c["company"]), [])) > 0
+            update_company_last_scraped(conn, c["slug"], job_found=found_any)
+    finally:
+        conn.close()
+
     # Log circuit breaker health
     _log(f"Circuit breaker: {breaker.summary()}")
 
@@ -428,7 +452,7 @@ async def run_ats_scraper(
     # Log system health metrics
     err_str = "; ".join(errors[:20]) if errors else ""  # Cap error string length
     try:
-        log_scraper_run(conn, "scrape_ats", len(registry), new_jobs_inserted, duration, err_str)
+        log_scraper_run(conn, "scrape_ats", len(registry), new_jobs_inserted, duration, err_str, shard_index=(shard if shard is not None else 0))
     finally:
         conn.close()
 

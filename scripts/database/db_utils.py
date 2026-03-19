@@ -20,11 +20,83 @@ For async PostgreSQL:
 import json
 import os
 import sqlite3
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 DB_PATH = Path(__file__).parent.parent.parent / "data" / "jobclaw.db"
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
+HOT_COMPANIES_PATH = Path(__file__).parent.parent.parent / "config" / "hot_companies.json"
+
+_hot_slugs_cache = None
+
+
+def get_hot_slugs() -> set[str]:
+    """Load and cache the list of hot company slugs."""
+    global _hot_slugs_cache
+    if _hot_slugs_cache is None:
+        try:
+            if HOT_COMPANIES_PATH.exists():
+                data = json.loads(HOT_COMPANIES_PATH.read_text())
+                if isinstance(data, dict) and "companies" in data:
+                    _hot_slugs_cache = {c["slug"] for c in data["companies"] if "slug" in c}
+                elif isinstance(data, list):
+                    _hot_slugs_cache = {c["slug"] for c in data if "slug" in c}
+                else:
+                    _hot_slugs_cache = set()
+            else:
+                _hot_slugs_cache = set()
+        except Exception:
+            _hot_slugs_cache = set()
+    return _hot_slugs_cache
+
+
+def compute_quality_score(job_dict: dict) -> float:
+    """Calculate a quality score (0-100) for a job listing."""
+    from scripts.ingestion.role_filter import get_role_weight, matches_target_role
+    
+    score = 0.0
+    hot_slugs = get_hot_slugs()
+
+    # 1. Hot Company Bonus (+25)
+    if job_dict.get("source_ats") in hot_slugs:
+        score += 25
+
+    # 2. Salary Transparency (+15)
+    if job_dict.get("salary_min") and float(job_dict["salary_min"]) > 0:
+        score += 15
+
+    # 3. Freshness (bonus for being new)
+    score += 10
+
+    # 4. Description Depth (+8)
+    desc = job_dict.get("description", "")
+    if len(desc) > 500:
+        score += 8
+    elif len(desc) > 100:
+        score += 4
+
+    # 5. Semantic Weight (Phase 3)
+    categories = job_dict.get("keywords_matched", [])
+    if not categories:
+        categories = matches_target_role(job_dict.get("title", ""))
+    
+    if categories:
+        max_weight = max(get_role_weight(cat) for cat in categories)
+        score += (max_weight * 20)  # Up to +20 for high-value roles
+
+    # 6. Title Relevance
+    title = job_dict.get("title", "")
+    if len(title) > 100:
+        score -= 10
+    elif len(title) < 60:
+        score += 5
+
+    # 7. Seniority Filter
+    title_lower = title.lower()
+    if any(kw in title_lower for kw in ["director", "vp ", "vice president", "v.p.", "c-level", "chief"]):
+        score -= 30
+
+    return max(0.0, min(100.0, score))
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -63,18 +135,10 @@ def get_connection():
     # Ensure the data directory exists
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-    needs_init = not DB_PATH.exists()
     conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.execute("PRAGMA journal_mode=WAL")
 
-    if needs_init:
-        _ensure_sqlite_schema(conn)
-    else:
-        # Check if tables exist (handles edge case of empty DB file)
-        cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='jobs'")
-        if not cursor.fetchone():
-            _ensure_sqlite_schema(conn)
+    _ensure_sqlite_schema(conn)
 
     return conn
 
@@ -109,7 +173,8 @@ def _ensure_postgres_schema(conn):
         is_active INTEGER DEFAULT 1,
         last_seen_at TEXT,
         discord_posted INTEGER DEFAULT 0,
-        embedding_json TEXT
+        embedding_json TEXT,
+        quality_score REAL DEFAULT 0
     )
     """)
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_pg_status ON jobs(status)")
@@ -136,7 +201,19 @@ def _ensure_postgres_schema(conn):
         new_jobs INTEGER DEFAULT 0,
         duration_seconds REAL DEFAULT 0,
         errors TEXT DEFAULT '',
-        run_at TEXT DEFAULT now()::text
+        run_at TEXT DEFAULT now()::text,
+        shard_index INTEGER DEFAULT 0
+    )
+    """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS companies (
+        id SERIAL PRIMARY KEY,
+        slug TEXT UNIQUE NOT NULL,
+        name TEXT,
+        ats_type TEXT,
+        tier TEXT DEFAULT 'P2',
+        last_scraped_at TEXT,
+        last_job_found_at TEXT
     )
     """)
     conn.commit()
@@ -170,7 +247,8 @@ def _ensure_sqlite_schema(conn):
         visa_sponsorship INTEGER,
         tech_stack TEXT,
         is_active INTEGER DEFAULT 1,
-        last_seen_at TEXT
+        last_seen_at TEXT,
+        quality_score REAL DEFAULT 0
     )
     """)
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_status ON jobs(status)")
@@ -178,16 +256,42 @@ def _ensure_sqlite_schema(conn):
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_company ON jobs(company)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_source_ats ON jobs(source_ats)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_is_active ON jobs(is_active)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_quality ON jobs(quality_score)")
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS runs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        script_name TEXT NOT NULL,
-        timestamp TEXT NOT NULL,
-        companies_fetched INTEGER,
-        new_jobs_found INTEGER,
-        duration_s REAL,
-        errors TEXT
+        scraper TEXT NOT NULL,
+        companies INTEGER DEFAULT 0,
+        new_jobs INTEGER DEFAULT 0,
+        duration_secs REAL DEFAULT 0,
+        errors TEXT DEFAULT '',
+        run_at TEXT DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS scraper_runs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        scraper TEXT NOT NULL,
+        companies_scraped INTEGER DEFAULT 0,
+        new_jobs INTEGER DEFAULT 0,
+        duration_seconds REAL DEFAULT 0,
+        errors TEXT DEFAULT '',
+        run_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        shard_index INTEGER DEFAULT 0
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS companies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        slug TEXT UNIQUE NOT NULL,
+        name TEXT,
+        ats_type TEXT,
+        tier TEXT DEFAULT 'P2',
+        last_scraped_at TEXT,
+        last_job_found_at TEXT
     )
     """)
     conn.commit()
@@ -271,8 +375,8 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
                 date_posted, source_ats, first_seen, status, keywords_matched,
                 description, salary_min, salary_max, salary_currency,
                 experience_years, remote_ok, job_type, seniority_level,
-                visa_sponsorship, tech_stack, is_active, last_seen_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'unposted', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)
+                visa_sponsorship, tech_stack, is_active, last_seen_at, quality_score
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'unposted', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
         """,
             (
                 internal_hash,
@@ -296,6 +400,7 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
                 job_dict.get("visa_sponsorship"),
                 tech_stack_json,
                 first_seen,
+                compute_quality_score(job_dict),
             ),
         )
         conn.commit()
@@ -305,10 +410,10 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
             cursor.execute(
                 """
                 UPDATE jobs
-                SET last_seen_at = ?, is_active = 1
+                SET last_seen_at = ?, is_active = 1, quality_score = ?
                 WHERE internal_hash = ?
             """,
-                (first_seen, internal_hash),
+                (first_seen, compute_quality_score(job_dict), internal_hash),
             )
             if job_dict.get("description"):
                 tech_stack_json = json.dumps(job_dict["tech_stack"]) if job_dict.get("tech_stack") else None
@@ -357,11 +462,12 @@ def _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
             date_posted, source_ats, first_seen, status, keywords_matched,
             description, salary_min, salary_max, salary_currency,
             experience_years, remote_ok, job_type, seniority_level,
-            visa_sponsorship, tech_stack, is_active, last_seen_at
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'unposted', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE, %s)
+            visa_sponsorship, tech_stack, is_active, last_seen_at, quality_score
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'unposted', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE, %s, %s)
         ON CONFLICT (internal_hash) DO UPDATE SET
             last_seen_at = EXCLUDED.last_seen_at,
             is_active = TRUE,
+            quality_score = EXCLUDED.quality_score,
             description = COALESCE(NULLIF(jobs.description, ''), EXCLUDED.description),
             salary_min = COALESCE(jobs.salary_min, EXCLUDED.salary_min),
             salary_max = COALESCE(jobs.salary_max, EXCLUDED.salary_max),
@@ -396,6 +502,7 @@ def _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
             job_dict.get("visa_sponsorship"),
             tech_stack_json,
             first_seen,
+            compute_quality_score(job_dict),
         ),
     )
     result = cursor.fetchone()
@@ -485,16 +592,106 @@ def mark_jobs_posted(conn, internal_hashes: list[str]):
     conn.commit()
 
 
-def log_scraper_run(conn, script_name: str, companies_fetched: int, new_jobs: int, duration: float, errors: str = None):
-    """Log the performance metrics of a micro-scraper."""
+def get_next_shard_from_db(conn, scraper_name: str, total_shards: int = 4) -> int:
+    """Read shard from DB to ensure rotation persists even in ephemeral runners."""
+    cursor = conn.cursor()
+    try:
+        placeholder = "%s" if is_postgres() else "?"
+        cursor.execute(
+            f"SELECT COUNT(*) FROM scraper_runs WHERE scraper = {placeholder}",
+            (scraper_name,)
+        )
+        row = cursor.fetchone()
+        run_count = row[0] if row else 0
+        return run_count % total_shards
+    except Exception:
+        return 0
+
+
+def get_companies_by_tier(conn, tier: str, shard: int = None, total_shards: int = 4) -> list[dict]:
+    """Fetch companies of a specific tier, optionally sharded for rotation.
+    
+    Includes TTL Backoff: P1/P2 companies with 0 jobs found in last 30 days are skipped
+    to save request volume for more active targets.
+    """
+    cursor = conn.cursor()
+    placeholder = "%s" if is_postgres() else "?"
+    
+    now = datetime.now(UTC)
+    thirty_days_ago = (now - timedelta(days=30)).isoformat()
+    
+    # Base query
+    query = f"SELECT * FROM companies WHERE tier = {placeholder}"
+    params = [tier]
+    
+    # TTL Backoff for non-P0 tiers
+    if tier != "P0":
+        query += f" AND (last_job_found_at IS NULL OR last_job_found_at >= {placeholder})"
+        params.append(thirty_days_ago)
+    
+    if is_postgres():
+        cols = [desc[0] for desc in cursor.description] # This needs a previous execute or specific query
+        # Fetching cols after query
+    
+    cursor.execute(query, params)
+    
+    if is_postgres():
+        cols = [desc[0] for desc in cursor.description]
+        rows = cursor.fetchall()
+        all_companies = [dict(zip(cols, row)) for row in rows]
+    else:
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute(query, params)
+        rows = cursor.fetchall()
+        all_companies = [dict(r) for r in rows]
+
+    if shard is not None and all_companies:
+        # Client-side sharding for simplicity, or we could do it in SQL
+        all_companies.sort(key=lambda x: x["slug"])
+        chunk_size = len(all_companies) // total_shards
+        remainder = len(all_companies) % total_shards
+        start_idx = shard * chunk_size + min(shard, remainder)
+        end_idx = start_idx + chunk_size + (1 if shard < remainder else 0)
+        return all_companies[start_idx:end_idx]
+        
+    return all_companies
+
+
+def update_company_last_scraped(conn, slug: str, job_found: bool = False):
+    """Update metadata for TTL backoff logic.
+    
+    Dynamic Tier Promotion: If a P2 company posts a job, promote it to P1 for 
+    more frequent monitoring in subsequent runs.
+    """
+    cursor = conn.cursor()
+    now = datetime.now(UTC).isoformat()
+    placeholder = "%s" if is_postgres() else "?"
+    
+    if job_found:
+        # Dynamic Promotion P2 -> P1
+        cursor.execute(
+            f"UPDATE companies SET last_scraped_at = {placeholder}, last_job_found_at = {placeholder}, tier = CASE WHEN tier = 'P2' THEN 'P1' ELSE tier END WHERE slug = {placeholder}",
+            (now, now, slug)
+        )
+    else:
+        cursor.execute(
+            f"UPDATE companies SET last_scraped_at = {placeholder} WHERE slug = {placeholder}",
+            (now, slug)
+        )
+    conn.commit()
+
+
+def log_scraper_run(conn, script_name: str, companies_scraped: int, new_jobs: int, duration: float, errors: str = None, shard_index: int = 0):
+    """Log the performance metrics of a scraper run, including shard index."""
     cursor = conn.cursor()
     placeholder = "%s" if is_postgres() else "?"
     cursor.execute(
         f"""
-        INSERT INTO runs (script_name, timestamp, companies_fetched, new_jobs_found, duration_s, errors)
-        VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
+        INSERT INTO scraper_runs (scraper, companies_scraped, new_jobs, duration_seconds, errors, run_at, shard_index)
+        VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
     """,
-        (script_name, datetime.now(UTC).isoformat(), companies_fetched, new_jobs, duration, errors),
+        (script_name, companies_scraped, new_jobs, duration, errors or "", datetime.now(UTC).isoformat(), shard_index),
     )
     conn.commit()
 
@@ -519,12 +716,13 @@ async def async_insert_job(pool, job_dict: dict) -> bool:
                 date_posted, source_ats, first_seen, status, keywords_matched,
                 description, salary_min, salary_max, salary_currency,
                 experience_years, remote_ok, job_type, seniority_level,
-                visa_sponsorship, tech_stack, is_active, last_seen_at
+                visa_sponsorship, tech_stack, is_active, last_seen_at, quality_score
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'unposted', $10,
-                      $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, TRUE, $21)
+                      $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, TRUE, $21, $22)
             ON CONFLICT (internal_hash) DO UPDATE SET
                 last_seen_at = EXCLUDED.last_seen_at,
                 is_active = TRUE,
+                quality_score = EXCLUDED.quality_score,
                 description = COALESCE(NULLIF(jobs.description, ''), EXCLUDED.description),
                 salary_min = COALESCE(jobs.salary_min, EXCLUDED.salary_min),
                 salary_max = COALESCE(jobs.salary_max, EXCLUDED.salary_max),
@@ -556,6 +754,7 @@ async def async_insert_job(pool, job_dict: dict) -> bool:
             job_dict.get("visa_sponsorship"),
             tech_stack_json,
             first_seen,
+            compute_quality_score(job_dict),
         )
         return result["is_new"] if result else False
 
