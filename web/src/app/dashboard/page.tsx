@@ -194,7 +194,7 @@ export default function DashboardPage() {
                                                     <td className="px-6 py-4">
                                                         <div className="flex items-center gap-3">
                                                             <div className="w-10 h-10 shrink-0">
-                                                                <CompanyLogo companyName={job.company} size="sm" />
+                                                                <CompanyLogo company={job.company} size="sm" />
                                                             </div>
                                                             <div>
                                                                 <p className="font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-1">
