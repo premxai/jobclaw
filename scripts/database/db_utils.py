@@ -53,7 +53,7 @@ def get_hot_slugs() -> set[str]:
 def compute_quality_score(job_dict: dict) -> float:
     """Calculate a quality score (0-100) for a job listing."""
     from scripts.ingestion.role_filter import get_role_weight, matches_target_role
-    
+
     score = 0.0
     hot_slugs = get_hot_slugs()
 
@@ -79,10 +79,10 @@ def compute_quality_score(job_dict: dict) -> float:
     categories = job_dict.get("keywords_matched", [])
     if not categories:
         categories = matches_target_role(job_dict.get("title", ""))
-    
+
     if categories:
         max_weight = max(get_role_weight(cat) for cat in categories)
-        score += (max_weight * 20)  # Up to +20 for high-value roles
+        score += max_weight * 20  # Up to +20 for high-value roles
 
     # 6. Title Relevance
     title = job_dict.get("title", "")
@@ -597,10 +597,7 @@ def get_next_shard_from_db(conn, scraper_name: str, total_shards: int = 4) -> in
     cursor = conn.cursor()
     try:
         placeholder = "%s" if is_postgres() else "?"
-        cursor.execute(
-            f"SELECT COUNT(*) FROM scraper_runs WHERE scraper = {placeholder}",
-            (scraper_name,)
-        )
+        cursor.execute(f"SELECT COUNT(*) FROM scraper_runs WHERE scraper = {placeholder}", (scraper_name,))
         row = cursor.fetchone()
         run_count = row[0] if row else 0
         return run_count % total_shards
@@ -610,31 +607,31 @@ def get_next_shard_from_db(conn, scraper_name: str, total_shards: int = 4) -> in
 
 def get_companies_by_tier(conn, tier: str, shard: int = None, total_shards: int = 4) -> list[dict]:
     """Fetch companies of a specific tier, optionally sharded for rotation.
-    
+
     Includes TTL Backoff: P1/P2 companies with 0 jobs found in last 30 days are skipped
     to save request volume for more active targets.
     """
     cursor = conn.cursor()
     placeholder = "%s" if is_postgres() else "?"
-    
+
     now = datetime.now(UTC)
     thirty_days_ago = (now - timedelta(days=30)).isoformat()
-    
+
     # Base query
     query = f"SELECT * FROM companies WHERE tier = {placeholder}"
     params = [tier]
-    
+
     # TTL Backoff for non-P0 tiers
     if tier != "P0":
         query += f" AND (last_job_found_at IS NULL OR last_job_found_at >= {placeholder})"
         params.append(thirty_days_ago)
-    
+
     if is_postgres():
-        cols = [desc[0] for desc in cursor.description] # This needs a previous execute or specific query
+        cols = [desc[0] for desc in cursor.description]  # This needs a previous execute or specific query
         # Fetching cols after query
-    
+
     cursor.execute(query, params)
-    
+
     if is_postgres():
         cols = [desc[0] for desc in cursor.description]
         rows = cursor.fetchall()
@@ -654,35 +651,40 @@ def get_companies_by_tier(conn, tier: str, shard: int = None, total_shards: int 
         start_idx = shard * chunk_size + min(shard, remainder)
         end_idx = start_idx + chunk_size + (1 if shard < remainder else 0)
         return all_companies[start_idx:end_idx]
-        
+
     return all_companies
 
 
 def update_company_last_scraped(conn, slug: str, job_found: bool = False):
     """Update metadata for TTL backoff logic.
-    
-    Dynamic Tier Promotion: If a P2 company posts a job, promote it to P1 for 
+
+    Dynamic Tier Promotion: If a P2 company posts a job, promote it to P1 for
     more frequent monitoring in subsequent runs.
     """
     cursor = conn.cursor()
     now = datetime.now(UTC).isoformat()
     placeholder = "%s" if is_postgres() else "?"
-    
+
     if job_found:
         # Dynamic Promotion P2 -> P1
         cursor.execute(
             f"UPDATE companies SET last_scraped_at = {placeholder}, last_job_found_at = {placeholder}, tier = CASE WHEN tier = 'P2' THEN 'P1' ELSE tier END WHERE slug = {placeholder}",
-            (now, now, slug)
+            (now, now, slug),
         )
     else:
-        cursor.execute(
-            f"UPDATE companies SET last_scraped_at = {placeholder} WHERE slug = {placeholder}",
-            (now, slug)
-        )
+        cursor.execute(f"UPDATE companies SET last_scraped_at = {placeholder} WHERE slug = {placeholder}", (now, slug))
     conn.commit()
 
 
-def log_scraper_run(conn, script_name: str, companies_scraped: int, new_jobs: int, duration: float, errors: str = None, shard_index: int = 0):
+def log_scraper_run(
+    conn,
+    script_name: str,
+    companies_scraped: int,
+    new_jobs: int,
+    duration: float,
+    errors: str = None,
+    shard_index: int = 0,
+):
     """Log the performance metrics of a scraper run, including shard index."""
     cursor = conn.cursor()
     placeholder = "%s" if is_postgres() else "?"

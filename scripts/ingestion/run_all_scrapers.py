@@ -28,6 +28,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 from scripts.utils.logger import _log
 from scripts.database.db_utils import get_connection, get_next_shard_from_db
 
+
 def get_next_shard(scraper_name: str, total_shards: int = 4) -> int:
     """Read shard from DB to ensure rotation persists even in ephemeral runners."""
     conn = get_connection()

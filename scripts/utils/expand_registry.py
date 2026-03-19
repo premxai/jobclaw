@@ -25,6 +25,7 @@ REGISTRY_FILE = PROJECT_ROOT / "config" / "company_registry.json"
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv(PROJECT_ROOT / ".env")
 except ImportError:
     pass
@@ -36,6 +37,7 @@ BRAVE_SEARCH_URL = "https://api.search.brave.com/res/v1/web/search"
 # ─────────────────────────────────────────────────────────────────────────────
 # ATS URL PARSER
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def parse_url_for_ats(link: str) -> tuple:
     """Returns (ats_platform, slug, name_guess) or (None, None, None)"""
@@ -182,6 +184,7 @@ def _fetch_simplify_urls() -> set:
 # ─────────────────────────────────────────────────────────────────────────────
 # SOURCE 2: YC company directory via Algolia public API
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def _fetch_yc_urls() -> set:
     """YC Algolia search — returns up to 4,000+ company websites."""
@@ -333,6 +336,7 @@ def _fetch_brave_ats_urls() -> set:
 # SOURCE 5: Local jobs.csv
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _fetch_local_urls() -> set:
     urls: set = set()
     local_jobs = PROJECT_ROOT / "jobs.csv"
@@ -349,6 +353,7 @@ def _fetch_local_urls() -> set:
 # ─────────────────────────────────────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def fetch_and_merge():
     with open(REGISTRY_FILE, encoding="utf-8") as f:

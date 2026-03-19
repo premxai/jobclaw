@@ -289,6 +289,7 @@ async def match_jobs(
 
     try:
         from scripts.ai.embed_jobs import JobEmbedder
+
         embedder = JobEmbedder()
     except Exception as e:
         raise HTTPException(status_code=503, detail=f"Embedding backend unavailable: {e}") from e
@@ -298,6 +299,7 @@ async def match_jobs(
     if hot_only:
         try:
             import json as _j
+
             hot_cfg = PROJECT_ROOT / "config" / "hot_companies.json"
             if hot_cfg.exists():
                 data = _j.loads(hot_cfg.read_text(encoding="utf-8"))
@@ -315,8 +317,7 @@ async def match_jobs(
                 continue
             # Fetch full job record
             row = conn.execute(
-                "SELECT * FROM jobs WHERE internal_hash = ? AND is_active = 1",
-                (r["internal_hash"],)
+                "SELECT * FROM jobs WHERE internal_hash = ? AND is_active = 1", (r["internal_hash"],)
             ).fetchone()
             if not row:
                 continue
@@ -332,7 +333,11 @@ async def match_jobs(
                 except Exception:
                     pass
 
-            job_dict = dict(row) if hasattr(row, "keys") else dict(zip([d[0] for d in conn.execute("PRAGMA table_info(jobs)").fetchall()], row))
+            job_dict = (
+                dict(row)
+                if hasattr(row, "keys")
+                else dict(zip([d[0] for d in conn.execute("PRAGMA table_info(jobs)").fetchall()], row))
+            )
             job_dict["match_score"] = r["similarity"]
             job_dict["freshness_minutes"] = freshness_min
             enriched.append(job_dict)

@@ -215,9 +215,11 @@ ROLE_WEIGHTS: dict[str, float] = {
     "General Tech": 0.5,
 }
 
+
 def get_role_weight(category: str) -> float:
     """Return the semantic weight for a category (0.0 - 1.0)."""
     return ROLE_WEIGHTS.get(category, 0.5)
+
 
 def matches_target_role(title: str) -> list[str]:
     """Check if a job title matches any target role keywords.

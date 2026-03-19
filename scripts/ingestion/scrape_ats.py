@@ -30,8 +30,12 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.database.db_utils import (
-    get_connection, insert_job, log_scraper_run, mark_stale_jobs,
-    get_companies_by_tier, update_company_last_scraped
+    get_connection,
+    insert_job,
+    log_scraper_run,
+    mark_stale_jobs,
+    get_companies_by_tier,
+    update_company_last_scraped,
 )
 from scripts.ingestion.ats_adapters import NormalizedJob, fetch_company_jobs
 from scripts.ingestion.parallel_ingestor import is_within_window, load_registry
@@ -453,7 +457,15 @@ async def run_ats_scraper(
     # Log system health metrics
     err_str = "; ".join(errors[:20]) if errors else ""  # Cap error string length
     try:
-        log_scraper_run(conn, "scrape_ats", len(registry), new_jobs_inserted, duration, err_str, shard_index=(shard if shard is not None else 0))
+        log_scraper_run(
+            conn,
+            "scrape_ats",
+            len(registry),
+            new_jobs_inserted,
+            duration,
+            err_str,
+            shard_index=(shard if shard is not None else 0),
+        )
     finally:
         conn.close()
 

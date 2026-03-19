@@ -23,6 +23,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv(PROJECT_ROOT / ".env")
 except ImportError:
     pass
@@ -83,7 +84,11 @@ async def _send_hot_discord_alert(job: dict, minutes_old: float):
     category = ""
     if job.get("keywords_matched"):
         try:
-            cats = json.loads(job["keywords_matched"]) if isinstance(job["keywords_matched"], str) else job["keywords_matched"]
+            cats = (
+                json.loads(job["keywords_matched"])
+                if isinstance(job["keywords_matched"], str)
+                else job["keywords_matched"]
+            )
             if cats:
                 category = f" · {cats[0]}"
         except Exception:
@@ -108,6 +113,7 @@ async def _send_hot_discord_alert(job: dict, minutes_old: float):
 
     try:
         import urllib.request
+
         data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(
             DISCORD_WEBHOOK,
@@ -144,6 +150,7 @@ async def run_hot_scraper():
     alert_jobs = []
 
     from scripts.utils.http_client import RateLimiter
+
     rate_limiter = RateLimiter()
 
     async with create_session(rate_limiter) as session:

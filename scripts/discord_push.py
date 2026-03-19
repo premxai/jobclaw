@@ -171,19 +171,19 @@ def _build_job_embed(job: dict) -> dict:
     source_ats = job.get("source_ats", "")
     hot_slugs = get_hot_slugs()
     is_hot = source_ats.lower() in hot_slugs or company.lower().strip() in hot_slugs
-    
+
     # Categorization (Phase 3 matching)
     category = _get_category(job)
-    
+
     emoji = CATEGORY_EMOJIS.get(category, "💼")
     if is_hot:
         emoji = "🔥"
-        
+
     base_color = CATEGORY_COLORS.get(category, 0x546E7A)
     # Brighten color for hot companies
     if is_hot:
         base_color = 0xF1C40F  # Gold/Yellow
-        
+
     # Override color based on posting age (green = fresh, yellow = recent)
     color = _urgency_color(date_posted, base_color)
     ats_label = ATS_LABELS.get(source_ats.lower(), source_ats) if source_ats else "Direct"
@@ -193,7 +193,7 @@ def _build_job_embed(job: dict) -> dict:
         location = location[:37] + "..."
 
     quality_score = job.get("quality_score", 0)
-    
+
     embed = {
         "title": f"{emoji} {title}",
         "color": color,
@@ -393,11 +393,12 @@ async def push_new_jobs_to_discord():
         # AND filter by Quality Threshold (Phase 1 gate)
         QUALITY_THRESHOLD = 30
         fresh_jobs = [
-            j for j in jobs 
-            if not is_already_posted(j["internal_hash"], posted_hashes) 
+            j
+            for j in jobs
+            if not is_already_posted(j["internal_hash"], posted_hashes)
             and float(j.get("quality_score", 0)) >= QUALITY_THRESHOLD
         ]
-        
+
         if not fresh_jobs:
             log(f"All {len(jobs)} unposted jobs failed the quality threshold (>= 30).")
             return 0
