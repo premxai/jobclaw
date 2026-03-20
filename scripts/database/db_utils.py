@@ -298,8 +298,73 @@ def _ensure_sqlite_schema(conn):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# ASYNC POSTGRESQL BACKEND
+# SHARD ROTATION TRACKER
 # ═══════════════════════════════════════════════════════════════════════
+
+
+def get_next_shard_from_db(conn, scraper_name: str, total_shards: int = 4) -> int:
+    """Read the last shard index from the DB, increment, and return the next shard.
+
+    Creates a shard_state table if it doesn't exist. This ensures shard rotation
+    persists across ephemeral GitHub Actions runners.
+    """
+    cursor = conn.cursor()
+
+    if is_postgres():
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS shard_state (
+            scraper TEXT PRIMARY KEY,
+            last_shard INTEGER DEFAULT 0,
+            updated_at TEXT DEFAULT now()::text
+        )
+        """)
+        conn.commit()
+
+        cursor.execute("SELECT last_shard FROM shard_state WHERE scraper = %s", (scraper_name,))
+        row = cursor.fetchone()
+
+        if row is None:
+            next_shard = 0
+            cursor.execute(
+                "INSERT INTO shard_state (scraper, last_shard) VALUES (%s, %s)",
+                (scraper_name, next_shard),
+            )
+        else:
+            next_shard = (row[0] + 1) % total_shards
+            cursor.execute(
+                "UPDATE shard_state SET last_shard = %s, updated_at = now()::text WHERE scraper = %s",
+                (next_shard, scraper_name),
+            )
+    else:
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS shard_state (
+            scraper TEXT PRIMARY KEY,
+            last_shard INTEGER DEFAULT 0,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+        """)
+        conn.commit()
+
+        cursor.execute("SELECT last_shard FROM shard_state WHERE scraper = ?", (scraper_name,))
+        row = cursor.fetchone()
+
+        if row is None:
+            next_shard = 0
+            cursor.execute(
+                "INSERT INTO shard_state (scraper, last_shard) VALUES (?, ?)",
+                (scraper_name, next_shard),
+            )
+        else:
+            next_shard = (row[0] + 1) % total_shards
+            cursor.execute(
+                "UPDATE shard_state SET last_shard = ?, updated_at = CURRENT_TIMESTAMP WHERE scraper = ?",
+                (next_shard, scraper_name),
+            )
+
+    conn.commit()
+    return next_shard
+
+
 
 _pg_pool = None
 

@@ -1055,6 +1055,11 @@ ADAPTERS = {
 }
 
 
+def get_adapter(ats: str):
+    """Return the adapter class for the given ATS platform name, or None."""
+    return ADAPTERS.get(ats.lower()) if ats else None
+
+
 async def fetch_company_jobs(
     session,
     company: str,
