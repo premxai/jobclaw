@@ -11,7 +11,7 @@ This ensures transient failures (429s, timeouts) don't cause permanent data loss
 """
 
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 # Retry schedule (in seconds)
@@ -79,7 +79,7 @@ class RetryQueue:
         If max retries exceeded, drop from queue.
         """
         key = self._key(ats, slug)
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         now_str = now.isoformat().replace("+00:00", "Z")
 
         # Check if already in queue
@@ -137,7 +137,7 @@ class RetryQueue:
         Returns list of company dicts with ats, slug, company fields.
         Does NOT remove from queue — call mark_success() after successful retry.
         """
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         ready = []
 
         for item in self._queue:

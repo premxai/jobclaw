@@ -19,7 +19,7 @@ import os
 import re
 import sys
 import time
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -214,7 +214,7 @@ def _extract_job_from_result(result: dict, category: str) -> dict | None:
         "location": location,
         "url": url,
         "source_ats": source_ats,
-        "date_posted": datetime.now(UTC).strftime("%Y-%m-%d"),
+        "date_posted": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
         "keywords_matched": json.dumps([category]),
         "description": description[:500] if description else "",
     }

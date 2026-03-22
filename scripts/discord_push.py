@@ -16,7 +16,7 @@ import json
 import os
 import sys
 from collections import defaultdict
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -116,7 +116,7 @@ def _urgency_color(date_posted: str, base_color: int) -> int:
     """
     try:
         posted = datetime.fromisoformat(date_posted.replace("Z", "+00:00"))
-        age = datetime.now(UTC) - posted
+        age = datetime.now(timezone.utc) - posted
         if age < timedelta(hours=2):
             return 0x2ECC71  # Bright green — hot/fresh
         if age < timedelta(hours=12):
@@ -205,8 +205,8 @@ def _build_job_embed(job: dict) -> dict:
             {"name": "🏷️ Category", "value": category, "inline": True},
             {"name": "📊 Match Score", "value": f"`{int(quality_score)}/100`", "inline": True},
         ],
-        "footer": {"text": f"JobClaw • {ats_label} • {datetime.now(UTC).strftime('%H:%M UTC')}"},
-        "timestamp": datetime.now(UTC).isoformat(),
+        "footer": {"text": f"JobClaw • {ats_label} • {datetime.now(timezone.utc).strftime('%H:%M UTC')}"},
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
     if url:

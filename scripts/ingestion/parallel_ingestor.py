@@ -17,7 +17,7 @@ import asyncio
 import json
 import re
 import sys
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -183,7 +183,7 @@ def is_within_window(date_str: str, window_hours: int = 24) -> bool:
     """
     if not date_str:
         return True
-    cutoff = datetime.now(UTC) - timedelta(hours=window_hours)
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=window_hours)
 
     # Try ISO format
     for fmt in (
@@ -200,7 +200,7 @@ def is_within_window(date_str: str, window_hours: int = 24) -> bool:
         try:
             parsed = datetime.strptime(date_str, fmt)
             if parsed.tzinfo is None:
-                parsed = parsed.replace(tzinfo=UTC)
+                parsed = parsed.replace(tzinfo=timezone.utc)
             # Date-only strings (e.g. "2025-03-05") parse as midnight UTC.
             # Treat them as end-of-day so they pass the 24h window on the
             # same calendar day.
@@ -215,7 +215,7 @@ def is_within_window(date_str: str, window_hours: int = 24) -> bool:
         ts = float(date_str)
         if ts > 1e12:
             ts = ts / 1000
-        return datetime.fromtimestamp(ts, tz=UTC) >= cutoff
+        return datetime.fromtimestamp(ts, tz=timezone.utc) >= cutoff
     except (ValueError, OSError):
         pass
 
@@ -383,7 +383,7 @@ async def run_cycle(window_hours: int = 24) -> dict[str, Any]:
     _log(f"Dedup: {total_new} new jobs (skipped {len(recent) - total_new} duplicates)")
 
     # 6. Store
-    ts = datetime.now(UTC).isoformat()
+    ts = datetime.now(timezone.utc).isoformat()
     for job in new_jobs:
         job.first_seen = ts
         db["jobs"][job.dedup_key] = job.to_dict()

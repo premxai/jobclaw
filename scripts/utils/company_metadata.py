@@ -11,7 +11,7 @@ Reduces scrape volume from ~12k to ~2-3k per cycle.
 
 import hashlib
 import json
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 # ATS platforms with different update frequencies
@@ -110,7 +110,7 @@ class CompanyMetadata:
         interval = SCRAPE_INTERVALS.get(ats.lower(), DEFAULT_INTERVAL)
 
         # Check if enough time has passed
-        now = datetime.now(UTC)
+        now = datetime.now(timezone.utc)
         elapsed = (now - last_scraped).total_seconds()
 
         if elapsed >= interval:
@@ -143,7 +143,7 @@ class CompanyMetadata:
         """
         self._stats["scraped"] += 1
         key = self._key(ats, slug)
-        now_str = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        now_str = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 
         # Compute job hash
         new_hash = ""

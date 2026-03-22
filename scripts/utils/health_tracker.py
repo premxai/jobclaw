@@ -16,7 +16,7 @@ Generates alerts when:
 
 import json
 import time
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -78,7 +78,7 @@ class HealthTracker:
         retry_queue_size: int,
     ) -> None:
         """Record metrics at the end of a run."""
-        now = datetime.now(UTC).isoformat().replace("+00:00", "Z")
+        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         duration = time.time() - self._start_time if self._start_time else 0
 
         self._data = {
@@ -130,7 +130,7 @@ class HealthTracker:
         if last_run:
             try:
                 last_dt = datetime.fromisoformat(last_run.replace("Z", "+00:00"))
-                hours_since = (datetime.now(UTC) - last_dt).total_seconds() / 3600
+                hours_since = (datetime.now(timezone.utc) - last_dt).total_seconds() / 3600
 
                 if hours_since > 6 and self._data.get("new_jobs", 0) == 0:
                     alerts.append(

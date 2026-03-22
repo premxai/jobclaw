@@ -19,7 +19,7 @@ import asyncio
 import os
 import sys
 import time
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -80,7 +80,7 @@ async def run_all(
     All run concurrently — no scraper blocks another.
     """
     start_time = time.time()
-    ts = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
+    ts = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     _log(f"[orchestrator] === SPEED SCRAPE STARTED at {ts} (window={window_hours}hr) ===")
 
     tasks = []

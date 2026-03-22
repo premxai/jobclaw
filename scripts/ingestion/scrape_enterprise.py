@@ -23,7 +23,7 @@ import json
 import os
 import re
 import time
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 import aiohttp
 
@@ -270,7 +270,7 @@ class MicrosoftJobsAPI:
                 ts = p.get("postedTs")
                 date_posted = ""
                 if ts:
-                    date_posted = datetime.fromtimestamp(ts, UTC).isoformat()
+                    date_posted = datetime.fromtimestamp(ts, timezone.utc).isoformat()
 
                 url = "https://apply.careers.microsoft.com" + p.get("positionUrl", "")
                 job_id = p.get("id", "")
@@ -405,7 +405,7 @@ class NvidiaJobsAPI:
                 ts = p.get("postedTs")
                 date_posted = ""
                 if ts:
-                    date_posted = datetime.fromtimestamp(ts, UTC).isoformat()
+                    date_posted = datetime.fromtimestamp(ts, timezone.utc).isoformat()
 
                 url = "https://nvidia.eightfold.ai" + p.get("positionUrl", "")
                 job_id = p.get("id", "")

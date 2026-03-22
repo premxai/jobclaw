@@ -29,7 +29,7 @@ import hashlib
 import html
 import re
 from dataclasses import asdict, dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from scripts.utils.http_client import HAS_CURL_CFFI, RateLimiter, fetch_with_retry
@@ -417,7 +417,9 @@ class LeverAdapter:
                 company=company,
                 location=location,
                 url=j.get("hostedUrl", ""),
-                date_posted=datetime.fromtimestamp(created_at / 1000, tz=UTC).isoformat() if created_at else "",
+                date_posted=datetime.fromtimestamp(created_at / 1000, tz=timezone.utc).isoformat()
+                if created_at
+                else "",
                 source_ats="lever",
                 job_id=j.get("id", ""),
                 description=description,

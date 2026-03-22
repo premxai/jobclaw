@@ -18,7 +18,7 @@ Usage:
 """
 
 import json
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -37,7 +37,7 @@ def load_posted_hashes() -> dict[str, str]:
             data = json.load(f)
         # Handle both old format (list of hashes) and new format (dict of hash:timestamp)
         if isinstance(data, list):
-            now = datetime.now(UTC).isoformat()
+            now = datetime.now(timezone.utc).isoformat()
             return {h: now for h in data}
         return data
     except (OSError, json.JSONDecodeError):
@@ -46,7 +46,7 @@ def load_posted_hashes() -> dict[str, str]:
 
 def save_posted_hashes(hashes: dict[str, str]) -> None:
     """Save the dedup file, pruning entries older than MAX_AGE_DAYS."""
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     pruned = {}
     for h, ts in hashes.items():
         try:
@@ -69,4 +69,4 @@ def is_already_posted(hashes: dict[str, str], internal_hash: str) -> bool:
 
 def mark_as_posted(hashes: dict[str, str], internal_hash: str) -> None:
     """Mark a hash as posted with the current timestamp."""
-    hashes[internal_hash] = datetime.now(UTC).isoformat()
+    hashes[internal_hash] = datetime.now(timezone.utc).isoformat()

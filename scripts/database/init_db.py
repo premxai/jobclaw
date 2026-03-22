@@ -1,7 +1,7 @@
 import json
 import logging
 import sqlite3
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s | %(levelname)s | %(message)s")
@@ -158,7 +158,7 @@ def migrate_old_data(conn):
                         v.get("url", ""),
                         v.get("date_posted", ""),
                         v.get("source_ats", ""),
-                        v.get("first_seen", datetime.now(UTC).isoformat()),
+                        v.get("first_seen", datetime.now(timezone.utc).isoformat()),
                         keywords,
                     ),
                 )

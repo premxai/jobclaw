@@ -20,7 +20,7 @@ For async PostgreSQL:
 import json
 import os
 import sqlite3
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 DB_PATH = Path(__file__).parent.parent.parent / "data" / "jobclaw.db"
@@ -355,7 +355,7 @@ def insert_job(conn, job_dict: dict) -> bool:
     """
     internal_hash = _make_hash(job_dict)
     keywords = json.dumps(job_dict.get("keywords_matched", []))
-    first_seen = datetime.now(UTC).isoformat()
+    first_seen = datetime.now(timezone.utc).isoformat()
 
     if is_postgres():
         return _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen)
@@ -515,7 +515,7 @@ def mark_stale_jobs(conn, source_ats: str, company: str, active_job_ids: set[str
     if not active_job_ids:
         return 0
 
-    now = datetime.now(UTC).isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     cursor = conn.cursor()
 
     company_norm = company.lower().strip()
@@ -614,7 +614,7 @@ def get_companies_by_tier(conn, tier: str, shard: int = None, total_shards: int 
     cursor = conn.cursor()
     placeholder = "%s" if is_postgres() else "?"
 
-    now = datetime.now(UTC)
+    now = datetime.now(timezone.utc)
     thirty_days_ago = (now - timedelta(days=30)).isoformat()
 
     # Base query
@@ -662,7 +662,7 @@ def update_company_last_scraped(conn, slug: str, job_found: bool = False):
     more frequent monitoring in subsequent runs.
     """
     cursor = conn.cursor()
-    now = datetime.now(UTC).isoformat()
+    now = datetime.now(timezone.utc).isoformat()
     placeholder = "%s" if is_postgres() else "?"
 
     if job_found:
@@ -693,7 +693,15 @@ def log_scraper_run(
         INSERT INTO scraper_runs (scraper, companies_scraped, new_jobs, duration_seconds, errors, run_at, shard_index)
         VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
     """,
-        (script_name, companies_scraped, new_jobs, duration, errors or "", datetime.now(UTC).isoformat(), shard_index),
+        (
+            script_name,
+            companies_scraped,
+            new_jobs,
+            duration,
+            errors or "",
+            datetime.now(timezone.utc).isoformat(),
+            shard_index,
+        ),
     )
     conn.commit()
 
@@ -707,7 +715,7 @@ async def async_insert_job(pool, job_dict: dict) -> bool:
     """Async PostgreSQL job insert with upsert."""
     internal_hash = _make_hash(job_dict)
     keywords = json.dumps(job_dict.get("keywords_matched", []))
-    first_seen = datetime.now(UTC).isoformat()
+    first_seen = datetime.now(timezone.utc).isoformat()
 
     async with pool.acquire() as conn:
         tech_stack_json = json.dumps(job_dict["tech_stack"]) if job_dict.get("tech_stack") else None

@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from datetime import datetime, UTC
+from datetime import datetime, timezone
 
 # Add project root to sys.path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -61,7 +61,7 @@ def generate_health_report():
 
                 print(f"| {name:<12} | {runs:^4} | {new_jobs:^8} | {dur:^6}s | {health:^7} |")
 
-        print(f"\nReport generated at: {datetime.now(UTC).strftime('%Y-%m-%d %H:%M:%S')} UTC")
+        print(f"\nReport generated at: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC")
 
     finally:
         conn.close()

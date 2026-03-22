@@ -15,7 +15,7 @@ import json
 import os
 import sys
 import time
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -54,8 +54,8 @@ def _minutes_ago(dt_str: str) -> float:
             dt_str = dt_str[:-1] + "+00:00"
         dt = datetime.fromisoformat(dt_str)
         if dt.tzinfo is None:
-            dt = dt.replace(tzinfo=UTC)
-        delta = datetime.now(UTC) - dt
+            dt = dt.replace(tzinfo=timezone.utc)
+        delta = datetime.now(timezone.utc) - dt
         return delta.total_seconds() / 60
     except Exception:
         return 999
@@ -106,7 +106,7 @@ async def _send_hot_discord_alert(job: dict, minutes_old: float):
             {"name": "🔗 Apply Now", "value": f"[Open Application →]({job['url']})", "inline": False},
         ],
         "footer": {"text": f"JobClaw Hot Alert{category} · Be one of the first applicants!"},
-        "timestamp": datetime.now(UTC).isoformat(),
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
     payload = {"embeds": [embed]}

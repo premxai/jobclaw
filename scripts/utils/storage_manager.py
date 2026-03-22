@@ -12,7 +12,7 @@ import contextlib
 import json
 import os
 import tempfile
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -157,7 +157,7 @@ def store_jobs(new_jobs: list[dict[str, Any]]) -> dict[str, Any]:
     unique_new, _ = detect_duplicates(new_jobs, existing)
 
     # Add timestamp to new jobs
-    ts = datetime.now(UTC).isoformat()
+    ts = datetime.now(timezone.utc).isoformat()
     for job in unique_new:
         job["first_seen"] = ts
 

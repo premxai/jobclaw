@@ -14,7 +14,7 @@ Supported repos:
 """
 
 import re
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
 import aiohttp
 
@@ -85,7 +85,7 @@ class SimplifyJobsParser:
                     if isinstance(date_posted, (int, float)):
                         try:
                             date_posted = datetime.fromtimestamp(
-                                date_posted / 1000 if date_posted > 1e12 else date_posted, tz=UTC
+                                date_posted / 1000 if date_posted > 1e12 else date_posted, tz=timezone.utc
                             ).isoformat()
                         except (ValueError, OSError):
                             date_posted = ""

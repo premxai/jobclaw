@@ -16,7 +16,7 @@ import contextlib
 import json
 import os
 import tempfile
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -73,7 +73,7 @@ def create_session_log(
         Path to the created session file.
     """
     _ensure_dirs()
-    ts = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     filename = f"session_{ts}.md"
     path = SESSIONS_DIR / filename
 
@@ -133,7 +133,7 @@ def update_checkpoint(updates: dict[str, Any]) -> dict[str, Any]:
     _ensure_dirs()
     previous = load_checkpoint()
     merged = {**previous, **updates}
-    merged["last_updated"] = datetime.now(UTC).isoformat()
+    merged["last_updated"] = datetime.now(timezone.utc).isoformat()
     _atomic_write(CHECKPOINT_FILE, json.dumps(merged, indent=2))
     return merged
 
@@ -156,7 +156,7 @@ def update_summary(
         Path to the summary file.
     """
     _ensure_dirs()
-    ts = datetime.now(UTC).isoformat()
+    ts = datetime.now(timezone.utc).isoformat()
 
     completed_lines = "\n".join(f"- [x] {c}" for c in completed) if completed else "_None yet._"
     pending_lines = "\n".join(f"- [ ] {p}" for p in pending) if pending else "_All complete._"

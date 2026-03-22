@@ -18,7 +18,7 @@ import logging
 import sys
 import threading
 import time
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -54,7 +54,7 @@ class JSONFormatter(logging.Formatter):
 
     def format(self, record):
         log_entry = {
-            "ts": datetime.now(UTC).isoformat(),
+            "ts": datetime.now(timezone.utc).isoformat(),
             "level": record.levelname,
             "logger": record.name,
             "msg": record.getMessage(),
