@@ -24,6 +24,7 @@ from pathlib import Path
 
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     pass
@@ -180,6 +181,39 @@ async def run_all(
             )
         else:
             _log("[orchestrator] BRAVE_SEARCH_API_KEY not set — skipping Brave Search")
+
+        # ── YC Startups (workatastartup.com) — deep tier only ───────────
+        from scripts.ingestion.scrape_yc import fetch_yc_jobs
+
+        tasks.append(
+            _with_timeout(
+                _run_with_timing("YC Startups (workatastartup.com)", fetch_yc_jobs()),
+                "YC Startups (workatastartup.com)",
+                120,
+            )
+        )
+
+        # ── HN Who's Hiring — deep tier only ────────────────────────────
+        from scripts.ingestion.scrape_hn_hiring import fetch_hn_hiring_jobs
+
+        tasks.append(
+            _with_timeout(
+                _run_with_timing("HN Who's Hiring (Algolia API)", fetch_hn_hiring_jobs()),
+                "HN Who's Hiring (Algolia API)",
+                120,
+            )
+        )
+
+        # ── Indeed Public Search — deep tier only ───────────────────────
+        from scripts.ingestion.scrape_indeed import fetch_indeed_jobs
+
+        tasks.append(
+            _with_timeout(
+                _run_with_timing("Indeed Public Search", fetch_indeed_jobs(None)),
+                "Indeed Public Search",
+                300,
+            )
+        )
 
     # NOTE: StreamingJobPusher disabled — no scraper currently calls pusher.push().
     # The batch push_new_jobs_to_discord() at the end handles all Discord notifications.
