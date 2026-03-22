@@ -459,61 +459,67 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
 
 def _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
     """PostgreSQL insert with ON CONFLICT upsert."""
-    cursor = conn.cursor()
-    tech_stack_json = json.dumps(job_dict["tech_stack"]) if job_dict.get("tech_stack") else None
-    cursor.execute(
-        """
-        INSERT INTO jobs (
-            internal_hash, job_id, title, company, location, url,
-            date_posted, source_ats, first_seen, status, keywords_matched,
-            description, salary_min, salary_max, salary_currency,
-            experience_years, remote_ok, job_type, seniority_level,
-            visa_sponsorship, tech_stack, is_active, last_seen_at, quality_score
-        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'unposted', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE, %s, %s)
-        ON CONFLICT (internal_hash) DO UPDATE SET
-            last_seen_at = EXCLUDED.last_seen_at,
-            is_active = TRUE,
-            quality_score = EXCLUDED.quality_score,
-            description = COALESCE(NULLIF(jobs.description, ''), EXCLUDED.description),
-            salary_min = COALESCE(jobs.salary_min, EXCLUDED.salary_min),
-            salary_max = COALESCE(jobs.salary_max, EXCLUDED.salary_max),
-            salary_currency = COALESCE(jobs.salary_currency, EXCLUDED.salary_currency),
-            experience_years = COALESCE(jobs.experience_years, EXCLUDED.experience_years),
-            remote_ok = COALESCE(jobs.remote_ok, EXCLUDED.remote_ok),
-            job_type = COALESCE(jobs.job_type, EXCLUDED.job_type),
-            seniority_level = COALESCE(jobs.seniority_level, EXCLUDED.seniority_level),
-            visa_sponsorship = COALESCE(jobs.visa_sponsorship, EXCLUDED.visa_sponsorship),
-            tech_stack = COALESCE(jobs.tech_stack, EXCLUDED.tech_stack)
-        RETURNING (xmax = 0) AS is_new
-    """,
-        (
-            internal_hash,
-            job_dict.get("job_id", ""),
-            job_dict.get("title", ""),
-            job_dict.get("company", ""),
-            job_dict.get("location", ""),
-            job_dict.get("url", ""),
-            job_dict.get("date_posted", ""),
-            job_dict.get("source_ats", ""),
-            first_seen,
-            keywords,
-            job_dict.get("description"),
-            job_dict.get("salary_min"),
-            job_dict.get("salary_max"),
-            job_dict.get("salary_currency"),
-            job_dict.get("experience_years"),
-            job_dict.get("remote_ok"),
-            job_dict.get("job_type"),
-            job_dict.get("seniority_level"),
-            job_dict.get("visa_sponsorship"),
-            tech_stack_json,
-            first_seen,
-            compute_quality_score(job_dict),
-        ),
-    )
-    result = cursor.fetchone()
-    conn.commit()
-    return result[0] if result else False
+    try:
+        cursor = conn.cursor()
+        tech_stack_json = json.dumps(job_dict["tech_stack"]) if job_dict.get("tech_stack") else None
+        cursor.execute(
+            """
+            INSERT INTO jobs (
+                internal_hash, job_id, title, company, location, url,
+                date_posted, source_ats, first_seen, status, keywords_matched,
+                description, salary_min, salary_max, salary_currency,
+                experience_years, remote_ok, job_type, seniority_level,
+                visa_sponsorship, tech_stack, is_active, last_seen_at, quality_score
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'unposted', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1, %s, %s)
+            ON CONFLICT (internal_hash) DO UPDATE SET
+                last_seen_at = EXCLUDED.last_seen_at,
+                is_active = 1,
+                quality_score = EXCLUDED.quality_score,
+                description = COALESCE(NULLIF(jobs.description, ''), EXCLUDED.description),
+                salary_min = COALESCE(jobs.salary_min, EXCLUDED.salary_min),
+                salary_max = COALESCE(jobs.salary_max, EXCLUDED.salary_max),
+                salary_currency = COALESCE(jobs.salary_currency, EXCLUDED.salary_currency),
+                experience_years = COALESCE(jobs.experience_years, EXCLUDED.experience_years),
+                remote_ok = COALESCE(jobs.remote_ok, EXCLUDED.remote_ok),
+                job_type = COALESCE(jobs.job_type, EXCLUDED.job_type),
+                seniority_level = COALESCE(jobs.seniority_level, EXCLUDED.seniority_level),
+                visa_sponsorship = COALESCE(jobs.visa_sponsorship, EXCLUDED.visa_sponsorship),
+                tech_stack = COALESCE(jobs.tech_stack, EXCLUDED.tech_stack)
+            RETURNING (xmax = 0) AS is_new
+        """,
+            (
+                internal_hash,
+                job_dict.get("job_id", ""),
+                job_dict.get("title", ""),
+                job_dict.get("company", ""),
+                job_dict.get("location", ""),
+                job_dict.get("url", ""),
+                job_dict.get("date_posted", ""),
+                job_dict.get("source_ats", ""),
+                first_seen,
+                keywords,
+                job_dict.get("description"),
+                job_dict.get("salary_min"),
+                job_dict.get("salary_max"),
+                job_dict.get("salary_currency"),
+                job_dict.get("experience_years"),
+                job_dict.get("remote_ok"),
+                job_dict.get("job_type"),
+                job_dict.get("seniority_level"),
+                job_dict.get("visa_sponsorship"),
+                tech_stack_json,
+                first_seen,
+                compute_quality_score(job_dict),
+            ),
+        )
+        result = cursor.fetchone()
+        conn.commit()
+        return result[0] if result else False
+    except Exception as e:
+        conn.rollback()
+        from scripts.utils.logger import _log
+        _log(f"PG Insert Error ({job_dict.get('company')} - {job_dict.get('title')}): {e}", "ERROR")
+        return False
 
 
 def mark_stale_jobs(conn, source_ats: str, company: str, active_job_ids: set[str]) -> int:
@@ -631,10 +637,6 @@ def get_companies_by_tier(conn, tier: str, shard: int = None, total_shards: int 
     if tier != "P0":
         query += f" AND (last_job_found_at IS NULL OR last_job_found_at >= {placeholder})"
         params.append(thirty_days_ago)
-
-    if is_postgres():
-        cols = [desc[0] for desc in cursor.description]  # This needs a previous execute or specific query
-        # Fetching cols after query
 
     cursor.execute(query, params)
 

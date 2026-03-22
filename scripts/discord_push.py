@@ -391,7 +391,7 @@ async def push_new_jobs_to_discord():
 
         # Filter out jobs we already posted in previous runs (disk-based dedup)
         # AND filter by Quality Threshold (Phase 1 gate)
-        QUALITY_THRESHOLD = 30
+        QUALITY_THRESHOLD = 20
         fresh_jobs = [
             j
             for j in jobs
