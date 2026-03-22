@@ -81,24 +81,36 @@ class CircuitBreaker:
 
     Opens (skips) after `threshold` consecutive errors on a platform.
     Tracks per-platform failure counts and provides skip decisions.
+    Instead of skipping ALL remaining companies once open, skips only the
+    next 50 companies (half-open cooldown) before retrying.
     """
 
     def __init__(self, threshold: int = 15):
         self.threshold = threshold
         self._failures: dict[str, int] = defaultdict(int)
         self._total_skipped: dict[str, int] = defaultdict(int)
+        self._skip_remaining: dict[str, int] = {}
 
     def record_failure(self, platform: str) -> None:
         """Record a failure for a platform."""
         self._failures[platform] += 1
+        if self._failures[platform] >= self.threshold and platform not in self._skip_remaining:
+            self._skip_remaining[platform] = 50
 
     def record_success(self, platform: str) -> None:
         """Reset failure count on success (half-open → closed)."""
         self._failures[platform] = 0
+        self._skip_remaining.pop(platform, None)
 
     def should_skip(self, platform: str) -> bool:
-        """Check if the platform circuit is open (too many failures)."""
-        if self._failures[platform] >= self.threshold:
+        """Check if the platform circuit is open (too many failures).
+
+        Returns True only for the next 50 companies after the circuit opens,
+        then allows retries (half-open behaviour).
+        """
+        remaining = self._skip_remaining.get(platform, 0)
+        if remaining > 0:
+            self._skip_remaining[platform] = remaining - 1
             self._total_skipped[platform] += 1
             return True
         return False
@@ -142,8 +154,10 @@ async def _worker(
         ats = company["ats"]
         slug = company["slug"]
 
-        # Circuit breaker: skip if platform has too many failures
+        # Circuit breaker: skip if platform is in half-open cooldown
         if circuit_breaker and circuit_breaker.should_skip(ats):
+            remaining = circuit_breaker._skip_remaining.get(ats, 0)
+            _log(f"Circuit half-open for {ats}: skipping {cname} (remaining: {remaining})", "DEBUG")
             queue.task_done()
             continue
 

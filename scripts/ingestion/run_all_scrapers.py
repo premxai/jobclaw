@@ -60,6 +60,18 @@ async def _run_with_timing(name: str, coro):
         return (name, dur, str(e))
 
 
+async def _with_timeout(coro, name: str, timeout_sec: int):
+    """Wrap a scraper coroutine with a per-scraper timeout."""
+    try:
+        return await asyncio.wait_for(coro, timeout=timeout_sec)
+    except asyncio.TimeoutError:
+        _log(
+            f"SCRAPER_TIMEOUT: {name} exceeded {timeout_sec}s — partial results may be missing",
+            "ERROR",
+        )
+        return []
+
+
 async def run_all(
     skip_ats: bool = False,
     skip_github: bool = False,
@@ -94,18 +106,36 @@ async def run_all(
     # ── Always run: RSS (fastest) ───────────────────────────────────
     from scripts.ingestion.scrape_rss import run_rss_scraper
 
-    tasks.append(_run_with_timing("RSS/Aggregators", run_rss_scraper(window_hours)))
+    tasks.append(
+        _with_timeout(
+            _run_with_timing("RSS/Aggregators", run_rss_scraper(window_hours)),
+            "RSS/Aggregators",
+            120,
+        )
+    )
 
     # ── Always run: Enterprise (8 big companies) ────────────────────
     from scripts.ingestion.scrape_enterprise import run_enterprise_scraper
 
-    tasks.append(_run_with_timing("Enterprise (Apple/Amazon/Google...)", run_enterprise_scraper()))
+    tasks.append(
+        _with_timeout(
+            _run_with_timing("Enterprise (Apple/Amazon/Google...)", run_enterprise_scraper()),
+            "Enterprise (Apple/Amazon/Google...)",
+            300,
+        )
+    )
 
     # ── GitHub repos ────────────────────────────────────────────────
     if not skip_github:
         from scripts.ingestion.scrape_github import run_github_scraper
 
-        tasks.append(_run_with_timing("GitHub Repos", run_github_scraper(window_hours)))
+        tasks.append(
+            _with_timeout(
+                _run_with_timing("GitHub Repos", run_github_scraper(window_hours)),
+                "GitHub Repos",
+                180,
+            )
+        )
 
     # ── ATS boards (~10,500 companies with curl_cffi TLS impersonation) ──
     # All ATS platforms handled by direct API scraper with TLS impersonation
@@ -117,15 +147,19 @@ async def run_all(
         shard_label = f", shard={shard}/{total_shards}" if shard is not None else ""
         label = f"ATS Boards ({'filtered' if ats_skip else 'all'}{shard_label})"
         tasks.append(
-            _run_with_timing(
-                label,
-                run_ats_scraper(
-                    window_hours,
-                    skip_platforms=ats_skip,
-                    shard=shard,
-                    total_shards=total_shards,
-                    tier=tier,
+            _with_timeout(
+                _run_with_timing(
+                    label,
+                    run_ats_scraper(
+                        window_hours,
+                        skip_platforms=ats_skip,
+                        shard=shard,
+                        total_shards=total_shards,
+                        tier=tier,
+                    ),
                 ),
+                label,
+                900,
             )
         )
 
@@ -137,7 +171,13 @@ async def run_all(
         if brave_key:
             from scripts.ingestion.scrape_brave import run_brave_scraper
 
-            tasks.append(_run_with_timing("Brave Search (LinkedIn/Indeed/Glassdoor)", run_brave_scraper()))
+            tasks.append(
+                _with_timeout(
+                    _run_with_timing("Brave Search (LinkedIn/Indeed/Glassdoor)", run_brave_scraper()),
+                    "Brave Search (LinkedIn/Indeed/Glassdoor)",
+                    120,
+                )
+            )
         else:
             _log("[orchestrator] BRAVE_SEARCH_API_KEY not set — skipping Brave Search")
 

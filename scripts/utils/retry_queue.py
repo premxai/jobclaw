@@ -11,8 +11,11 @@ This ensures transient failures (429s, timeouts) don't cause permanent data loss
 """
 
 import json
+import logging
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # Retry schedule (in seconds)
 RETRY_DELAYS = [
@@ -129,6 +132,13 @@ class RetryQueue:
                 }
             )
             self._stats["added"] += 1
+
+            if len(self._queue) > 200:
+                dropped = len(self._queue) - 100
+                self._queue = self._queue[-100:]  # keep newest 100
+                logger.warning(
+                    f"Retry queue overflow: dropped {dropped} oldest entries (queue was >{200})"
+                )
 
     def get_ready_retries(self) -> list[dict]:
         """

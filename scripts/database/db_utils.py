@@ -506,7 +506,7 @@ def _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
                 job_dict.get("remote_ok"),
                 job_dict.get("job_type"),
                 job_dict.get("seniority_level"),
-                job_dict.get("visa_sponsorship"),
+                1 if job_dict.get("visa_sponsorship") is True else (0 if job_dict.get("visa_sponsorship") is False else job_dict.get("visa_sponsorship")),
                 tech_stack_json,
                 first_seen,
                 compute_quality_score(job_dict),
@@ -541,7 +541,7 @@ def mark_stale_jobs(conn, source_ats: str, company: str, active_job_ids: set[str
     placeholder = "%s" if is_postgres() else "?"
 
     cursor.execute(
-        f"SELECT internal_hash FROM jobs WHERE source_ats = {placeholder} AND LOWER(company) = {placeholder} AND is_active = {'TRUE' if is_postgres() else '1'}",
+        f"SELECT internal_hash FROM jobs WHERE source_ats = {placeholder} AND LOWER(company) = {placeholder} AND is_active = 1",
         (ats_norm, company_norm),
     )
     all_hashes = {row[0] for row in cursor.fetchall()}
@@ -551,7 +551,7 @@ def mark_stale_jobs(conn, source_ats: str, company: str, active_job_ids: set[str
         qs = ",".join(placeholder for _ in stale_hashes)
         params = [now] + list(stale_hashes)
         cursor.execute(
-            f"UPDATE jobs SET is_active = {'FALSE' if is_postgres() else '0'}, last_seen_at = {placeholder} WHERE internal_hash IN ({qs})",
+            f"UPDATE jobs SET is_active = 0, last_seen_at = {placeholder} WHERE internal_hash IN ({qs})",
             params,
         )
         conn.commit()
@@ -560,10 +560,19 @@ def mark_stale_jobs(conn, source_ats: str, company: str, active_job_ids: set[str
 
 
 def get_unposted_jobs(conn):
-    """Fetch jobs ready to be sent to Discord."""
+    """Fetch jobs ready to be sent to Discord (last 48 hours only)."""
     if is_postgres():
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM jobs WHERE status = 'unposted' ORDER BY first_seen ASC LIMIT 500")
+        cursor.execute(
+            """SELECT * FROM jobs
+               WHERE status = 'unposted'
+                 AND (
+                   (date_posted != '' AND date_posted::timestamptz >= NOW() - INTERVAL '48 hours')
+                   OR (date_posted = '' AND first_seen >= NOW() - INTERVAL '48 hours')
+                 )
+               ORDER BY first_seen ASC
+               LIMIT 500"""
+        )
         cols = [desc[0] for desc in cursor.description]
         rows = cursor.fetchall()
         jobs = []
@@ -579,7 +588,16 @@ def get_unposted_jobs(conn):
     else:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM jobs WHERE status = 'unposted' ORDER BY first_seen ASC LIMIT 500")
+        cursor.execute(
+            """SELECT * FROM jobs
+               WHERE status = 'unposted'
+                 AND (
+                   (date_posted != '' AND date_posted >= datetime('now', '-48 hours'))
+                   OR (date_posted = '' AND first_seen >= datetime('now', '-48 hours'))
+                 )
+               ORDER BY first_seen ASC
+               LIMIT 500"""
+        )
         rows = cursor.fetchall()
         jobs = []
         for r in rows:
@@ -591,6 +609,71 @@ def get_unposted_jobs(conn):
                     job["keywords_matched"] = []
             jobs.append(job)
         return jobs
+
+
+def purge_stale_unposted(conn) -> int:
+    """Archive jobs that are too old to post (>48 hours unposted). Returns count archived."""
+    cursor = conn.cursor()
+    try:
+        if is_postgres():
+            cursor.execute(
+                """UPDATE jobs SET status = 'archived'
+                   WHERE status = 'unposted'
+                   AND first_seen < NOW() - INTERVAL '48 hours'"""
+            )
+        else:
+            cursor.execute(
+                """UPDATE jobs SET status = 'archived'
+                   WHERE status = 'unposted'
+                   AND first_seen < datetime('now', '-48 hours')"""
+            )
+        count = cursor.rowcount
+        conn.commit()
+        return count
+    except Exception as e:
+        from scripts.utils.logger import _log
+
+        _log(f"purge_stale_unposted failed: {e}", "WARNING")
+        conn.rollback()
+        return 0
+
+
+def prune_scraper_runs(conn, keep_last_n: int = 500) -> int:
+    """Delete old scraper_run records, keeping only the last N per scraper. Returns rows deleted."""
+    cursor = conn.cursor()
+    try:
+        if is_postgres():
+            cursor.execute(
+                """DELETE FROM scraper_runs
+                   WHERE id NOT IN (
+                       SELECT id FROM (
+                           SELECT id, ROW_NUMBER() OVER (PARTITION BY scraper ORDER BY id DESC) as rn
+                           FROM scraper_runs
+                       ) ranked
+                       WHERE rn <= %s
+                   )""",
+                (keep_last_n,),
+            )
+        else:
+            cursor.execute(
+                """DELETE FROM scraper_runs
+                   WHERE id NOT IN (
+                       SELECT id FROM (
+                           SELECT id, ROW_NUMBER() OVER (PARTITION BY scraper ORDER BY id DESC) as rn
+                           FROM scraper_runs
+                       ) ranked
+                       WHERE rn <= ?
+                   )""",
+                (keep_last_n,),
+            )
+        count = cursor.rowcount
+        conn.commit()
+        return count
+    except Exception as e:
+        from scripts.utils.logger import _log
+
+        _log(f"prune_scraper_runs failed: {e}", "WARNING")
+        return 0
 
 
 def mark_jobs_posted(conn, internal_hashes: list[str]):

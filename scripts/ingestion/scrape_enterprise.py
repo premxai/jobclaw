@@ -763,6 +763,11 @@ class GoogleJobsAPI:
             data = self._extract_ds1(html)
             if not data:
                 _log(f"[google] No ds:1 data on page {page}", "DEBUG")
+                if page == 1:
+                    _log(
+                        "GOOGLE_SSR_CHANGED: ds:1 pattern not found — scraper returned 0 jobs. HTML structure may have changed.",
+                        "WARN",
+                    )
                 break
 
             parsed = self._parse_ds1(data)
@@ -803,63 +808,64 @@ class MetaJobsAPI:
                 context = await browser.new_context(
                     user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"
                 )
-                page = await context.new_page()
+                try:
+                    page = await context.new_page()
 
-                async def handle_response(response):
-                    if "graphql" in response.url:
+                    async def handle_response(response):
+                        if "graphql" in response.url:
+                            try:
+                                json_data = await response.json()
+                                graphql_data.append(json_data)
+                            except Exception:
+                                pass
+
+                    page.on("response", handle_response)
+                    await page.goto(self.URL, wait_until="domcontentloaded", timeout=60000)
+
+                    # Sleep briefly to ensure GraphQL finishes caching
+                    await asyncio.sleep(8)
+
+                    for gql_response in graphql_data:
                         try:
-                            json_data = await response.json()
-                            graphql_data.append(json_data)
-                        except Exception:
-                            pass
-
-                page.on("response", handle_response)
-                await page.goto(self.URL, wait_until="domcontentloaded", timeout=60000)
-
-                # Sleep briefly to ensure GraphQL finishes caching
-                await asyncio.sleep(8)
-
-                for gql_response in graphql_data:
-                    try:
-                        data = gql_response.get("data", {})
-                        # Try multiple known GraphQL query names (Meta changes these)
-                        job_results = []
-                        for query_key in ["job_search_with_featured_jobs", "job_search", "careers_job_search"]:
-                            if query_key in data:
-                                container = data[query_key]
-                                job_results = (
-                                    container.get("all_jobs", [])
-                                    or container.get("jobs", [])
-                                    or container.get("results", [])
-                                )
-                                if job_results:
-                                    break
-
-                        for job in job_results:
-                            job_id = job.get("id")
-                            title = job.get("title", "")
-
-                            locs = job.get("locations", [])
-                            location = locs[0] if locs else "United States"
-
-                            url = f"https://www.metacareers.com/jobs/{job_id}/" if job_id else ""
-
-                            if title and job_id:
-                                all_jobs.append(
-                                    NormalizedJob(
-                                        title=title,
-                                        company="Meta",
-                                        location=location,
-                                        url=url,
-                                        date_posted="",
-                                        source_ats="meta",
-                                        job_id=str(job_id),
+                            data = gql_response.get("data", {})
+                            # Try multiple known GraphQL query names (Meta changes these)
+                            job_results = []
+                            for query_key in ["job_search_with_featured_jobs", "job_search", "careers_job_search"]:
+                                if query_key in data:
+                                    container = data[query_key]
+                                    job_results = (
+                                        container.get("all_jobs", [])
+                                        or container.get("jobs", [])
+                                        or container.get("results", [])
                                     )
-                                )
-                    except (KeyError, TypeError, AttributeError) as e:
-                        _log(f"[meta] Error parsing GraphQL response: {e}", "DEBUG")
+                                    if job_results:
+                                        break
 
-                await context.close()
+                            for job in job_results:
+                                job_id = job.get("id")
+                                title = job.get("title", "")
+
+                                locs = job.get("locations", [])
+                                location = locs[0] if locs else "United States"
+
+                                url = f"https://www.metacareers.com/jobs/{job_id}/" if job_id else ""
+
+                                if title and job_id:
+                                    all_jobs.append(
+                                        NormalizedJob(
+                                            title=title,
+                                            company="Meta",
+                                            location=location,
+                                            url=url,
+                                            date_posted="",
+                                            source_ats="meta",
+                                            job_id=str(job_id),
+                                        )
+                                    )
+                        except (KeyError, TypeError, AttributeError) as e:
+                            _log(f"[meta] Error parsing GraphQL response: {e}", "DEBUG")
+                finally:
+                    await context.close()
                 await browser.close()
         except Exception as e:
             _log(f"Error fetching Meta jobs via Playwright: {e}", "ERROR")
@@ -1002,8 +1008,8 @@ async def run_enterprise_scraper():
             _paginate_api(uber_api, session, "Uber", rate_limiter=rate_limiter, max_pages=15),
             _paginate_api(tesla_api, session, "Tesla", rate_limiter=rate_limiter, max_pages=1),
             _paginate_api(cursor_api, session, "Cursor", rate_limiter=rate_limiter, max_pages=1),
-            google_api.fetch_all_jobs(max_pages=10, session=session, rate_limiter=rate_limiter),
-            meta_api.fetch_all_jobs(session=session, rate_limiter=rate_limiter),
+            google_api.fetch_all_jobs(max_pages=10),
+            meta_api.fetch_all_jobs(),
             return_exceptions=True,
         )
 

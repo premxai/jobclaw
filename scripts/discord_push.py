@@ -58,6 +58,21 @@ CATEGORY_CHANNELS = {
     "Research": os.getenv("DISCORD_CHANNEL_RESEARCH"),
 }
 
+REQUIRED_CHANNELS = {
+    "DISCORD_CHANNEL_AI": os.getenv("DISCORD_CHANNEL_AI"),
+    "DISCORD_CHANNEL_SWE": os.getenv("DISCORD_CHANNEL_SWE"),
+    "DISCORD_CHANNEL_DATA": os.getenv("DISCORD_CHANNEL_DATA"),
+    "DISCORD_CHANNEL_NEWGRAD": os.getenv("DISCORD_CHANNEL_NEWGRAD"),
+    "DISCORD_CHANNEL_PRODUCT": os.getenv("DISCORD_CHANNEL_PRODUCT"),
+    "DISCORD_CHANNEL_RESEARCH": os.getenv("DISCORD_CHANNEL_RESEARCH"),
+}
+_missing_channels = [k for k, v in REQUIRED_CHANNELS.items() if not v]
+if _missing_channels:
+    log(
+        f"Missing Discord channel IDs: {_missing_channels} — these categories will fall back to general channel.",
+        "WARN",
+    )
+
 CATEGORY_EMOJIS = {
     "AI/ML": "🤖",
     "Data Science": "🔬",
@@ -105,6 +120,33 @@ ATS_LABELS = {
     "indeed": "Indeed",
     "glassdoor": "Glassdoor",
 }
+
+
+def _is_fresh(job: dict, cutoff: datetime) -> bool:
+    """Return True if the job is newer than cutoff. Falls back to first_seen if date_posted is unparseable."""
+    import dateutil.parser
+
+    # Try date_posted first
+    raw = job.get("date_posted", "")
+    if raw:
+        try:
+            dt = dateutil.parser.parse(raw)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt >= cutoff
+        except Exception:
+            pass
+    # Fall back to first_seen
+    raw = job.get("first_seen", "")
+    if raw:
+        try:
+            dt = dateutil.parser.parse(raw)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            return dt >= cutoff
+        except Exception:
+            pass
+    return True  # Unknown age: include (over-inclusive is safer)
 
 
 def _urgency_color(date_posted: str, base_color: int) -> int:
@@ -161,6 +203,31 @@ def _format_date(date_str: str | None) -> str:
         return date_str[:10] if len(date_str) >= 10 else date_str
 
 
+def _urgency_prefix(job: dict) -> str:
+    """Return an urgency prefix string based on job age.
+
+    < 2 hours  → "⚡ "
+    2–12 hours → "🟡 "
+    12–48 hours → "" (no prefix)
+    """
+    import dateutil.parser
+
+    raw = job.get("date_posted", "") or job.get("first_seen", "")
+    if raw:
+        try:
+            dt = dateutil.parser.parse(str(raw))
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=timezone.utc)
+            age = datetime.now(timezone.utc) - dt
+            if age < timedelta(hours=2):
+                return "⚡ "
+            if age < timedelta(hours=12):
+                return "🟡 "
+        except Exception:
+            pass
+    return ""
+
+
 def _build_job_embed(job: dict) -> dict:
     """Build a single Discord embed card for one job."""
     title = job.get("title", "Unknown Role")
@@ -192,10 +259,10 @@ def _build_job_embed(job: dict) -> dict:
     if location and len(location) > 40:
         location = location[:37] + "..."
 
-    quality_score = job.get("quality_score", 0)
+    urgency = _urgency_prefix(job)
 
     embed = {
-        "title": f"{emoji} {title}",
+        "title": f"{urgency}{emoji} {title}",
         "color": color,
         "fields": [
             {"name": "🏢 Company", "value": f"**{company}** {' ✅' if is_hot else ''}", "inline": True},
@@ -203,7 +270,6 @@ def _build_job_embed(job: dict) -> dict:
             {"name": "📅 Posted", "value": _format_date(date_posted), "inline": True},
             {"name": "🔗 Source", "value": ats_label, "inline": True},
             {"name": "🏷️ Category", "value": category, "inline": True},
-            {"name": "📊 Match Score", "value": f"`{int(quality_score)}/100`", "inline": True},
         ],
         "footer": {"text": f"JobClaw • {ats_label} • {datetime.now(timezone.utc).strftime('%H:%M UTC')}"},
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -389,42 +455,22 @@ async def push_new_jobs_to_discord():
             log("No unposted jobs — nothing to push.")
             return 0
 
-        # Removed quality score gate: pushing ALL unposted deduplicated jobs to Discord
-        # Enforce user requirement: United States only, <= 48 hours old
-        from datetime import datetime, timezone, timedelta
-        two_days_ago = datetime.now(timezone.utc) - timedelta(days=2)
-        
-        fresh_jobs = []
-        for j in jobs:
-            if is_already_posted(posted_hashes, j["internal_hash"]):
-                continue
-            
-            # 1. Must be in the United States
-            loc = str(j.get("location") or "").lower()
-            # If location is empty but it's remote, we assume US (most default to US)
-            # Otherwise, explicitly check. (The ingestors already check, but we double check)
-            if loc and not ("us" in loc.split() or "united states" in loc or "remote - us" in loc or "america" in loc or "usa" in loc or "ca," in loc or "ny," in loc or "tx," in loc or ", ma" in loc or ", wa" in loc or ", ca" in loc):
-                 # very basic heuristic, though upstream us_filter.py is better
-                 # let's just use the upstream if possible, or assume upstream handled it.
-                 pass
-            
-            # 2. Not older than 2 days
-            dp = j.get("date_posted") or j.get("first_seen")
-            is_recent = True
-            if dp:
-                try:
-                    # e.g '2026-03-22T14:50:29+00:00'
-                    import dateutil.parser
-                    if dateutil.parser.isoparse(dp) < two_days_ago:
-                        is_recent = False
-                except Exception:
-                    pass
-            
-            if is_recent:
-               fresh_jobs.append(j)
+        # Filter out jobs older than 48 hours
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=48)
+        jobs = [j for j in jobs if _is_fresh(j, cutoff)]
+
+        # Filter out jobs we already posted in previous runs (disk-based dedup)
+        # AND filter by Quality Threshold (Phase 1 gate)
+        QUALITY_THRESHOLD = 20
+        fresh_jobs = [
+            j
+            for j in jobs
+            if not is_already_posted(posted_hashes, j["internal_hash"])
+            and float(j.get("quality_score", 0)) >= QUALITY_THRESHOLD
+        ]
 
         if not fresh_jobs:
-            log(f"All {len(jobs)} unposted jobs have either already been posted or none are available.")
+            log(f"All {len(jobs)} unposted jobs failed quality/freshness filters.")
             return 0
 
         # Sort by first_seen, or just fallback to quality score
@@ -557,6 +603,12 @@ class StreamingJobPusher:
                     continue
 
                 try:
+                    # Skip jobs older than 2 days
+                    cutoff = datetime.now(timezone.utc) - timedelta(days=2)
+                    if not _is_fresh(job, cutoff):
+                        log(f"Skipping job {job.get('internal_hash')} - not recent enough.", "DEBUG")
+                        continue
+
                     category = _get_category(job)
                     channel_id = _get_channel_id(category)
                     embed = _build_job_embed(job)
