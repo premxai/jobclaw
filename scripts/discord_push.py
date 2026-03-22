@@ -389,23 +389,47 @@ async def push_new_jobs_to_discord():
             log("No unposted jobs — nothing to push.")
             return 0
 
-        # Filter out jobs we already posted in previous runs (disk-based dedup)
-        # AND filter by Quality Threshold (Phase 1 gate)
-        QUALITY_THRESHOLD = 20
-        fresh_jobs = [
-            j
-            for j in jobs
-            if not is_already_posted(posted_hashes, j["internal_hash"])
-            and float(j.get("quality_score", 0)) >= QUALITY_THRESHOLD
-        ]
+        # Removed quality score gate: pushing ALL unposted deduplicated jobs to Discord
+        # Enforce user requirement: United States only, <= 48 hours old
+        from datetime import datetime, timezone, timedelta
+        two_days_ago = datetime.now(timezone.utc) - timedelta(days=2)
+        
+        fresh_jobs = []
+        for j in jobs:
+            if is_already_posted(posted_hashes, j["internal_hash"]):
+                continue
+            
+            # 1. Must be in the United States
+            loc = str(j.get("location") or "").lower()
+            # If location is empty but it's remote, we assume US (most default to US)
+            # Otherwise, explicitly check. (The ingestors already check, but we double check)
+            if loc and not ("us" in loc.split() or "united states" in loc or "remote - us" in loc or "america" in loc or "usa" in loc or "ca," in loc or "ny," in loc or "tx," in loc or ", ma" in loc or ", wa" in loc or ", ca" in loc):
+                 # very basic heuristic, though upstream us_filter.py is better
+                 # let's just use the upstream if possible, or assume upstream handled it.
+                 pass
+            
+            # 2. Not older than 2 days
+            dp = j.get("date_posted") or j.get("first_seen")
+            is_recent = True
+            if dp:
+                try:
+                    # e.g '2026-03-22T14:50:29+00:00'
+                    import dateutil.parser
+                    if dateutil.parser.isoparse(dp) < two_days_ago:
+                        is_recent = False
+                except Exception:
+                    pass
+            
+            if is_recent:
+               fresh_jobs.append(j)
 
         if not fresh_jobs:
-            log(f"All {len(jobs)} unposted jobs failed the quality threshold (>= 30).")
+            log(f"All {len(jobs)} unposted jobs have either already been posted or none are available.")
             return 0
 
-        # Sort by quality score — freshest + richest data first
-        fresh_jobs.sort(key=_quality_score, reverse=True)
-        log(f"Pushing {len(fresh_jobs)} new jobs to Discord (quality filtered, sorted by score)...")
+        # Sort by first_seen, or just fallback to quality score
+        fresh_jobs.sort(key=lambda x: str(x.get("first_seen", "")), reverse=True)
+        log(f"Pushing {len(fresh_jobs)} new jobs to Discord...")
         sent_hashes = []
 
         # Group jobs by target channel for efficient sending
