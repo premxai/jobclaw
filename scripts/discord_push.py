@@ -395,7 +395,7 @@ async def push_new_jobs_to_discord():
         fresh_jobs = [
             j
             for j in jobs
-            if not is_already_posted(j["internal_hash"], posted_hashes)
+            if not is_already_posted(posted_hashes, j["internal_hash"])
             and float(j.get("quality_score", 0)) >= QUALITY_THRESHOLD
         ]
 
@@ -462,7 +462,8 @@ async def push_new_jobs_to_discord():
         return sent_count
 
     except Exception as e:
-        log(f"Discord push failed: {e}", "ERROR")
+        import traceback
+        log(f"Discord push failed: {traceback.format_exc()}", "ERROR")
         return 0
     finally:
         conn.close()

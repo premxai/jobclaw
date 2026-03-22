@@ -256,6 +256,12 @@ def _ensure_sqlite_schema(conn):
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_company ON jobs(company)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_source_ats ON jobs(source_ats)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_is_active ON jobs(is_active)")
+    
+    try:
+        cursor.execute("ALTER TABLE jobs ADD COLUMN quality_score REAL DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
+        
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_quality ON jobs(quality_score)")
 
     cursor.execute("""
