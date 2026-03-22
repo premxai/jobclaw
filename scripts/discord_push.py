@@ -461,8 +461,9 @@ async def push_new_jobs_to_discord():
 
         return sent_count
 
-    except Exception as e:
+    except Exception:
         import traceback
+
         log(f"Discord push failed: {traceback.format_exc()}", "ERROR")
         return 0
     finally:
