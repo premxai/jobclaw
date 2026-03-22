@@ -73,6 +73,7 @@ _STATE_CODES = {
     "wi",
     "wy",
     "dc",
+    "us",  # Explicit US country code
 }
 
 
