@@ -42,36 +42,25 @@ def log(msg: str, level: str = "INFO"):
 # CHANNEL ROUTING
 # ═══════════════════════════════════════════════════════════════════════
 
-BOT_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
-WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")
-GENERAL_CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID")
-
-# Category → Channel ID mapping
-CATEGORY_CHANNELS = {
-    "AI/ML": os.getenv("DISCORD_CHANNEL_AI"),
-    "Data Science": os.getenv("DISCORD_CHANNEL_DATA"),
-    "Data Engineering": os.getenv("DISCORD_CHANNEL_DATA"),
-    "Data Analyst": os.getenv("DISCORD_CHANNEL_DATA"),
-    "SWE": os.getenv("DISCORD_CHANNEL_SWE"),
-    "New Grad": os.getenv("DISCORD_CHANNEL_NEWGRAD"),
-    "Product": os.getenv("DISCORD_CHANNEL_PRODUCT"),
-    "Research": os.getenv("DISCORD_CHANNEL_RESEARCH"),
+# Per-category Discord webhook URLs — one webhook per channel.
+# Set these secrets in GitHub repo settings → Secrets → Actions.
+_CATEGORY_WEBHOOKS = {
+    "AI/ML":           os.getenv("DISCORD_WEBHOOK_AI", ""),
+    "Data Science":    os.getenv("DISCORD_WEBHOOK_DATA", ""),
+    "Data Engineering":os.getenv("DISCORD_WEBHOOK_DATA", ""),
+    "Data Analyst":    os.getenv("DISCORD_WEBHOOK_DATA", ""),
+    "SWE":             os.getenv("DISCORD_WEBHOOK_SWE", ""),
+    "New Grad":        os.getenv("DISCORD_WEBHOOK_NEWGRAD", ""),
+    "Product":         os.getenv("DISCORD_WEBHOOK_PRODUCT", ""),
+    "Research":        os.getenv("DISCORD_WEBHOOK_RESEARCH", ""),
 }
 
-REQUIRED_CHANNELS = {
-    "DISCORD_CHANNEL_AI": os.getenv("DISCORD_CHANNEL_AI"),
-    "DISCORD_CHANNEL_SWE": os.getenv("DISCORD_CHANNEL_SWE"),
-    "DISCORD_CHANNEL_DATA": os.getenv("DISCORD_CHANNEL_DATA"),
-    "DISCORD_CHANNEL_NEWGRAD": os.getenv("DISCORD_CHANNEL_NEWGRAD"),
-    "DISCORD_CHANNEL_PRODUCT": os.getenv("DISCORD_CHANNEL_PRODUCT"),
-    "DISCORD_CHANNEL_RESEARCH": os.getenv("DISCORD_CHANNEL_RESEARCH"),
-}
-_missing_channels = [k for k, v in REQUIRED_CHANNELS.items() if not v]
-if _missing_channels:
-    log(
-        f"Missing Discord channel IDs: {_missing_channels} — these categories will fall back to general channel.",
-        "WARN",
-    )
+# First configured webhook used as fallback for uncategorized jobs
+_FALLBACK_WEBHOOK = next((v for v in _CATEGORY_WEBHOOKS.values() if v), "")
+
+_missing_webhooks = [k for k, v in _CATEGORY_WEBHOOKS.items() if not v]
+if len(_missing_webhooks) == len(_CATEGORY_WEBHOOKS):
+    log("No DISCORD_WEBHOOK_* env vars set — Discord push will be skipped.", "WARN")
 
 CATEGORY_EMOJIS = {
     "AI/ML": "🤖",
@@ -184,12 +173,9 @@ def _get_category(job: dict) -> str:
     return cats[0] if cats else "Uncategorized"
 
 
-def _get_channel_id(category: str) -> str | None:
-    """Resolve a category to a Discord channel ID. Falls back to general."""
-    channel = CATEGORY_CHANNELS.get(category)
-    if channel:
-        return channel
-    return GENERAL_CHANNEL_ID
+def _get_webhook_url(category: str) -> str:
+    """Resolve a category to its Discord webhook URL. Falls back to first configured webhook."""
+    return _CATEGORY_WEBHOOKS.get(category, "") or _FALLBACK_WEBHOOK
 
 
 def _format_date(date_str: str | None) -> str:
@@ -366,46 +352,12 @@ _DISCORD_HEADERS = {
 }
 
 
-async def _send_card_via_bot(session, channel_id: str, embed: dict) -> bool:
-    """Send a single job card to a specific channel via Bot API (3-retry exponential backoff)."""
-    import asyncio
-
-    url = f"https://discord.com/api/v10/channels/{channel_id}/messages"
-    headers = {
-        **_DISCORD_HEADERS,
-        "Authorization": f"Bot {BOT_TOKEN}",
-    }
-
-    for attempt in range(3):
-        resp = await session.post(url, headers=headers, json={"embeds": [embed]})
-
-        if resp.status in (200, 201):
-            return True
-
-        if resp.status == 429:
-            try:
-                data = await resp.json()
-                wait = data.get("retry_after", 2.0)
-            except Exception:
-                wait = 2.0
-            backoff = max(wait, 2.0) * (2**attempt)
-            log(f"Rate limited — waiting {backoff:.1f}s (attempt {attempt + 1}/3)", "WARN")
-            await asyncio.sleep(backoff)
-            continue
-
-        log(f"Bot API returned {resp.status} for channel {channel_id}", "WARN")
-        return False
-
-    log(f"Bot API — retries exhausted for channel {channel_id}", "WARN")
-    return False
-
-
-async def _send_card_via_webhook(session, embed: dict) -> bool:
-    """Send a single job card via webhook (3-retry exponential backoff)."""
+async def _post_to_webhook(session, webhook_url: str, embed: dict) -> bool:
+    """POST a single embed to a Discord webhook with 3-retry exponential backoff."""
     import asyncio
 
     for attempt in range(3):
-        resp = await session.post(WEBHOOK_URL, headers=_DISCORD_HEADERS, json={"embeds": [embed]})
+        resp = await session.post(webhook_url, headers=_DISCORD_HEADERS, json={"embeds": [embed]})
 
         if resp.status in (200, 204):
             return True
@@ -421,7 +373,7 @@ async def _send_card_via_webhook(session, embed: dict) -> bool:
             await asyncio.sleep(backoff)
             continue
 
-        log(f"Webhook returned {resp.status}", "WARN")
+        log(f"Webhook returned HTTP {resp.status}", "WARN")
         return False
 
     log("Webhook — retries exhausted", "WARN")
@@ -444,72 +396,70 @@ async def push_new_jobs_to_discord():
 
     import aiohttp
 
+    from scripts.database.db_utils import purge_stale_unposted
+
+    if not _FALLBACK_WEBHOOK:
+        log("No DISCORD_WEBHOOK_* secrets configured — cannot push. Set at least one webhook.", "ERROR")
+        return 0
+
     # Load persistent dedup hashes from git-tracked file
     posted_hashes = load_posted_hashes()
     log(f"Loaded {len(posted_hashes)} previously-posted hashes from dedup file.")
 
     conn = get_connection()
     try:
+        # Archive jobs too old to post so they don't pile up
+        purged = purge_stale_unposted(conn)
+        if purged:
+            log(f"Archived {purged} stale unposted jobs (>48hr).")
+
+        # SQL already filters to last 48hr window
         jobs = get_unposted_jobs(conn)
+        log(f"Found {len(jobs)} unposted jobs within 48hr window.")
         if not jobs:
             log("No unposted jobs — nothing to push.")
             return 0
 
-        # Filter out jobs older than 48 hours
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=48)
-        jobs = [j for j in jobs if _is_fresh(j, cutoff)]
-
-        # Filter out jobs we already posted in previous runs (disk-based dedup only)
+        # Disk-based dedup: skip jobs already posted in a previous run
         fresh_jobs = [j for j in jobs if not is_already_posted(posted_hashes, j["internal_hash"])]
+        log(f"{len(fresh_jobs)} jobs to push after dedup ({len(jobs) - len(fresh_jobs)} already posted).")
 
         if not fresh_jobs:
-            log(f"All {len(jobs)} unposted jobs failed freshness/dedup filters.")
+            log("All unposted jobs already posted (dedup). Nothing new.")
             return 0
 
-        # Sort by first_seen, or just fallback to quality score
+        # Sort newest first
         fresh_jobs.sort(key=lambda x: str(x.get("first_seen", "")), reverse=True)
-        log(f"Pushing {len(fresh_jobs)} new jobs to Discord...")
-        sent_hashes = []
-
-        # Group jobs by target channel for efficient sending
-        channel_jobs: dict[str, list[dict]] = defaultdict(list)
-        for job in fresh_jobs:
-            category = _get_category(job)
-            channel_id = _get_channel_id(category)
-
-            if BOT_TOKEN and channel_id:
-                channel_jobs[channel_id].append(job)
-            elif WEBHOOK_URL:
-                channel_jobs["__webhook__"].append(job)
-            else:
-                log("No Discord credentials configured — skipping.", "WARN")
-                return 0
 
         sent_count = 0
         failed_count = 0
+        sent_hashes = []
 
         async with aiohttp.ClientSession() as session:
-            for channel_id, ch_jobs in channel_jobs.items():
-                for job in ch_jobs:
-                    embed = _build_job_embed(job)
-                    try:
-                        if channel_id == "__webhook__":
-                            ok = await _send_card_via_webhook(session, embed)
-                        else:
-                            ok = await _send_card_via_bot(session, channel_id, embed)
+            for job in fresh_jobs:
+                category = _get_category(job)
+                webhook_url = _get_webhook_url(category)
 
-                        if ok:
-                            sent_count += 1
-                            mark_as_posted(posted_hashes, job["internal_hash"])
-                            sent_hashes.append(job["internal_hash"])
-                        else:
-                            failed_count += 1
-                    except Exception as e:
-                        log(f"Failed to send card: {e}", "WARN")
+                if not webhook_url:
+                    log(f"No webhook for category '{category}' — skipping job.", "WARN")
+                    failed_count += 1
+                    continue
+
+                embed = _build_job_embed(job)
+                try:
+                    ok = await _post_to_webhook(session, webhook_url, embed)
+                    if ok:
+                        sent_count += 1
+                        mark_as_posted(posted_hashes, job["internal_hash"])
+                        sent_hashes.append(job["internal_hash"])
+                    else:
                         failed_count += 1
+                except Exception as e:
+                    log(f"Failed to send card: {e}", "WARN")
+                    failed_count += 1
 
-                    # Respect Discord rate limits: ~1 msg/sec
-                    await asyncio.sleep(1.0)
+                # Respect Discord rate limits: ~1 msg/sec
+                await asyncio.sleep(1.0)
 
         log(f"Sent {sent_count} cards ({failed_count} failed)")
 
@@ -551,11 +501,10 @@ class StreamingJobPusher:
     RATE_LIMIT_DELAY = 1.0  # Seconds between webhook calls
 
     def __init__(self, webhook_url: str = None):
-        self._webhook_url = webhook_url or WEBHOOK_URL
         self._queue: _asyncio.Queue = _asyncio.Queue()
         self._stop = _asyncio.Event()
         self._total_pushed = 0
-        self._enabled = bool(self._webhook_url or BOT_TOKEN)
+        self._enabled = bool(_FALLBACK_WEBHOOK or webhook_url)
         # Load persistent dedup hashes
         self._posted_hashes = load_posted_hashes() if self._enabled else {}
 
@@ -597,15 +546,10 @@ class StreamingJobPusher:
 
                 try:
                     category = _get_category(job)
-                    channel_id = _get_channel_id(category)
+                    webhook_url = _get_webhook_url(category)
                     embed = _build_job_embed(job)
 
-                    if BOT_TOKEN and channel_id:
-                        ok = await _send_card_via_bot(session, channel_id, embed)
-                    elif self._webhook_url:
-                        ok = await _send_card_via_webhook(session, embed)
-                    else:
-                        ok = False
+                    ok = await _post_to_webhook(session, webhook_url, embed) if webhook_url else False
 
                     if ok:
                         self._total_pushed += 1

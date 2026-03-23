@@ -1,10 +1,11 @@
-name: "🔍 Deep Tier — LinkedIn, Indeed, Glassdoor via Brave Search (Daily)"
+name: "🌊 Deep Tier — All 27,923 Companies (Daily 11PM UTC)"
 
 # ┌────────────────────────────────────────────────────────────────────┐
-# │  DEEP TIER — runs daily at 6 PM EST (11 PM UTC)                   │
-# │  Scraper: Brave Search API (LinkedIn, Indeed, Glassdoor)          │
-# │           + full ATS sweep (all shards, no rotation)              │
-# │  Duration: ~5-15 minutes                                          │
+# │  DEEP TIER — runs daily at 11 PM UTC (6 PM EST)                   │
+# │  ALL platforms: Greenhouse + Lever + Ashby + Workday + Workable   │
+# │  + Brave Search (LinkedIn/Indeed/Glassdoor) + YC + HN Hiring      │
+# │  No sharding — full sweep of all 27,923 companies                 │
+# │  Duration: ~15-45 minutes                                          │
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
@@ -39,15 +40,12 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
-          DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
-          DISCORD_CHANNEL_AI: ${{ secrets.DISCORD_CHANNEL_AI }}
-          DISCORD_CHANNEL_SWE: ${{ secrets.DISCORD_CHANNEL_SWE }}
-          DISCORD_CHANNEL_DATA: ${{ secrets.DISCORD_CHANNEL_DATA }}
-          DISCORD_CHANNEL_NEWGRAD: ${{ secrets.DISCORD_CHANNEL_NEWGRAD }}
-          DISCORD_CHANNEL_PRODUCT: ${{ secrets.DISCORD_CHANNEL_PRODUCT }}
-          DISCORD_CHANNEL_RESEARCH: ${{ secrets.DISCORD_CHANNEL_RESEARCH }}
+          DISCORD_WEBHOOK_AI: ${{ secrets.DISCORD_WEBHOOK_AI }}
+          DISCORD_WEBHOOK_SWE: ${{ secrets.DISCORD_WEBHOOK_SWE }}
+          DISCORD_WEBHOOK_DATA: ${{ secrets.DISCORD_WEBHOOK_DATA }}
+          DISCORD_WEBHOOK_NEWGRAD: ${{ secrets.DISCORD_WEBHOOK_NEWGRAD }}
+          DISCORD_WEBHOOK_PRODUCT: ${{ secrets.DISCORD_WEBHOOK_PRODUCT }}
+          DISCORD_WEBHOOK_RESEARCH: ${{ secrets.DISCORD_WEBHOOK_RESEARCH }}
         run: |
           python scripts/ingestion/run_all_scrapers.py \
             --tier deep \

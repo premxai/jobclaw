@@ -1,4 +1,4 @@
-name: "📋 Expand ATS Company Registry (Daily)"
+name: "🔍 Registry Expander — Discover New Companies (Daily 10PM UTC)"
 
 # ┌────────────────────────────────────────────────────────────────────┐
 # │  Runs once daily at 10 PM UTC (1 hr before deep scrape)           │
