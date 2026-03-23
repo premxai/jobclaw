@@ -455,22 +455,15 @@ async def push_new_jobs_to_discord():
             log("No unposted jobs — nothing to push.")
             return 0
 
-        # Filter out jobs older than 48 hours
-        cutoff = datetime.now(timezone.utc) - timedelta(hours=48)
-        jobs = [j for j in jobs if _is_fresh(j, cutoff)]
-
-        # Filter out jobs we already posted in previous runs (disk-based dedup)
-        # AND filter by Quality Threshold (Phase 1 gate)
-        QUALITY_THRESHOLD = 20
+        # Filter out jobs we already posted in previous runs (disk-based dedup only)
         fresh_jobs = [
             j
             for j in jobs
             if not is_already_posted(posted_hashes, j["internal_hash"])
-            and float(j.get("quality_score", 0)) >= QUALITY_THRESHOLD
         ]
 
         if not fresh_jobs:
-            log(f"All {len(jobs)} unposted jobs failed quality/freshness filters.")
+            log(f"All {len(jobs)} unposted jobs already posted (dedup).")
             return 0
 
         # Sort by first_seen, or just fallback to quality score
@@ -603,12 +596,6 @@ class StreamingJobPusher:
                     continue
 
                 try:
-                    # Skip jobs older than 2 days
-                    cutoff = datetime.now(timezone.utc) - timedelta(days=2)
-                    if not _is_fresh(job, cutoff):
-                        log(f"Skipping job {job.get('internal_hash')} - not recent enough.", "DEBUG")
-                        continue
-
                     category = _get_category(job)
                     channel_id = _get_channel_id(category)
                     embed = _build_job_embed(job)
