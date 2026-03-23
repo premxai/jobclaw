@@ -41,6 +41,12 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_CHANNEL_ID: ${{ secrets.DISCORD_CHANNEL_ID }}
+          DISCORD_CHANNEL_AI: ${{ secrets.DISCORD_CHANNEL_AI }}
+          DISCORD_CHANNEL_SWE: ${{ secrets.DISCORD_CHANNEL_SWE }}
+          DISCORD_CHANNEL_DATA: ${{ secrets.DISCORD_CHANNEL_DATA }}
+          DISCORD_CHANNEL_NEWGRAD: ${{ secrets.DISCORD_CHANNEL_NEWGRAD }}
+          DISCORD_CHANNEL_PRODUCT: ${{ secrets.DISCORD_CHANNEL_PRODUCT }}
+          DISCORD_CHANNEL_RESEARCH: ${{ secrets.DISCORD_CHANNEL_RESEARCH }}
         run: python scripts/ingestion/scrape_hot.py
 
       - name: Commit updated posted_hashes (if changed)
