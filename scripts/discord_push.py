@@ -430,11 +430,17 @@ async def push_new_jobs_to_discord():
         # Sort newest first
         fresh_jobs.sort(key=lambda x: str(x.get("first_seen", "")), reverse=True)
 
+        # Cap batch per run — keeps each 15-min job well within timeout
+        if len(fresh_jobs) > 50:
+            log(f"Capping batch to 50 (of {len(fresh_jobs)}) — remainder posted next run.")
+            fresh_jobs = fresh_jobs[:50]
+
         sent_count = 0
         failed_count = 0
         sent_hashes = []
 
-        async with aiohttp.ClientSession() as session:
+        timeout = aiohttp.ClientTimeout(total=10)  # 10s per request max
+        async with aiohttp.ClientSession(timeout=timeout) as session:
             for job in fresh_jobs:
                 category = _get_category(job)
                 webhook_url = _get_webhook_url(category)
