@@ -52,7 +52,7 @@ docker compose up -d   # services: api (8000), postgres, redis, prometheus, graf
 ```bash
 cp .env.example .env   # then fill in secrets
 ```
-Key env vars: `DATABASE_URL` (defaults to SQLite), `DISCORD_WEBHOOK_URL`, `DISCORD_CHANNEL_*` (per-category channels: AI, SWE, DATA, NEWGRAD, PRODUCT, RESEARCH), `BRAVE_SEARCH_API_KEY`, `JOBCLAW_API_KEY` (leave blank for dev).
+Key env vars: `DATABASE_URL` (Neon PostgreSQL URL; defaults to SQLite if unset), `DISCORD_WEBHOOK_AI/SWE/DATA/NEWGRAD/PRODUCT/RESEARCH` (per-category webhook URLs; at least one required), `BRAVE_SEARCH_API_KEY`, `JOBCLAW_API_KEY` (leave blank for dev).
 
 ### CI Validation (mirrors deploy.yml checks)
 ```bash

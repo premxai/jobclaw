@@ -39,8 +39,6 @@ jobs:
       - name: Run fast-tier scrapers (RSS + GitHub + Greenhouse/Lever/Ashby)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           DISCORD_WEBHOOK_AI: ${{ secrets.DISCORD_WEBHOOK_AI }}
           DISCORD_WEBHOOK_SWE: ${{ secrets.DISCORD_WEBHOOK_SWE }}
           DISCORD_WEBHOOK_DATA: ${{ secrets.DISCORD_WEBHOOK_DATA }}
