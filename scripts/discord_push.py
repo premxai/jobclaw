@@ -460,11 +460,7 @@ async def push_new_jobs_to_discord():
         jobs = [j for j in jobs if _is_fresh(j, cutoff)]
 
         # Filter out jobs we already posted in previous runs (disk-based dedup only)
-        fresh_jobs = [
-            j
-            for j in jobs
-            if not is_already_posted(posted_hashes, j["internal_hash"])
-        ]
+        fresh_jobs = [j for j in jobs if not is_already_posted(posted_hashes, j["internal_hash"])]
 
         if not fresh_jobs:
             log(f"All {len(jobs)} unposted jobs failed freshness/dedup filters.")
