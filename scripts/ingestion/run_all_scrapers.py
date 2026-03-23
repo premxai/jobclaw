@@ -82,6 +82,7 @@ async def run_all(
     shard: int = None,
     total_shards: int = 4,
     tier: str = None,
+    platforms: set = None,
 ):
     """
     Launch all scrapers in parallel — ZERO-MISS coverage.
@@ -157,6 +158,7 @@ async def run_all(
                         shard=shard,
                         total_shards=total_shards,
                         tier=tier,
+                        platforms=platforms,
                     ),
                 ),
                 label,
@@ -318,31 +320,39 @@ Legacy flags still work:
         elif args.daily:
             tier = "deep"
 
+    # Gem DNS is permanently dead — skip on every tier
+    _GEM_SKIP = {"gem"}
+
     if tier == "fast":
-        # RSS + GitHub + ATS (1 rotating shard) — ~2 min
+        # Group A: Fast REST APIs only (Greenhouse, Lever, Ashby)
+        # All 6,464 companies covered in ~15-20 min — no sharding needed
         skip_ats = False
         run_brave = False
         skip_github = False
-        window = args.window or 4
-        skip_platforms = set()
-        shard_val = get_next_shard("fast_ats", total_shards)  # Deterministic rotation
-        db_tier = "P0"
+        window = args.window or 6
+        skip_platforms = _GEM_SKIP
+        platforms = {"greenhouse", "lever", "ashby"}
+        shard_val = None  # No sharding — cover all Group A in one run
+        db_tier = None
     elif tier == "medium":
-        # RSS + GitHub + Enterprise + ATS (1 rotating shard) — ~4 min
+        # Group B: Workday (8-shard rotation) + Rippling + SmartRecruiters + BambooHR
+        # Workday 15,848 / 8 shards = ~2,000/run instead of ~4,000 with 4 shards
         skip_ats = False
         run_brave = False
         skip_github = False
         window = args.window or 8
-        skip_platforms = set()
-        shard_val = get_next_shard("medium_ats", total_shards)
-        db_tier = "P1"
+        skip_platforms = _GEM_SKIP
+        platforms = {"workday", "rippling", "smartrecruiters", "bamboohr"}
+        shard_val = get_next_shard("medium_ats_workday", 8)  # 8-shard rotation for Workday
+        db_tier = None
     elif tier == "deep":
-        # Everything: ALL shards + Brave Search — ~15 min
+        # Everything: ALL platforms + Workable + Brave Search — daily full sweep
         skip_ats = False
         run_brave = True
         skip_github = False
         window = args.window or 24
-        skip_platforms = set()
+        skip_platforms = _GEM_SKIP  # Gem still dead in deep
+        platforms = None  # All platforms including workable
         shard_val = None  # No sharding — full sweep of all companies
         db_tier = None
     else:
@@ -351,7 +361,8 @@ Legacy flags still work:
         run_brave = False
         skip_github = args.no_github
         window = args.window or 24
-        skip_platforms = None
+        skip_platforms = _GEM_SKIP
+        platforms = None
         shard_val = get_next_shard("custom_ats", total_shards)
         db_tier = "P2"
 
@@ -372,6 +383,7 @@ Legacy flags still work:
         f"[orchestrator] Tier={tier or 'default'}, Window={window}hr, "
         f"Shard={shard_val if shard_val is not None else 'ALL'}/{total_shards}, "
         f"ATS={'OFF' if skip_ats else 'ON'}, "
+        f"Platforms={sorted(platforms) if platforms else 'ALL'}, "
         f"Brave={'ON' if run_brave else 'OFF'}"
     )
 
@@ -388,6 +400,7 @@ Legacy flags still work:
             shard=shard_val,
             total_shards=args.total_shards,
             tier=db_tier,
+            platforms=platforms,
         )
     )
 

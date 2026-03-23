@@ -1,16 +1,12 @@
-name: "⚡ Medium Tier — ATS Companies, Sharded (Hourly Rotation)"
+name: "⚡ Medium Tier — Workday/Rippling/SmartRecruiters (Hourly, 8-Shard)"
 
 # ┌────────────────────────────────────────────────────────────────────┐
-# │  MEDIUM TIER — runs every hour, rotates through 4 shards          │
-# │  Scrapers: Greenhouse, Lever, Ashby, SmartRecruiters,             │
-# │            Rippling, Workable, + Enterprise (Apple/Google/etc)    │
-# │  Strategy: 4 shards × ~3,000 companies each, 1 shard per hour    │
-# │    Hour 0 → shard 0  (~3k companies)                              │
-# │    Hour 1 → shard 1  (~3k companies)                              │
-# │    Hour 2 → shard 2  (~3k companies)                              │
-# │    Hour 3 → shard 3  (~3k companies)                              │
-# │    Hour 4 → shard 0  (cycle restarts — full coverage every 4h)   │
-# │  Duration: ~8-15 minutes per run                                  │
+# │  MEDIUM TIER — runs every hour, rotates through 8 shards          │
+# │  ATS Group B: Workday (15,848) + Rippling (1,323) +               │
+# │               SmartRecruiters (179) + BambooHR (7)                │
+# │  Strategy: Workday 15,848 / 8 shards = ~2,000 companies/run      │
+# │  Full Workday coverage every 8 hours                               │
+# │  Duration: ~20-30 minutes per run                                  │
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
@@ -28,7 +24,7 @@ permissions:
 jobs:
   medium-scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
 
     steps:
       - uses: actions/checkout@v4
@@ -45,7 +41,7 @@ jobs:
           pip install -r requirements.txt
           playwright install chromium
 
-      - name: Run medium-tier scrapers (ATS + Enterprise, sharded)
+      - name: Run medium-tier scrapers (Workday/Rippling/SmartRecruiters/BambooHR, 8-shard)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -60,19 +56,10 @@ jobs:
           DISCORD_CHANNEL_PRODUCT: ${{ secrets.DISCORD_CHANNEL_PRODUCT }}
           DISCORD_CHANNEL_RESEARCH: ${{ secrets.DISCORD_CHANNEL_RESEARCH }}
         run: |
-          # Determine shard: use manual input or auto-rotate by hour
-          SHARD_INPUT="${{ github.event.inputs.shard }}"
-          if [ "$SHARD_INPUT" = "auto" ] || [ -z "$SHARD_INPUT" ]; then
-            SHARD=$(( $(date +%-H) % 4 ))
-          else
-            SHARD=$SHARD_INPUT
-          fi
-          echo "Running shard $SHARD/4"
-          # Window=4 is safe now — each shard runs once every 4 hours (no gaps)
+          # Shard rotation handled by orchestrator via DB (medium_ats_workday key, 8 shards)
           python scripts/ingestion/run_all_scrapers.py \
             --tier medium \
-            --window 6 \
-            --shard $SHARD
+            --window 8
 
       - name: Commit dedup file
         if: always()

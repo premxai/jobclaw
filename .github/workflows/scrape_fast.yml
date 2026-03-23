@@ -1,10 +1,11 @@
-name: "🚀 Fast Tier — RSS + GitHub (Every Hour)"
+name: "🚀 Fast Tier — RSS + GitHub + Greenhouse/Lever/Ashby (Every Hour)"
 
 # ┌────────────────────────────────────────────────────────────────────┐
 # │  FAST TIER — runs every hour                                       │
-# │  Scrapers: RSS feeds + GitHub job-board repos                     │
-# │  Duration: ~5-10 minutes per run                                   │
-# │  Coverage: RemoteOK, Remotive, WWR, Dice, Wellfound, YC, GitHub   │
+# │  Scrapers: RSS feeds + GitHub repos + Group A ATS                 │
+# │  ATS Group A: Greenhouse (2,886) + Lever (1,881) + Ashby (1,697) │
+# │  = 6,464 companies on fast public REST APIs, covered every hour   │
+# │  Duration: ~15-20 minutes per run                                  │
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
@@ -18,7 +19,7 @@ permissions:
 jobs:
   fast-scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 20        # Playwright install + scraping needs ~15min
+    timeout-minutes: 25        # Setup ~90s + Group A ATS (~15-20min) + buffer
 
     steps:
       - uses: actions/checkout@v4
@@ -35,7 +36,7 @@ jobs:
           pip install -r requirements.txt
           playwright install chromium
 
-      - name: Run fast-tier scrapers (RSS + GitHub)
+      - name: Run fast-tier scrapers (RSS + GitHub + Greenhouse/Lever/Ashby)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -52,8 +53,7 @@ jobs:
         run: |
           python scripts/ingestion/run_all_scrapers.py \
             --tier fast \
-            --window 24 \
-            --skip-ats
+            --window 6
 
       - name: Commit dedup file
         if: always()

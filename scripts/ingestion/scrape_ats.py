@@ -217,19 +217,21 @@ async def run_ats_scraper(
     shard: int = -1,
     total_shards: int = 4,
     tier: str = None,
+    platforms: set = None,
 ):
     """
     Micro-scraper exclusively for Direct ATS APIs (Greenhouse, Lever, etc.)
 
     Pipeline:
       1. Load registry (~11,800 companies)
-      2. Apply shard filter (optional: split registry into N rotating chunks)
-      3. Group by ATS platform → build per-platform queues
-      4. Launch N workers per platform (bounded, NOT 11,800 coroutines)
-      5. Fetch with caching + rate limiting + TLS fingerprint rotation
-      6. Filter: target role → US location → time window
-      7. Insert into SQLite with description + salary enrichment
-      8. Mark vanished jobs as inactive (lifecycle tracking)
+      2. Apply platform filter (optional: restrict to specific ATS types)
+      3. Apply shard filter (optional: split registry into N rotating chunks)
+      4. Group by ATS platform → build per-platform queues
+      5. Launch N workers per platform (bounded, NOT 11,800 coroutines)
+      6. Fetch with caching + rate limiting + TLS fingerprint rotation
+      7. Filter: target role → US location → time window
+      8. Insert into SQLite with description + salary enrichment
+      9. Mark vanished jobs as inactive (lifecycle tracking)
 
     Args:
         window_hours: Time window for filtering (default 24h)
@@ -239,6 +241,8 @@ async def run_ats_scraper(
                None = no sharding (process entire registry).
         total_shards: Number of shards to split registry into (default 4).
         tier: Optional DB tier to fetch (P0, P1, P2). If provided, registry is ignored.
+        platforms: Whitelist of ATS platform names to include (e.g. {"greenhouse", "lever"}).
+                   None = all platforms. Used to bucket platforms by speed/tier.
     """
     start_time = time.time()
     _log(">>> Starting ATS Micro-Scraper v4 (curl_cffi TLS impersonation)")
@@ -269,6 +273,13 @@ async def run_ats_scraper(
         skipped = before_count - len(registry)
         if skipped:
             _log(f"Skipping {skipped} companies on platforms: {', '.join(sorted(skip_platforms))}")
+
+    # ── Platform whitelist filter ───────────────────────────────────────
+    # Allows tiers to target specific ATS types (e.g. fast tier = greenhouse/lever/ashby only)
+    if platforms:
+        before_platform_filter = len(registry)
+        registry = [c for c in registry if c.get("ats", "").lower() in platforms]
+        _log(f"Platform filter {sorted(platforms)}: {len(registry)} of {before_platform_filter} companies selected.")
 
     # ── Registry Sharding ──────────────────────────────────────────────
     # Split 10k+ companies into N rotating shards for shorter runs.
