@@ -45,8 +45,21 @@ cd web && npm install && npm run dev   # http://localhost:3000
 
 ### Docker (full stack)
 ```bash
-docker compose up -d   # api, postgres, redis, prometheus, grafana
+docker compose up -d   # services: api (8000), postgres, redis, prometheus, grafana
 ```
+
+### Environment Setup
+```bash
+cp .env.example .env   # then fill in secrets
+```
+Key env vars: `DATABASE_URL` (defaults to SQLite), `DISCORD_WEBHOOK_URL`, `DISCORD_CHANNEL_*` (per-category channels: AI, SWE, DATA, NEWGRAD, PRODUCT, RESEARCH), `BRAVE_SEARCH_API_KEY`, `JOBCLAW_API_KEY` (leave blank for dev).
+
+### CI Validation (mirrors deploy.yml checks)
+```bash
+ruff check scripts/ api/ && ruff format --check scripts/ api/
+python -c "from api.main import app; from scripts.database.db_utils import get_connection"
+```
+No formal test suite — `tests/` directory doesn't exist. The 12 `test_*.py` files in repo root are ad-hoc exploration scripts, not a test suite.
 
 ## Architecture
 
@@ -96,6 +109,13 @@ Jobs below score 20 are not posted to Discord. Scores come from: hot company bon
 ### Role Categories (7)
 Defined in `scripts/ingestion/role_filter.py`: AI/ML, SWE, Data, New Grad, Product, Research, Design. 142+ keywords. Jobs not matching any category are dropped.
 
+### Logging
+Dual-mode structured logging via `scripts/utils/logger.py`:
+- `logs/jobclaw.jsonl` — machine-parseable JSON (for log aggregators)
+- `logs/jobclaw.log` — human-readable combined log
+- Legacy `_log(msg, level, tag)` pattern used throughout; new code can use structured kwargs: `log.info("msg", companies=500, shard=2)`
+- `ScrapeTimer` context manager for automatic operation timing
+
 ## Key Files
 
 | File | Purpose |
@@ -106,6 +126,10 @@ Defined in `scripts/ingestion/role_filter.py`: AI/ML, SWE, Data, New Grad, Produ
 | `scripts/database/db_utils.py` | Job insert, dedup, quality scoring, shard rotation |
 | `scripts/discord_push.py` | Query unposted → Discord embeds → mark posted |
 | `scripts/utils/http_client.py` | `RateLimiter`, `create_session`, curl_cffi TLS |
+| `scripts/utils/logger.py` | Structured JSON + console logging, `ScrapeTimer` |
+| `scripts/utils/retry_queue.py` | Failed job retry management across runs |
+| `scripts/ai/` | Embeddings, semantic dedup, salary estimation, job matching |
+| `scripts/discovery/` | Company career page discovery crawlers |
 | `config/company_registry.json` | 27,922 companies with ATS platform + slug |
 | `config/hot_companies.json` | Fast-track companies (scraped every 5 min) |
 | `api/main.py` | FastAPI server — REST endpoints + WebSocket |
