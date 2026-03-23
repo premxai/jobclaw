@@ -70,7 +70,7 @@ async def _with_timeout(coro, name: str, timeout_sec: int):
             f"SCRAPER_TIMEOUT: {name} exceeded {timeout_sec}s — partial results may be missing",
             "ERROR",
         )
-        return []
+        return (name, timeout_sec, f"timeout after {timeout_sec}s")
 
 
 async def run_all(

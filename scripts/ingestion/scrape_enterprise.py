@@ -1076,7 +1076,7 @@ async def run_enterprise_scraper():
         log_scraper_run(
             conn=conn,
             script_name="scrape_enterprise",
-            companies_fetched=total_companies,
+            companies_scraped=total_companies,
             new_jobs=new_jobs_inserted,
             duration=round(time.time() - start_t, 2),
         )
