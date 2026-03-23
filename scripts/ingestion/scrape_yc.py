@@ -22,6 +22,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.ingestion.role_filter import matches_target_role
 from scripts.ingestion.us_filter import is_us_location
+from scripts.database.db_utils import get_connection, insert_job, log_scraper_run
 from scripts.utils.logger import _log
 
 SOURCE_ATS = "yc_startups"
@@ -258,11 +259,14 @@ def _build_normalized_job(raw: dict) -> dict:
     }
 
 
-async def fetch_yc_jobs(session: aiohttp.ClientSession) -> list[dict]:
+async def fetch_yc_jobs(session: aiohttp.ClientSession | None = None) -> list[dict]:
     """
     Fetch and parse YC startup jobs from workatastartup.com.
     Returns a list of NormalizedJob-compatible dicts.
     """
+    if session is None:
+        async with aiohttp.ClientSession() as session:
+            return await fetch_yc_jobs(session)
     try:
         async with session.get(JOBS_URL, headers=HEADERS, timeout=aiohttp.ClientTimeout(total=30)) as resp:
             if resp.status != 200:
@@ -300,6 +304,18 @@ async def fetch_yc_jobs(session: aiohttp.ClientSession) -> list[dict]:
         results.append(job)
 
     _log(f"[yc_startups] {len(results)} jobs passed role + US filters.")
+
+    # DB insertion
+    conn = get_connection()
+    inserted = 0
+    try:
+        for job in results:
+            if insert_job(conn, job):
+                inserted += 1
+        log_scraper_run(conn, "scrape_yc", 1, inserted, 0, "")
+    finally:
+        conn.close()
+    _log(f"[yc_startups] Inserted {inserted} new jobs into DB.")
     return results
 
 

@@ -24,6 +24,7 @@ import aiohttp
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from scripts.database.db_utils import get_connection, insert_job, log_scraper_run
 from scripts.ingestion.role_filter import matches_target_role
 from scripts.ingestion.us_filter import is_us_location
 from scripts.utils.logger import _log
@@ -256,11 +257,14 @@ async def _fetch_post_comments(session: aiohttp.ClientSession, post_id: str) -> 
     return children
 
 
-async def fetch_hn_hiring_jobs(session: aiohttp.ClientSession) -> list[dict]:
+async def fetch_hn_hiring_jobs(session: aiohttp.ClientSession | None = None) -> list[dict]:
     """
     Fetch and parse the HN Who's Hiring thread.
     Returns a list of NormalizedJob-compatible dicts.
     """
+    if session is None:
+        async with aiohttp.ClientSession() as session:
+            return await fetch_hn_hiring_jobs(session)
     month_str = datetime.now(timezone.utc).strftime("%Y-%m")
 
     post_id = await _find_latest_hiring_post(session)
@@ -299,6 +303,18 @@ async def fetch_hn_hiring_jobs(session: aiohttp.ClientSession) -> list[dict]:
         results.append(job)
 
     _log(f"[hn_hiring] {len(results)} jobs passed role + US filters.")
+
+    # DB insertion
+    conn = get_connection()
+    inserted = 0
+    try:
+        for job in results:
+            if insert_job(conn, job):
+                inserted += 1
+        log_scraper_run(conn, "scrape_hn_hiring", 1, inserted, 0, "")
+    finally:
+        conn.close()
+    _log(f"[hn_hiring] Inserted {inserted} new jobs into DB.")
     return results
 
 

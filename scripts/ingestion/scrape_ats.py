@@ -255,6 +255,8 @@ async def run_ats_scraper(
             conn.close()
         # No further sharding needed if fetched from DB
         shard = None
+        before_count = len(registry)
+        skipped = 0
     else:
         registry = load_registry()
         if not registry:

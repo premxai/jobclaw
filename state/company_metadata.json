@@ -13,6 +13,198 @@
       "last_job_count": 0,
       "last_job_hash": "",
       "consecutive_empty": 1
+    },
+    "ashby:cohere": {
+      "last_scraped": "2026-03-23T04:21:28.120821Z",
+      "last_job_count": 125,
+      "last_job_hash": "1ed76244b965",
+      "consecutive_empty": 0
+    },
+    "greenhouse:carta": {
+      "last_scraped": "2026-03-23T04:21:29.196652Z",
+      "last_job_count": 91,
+      "last_job_hash": "d3a3c1da275f",
+      "consecutive_empty": 0
+    },
+    "lever:coreweave": {
+      "last_scraped": "2026-03-23T04:21:29.197931Z",
+      "last_job_count": 0,
+      "last_job_hash": "",
+      "consecutive_empty": 1
+    },
+    "lever:crowdstrike": {
+      "last_scraped": "2026-03-23T04:21:29.198947Z",
+      "last_job_count": 0,
+      "last_job_hash": "",
+      "consecutive_empty": 1
+    },
+    "ashby:atlan": {
+      "last_scraped": "2026-03-23T04:21:29.436342Z",
+      "last_job_count": 20,
+      "last_job_hash": "fb5129d6f28f",
+      "consecutive_empty": 0
+    },
+    "ashby:anduril": {
+      "last_scraped": "2026-03-23T04:21:29.438289Z",
+      "last_job_count": 0,
+      "last_job_hash": "",
+      "consecutive_empty": 1
+    },
+    "lever:coda": {
+      "last_scraped": "2026-03-23T04:21:29.520764Z",
+      "last_job_count": 0,
+      "last_job_hash": "",
+      "consecutive_empty": 1
+    },
+    "greenhouse:asana": {
+      "last_scraped": "2026-03-23T04:21:31.233234Z",
+      "last_job_count": 163,
+      "last_job_hash": "cc23aee4d435",
+      "consecutive_empty": 0
+    },
+    "rippling:arc": {
+      "last_scraped": "2026-03-23T04:21:31.238544Z",
+      "last_job_count": 0,
+      "last_job_hash": "",
+      "consecutive_empty": 1
+    },
+    "ashby:confluent": {
+      "last_scraped": "2026-03-23T04:21:31.656078Z",
+      "last_job_count": 54,
+      "last_job_hash": "c9e50498f8a0",
+      "consecutive_empty": 0
+    },
+    "lever:brightmachines": {
+      "last_scraped": "2026-03-23T04:21:31.885055Z",
+      "last_job_count": 26,
+      "last_job_hash": "62273cc04323",
+      "consecutive_empty": 0
+    },
+    "greenhouse:databricks": {
+      "last_scraped": "2026-03-23T04:21:38.976886Z",
+      "last_job_count": 832,
+      "last_job_hash": "6e2746de1f48",
+      "consecutive_empty": 0
+    },
+    "rippling:1x": {
+      "last_scraped": "2026-03-23T04:21:38.987567Z",
+      "last_job_count": 0,
+      "last_job_hash": "",
+      "consecutive_empty": 1
+    },
+    "greenhouse:cloudflare": {
+      "last_scraped": "2026-03-23T04:21:47.516423Z",
+      "last_job_count": 555,
+      "last_job_hash": "e87406e9e2ca",
+      "consecutive_empty": 0
+    },
+    "greenhouse:cerebras": {
+      "last_scraped": "2026-03-23T04:21:47.517418Z",
+      "last_job_count": 0,
+      "last_job_hash": "",
+      "consecutive_empty": 1
+    },
+    "greenhouse:characterai": {
+      "last_scraped": "2026-03-23T04:21:47.519408Z",
+      "last_job_count": 0,
+      "last_job_hash": "",
+      "consecutive_empty": 1
+    },
+    "lever:alation": {
+      "last_scraped": "2026-03-23T04:21:47.654960Z",
+      "last_job_count": 0,
+      "last_job_hash": "",
+      "consecutive_empty": 1
+    },
+    "greenhouse:adyen": {
+      "last_scraped": "2026-03-23T04:21:50.215150Z",
+      "last_job_count": 293,
+      "last_job_hash": "1aef51a1e79c",
+      "consecutive_empty": 0
+    },
+    "lever:clickup": {
+      "last_scraped": "2026-03-23T04:21:50.216589Z",
+      "last_job_count": 0,
+      "last_job_hash": "",
+      "consecutive_empty": 1
+    },
+    "greenhouse:airbnb": {
+      "last_scraped": "2026-03-23T04:21:52.917695Z",
+      "last_job_count": 262,
+      "last_job_hash": "faa900ea6c88",
+      "consecutive_empty": 0
+    },
+    "greenhouse:airtable": {
+      "last_scraped": "2026-03-23T04:21:53.570733Z",
+      "last_job_count": 52,
+      "last_job_hash": "3d392aafd325",
+      "consecutive_empty": 0
+    },
+    "greenhouse:anthropic": {
+      "last_scraped": "2026-03-23T04:21:58.981242Z",
+      "last_job_count": 437,
+      "last_job_hash": "e94b449b4a7c",
+      "consecutive_empty": 0
+    },
+    "greenhouse:chime": {
+      "last_scraped": "2026-03-23T04:21:59.883433Z",
+      "last_job_count": 63,
+      "last_job_hash": "7522f20085b9",
+      "consecutive_empty": 0
+    },
+    "gem:canva": {
+      "last_scraped": "2026-03-23T04:21:59.910594Z",
+      "last_job_count": 0,
+      "last_job_hash": "",
+      "consecutive_empty": 1
+    },
+    "greenhouse:airbyte": {
+      "last_scraped": "2026-03-23T04:21:59.943053Z",
+      "last_job_count": 0,
+      "last_job_hash": "",
+      "consecutive_empty": 1
+    },
+    "greenhouse:cruise": {
+      "last_scraped": "2026-03-23T04:22:00.116252Z",
+      "last_job_count": 0,
+      "last_job_hash": "",
+      "consecutive_empty": 1
+    },
+    "gem:coinbase": {
+      "last_scraped": "2026-03-23T04:22:00.165093Z",
+      "last_job_count": 0,
+      "last_job_hash": "",
+      "consecutive_empty": 1
+    },
+    "gem:bigeye": {
+      "last_scraped": "2026-03-23T04:22:01.508073Z",
+      "last_job_count": 0,
+      "last_job_hash": "",
+      "consecutive_empty": 1
+    },
+    "greenhouse:brex": {
+      "last_scraped": "2026-03-23T04:22:03.866128Z",
+      "last_job_count": 250,
+      "last_job_hash": "5bef4bf3a17f",
+      "consecutive_empty": 0
+    },
+    "greenhouse:apptronik": {
+      "last_scraped": "2026-03-23T04:22:04.355957Z",
+      "last_job_count": 51,
+      "last_job_hash": "9e92ee299d80",
+      "consecutive_empty": 0
+    },
+    "greenhouse:amplitude": {
+      "last_scraped": "2026-03-23T04:22:05.447400Z",
+      "last_job_count": 49,
+      "last_job_hash": "e51dab69ac8e",
+      "consecutive_empty": 0
+    },
+    "greenhouse:affirm": {
+      "last_scraped": "2026-03-23T04:22:07.003614Z",
+      "last_job_count": 160,
+      "last_job_hash": "a98b942546c9",
+      "consecutive_empty": 0
     }
   }
 }

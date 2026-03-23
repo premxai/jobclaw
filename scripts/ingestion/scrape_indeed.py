@@ -28,6 +28,7 @@ import aiohttp
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from scripts.database.db_utils import get_connection, insert_job, log_scraper_run
 from scripts.ingestion.role_filter import matches_target_role
 from scripts.ingestion.us_filter import is_us_location
 from scripts.utils.logger import _log
@@ -409,7 +410,7 @@ async def _fetch_and_parse(url: str, session: aiohttp.ClientSession) -> list[dic
 # ═══════════════════════════════════════════════════════════════════════
 
 
-async def fetch_indeed_jobs(session: aiohttp.ClientSession) -> list[dict]:
+async def fetch_indeed_jobs(session: aiohttp.ClientSession | None = None) -> list[dict]:
     """
     Search Indeed for tech jobs across SEARCH_QUERIES.
 
@@ -420,6 +421,10 @@ async def fetch_indeed_jobs(session: aiohttp.ClientSession) -> list[dict]:
         List of job dicts matching the jobs table schema, filtered by
         role and US location.
     """
+    if session is None:
+        async with aiohttp.ClientSession() as session:
+            return await fetch_indeed_jobs(session)
+
     all_jobs: list[dict] = []
     seen_ids: set[str] = set()
 
@@ -455,6 +460,18 @@ async def fetch_indeed_jobs(session: aiohttp.ClientSession) -> list[dict]:
             await asyncio.sleep(INTER_QUERY_DELAY)
 
     _log(f"[indeed] {len(all_jobs)} jobs passed role + US filters.")
+
+    # DB insertion
+    conn = get_connection()
+    inserted = 0
+    try:
+        for job in all_jobs:
+            if insert_job(conn, job):
+                inserted += 1
+        log_scraper_run(conn, "scrape_indeed", len(SEARCH_QUERIES), inserted, 0, "")
+    finally:
+        conn.close()
+    _log(f"[indeed] Inserted {inserted} new jobs into DB.")
     return all_jobs
 
 

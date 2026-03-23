@@ -209,7 +209,7 @@ async def run_all(
 
         tasks.append(
             _with_timeout(
-                _run_with_timing("Indeed Public Search", fetch_indeed_jobs(None)),
+                _run_with_timing("Indeed Public Search", fetch_indeed_jobs()),
                 "Indeed Public Search",
                 300,
             )

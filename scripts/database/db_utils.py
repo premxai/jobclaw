@@ -69,7 +69,7 @@ def compute_quality_score(job_dict: dict) -> float:
     score += 10
 
     # 4. Description Depth (+8)
-    desc = job_dict.get("description", "")
+    desc = job_dict.get("description") or ""
     if len(desc) > 500:
         score += 8
     elif len(desc) > 100:
@@ -85,7 +85,7 @@ def compute_quality_score(job_dict: dict) -> float:
         score += max_weight * 20  # Up to +20 for high-value roles
 
     # 6. Title Relevance
-    title = job_dict.get("title", "")
+    title = job_dict.get("title") or ""
     if len(title) > 100:
         score -= 10
     elif len(title) < 60:
@@ -569,10 +569,7 @@ def get_unposted_jobs(conn):
         cursor.execute(
             """SELECT * FROM jobs
                WHERE status = 'unposted'
-                 AND (
-                   (date_posted != '' AND date_posted::timestamptz >= NOW() - INTERVAL '48 hours')
-                   OR (date_posted = '' AND first_seen >= NOW() - INTERVAL '48 hours')
-                 )
+                 AND first_seen::timestamptz >= NOW() - INTERVAL '48 hours'
                ORDER BY first_seen ASC
                LIMIT 500"""
         )
@@ -622,7 +619,7 @@ def purge_stale_unposted(conn) -> int:
             cursor.execute(
                 """UPDATE jobs SET status = 'archived'
                    WHERE status = 'unposted'
-                   AND first_seen < NOW() - INTERVAL '48 hours'"""
+                   AND first_seen::timestamptz < NOW() - INTERVAL '48 hours'"""
             )
         else:
             cursor.execute(
@@ -736,6 +733,13 @@ def get_companies_by_tier(conn, tier: str, shard: int = None, total_shards: int 
         cursor.execute(query, params)
         rows = cursor.fetchall()
         all_companies = [dict(r) for r in rows]
+
+    # Normalize DB column names to match the scraper's expected dict keys
+    for c in all_companies:
+        if "ats_type" in c and "ats" not in c:
+            c["ats"] = c["ats_type"]
+        if "name" in c and "company" not in c:
+            c["company"] = c["name"]
 
     if shard is not None and all_companies:
         # Client-side sharding for simplicity, or we could do it in SQL
