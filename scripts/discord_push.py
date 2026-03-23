@@ -15,7 +15,6 @@ Setup:
 import json
 import os
 import sys
-from collections import defaultdict
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -45,14 +44,14 @@ def log(msg: str, level: str = "INFO"):
 # Per-category Discord webhook URLs — one webhook per channel.
 # Set these secrets in GitHub repo settings → Secrets → Actions.
 _CATEGORY_WEBHOOKS = {
-    "AI/ML":           os.getenv("DISCORD_WEBHOOK_AI", ""),
-    "Data Science":    os.getenv("DISCORD_WEBHOOK_DATA", ""),
-    "Data Engineering":os.getenv("DISCORD_WEBHOOK_DATA", ""),
-    "Data Analyst":    os.getenv("DISCORD_WEBHOOK_DATA", ""),
-    "SWE":             os.getenv("DISCORD_WEBHOOK_SWE", ""),
-    "New Grad":        os.getenv("DISCORD_WEBHOOK_NEWGRAD", ""),
-    "Product":         os.getenv("DISCORD_WEBHOOK_PRODUCT", ""),
-    "Research":        os.getenv("DISCORD_WEBHOOK_RESEARCH", ""),
+    "AI/ML": os.getenv("DISCORD_WEBHOOK_AI", ""),
+    "Data Science": os.getenv("DISCORD_WEBHOOK_DATA", ""),
+    "Data Engineering": os.getenv("DISCORD_WEBHOOK_DATA", ""),
+    "Data Analyst": os.getenv("DISCORD_WEBHOOK_DATA", ""),
+    "SWE": os.getenv("DISCORD_WEBHOOK_SWE", ""),
+    "New Grad": os.getenv("DISCORD_WEBHOOK_NEWGRAD", ""),
+    "Product": os.getenv("DISCORD_WEBHOOK_PRODUCT", ""),
+    "Research": os.getenv("DISCORD_WEBHOOK_RESEARCH", ""),
 }
 
 # First configured webhook used as fallback for uncategorized jobs
