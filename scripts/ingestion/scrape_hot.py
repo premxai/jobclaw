@@ -168,8 +168,20 @@ async def run_hot_scraper():
 
             tasks.append((name, ats, adapter.fetch(session, slug, name)))
 
-        # Run all in parallel (hot scraper doesn't shard — we want ALL results immediately)
-        results = await asyncio.gather(*[t[2] for t in tasks], return_exceptions=True)
+        # Run all in parallel — cap at 90s so the workflow never times out
+        task_futures = [asyncio.ensure_future(t[2]) for t in tasks]
+        done, pending = await asyncio.wait(task_futures, timeout=90)
+        for p in pending:
+            p.cancel()
+        # Build results list aligned with tasks (pending → TimeoutError)
+        results = []
+        for f in task_futures:
+            if f in done:
+                results.append(f.exception() if f.exception() else f.result())
+            else:
+                results.append(Exception("timeout"))
+        if pending:
+            _log_hot(f"{len(pending)}/{len(tasks)} companies timed out (>90s) — skipped", "WARN")
 
         for (name, ats, _), result in zip(tasks, results):
             if isinstance(result, Exception):

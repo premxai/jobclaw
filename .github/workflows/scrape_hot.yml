@@ -22,7 +22,7 @@ jobs:
   hot-scrape:
     name: Hot Scraper Run
     runs-on: ubuntu-latest
-    timeout-minutes: 4       # Must complete in under 5 min
+    timeout-minutes: 6       # Setup ~90s + scraper gather capped at 90s + buffer
 
     steps:
       - uses: actions/checkout@v4
