@@ -136,9 +136,7 @@ class RetryQueue:
             if len(self._queue) > 200:
                 dropped = len(self._queue) - 100
                 self._queue = self._queue[-100:]  # keep newest 100
-                logger.warning(
-                    f"Retry queue overflow: dropped {dropped} oldest entries (queue was >{200})"
-                )
+                logger.warning(f"Retry queue overflow: dropped {dropped} oldest entries (queue was >{200})")
 
     def get_ready_retries(self) -> list[dict]:
         """

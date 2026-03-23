@@ -506,7 +506,9 @@ def _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
                 job_dict.get("remote_ok"),
                 job_dict.get("job_type"),
                 job_dict.get("seniority_level"),
-                1 if job_dict.get("visa_sponsorship") is True else (0 if job_dict.get("visa_sponsorship") is False else job_dict.get("visa_sponsorship")),
+                1
+                if job_dict.get("visa_sponsorship") is True
+                else (0 if job_dict.get("visa_sponsorship") is False else job_dict.get("visa_sponsorship")),
                 tech_stack_json,
                 first_seen,
                 compute_quality_score(job_dict),
@@ -518,6 +520,7 @@ def _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
     except Exception as e:
         conn.rollback()
         from scripts.utils.logger import _log
+
         _log(f"PG Insert Error ({job_dict.get('company')} - {job_dict.get('title')}): {e}", "ERROR")
         return False
 
