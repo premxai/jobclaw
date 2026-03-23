@@ -3,6 +3,7 @@ aiohttp>=3.9.0
 aiohttp-socks>=0.8.0      # SOCKS4/SOCKS5/HTTP proxy support for aiohttp
 curl_cffi>=0.14.0          # TLS fingerprint impersonation (Chrome/Safari/Edge) — bypasses Cloudflare/WAF
 discord.py>=2.3.0
+python-dateutil>=2.9.0     # Robust datetime parsing for job freshness checks
 python-dotenv>=1.0.0
 
 # Enterprise scraper (Google, Meta) - browser automation
