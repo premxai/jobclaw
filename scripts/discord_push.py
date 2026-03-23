@@ -455,6 +455,10 @@ async def push_new_jobs_to_discord():
             log("No unposted jobs — nothing to push.")
             return 0
 
+        # Filter out jobs older than 48 hours
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=48)
+        jobs = [j for j in jobs if _is_fresh(j, cutoff)]
+
         # Filter out jobs we already posted in previous runs (disk-based dedup only)
         fresh_jobs = [
             j
@@ -463,7 +467,7 @@ async def push_new_jobs_to_discord():
         ]
 
         if not fresh_jobs:
-            log(f"All {len(jobs)} unposted jobs already posted (dedup).")
+            log(f"All {len(jobs)} unposted jobs failed freshness/dedup filters.")
             return 0
 
         # Sort by first_seen, or just fallback to quality score
