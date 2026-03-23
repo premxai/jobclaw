@@ -346,7 +346,7 @@ async def fetch_with_retry(
                         await resp.release()
                     return None
 
-                retry_after = resp.headers.get("Retry-After")
+                retry_after = (resp.headers or {}).get("Retry-After")
                 if retry_after:
                     try:
                         wait = min(float(retry_after), 120.0)
