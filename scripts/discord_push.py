@@ -459,11 +459,19 @@ async def push_new_jobs_to_discord():
         cutoff = datetime.now(timezone.utc) - timedelta(hours=48)
         jobs = [j for j in jobs if _is_fresh(j, cutoff)]
 
-        # Filter out jobs we already posted in previous runs (disk-based dedup only)
+        # Reconcile DB: jobs already in posted_hashes but still 'unposted' in DB
+        # (happens when Discord push succeeded but DB update crashed)
+        dedup_stale = [j for j in jobs if is_already_posted(posted_hashes, j["internal_hash"])]
+        if dedup_stale:
+            stale_hashes = [j["internal_hash"] for j in dedup_stale]
+            mark_jobs_posted(conn, stale_hashes)
+            log(f"Reconciled {len(dedup_stale)} jobs: already in posted_hashes but DB was stale — fixed.")
+
+        # Only push jobs not already posted
         fresh_jobs = [j for j in jobs if not is_already_posted(posted_hashes, j["internal_hash"])]
 
         if not fresh_jobs:
-            log(f"All {len(jobs)} unposted jobs failed freshness/dedup filters.")
+            log(f"No new jobs to push — {len(dedup_stale)} stale DB entries reconciled.")
             return 0
 
         # Sort by first_seen, or just fallback to quality score
