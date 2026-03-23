@@ -309,7 +309,7 @@ Legacy flags still work:
 
     # ── Tier-based presets (ZERO-MISS: every tier includes ATS) ────────
     tier = args.tier
-    total_shards = args.total_shards
+    total_shards = args.total_shards  # may be overridden per-tier below
 
     # Legacy flag mapping
     if not tier:
@@ -337,13 +337,15 @@ Legacy flags still work:
     elif tier == "medium":
         # Group B: Workday (8-shard rotation) + Rippling + SmartRecruiters + BambooHR
         # Workday 15,848 / 8 shards = ~2,000/run instead of ~4,000 with 4 shards
+        _MEDIUM_SHARDS = 8
         skip_ats = False
         run_brave = False
         skip_github = False
         window = args.window or 8
         skip_platforms = _GEM_SKIP
         platforms = {"workday", "rippling", "smartrecruiters", "bamboohr"}
-        shard_val = get_next_shard("medium_ats_workday", 8)  # 8-shard rotation for Workday
+        shard_val = get_next_shard("medium_ats_workday", _MEDIUM_SHARDS)
+        total_shards = _MEDIUM_SHARDS  # must match shard key — do not use args.total_shards here
         db_tier = None
     elif tier == "deep":
         # Everything: ALL platforms + Workable + Brave Search — daily full sweep
@@ -381,7 +383,7 @@ Legacy flags still work:
 
     _log(
         f"[orchestrator] Tier={tier or 'default'}, Window={window}hr, "
-        f"Shard={shard_val if shard_val is not None else 'ALL'}/{total_shards}, "
+        f"Shard={shard_val if shard_val is not None else 'ALL'}/{total_shards if shard_val is not None else 'N/A'}, "
         f"ATS={'OFF' if skip_ats else 'ON'}, "
         f"Platforms={sorted(platforms) if platforms else 'ALL'}, "
         f"Brave={'ON' if run_brave else 'OFF'}"
@@ -398,7 +400,7 @@ Legacy flags still work:
             window_hours=window,
             skip_platforms=skip_platforms,
             shard=shard_val,
-            total_shards=args.total_shards,
+            total_shards=total_shards,
             tier=db_tier,
             platforms=platforms,
         )

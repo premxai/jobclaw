@@ -244,9 +244,26 @@ class RateLimiter:
 # RETRY ENGINE — exponential backoff on 429/503/502
 # ═══════════════════════════════════════════════════════════════════════
 
-RETRYABLE_STATUS_CODES = {403, 429, 500, 502, 503, 504}
+RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
+PERMANENT_ERROR_CODES = {404, 410, 422}  # company gone / endpoint removed — skip immediately
 MAX_RETRIES = 3
 BASE_BACKOFF = 1.5  # seconds
+
+# ── Proxy rotation pool ──────────────────────────────────────────────────────
+# Set PROXY_URLS (comma-separated) or PROXY_URL (single) in the environment.
+# Requests round-robin across all provided proxies. No-op when empty.
+_PROXY_POOL = [u.strip() for u in os.getenv("PROXY_URLS", os.getenv("PROXY_URL", "")).split(",") if u.strip()]
+_proxy_idx = 0
+
+
+def _next_proxy() -> str | None:
+    """Return the next proxy from the rotation pool (round-robin). None if no proxies configured."""
+    global _proxy_idx
+    if not _PROXY_POOL:
+        return None
+    proxy = _PROXY_POOL[_proxy_idx % len(_PROXY_POOL)]
+    _proxy_idx += 1
+    return proxy
 
 
 # Sentinel returned by fetch_with_retry() on HTTP 304 Not Modified
@@ -351,10 +368,17 @@ async def fetch_with_retry(
                 await asyncio.sleep(total_wait)
                 continue
 
-            # Non-retryable error (403, 404, etc.)
+            # Permanent error — company gone or endpoint removed, don't waste retries
+            if status in PERMANENT_ERROR_CODES:
+                tag = f"[{log_tag}] " if log_tag else ""
+                _log(f"{tag}HTTP {status} on {url} — permanent error, skipping", "WARN")
+                if not is_cffi:
+                    await resp.release()
+                return None
+
+            # Non-retryable error (403, etc.)
             tag = f"[{log_tag}] " if log_tag else ""
-            if status != 404:
-                _log(f"{tag}HTTP {status} on {url} — not retrying", "WARN")
+            _log(f"{tag}HTTP {status} on {url} — not retrying", "WARN")
             if not is_cffi:
                 await resp.release()
             return None
@@ -486,14 +510,14 @@ class SessionManager:
     def __init__(
         self,
         rate_limiter: RateLimiter | None = None,
-        max_connections: int = 100,
+        max_connections: int = 15,
         max_per_host: int = 10,
         proxy: str | None = None,
     ):
         self.rate_limiter = rate_limiter
         self.max_connections = max_connections
         self.max_per_host = max_per_host
-        self.proxy = proxy or os.environ.get("PROXY_URL")
+        self.proxy = proxy or _next_proxy()  # rotate across proxy pool if configured
         self._session = None
         self.is_cffi = False
 
@@ -535,7 +559,7 @@ class SessionManager:
 
 def create_session(
     rate_limiter: RateLimiter | None = None,
-    max_connections: int = 100,
+    max_connections: int = 15,
     max_per_host: int = 10,
     proxy: str | None = None,
 ) -> SessionManager:

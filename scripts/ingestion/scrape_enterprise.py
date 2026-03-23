@@ -759,13 +759,17 @@ class GoogleJobsAPI:
             if not resp:
                 break
 
-            html = resp.text if hasattr(resp, "status_code") else await resp.text()
+            try:
+                html = resp.text if hasattr(resp, "status_code") else await resp.text()
+            except AttributeError:
+                _log("[google] Response object malformed — Google may be blocking. Skipping.", "WARN")
+                break
+
             data = self._extract_ds1(html)
             if not data:
-                _log(f"[google] No ds:1 data on page {page}", "DEBUG")
                 if page == 1:
                     _log(
-                        "GOOGLE_SSR_CHANGED: ds:1 pattern not found — scraper returned 0 jobs. HTML structure may have changed.",
+                        "[google] ds:1 payload not found — HTML structure changed or request blocked. 0 jobs.",
                         "WARN",
                     )
                 break
@@ -1008,7 +1012,7 @@ async def run_enterprise_scraper():
             _paginate_api(uber_api, session, "Uber", rate_limiter=rate_limiter, max_pages=15),
             _paginate_api(tesla_api, session, "Tesla", rate_limiter=rate_limiter, max_pages=1),
             _paginate_api(cursor_api, session, "Cursor", rate_limiter=rate_limiter, max_pages=1),
-            google_api.fetch_all_jobs(max_pages=10),
+            google_api.fetch_all_jobs(max_pages=10, session=session, rate_limiter=rate_limiter),
             meta_api.fetch_all_jobs(),
             return_exceptions=True,
         )

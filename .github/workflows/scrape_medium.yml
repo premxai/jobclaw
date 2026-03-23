@@ -54,7 +54,8 @@ jobs:
           # Shard rotation handled by orchestrator via DB (medium_ats_workday key, 8 shards)
           python scripts/ingestion/run_all_scrapers.py \
             --tier medium \
-            --window 8
+            --window 8 \
+            --total-shards 8
 
       - name: Commit dedup file
         if: always()

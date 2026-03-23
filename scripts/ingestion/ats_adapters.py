@@ -32,13 +32,15 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from scripts.utils.http_client import HAS_CURL_CFFI, RateLimiter, fetch_with_retry
+from scripts.utils.http_client import HAS_CURL_CFFI, NOT_MODIFIED, RateLimiter, fetch_with_retry
 from scripts.utils.logger import _log
 from scripts.utils.salary_parser import extract_experience, extract_salary, parse_salary_range
 
 
 async def _parse_json(resp) -> Any:
     """Parse JSON from either a curl_cffi or aiohttp response."""
+    if resp is NOT_MODIFIED:
+        return {}  # 304 Not Modified — no new data
     if HAS_CURL_CFFI and hasattr(resp, "status_code"):
         # curl_cffi responses have .json() as a sync method
         return resp.json()
@@ -524,7 +526,8 @@ class SmartRecruitersAdapter:
 
             try:
                 data = await _parse_json(resp)
-            except Exception:
+            except Exception as e:
+                _log(f"[smartrecruiters/{slug}] Pagination error at offset {offset}: {e}", "WARN")
                 break
 
             content = data.get("content", [])
@@ -611,7 +614,7 @@ class BambooHRAdapter:
         if hasattr(resp, "headers"):
             ct = (resp.headers.get("content-type") or "") if hasattr(resp.headers, "get") else ""
         if ct and "json" not in ct and "javascript" not in ct:
-            _log(f"[bamboohr/{slug}] Non-JSON response (ct={ct}), company may have left BambooHR", "WARN")
+            _log(f"[bamboohr/{slug}] HTML response — company likely migrated off BambooHR (ct={ct})", "WARN")
             return []
 
         try:
@@ -748,7 +751,7 @@ class WorkdayAdapter:
 
         # Fetch remaining pages
         offset = 20
-        max_pages = 50
+        max_pages = 200  # 4,000 jobs max (was 50/1,000 — too low for Boeing, Amazon, etc.)
         while offset < min(total, max_pages * 20) and job_postings:
             payload["offset"] = offset
             resp = await fetch_with_retry(
@@ -777,6 +780,9 @@ class WorkdayAdapter:
             offset += 20
             if offset >= total:
                 break
+
+        if offset >= max_pages * 20 and total > max_pages * 20:
+            _log(f"[workday/{tenant}] Hit {max_pages}-page cap ({max_pages * 20} jobs) — {total} total exist", "WARN")
 
         return all_jobs
 
