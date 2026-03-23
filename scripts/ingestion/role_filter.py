@@ -189,8 +189,12 @@ ROLE_KEYWORDS: list[tuple[str, str]] = [
     ("campus hire", "New Grad"),
     ("early career engineer", "New Grad"),
     # ── Product & Research ────────────────────────────────────────────
+    ("product manager", "Product"),
     ("associate product manager", "Product"),
     ("technical product manager", "Product"),
+    ("group product manager", "Product"),
+    ("senior product manager", "Product"),
+    ("product lead", "Product"),
     ("research associate", "Research"),
     ("research engineer", "Research"),
     ("computational biologist", "Research"),
