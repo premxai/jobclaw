@@ -213,7 +213,9 @@ def _ensure_postgres_schema(conn):
         ats_type TEXT,
         tier TEXT DEFAULT 'P2',
         last_scraped_at TEXT,
-        last_job_found_at TEXT
+        last_job_found_at TEXT,
+        consecutive_failures INTEGER DEFAULT 0,
+        is_dead INTEGER DEFAULT 0
     )
     """)
     conn.commit()
@@ -297,9 +299,19 @@ def _ensure_sqlite_schema(conn):
         ats_type TEXT,
         tier TEXT DEFAULT 'P2',
         last_scraped_at TEXT,
-        last_job_found_at TEXT
+        last_job_found_at TEXT,
+        consecutive_failures INTEGER DEFAULT 0,
+        is_dead INTEGER DEFAULT 0
     )
     """)
+    for col_def in [
+        "ALTER TABLE companies ADD COLUMN consecutive_failures INTEGER DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN is_dead INTEGER DEFAULT 0",
+    ]:
+        try:
+            cursor.execute(col_def)
+        except Exception:
+            pass  # Column already exists
     conn.commit()
 
 
@@ -771,9 +783,40 @@ def update_company_last_scraped(conn, slug: str, job_found: bool = False):
             f"UPDATE companies SET last_scraped_at = {placeholder}, last_job_found_at = {placeholder}, tier = CASE WHEN tier = 'P2' THEN 'P1' ELSE tier END WHERE slug = {placeholder}",
             (now, now, slug),
         )
+        cursor.execute(
+            f"UPDATE companies SET consecutive_failures = 0, is_dead = 0 WHERE slug = {placeholder}",
+            (slug,),
+        )
     else:
         cursor.execute(f"UPDATE companies SET last_scraped_at = {placeholder} WHERE slug = {placeholder}", (now, slug))
     conn.commit()
+
+
+def mark_company_failure(conn, slug: str, permanent: bool = False):
+    """
+    Record a scrape failure for a company slug.
+    permanent=True (HTTP 404) -> marks is_dead=1 after 3 failures.
+    permanent=False (timeout) -> marks is_dead=1 after 10 failures.
+    Resets automatically on next successful scrape via update_company_last_scraped().
+    """
+    try:
+        placeholder = "%s" if is_postgres() else "?"
+        cursor = conn.cursor()
+        cursor.execute(
+            f"UPDATE companies SET consecutive_failures = consecutive_failures + 1 WHERE slug = {placeholder}",
+            (slug,),
+        )
+        threshold = 3 if permanent else 10
+        cursor.execute(
+            f"UPDATE companies SET is_dead = 1 WHERE slug = {placeholder} AND consecutive_failures >= {placeholder}",
+            (slug, threshold),
+        )
+        conn.commit()
+    except Exception:
+        try:
+            conn.rollback()
+        except Exception:
+            pass
 
 
 def log_scraper_run(

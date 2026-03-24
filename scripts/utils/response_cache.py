@@ -26,6 +26,7 @@ Usage:
         cache.put("greenhouse", "acme", data, http_headers=response.headers)
 """
 
+import hashlib
 import json
 import os
 import time
@@ -200,20 +201,41 @@ class ResponseCache:
         except OSError:
             pass  # Non-fatal — conditional requests just won't work
 
-    def get_http_meta(self, platform: str, slug: str) -> dict:
+    def get_http_meta(self, url: str) -> dict:
         """
-        Get stored HTTP metadata (ETag, Last-Modified) for conditional requests.
+        Get stored HTTP metadata (ETag, Last-Modified) for a URL (for conditional requests).
+
+        Keyed by URL — used by fetch_with_retry() to send If-None-Match headers.
 
         Returns:
             Dict with 'etag' and/or 'last_modified' keys, or empty dict.
         """
-        path = self._meta_path(platform, slug)
+        slug = hashlib.md5(url.encode()).hexdigest()
+        path = self._meta_path("_url_", slug)
         if not path.exists():
             return {}
         try:
             return json.loads(path.read_text(encoding="utf-8"))
         except (json.JSONDecodeError, OSError):
             return {}
+
+    def store_http_meta(self, url: str, meta: dict) -> None:
+        """
+        Store HTTP metadata (ETag, Last-Modified) keyed by URL.
+
+        Used by fetch_with_retry() to persist ETags from 200 responses for
+        future If-None-Match conditional requests.
+
+        Args:
+            url: The request URL used as the cache key.
+            meta: Dict with 'etag' and/or 'last_modified' values.
+        """
+        slug = hashlib.md5(url.encode()).hexdigest()
+        path = self._meta_path("_url_", slug)
+        try:
+            path.write_text(json.dumps(meta), encoding="utf-8")
+        except OSError:
+            pass  # Non-fatal — conditional requests just won't work
 
     def record_not_modified(self) -> None:
         """Record a 304 Not Modified response."""

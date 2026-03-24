@@ -110,6 +110,20 @@ def _migrate_schema(conn):
 
     conn.commit()
 
+    # Add failure-tracking columns to companies table if missing
+    try:
+        cursor.execute("PRAGMA table_info(companies)")
+        company_cols = {row[1] for row in cursor.fetchall()}
+        for col_name, col_type in [
+            ("consecutive_failures", "INTEGER DEFAULT 0"),
+            ("is_dead", "INTEGER DEFAULT 0"),
+        ]:
+            if col_name not in company_cols:
+                cursor.execute(f"ALTER TABLE companies ADD COLUMN {col_name} {col_type}")
+        conn.commit()
+    except Exception:
+        pass  # companies table may not exist yet (PostgreSQL path)
+
 
 def migrate_old_data(conn):
     if not OLD_JSON_PATH.exists():

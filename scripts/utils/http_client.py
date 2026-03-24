@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from scripts.utils.logger import _log
+from scripts.utils.response_cache import ResponseCache
 
 # Try curl_cffi first (TLS impersonation), fall back to aiohttp
 try:
@@ -279,6 +280,10 @@ class _NotModified:
 
 NOT_MODIFIED = _NotModified()
 
+# Optional response cache for ETag conditional requests.
+# Set to a ResponseCache instance to enable If-None-Match header injection.
+_response_cache: ResponseCache | None = None
+
 
 async def fetch_with_retry(
     session,  # aiohttp.ClientSession OR curl_cffi AsyncSession
@@ -313,17 +318,32 @@ async def fetch_with_retry(
             if "headers" in kwargs:
                 headers.update(kwargs.pop("headers"))
 
+            # Send If-None-Match if we have a cached ETag for this URL
+            if _response_cache:
+                cached_meta = _response_cache.get_http_meta(url)
+                if cached_meta and cached_meta.get("etag"):
+                    merged_headers = {**headers, "If-None-Match": cached_meta["etag"]}
+                else:
+                    merged_headers = headers
+            else:
+                merged_headers = headers
+
             if is_cffi:
-                resp = await _cffi_request(session, method, url, headers, timeout, **kwargs)
+                resp = await _cffi_request(session, method, url, merged_headers, timeout, **kwargs)
                 status = resp.status_code
             else:
-                resp = await _aiohttp_request(session, method, url, headers, timeout, **kwargs)
+                resp = await _aiohttp_request(session, method, url, merged_headers, timeout, **kwargs)
                 status = resp.status
 
             # Success
             if status == 200:
                 if rate_limiter:
                     rate_limiter.record_success(url)
+                # Cache the ETag for future conditional requests
+                if _response_cache:
+                    resp_etag = resp.headers.get("ETag") or resp.headers.get("etag")
+                    if resp_etag:
+                        _response_cache.store_http_meta(url, {"etag": resp_etag})
                 return resp
 
             # HTTP 304 Not Modified — data hasn't changed since last fetch
@@ -351,21 +371,18 @@ async def fetch_with_retry(
                     try:
                         wait = min(float(retry_after), 120.0)
                     except ValueError:
-                        wait = BASE_BACKOFF * (2**attempt)
+                        wait = random.uniform(0, min(45.0, BASE_BACKOFF * (2**attempt)))
                 else:
-                    wait = BASE_BACKOFF * (2**attempt)
-
-                jitter = random.uniform(0.5, 1.5)
-                total_wait = min(wait * jitter, 45.0)
+                    wait = random.uniform(0, min(45.0, BASE_BACKOFF * (2**attempt)))
 
                 tag = f"[{log_tag}] " if log_tag else ""
                 _log(
-                    f"{tag}HTTP {status} on {url} — retry {attempt + 1}/{max_retries} in {total_wait:.1f}s",
+                    f"{tag}HTTP {status} on {url} — retry {attempt + 1}/{max_retries} in {wait:.1f}s",
                     "WARN",
                 )
                 if not is_cffi:
                     await resp.release()
-                await asyncio.sleep(total_wait)
+                await asyncio.sleep(wait)
                 continue
 
             # Permanent error — company gone or endpoint removed, don't waste retries

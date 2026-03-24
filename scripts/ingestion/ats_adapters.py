@@ -314,6 +314,8 @@ class GreenhouseAdapter:
             log_tag=f"greenhouse/{slug}",
             params={"content": "true"},
         )
+        if resp is NOT_MODIFIED:
+            return []  # No changes since last scrape — skip processing
         if not resp:
             return []
 
@@ -373,6 +375,8 @@ class LeverAdapter:
             rate_limiter=rate_limiter,
             log_tag=f"lever/{slug}",
         )
+        if resp is NOT_MODIFIED:
+            return []  # No changes since last scrape — skip processing
         if not resp:
             return []
 
@@ -456,6 +460,8 @@ class AshbyAdapter:
             rate_limiter=rate_limiter,
             log_tag=f"ashby/{slug}",
         )
+        if resp is NOT_MODIFIED:
+            return []  # No changes since last scrape — skip processing
         if not resp:
             return []
 

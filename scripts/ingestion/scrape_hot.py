@@ -28,7 +28,7 @@ try:
 except ImportError:
     pass
 
-from scripts.database.db_utils import get_connection, insert_job, log_scraper_run
+from scripts.database.db_utils import get_connection, insert_job, log_scraper_run, mark_company_failure
 from scripts.ingestion.ats_adapters import get_adapter
 from scripts.ingestion.role_filter import matches_target_role
 from scripts.ingestion.us_filter import is_us_location
@@ -128,6 +128,12 @@ async def _send_hot_discord_alert(job: dict, minutes_old: float):
         _log_hot(f"Discord alert error: {e}", "WARN")
 
 
+async def _delayed_fetch(delay_s, coro):
+    """Stagger coroutine startup by a deterministic delay to avoid request bursts."""
+    await asyncio.sleep(delay_s)
+    return await coro
+
+
 async def run_hot_scraper():
     """
     Fast scraper for hot companies. Runs in <2 minutes typically.
@@ -144,6 +150,18 @@ async def run_hot_scraper():
         config = json.load(f)
     hot_list = config.get("companies", [])
     _log_hot(f"🔥 Hot Scraper starting — monitoring {len(hot_list)} companies")
+
+    # HACK 3: Filter out dead companies (persistent 404s) before scraping
+    conn_dead = get_connection()
+    try:
+        cursor = conn_dead.cursor()
+        cursor.execute("SELECT slug FROM companies WHERE is_dead = 1")
+        dead_slugs = {row[0] for row in cursor.fetchall()}
+        hot_list = [c for c in hot_list if c.get("slug") not in dead_slugs]
+        if dead_slugs:
+            _log_hot(f"Skipping {len(dead_slugs)} dead company slugs (consistent 404s)")
+    finally:
+        conn_dead.close()
 
     conn = get_connection()
     new_jobs = 0
@@ -166,7 +184,9 @@ async def run_hot_scraper():
             if adapter is None:
                 continue
 
-            tasks.append((name, ats, adapter.fetch(session, slug, name)))
+            # HACK 4: Stagger requests with a deterministic per-company delay (0–29s)
+            delay = (hash(slug) & 0xFFFF) % 30
+            tasks.append((name, ats, _delayed_fetch(delay, adapter.fetch(session, slug, name))))
 
         # Run all in parallel — cap at 200s (well within the 5-min cycle)
         task_futures = [asyncio.ensure_future(t[2]) for t in tasks]
@@ -183,40 +203,50 @@ async def run_hot_scraper():
         if pending:
             _log_hot(f"{len(pending)}/{len(tasks)} companies timed out (>90s) — skipped", "WARN")
 
-        for (name, ats, _), result in zip(tasks, results):
-            if isinstance(result, Exception):
-                _log_hot(f"[{ats}/{name}] Error: {result}", "WARN")
-                continue
-
-            for job in result:
-                # Role filter
-                if not matches_target_role(job.title):
+        # HACK 3: Track permanent failures (404s) in the DB so dead companies are skipped
+        conn_fail = get_connection()
+        try:
+            for (name, ats, _), result in zip(tasks, results):
+                if isinstance(result, Exception):
+                    err_str = str(result)
+                    if "404" in err_str or "permanent" in err_str.lower():
+                        slug = next((c.get("slug") for c in hot_list if c.get("company") == name), None)
+                        if slug:
+                            mark_company_failure(conn_fail, slug, permanent=True)
+                    _log_hot(f"[{ats}/{name}] Error: {result}", "WARN")
                     continue
-                # Location filter
-                if not is_us_location(job.location):
-                    continue
 
-                j_dict = {
-                    "title": job.title,
-                    "company": job.company,
-                    "location": job.location,
-                    "url": job.url,
-                    "date_posted": job.date_posted,
-                    "source_ats": job.source_ats,
-                    "job_id": job.job_id,
-                    "keywords_matched": job.keywords_matched,
-                    "description": job.description,
-                    "salary_min": job.salary_min,
-                    "salary_max": job.salary_max,
-                    "salary_currency": job.salary_currency,
-                    "experience_years": job.experience_years,
-                }
+                for job in result:
+                    # Role filter
+                    if not matches_target_role(job.title):
+                        continue
+                    # Location filter
+                    if not is_us_location(job.location):
+                        continue
 
-                is_new = insert_job(conn, j_dict)
-                if is_new:
-                    new_jobs += 1
-                    # All new hot-company jobs are by definition fresh — alert immediately
-                    alert_jobs.append((j_dict, 0))  # 0 minutes old = just found
+                    j_dict = {
+                        "title": job.title,
+                        "company": job.company,
+                        "location": job.location,
+                        "url": job.url,
+                        "date_posted": job.date_posted,
+                        "source_ats": job.source_ats,
+                        "job_id": job.job_id,
+                        "keywords_matched": job.keywords_matched,
+                        "description": job.description,
+                        "salary_min": job.salary_min,
+                        "salary_max": job.salary_max,
+                        "salary_currency": job.salary_currency,
+                        "experience_years": job.experience_years,
+                    }
+
+                    is_new = insert_job(conn, j_dict)
+                    if is_new:
+                        new_jobs += 1
+                        # All new hot-company jobs are by definition fresh — alert immediately
+                        alert_jobs.append((j_dict, 0))  # 0 minutes old = just found
+        finally:
+            conn_fail.close()
 
     # Batch-send Discord alerts (don't spam — at most 20 per run)
     if alert_jobs:
