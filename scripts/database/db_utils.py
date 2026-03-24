@@ -218,6 +218,12 @@ def _ensure_postgres_schema(conn):
         is_dead INTEGER DEFAULT 0
     )
     """)
+    # Migrate existing tables — ADD COLUMN IF NOT EXISTS is safe to run repeatedly
+    for col_def in [
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS consecutive_failures INTEGER DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS is_dead INTEGER DEFAULT 0",
+    ]:
+        cursor.execute(col_def)
     conn.commit()
 
 
