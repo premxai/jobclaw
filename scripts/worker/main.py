@@ -58,7 +58,7 @@ async def main():
 
     try:
         # run_worker blocks indefinitely, processing tasks from the Redis queue
-        await run_worker(WorkerSettings, exit_on_exc=False)
+        await run_worker(WorkerSettings)
     finally:
         scheduler.shutdown(wait=False)
         await pool.aclose()
