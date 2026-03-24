@@ -119,7 +119,5 @@ class WorkerSettings:
     # 30 minutes per task — scrapers run until done, no artificial kills
     job_timeout = 1800
 
-    # Retry failed tasks once after 60s
-    retry_jobs = True
-    max_tries = 2
-    retry_delay = 60
+    # Retry failed tasks once (2 total attempts)
+    job_retries = 1

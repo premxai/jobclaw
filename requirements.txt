@@ -27,5 +27,5 @@ sentence-transformers>=3.0.0  # Local embeddings (all-MiniLM-L6-v2)
 datasketch>=1.6.0            # MinHash LSH for semantic deduplication
 
 # Persistent worker infrastructure (Railway deployment)
-arq>=0.25.0                  # Async Redis task queue (asyncio-native)
+arq>=0.26.0                  # Async Redis task queue (asyncio-native, 0.26+ has async run_worker)
 apscheduler>=3.10.0          # In-process scheduler (replaces GitHub Actions crons)
