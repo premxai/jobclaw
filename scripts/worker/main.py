@@ -9,6 +9,10 @@ Local dev: docker compose up worker
 
 The process blocks on run_worker() which processes tasks from Redis.
 The scheduler runs concurrently inside the same event loop.
+
+NOTE: We manage the event loop manually (not asyncio.run) so that ARQ's
+sync run_worker() can call loop.run_until_complete() without hitting
+"This event loop is already running".
 """
 
 import asyncio
@@ -42,31 +46,37 @@ if not REDIS_URL:
     )
 
 
-async def main():
+def main():
     _log("[worker] JobClaw persistent worker starting...")
-    _log(f"[worker] Connecting to Redis: {REDIS_URL.split('@')[-1]}")  # hide credentials
+    _log(f"[worker] Connecting to Redis: {REDIS_URL.split('@')[-1]}")
+
+    # Create a fresh event loop — NOT asyncio.run() — so that ARQ's sync
+    # run_worker can call loop.run_until_complete() without crashing.
+    if sys.platform == "win32":
+        loop = asyncio.SelectorEventLoop()
+    else:
+        loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
 
     redis_settings = RedisSettings.from_dsn(REDIS_URL)
 
-    # Create pool for the scheduler to enqueue jobs
-    pool = await create_pool(redis_settings)
-
-    # Start APScheduler (enqueues tasks on schedule)
-    scheduler = await start_scheduler(pool)
+    # Async setup: create Redis pool + start APScheduler on the loop.
+    # The loop is not yet "running" so run_until_complete works fine here.
+    pool = loop.run_until_complete(create_pool(redis_settings))
+    scheduler = loop.run_until_complete(start_scheduler(pool))
 
     _log("[worker] Scheduler running. Starting ARQ worker loop...")
 
     try:
-        # run_worker blocks indefinitely, processing tasks from the Redis queue
-        await run_worker(WorkerSettings)
+        # run_worker is sync — it picks up the current event loop and calls
+        # loop.run_until_complete(main_task) to block until shutdown.
+        run_worker(WorkerSettings)
     finally:
         scheduler.shutdown(wait=False)
-        await pool.aclose()
+        loop.run_until_complete(pool.aclose())
+        loop.close()
         _log("[worker] Shutdown complete.")
 
 
 if __name__ == "__main__":
-    if sys.platform == "win32":
-        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-    asyncio.run(main())
+    main()
