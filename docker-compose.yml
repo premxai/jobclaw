@@ -33,26 +33,34 @@ services:
       timeout: 5s
       retries: 3
 
-  # ── Scraper Worker ────────────────────────────────────────────────
-  scraper:
+  # ── Persistent Worker (ARQ + APScheduler) ─────────────────────
+  worker:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: jobclaw-scraper
-    command: >
-      python -m scripts.ingestion.run_all_scrapers --tier medium
+    container_name: jobclaw-worker
+    command: python scripts/worker/main.py
     environment:
       - DATABASE_URL=postgresql://jobclaw:jobclaw@postgres:5432/jobclaw
-      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL:-}
+      - REDIS_URL=redis://redis:6379
+      - DISCORD_WEBHOOK_AI=${DISCORD_WEBHOOK_AI:-}
+      - DISCORD_WEBHOOK_SWE=${DISCORD_WEBHOOK_SWE:-}
+      - DISCORD_WEBHOOK_DATA=${DISCORD_WEBHOOK_DATA:-}
+      - DISCORD_WEBHOOK_NEWGRAD=${DISCORD_WEBHOOK_NEWGRAD:-}
+      - DISCORD_WEBHOOK_PRODUCT=${DISCORD_WEBHOOK_PRODUCT:-}
+      - DISCORD_WEBHOOK_RESEARCH=${DISCORD_WEBHOOK_RESEARCH:-}
+      - BRAVE_SEARCH_API_KEY=${BRAVE_SEARCH_API_KEY:-}
+      - OPENCLAW_API_KEY=${OPENCLAW_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
-    restart: "no"
-    profiles:
-      - scrape
+    restart: unless-stopped
 
   # ── PostgreSQL ────────────────────────────────────────────────────
   postgres:

@@ -1,15 +1,13 @@
 name: "📢 Discord Push — Post Unposted Jobs (Every 15min)"
 
 # ┌──────────────────────────────────────────────────────────────────────┐
-# │  Decoupled Discord Push Workflow — runs every 15 minutes            │
-# │  Queries unposted jobs from DB → sends per-category webhook embeds  │
-# │  Decoupling ensures alerts are consistent even if scrapers fail.     │
+# │  MANUAL EMERGENCY TRIGGER ONLY — scheduling owned by Railway worker  │
+# │  The Railway ARQ worker enqueues task_discord_push every 15 min via  │
+# │  APScheduler. Use this workflow only for manual testing/recovery.    │
 # └──────────────────────────────────────────────────────────────────────┘
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'   # Every 15 minutes
-  workflow_dispatch:         # Manual trigger
+  workflow_dispatch:         # Manual trigger only — cron disabled (Railway worker owns scheduling)
 
 permissions:
   contents: write

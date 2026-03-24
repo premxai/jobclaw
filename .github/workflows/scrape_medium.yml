@@ -1,18 +1,13 @@
 name: "⚡ Medium Tier — Workday/Rippling/SmartRecruiters (Hourly, 8-Shard)"
 
 # ┌────────────────────────────────────────────────────────────────────┐
-# │  MEDIUM TIER — runs every hour, rotates through 8 shards          │
-# │  ATS Group B: Workday (15,848) + Rippling (1,323) +               │
-# │               SmartRecruiters (179) + BambooHR (7)                │
-# │  Strategy: Workday 15,848 / 8 shards = ~2,000 companies/run      │
-# │  Full Workday coverage every 8 hours                               │
-# │  Duration: ~20-30 minutes per run                                  │
+# │  MANUAL EMERGENCY TRIGGER ONLY — scheduling owned by Railway worker│
+# │  The Railway ARQ worker enqueues task_medium hourly at :02 via    │
+# │  APScheduler. Use this workflow only for manual testing/recovery.  │
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
-  schedule:
-    - cron: '0 * * * *'   # Every hour
-  workflow_dispatch:
+  workflow_dispatch:    # Manual trigger only — cron disabled (Railway worker owns scheduling)
     inputs:
       shard:
         description: 'Shard override (0-3, or "auto")'

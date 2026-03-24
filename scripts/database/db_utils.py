@@ -563,13 +563,14 @@ def mark_stale_jobs(conn, source_ats: str, company: str, active_job_ids: set[str
 
 
 def get_unposted_jobs(conn):
-    """Fetch jobs ready to be sent to Discord (last 48 hours only)."""
+    """Fetch jobs ready to be sent to Discord (last 72 hours)."""
     if is_postgres():
         cursor = conn.cursor()
         cursor.execute(
             """SELECT * FROM jobs
                WHERE status = 'unposted'
-                 AND first_seen::timestamptz >= NOW() - INTERVAL '48 hours'
+                 AND is_active = 1
+                 AND first_seen::timestamptz >= NOW() - INTERVAL '72 hours'
                ORDER BY first_seen ASC
                LIMIT 500"""
         )
@@ -591,9 +592,10 @@ def get_unposted_jobs(conn):
         cursor.execute(
             """SELECT * FROM jobs
                WHERE status = 'unposted'
+                 AND is_active = 1
                  AND (
-                   (date_posted != '' AND date_posted >= datetime('now', '-48 hours'))
-                   OR (date_posted = '' AND first_seen >= datetime('now', '-48 hours'))
+                   (date_posted != '' AND date_posted >= datetime('now', '-72 hours'))
+                   OR (date_posted = '' AND first_seen >= datetime('now', '-72 hours'))
                  )
                ORDER BY first_seen ASC
                LIMIT 500"""
@@ -612,20 +614,20 @@ def get_unposted_jobs(conn):
 
 
 def purge_stale_unposted(conn) -> int:
-    """Archive jobs that are too old to post (>48 hours unposted). Returns count archived."""
+    """Archive jobs that are too old to post (>72 hours unposted). Returns count archived."""
     cursor = conn.cursor()
     try:
         if is_postgres():
             cursor.execute(
                 """UPDATE jobs SET status = 'archived'
                    WHERE status = 'unposted'
-                   AND first_seen::timestamptz < NOW() - INTERVAL '48 hours'"""
+                   AND first_seen::timestamptz < NOW() - INTERVAL '72 hours'"""
             )
         else:
             cursor.execute(
                 """UPDATE jobs SET status = 'archived'
                    WHERE status = 'unposted'
-                   AND first_seen < datetime('now', '-48 hours')"""
+                   AND first_seen < datetime('now', '-72 hours')"""
             )
         count = cursor.rowcount
         conn.commit()

@@ -2,16 +2,14 @@ name: "🚀 Fast Tier — RSS + GitHub + Greenhouse/Lever/Ashby (Every Hour)"
 
 # ┌────────────────────────────────────────────────────────────────────┐
 # │  FAST TIER — runs every hour                                       │
-# │  Scrapers: RSS feeds + GitHub repos + Group A ATS                 │
-# │  ATS Group A: Greenhouse (2,886) + Lever (1,881) + Ashby (1,697) │
-# │  = 6,464 companies on fast public REST APIs, covered every hour   │
-# │  Duration: ~15-20 minutes per run                                  │
+# │  Scrapers: RSS feeds + GitHub repos + Group A ATS (4-shard)       │
+# │  ATS Group A: Greenhouse + Lever + Ashby (~10,801 total)          │
+# │  4-shard DB rotation = ~2,700 companies/run, full coverage/4hr    │
+# │  Duration: ~8-12 minutes per run                                   │
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
-  schedule:
-    - cron: '0 * * * *'       # Top of every hour
-  workflow_dispatch:
+  workflow_dispatch:    # Manual trigger only — cron disabled (Railway worker owns scheduling)
 
 permissions:
   contents: write              # Needed to push dedup file back to repo
@@ -19,7 +17,7 @@ permissions:
 jobs:
   fast-scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 25        # Setup ~90s + Group A ATS (~15-20min) + buffer
+    timeout-minutes: 25        # Setup ~90s + sharded ATS (~8-12min) + buffer
 
     steps:
       - uses: actions/checkout@v4
@@ -47,8 +45,7 @@ jobs:
           DISCORD_WEBHOOK_RESEARCH: ${{ secrets.DISCORD_WEBHOOK_RESEARCH }}
         run: |
           python scripts/ingestion/run_all_scrapers.py \
-            --tier fast \
-            --window 6
+            --tier fast
 
       - name: Commit dedup file
         if: always()

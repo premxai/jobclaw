@@ -200,7 +200,7 @@ async def _worker(
             if retry_queue:
                 retry_queue.add_failure(cname, ats, slug, "timeout")
         except Exception as e:
-            _log(f"[{ats}/{slug}] Fetch failed: {e}", "ERROR")
+            _log(f"[{ats}/{slug}] Fetch failed: {type(e).__name__}: {e or 'no detail'}", "ERROR")
             results.append((cname, ats, slug, [], str(e)))
             if circuit_breaker:
                 circuit_breaker.record_failure(ats)

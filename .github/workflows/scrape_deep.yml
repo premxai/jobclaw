@@ -1,17 +1,13 @@
 name: "🌊 Deep Tier — All 27,923 Companies (Daily 11PM UTC)"
 
 # ┌────────────────────────────────────────────────────────────────────┐
-# │  DEEP TIER — runs daily at 11 PM UTC (6 PM EST)                   │
-# │  ALL platforms: Greenhouse + Lever + Ashby + Workday + Workable   │
-# │  + Brave Search (LinkedIn/Indeed/Glassdoor) + YC + HN Hiring      │
-# │  No sharding — full sweep of all 27,923 companies                 │
-# │  Duration: ~15-45 minutes                                          │
+# │  MANUAL EMERGENCY TRIGGER ONLY — scheduling owned by Railway worker│
+# │  The Railway ARQ worker enqueues task_deep daily at 23:00 UTC via  │
+# │  APScheduler. Use this workflow only for manual testing/recovery.  │
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
-  schedule:
-    - cron: '0 23 * * *'    # 11 PM UTC = 6 PM EST
-  workflow_dispatch:
+  workflow_dispatch:    # Manual trigger only — cron disabled (Railway worker owns scheduling)
 
 permissions:
   contents: write              # Needed to push dedup file back to repo

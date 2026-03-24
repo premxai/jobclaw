@@ -1,15 +1,13 @@
 name: "🔥 Hot Scraper — 192 Companies Every 5min"
 
 # ┌──────────────────────────────────────────────────────────────────────┐
-# │  Runs every 5 minutes 24/7 — scrapes ~200 high-signal companies     │
-# │  and fires instant Discord alerts for any new jobs discovered.      │
-# │  Target: make users consistently be in first 5-10 applicants.      │
+# │  MANUAL EMERGENCY TRIGGER ONLY — scheduling owned by Railway worker │
+# │  The Railway ARQ worker enqueues task_hot every 5 minutes via       │
+# │  APScheduler. Use this workflow only for manual testing/recovery.   │
 # └──────────────────────────────────────────────────────────────────────┘
 
 on:
-  schedule:
-    - cron: '*/5 * * * *'   # Every 5 minutes
-  workflow_dispatch:         # Manual trigger for testing
+  workflow_dispatch:         # Manual trigger only — cron disabled (Railway worker owns scheduling)
 
 permissions:
   contents: write

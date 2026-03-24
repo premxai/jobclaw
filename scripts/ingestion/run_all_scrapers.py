@@ -162,7 +162,7 @@ async def run_all(
                     ),
                 ),
                 label,
-                900,
+                1200,
             )
         )
 
@@ -251,6 +251,15 @@ async def run_all(
 
     _log(f"[orchestrator] Results: {successes} succeeded, {failures} failed, total {total_dur}s")
 
+    # ── AI Pipeline — dedup + salary backfill (deep tier only) ─────
+    if run_brave:  # run_brave=True is the deep-tier flag
+        try:
+            from scripts.ai.run_ai_pipeline import run_ai_pipeline
+
+            await run_ai_pipeline()
+        except Exception as e:
+            _log(f"[orchestrator] AI pipeline failed (non-fatal): {e}", "WARN")
+
     # ── INSTANT Discord Push — post the moment scraping finishes ────
     jobs_pushed = 0
     try:
@@ -325,14 +334,17 @@ Legacy flags still work:
 
     if tier == "fast":
         # Group A: Fast REST APIs only (Greenhouse, Lever, Ashby)
-        # All 6,464 companies covered in ~15-20 min — no sharding needed
+        # 10,801 companies / 4 shards = ~2,700/run → finishes in ~8 min
+        # DB-persisted rotation guarantees full coverage every 4 hourly runs
+        _FAST_SHARDS = 4
         skip_ats = False
         run_brave = False
         skip_github = False
-        window = args.window or 6
+        window = args.window or 24
         skip_platforms = _GEM_SKIP
         platforms = {"greenhouse", "lever", "ashby"}
-        shard_val = None  # No sharding — cover all Group A in one run
+        shard_val = get_next_shard("fast_ats_ghla", _FAST_SHARDS)
+        total_shards = _FAST_SHARDS
         db_tier = None
     elif tier == "medium":
         # Group B: Workday (8-shard rotation) + Rippling + SmartRecruiters + BambooHR

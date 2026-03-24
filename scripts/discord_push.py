@@ -410,30 +410,42 @@ async def push_new_jobs_to_discord():
         # Archive jobs too old to post so they don't pile up
         purged = purge_stale_unposted(conn)
         if purged:
-            log(f"Archived {purged} stale unposted jobs (>48hr).")
+            log(f"Archived {purged} stale unposted jobs (>72hr).")
 
-        # SQL already filters to last 48hr window
+        # SQL already filters to last 72hr window + is_active=1
         jobs = get_unposted_jobs(conn)
-        log(f"Found {len(jobs)} unposted jobs within 48hr window.")
+        log(f"Found {len(jobs)} unposted jobs within 72hr window.")
         if not jobs:
             log("No unposted jobs — nothing to push.")
             return 0
 
         # Disk-based dedup: skip jobs already posted in a previous run
         fresh_jobs = [j for j in jobs if not is_already_posted(posted_hashes, j["internal_hash"])]
-        log(f"{len(fresh_jobs)} jobs to push after dedup ({len(jobs) - len(fresh_jobs)} already posted).")
+        log(f"{len(fresh_jobs)} jobs after dedup ({len(jobs) - len(fresh_jobs)} already posted).")
 
         if not fresh_jobs:
             log("All unposted jobs already posted (dedup). Nothing new.")
             return 0
 
-        # Sort newest first
-        fresh_jobs.sort(key=lambda x: str(x.get("first_seen", "")), reverse=True)
+        # Quality gate — drop low-quality jobs (director/VP, no description, etc.)
+        MIN_QUALITY_SCORE = 20
+        before_quality = len(fresh_jobs)
+        fresh_jobs = [j for j in fresh_jobs if (j.get("quality_score") or 0) >= MIN_QUALITY_SCORE]
+        dropped = before_quality - len(fresh_jobs)
+        if dropped:
+            log(f"Quality filter: dropped {dropped} jobs below score {MIN_QUALITY_SCORE}.")
 
-        # Cap batch per run — keeps each 15-min job well within timeout
-        if len(fresh_jobs) > 50:
-            log(f"Capping batch to 50 (of {len(fresh_jobs)}) — remainder posted next run.")
-            fresh_jobs = fresh_jobs[:50]
+        if not fresh_jobs:
+            log("No jobs meet quality threshold — nothing to push.")
+            return 0
+
+        # Sort by quality score DESC — best jobs post first regardless of backlog size
+        fresh_jobs.sort(key=lambda x: x.get("quality_score") or 0, reverse=True)
+
+        # Cap batch per run — 200 keeps Discord rate limits comfortable
+        if len(fresh_jobs) > 200:
+            log(f"Capping batch to 200 (of {len(fresh_jobs)}) — remainder posted next run.")
+            fresh_jobs = fresh_jobs[:200]
 
         sent_count = 0
         failed_count = 0
