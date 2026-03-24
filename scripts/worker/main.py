@@ -33,7 +33,13 @@ from scripts.utils.logger import _log
 from scripts.worker.scheduler import start_scheduler
 from scripts.worker.worker import WorkerSettings
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+REDIS_URL = os.getenv("REDIS_URL", "")
+
+if not REDIS_URL:
+    raise RuntimeError(
+        "REDIS_URL environment variable is not set. "
+        "Set it in Railway → service → Variables with your Upstash rediss:// URL."
+    )
 
 
 async def main():

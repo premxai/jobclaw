@@ -106,12 +106,12 @@ async def task_discord_push(ctx):
 
 # ── Worker settings ──────────────────────────────────────────────────────────
 
-REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379")  # fallback for local dev only
 
 
 class WorkerSettings:
     functions = [task_hot, task_fast, task_medium, task_deep, task_discord_push]
-    redis_settings = arq.connections.RedisSettings.from_dsn(REDIS_URL)
+    redis_settings = arq.connections.RedisSettings.from_dsn(os.getenv("REDIS_URL", "redis://localhost:6379"))
 
     # Allow up to 5 scraper tasks to run concurrently (they're I/O bound)
     max_jobs = 5
