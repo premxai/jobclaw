@@ -472,7 +472,7 @@ async def push_new_jobs_to_discord():
                     else:
                         failed_count += 1
                 except Exception as e:
-                    log(f"Failed to send card: {e}", "WARN")
+                    log(f"Failed to send card: {type(e).__name__}: {e or 'no detail'}", "WARN")
                     failed_count += 1
 
                 # Respect Discord rate limits: ~1 msg/sec
@@ -480,10 +480,16 @@ async def push_new_jobs_to_discord():
 
         log(f"Sent {sent_count} cards ({failed_count} failed)")
 
-        # Mark only successfully-sent jobs as posted in the DB
+        # Mark only successfully-sent jobs as posted in the DB.
+        # Use a fresh connection — the original conn may have been idle for minutes
+        # (rate-limit waits) and Neon drops SSL connections after ~5 min of inactivity.
         if sent_hashes:
-            mark_jobs_posted(conn, sent_hashes)
-            log(f"Marked {len(sent_hashes)}/{len(fresh_jobs)} jobs as posted in DB.")
+            conn_mark = get_connection()
+            try:
+                mark_jobs_posted(conn_mark, sent_hashes)
+                log(f"Marked {len(sent_hashes)}/{len(fresh_jobs)} jobs as posted in DB.")
+            finally:
+                conn_mark.close()
 
         # Persist dedup hashes to disk for cross-run dedup
         save_posted_hashes(posted_hashes)

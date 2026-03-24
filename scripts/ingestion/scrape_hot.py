@@ -153,7 +153,7 @@ async def run_hot_scraper():
 
     rate_limiter = RateLimiter()
 
-    async with create_session(rate_limiter) as session:
+    async with create_session(rate_limiter, max_connections=30, max_per_host=15) as session:
         tasks = []
         for company in hot_list:
             ats = company.get("ats")
@@ -168,9 +168,9 @@ async def run_hot_scraper():
 
             tasks.append((name, ats, adapter.fetch(session, slug, name)))
 
-        # Run all in parallel — cap at 90s so the workflow never times out
+        # Run all in parallel — cap at 200s (well within the 5-min cycle)
         task_futures = [asyncio.ensure_future(t[2]) for t in tasks]
-        done, pending = await asyncio.wait(task_futures, timeout=90)
+        done, pending = await asyncio.wait(task_futures, timeout=200)
         for p in pending:
             p.cancel()
         # Build results list aligned with tasks (pending → TimeoutError)
