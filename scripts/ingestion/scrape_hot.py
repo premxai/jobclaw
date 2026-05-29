@@ -36,7 +36,23 @@ from scripts.utils.http_client import create_session
 from scripts.utils.logger import _log
 
 HOT_COMPANIES_FILE = PROJECT_ROOT / "config" / "hot_companies.json"
-DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK_URL", "")
+
+# Per-category Discord webhook URLs — matching discord_push.py
+_CATEGORY_WEBHOOKS = {
+    "AI/ML": os.getenv("DISCORD_WEBHOOK_AI", ""),
+    "Data Science": os.getenv("DISCORD_WEBHOOK_DATA", ""),
+    "Data Engineering": os.getenv("DISCORD_WEBHOOK_DATA", ""),
+    "Data Analyst": os.getenv("DISCORD_WEBHOOK_DATA", ""),
+    "SWE": os.getenv("DISCORD_WEBHOOK_SWE", ""),
+    "New Grad": os.getenv("DISCORD_WEBHOOK_NEWGRAD", ""),
+    "Product": os.getenv("DISCORD_WEBHOOK_PRODUCT", ""),
+    "Research": os.getenv("DISCORD_WEBHOOK_RESEARCH", ""),
+}
+
+# Fallback webhook definition
+DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK_URL", "") or next(
+    (v for v in _CATEGORY_WEBHOOKS.values() if v), ""
+)
 
 # How old can a job be to still be considered "fresh" for hot-alerts
 # (jobs older than this from the DB's first_seen are already known)
@@ -77,11 +93,7 @@ def _format_freshness(minutes: float) -> str:
 
 async def _send_hot_discord_alert(job: dict, minutes_old: float):
     """Fire an instant Discord alert for a freshly discovered hot-company job."""
-    if not DISCORD_WEBHOOK:
-        return
-
-    freshness = _format_freshness(minutes_old)
-    category = ""
+    cats = []
     if job.get("keywords_matched"):
         try:
             cats = (
@@ -89,10 +101,16 @@ async def _send_hot_discord_alert(job: dict, minutes_old: float):
                 if isinstance(job["keywords_matched"], str)
                 else job["keywords_matched"]
             )
-            if cats:
-                category = f" · {cats[0]}"
         except Exception:
             pass
+
+    prim_cat = cats[0] if cats else ""
+    webhook_url = _CATEGORY_WEBHOOKS.get(prim_cat, "") or DISCORD_WEBHOOK
+    if not webhook_url:
+        return
+
+    freshness = _format_freshness(minutes_old)
+    category = f" · {prim_cat}" if prim_cat else ""
 
     # Build a compact, actionable alert embed
     embed = {
@@ -116,7 +134,7 @@ async def _send_hot_discord_alert(job: dict, minutes_old: float):
 
         data = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(
-            DISCORD_WEBHOOK,
+            webhook_url,
             data=data,
             headers={"Content-Type": "application/json"},
             method="POST",

@@ -198,10 +198,16 @@ class _HostBucket:
 
 
 class RateLimiter:
-    """Per-host rate limiter using token buckets."""
+    """Per-host rate limiter using token buckets.
+
+    Uses a shared class-level registry to maintain rate-limit state (e.g. cooldowns,
+    429 adaptive slowdowns) across all instances in the process lifetime.
+    """
+
+    _shared_buckets: dict[str, _HostBucket] = {}
+    _lock = asyncio.Lock()
 
     def __init__(self, overrides: dict[str, float] | None = None):
-        self._buckets: dict[str, _HostBucket] = {}
         self._rates = {**PLATFORM_RATE_LIMITS}
         if overrides:
             self._rates.update(overrides)
@@ -220,10 +226,10 @@ class RateLimiter:
 
     def _get_bucket(self, url: str) -> _HostBucket:
         key = self._host_key(url)
-        if key not in self._buckets:
+        if key not in self._shared_buckets:
             rps = self._rates.get(key, _DEFAULT_RPS)
-            self._buckets[key] = _HostBucket(rps=rps)
-        return self._buckets[key]
+            self._shared_buckets[key] = _HostBucket(rps=rps)
+        return self._shared_buckets[key]
 
     async def acquire(self, url: str):
         """Wait for permission to hit this URL's host."""

@@ -114,12 +114,16 @@ def is_postgres() -> bool:
 # ═══════════════════════════════════════════════════════════════════════
 
 
+_schema_initialized = False
+
+
 def get_connection():
     """Get a SQLite connection. Falls back to SQLite if no DATABASE_URL.
 
     Auto-initializes the schema (jobs + runs tables) on first access
     so GitHub Actions runners don't crash with 'no such table'.
     """
+    global _schema_initialized
     if is_postgres():
         # For sync code that needs a connection, create a psycopg2 connection
         try:
@@ -127,7 +131,9 @@ def get_connection():
 
             conn = psycopg2.connect(DATABASE_URL)
             conn.autocommit = False
-            _ensure_postgres_schema(conn)
+            if not _schema_initialized:
+                _ensure_postgres_schema(conn)
+                _schema_initialized = True
             return conn
         except ImportError as err:
             raise ImportError("psycopg2 required for PostgreSQL. Run: pip install psycopg2-binary") from err
@@ -138,7 +144,9 @@ def get_connection():
     conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.execute("PRAGMA journal_mode=WAL")
 
-    _ensure_sqlite_schema(conn)
+    if not _schema_initialized:
+        _ensure_sqlite_schema(conn)
+        _schema_initialized = True
 
     return conn
 

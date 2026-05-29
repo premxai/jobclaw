@@ -356,24 +356,30 @@ async def _post_to_webhook(session, webhook_url: str, embed: dict) -> bool:
     import asyncio
 
     for attempt in range(3):
-        resp = await session.post(webhook_url, headers=_DISCORD_HEADERS, json={"embeds": [embed]})
+        try:
+            async with session.post(
+                webhook_url, headers=_DISCORD_HEADERS, json={"embeds": [embed]}
+            ) as resp:
+                if resp.status in (200, 204):
+                    return True
 
-        if resp.status in (200, 204):
-            return True
+                if resp.status == 429:
+                    try:
+                        data = await resp.json()
+                        wait = data.get("retry_after", 2.0)
+                    except Exception:
+                        wait = 2.0
+                    backoff = max(wait, 2.0) * (2**attempt)
+                    log(f"Rate limited — waiting {backoff:.1f}s (attempt {attempt + 1}/3)", "WARN")
+                    await asyncio.sleep(backoff)
+                    continue
 
-        if resp.status == 429:
-            try:
-                data = await resp.json()
-                wait = data.get("retry_after", 2.0)
-            except Exception:
-                wait = 2.0
-            backoff = max(wait, 2.0) * (2**attempt)
-            log(f"Rate limited — waiting {backoff:.1f}s (attempt {attempt + 1}/3)", "WARN")
-            await asyncio.sleep(backoff)
-            continue
-
-        log(f"Webhook returned HTTP {resp.status}", "WARN")
-        return False
+                log(f"Webhook returned HTTP {resp.status}", "WARN")
+                return False
+        except Exception as e:
+            log(f"HTTP post failed (attempt {attempt + 1}/3): {e}", "WARN")
+            if attempt < 2:
+                await asyncio.sleep(2.0 * (2**attempt))
 
     log("Webhook — retries exhausted", "WARN")
     return False
