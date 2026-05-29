@@ -26,8 +26,8 @@ export default function JobDetailPage() {
         const id = params.id as string;
         fetchJobById(id).then((j) => {
             setJob(j);
-            const savedList = JSON.parse(localStorage.getItem("jobclaw_saved") || "[]");
-            setSaved(savedList.some((s: any) => s.internal_hash === j?.internal_hash));
+            const savedList = JSON.parse(localStorage.getItem("jobclaw_saved") || "[]") as Array<{ internal_hash: string }>;
+            setSaved(savedList.some((s) => s.internal_hash === j?.internal_hash));
             if (j) {
                 fetchJobs({ limit: 6 }).then((data) => {
                     setRelated(data.jobs.filter((r) => r.internal_hash !== j.internal_hash).slice(0, 3));
