@@ -7,7 +7,9 @@ name: "⚡ Medium Tier — Workday/Rippling/SmartRecruiters (Hourly, 8-Shard)"
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
-  workflow_dispatch:    # Manual trigger only — cron disabled (Railway worker owns scheduling)
+  schedule:
+    - cron: '0 */4 * * *'    # Every 4 hours
+  workflow_dispatch:         # Manual trigger for testing/recovery
     inputs:
       shard:
         description: 'Shard override (0-3, or "auto")'

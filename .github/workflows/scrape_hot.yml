@@ -7,7 +7,9 @@ name: "🔥 Hot Scraper — 192 Companies Every 5min"
 # └──────────────────────────────────────────────────────────────────────┘
 
 on:
-  workflow_dispatch:         # Manual trigger only — cron disabled (Railway worker owns scheduling)
+  schedule:
+    - cron: '*/15 * * * *'   # Every 15 minutes (best balance of speed vs GitHub runner cost)
+  workflow_dispatch:         # Manual trigger for testing/recovery
 
 permissions:
   contents: write

@@ -42,9 +42,11 @@ async def task_hot(ctx):
 
 async def task_fast(ctx):
     """Fast tier: Greenhouse + Lever + Ashby, 4-shard rotation (every hour)."""
-    from scripts.ingestion.run_all_scrapers import run_all
+    from scripts.ingestion.run_all_scrapers import run_all, get_next_shard
 
     _log("[worker] Starting task_fast")
+    _FAST_SHARDS = 4
+    shard = get_next_shard("fast_ats_ghla", _FAST_SHARDS)
     await run_all(
         tier="fast",
         skip_ats=False,
@@ -53,6 +55,8 @@ async def task_fast(ctx):
         window_hours=24,
         skip_platforms={"gem"},
         platforms={"greenhouse", "lever", "ashby"},
+        shard=shard,
+        total_shards=_FAST_SHARDS,
     )
 
 
