@@ -357,9 +357,7 @@ async def _post_to_webhook(session, webhook_url: str, embed: dict) -> bool:
 
     for attempt in range(3):
         try:
-            async with session.post(
-                webhook_url, headers=_DISCORD_HEADERS, json={"embeds": [embed]}
-            ) as resp:
+            async with session.post(webhook_url, headers=_DISCORD_HEADERS, json={"embeds": [embed]}) as resp:
                 if resp.status in (200, 204):
                     return True
 

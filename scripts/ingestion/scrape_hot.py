@@ -50,9 +50,7 @@ _CATEGORY_WEBHOOKS = {
 }
 
 # Fallback webhook definition
-DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK_URL", "") or next(
-    (v for v in _CATEGORY_WEBHOOKS.values() if v), ""
-)
+DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK_URL", "") or next((v for v in _CATEGORY_WEBHOOKS.values() if v), "")
 
 # How old can a job be to still be considered "fresh" for hot-alerts
 # (jobs older than this from the DB's first_seen are already known)
