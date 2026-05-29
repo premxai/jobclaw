@@ -52,10 +52,12 @@ _CATEGORY_WEBHOOKS = {
     "New Grad": os.getenv("DISCORD_WEBHOOK_NEWGRAD", ""),
     "Product": os.getenv("DISCORD_WEBHOOK_PRODUCT", ""),
     "Research": os.getenv("DISCORD_WEBHOOK_RESEARCH", ""),
+    "Uncategorized": os.getenv("DISCORD_WEBHOOK_GENERAL", ""),
 }
 
-# First configured webhook used as fallback for uncategorized jobs
-_FALLBACK_WEBHOOK = next((v for v in _CATEGORY_WEBHOOKS.values() if v), "")
+# General fallback webhook or first configured webhook
+_GENERAL_FALLBACK = os.getenv("DISCORD_WEBHOOK_GENERAL", "")
+_FALLBACK_WEBHOOK = _GENERAL_FALLBACK or next((v for v in _CATEGORY_WEBHOOKS.values() if v), "")
 
 _missing_webhooks = [k for k, v in _CATEGORY_WEBHOOKS.items() if not v]
 if len(_missing_webhooks) == len(_CATEGORY_WEBHOOKS):
