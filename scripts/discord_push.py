@@ -246,6 +246,25 @@ def _build_job_embed(job: dict) -> dict:
 
     urgency = _urgency_prefix(job)
 
+    # Try to parse the actual job posting date for Discord's embed timestamp
+    import dateutil.parser
+
+    job_dt = None
+    for date_field in ["date_posted", "first_seen"]:
+        raw_val = job.get(date_field)
+        if raw_val:
+            try:
+                dt = dateutil.parser.parse(str(raw_val))
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                job_dt = dt
+                break
+            except Exception:
+                pass
+
+    if job_dt is None:
+        job_dt = datetime.now(timezone.utc)
+
     embed = {
         "title": f"{urgency}{emoji} {title}",
         "color": color,
@@ -256,8 +275,8 @@ def _build_job_embed(job: dict) -> dict:
             {"name": "🔗 Source", "value": ats_label, "inline": True},
             {"name": "🏷️ Category", "value": category, "inline": True},
         ],
-        "footer": {"text": f"JobClaw • {ats_label} • {datetime.now(timezone.utc).strftime('%H:%M UTC')}"},
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "footer": {"text": f"JobClaw • {ats_label} • {job_dt.strftime('%b %d, %Y')}"},
+        "timestamp": job_dt.isoformat(),
     }
 
     if url:
