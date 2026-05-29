@@ -3,6 +3,8 @@
  * Falls back to mock data if the API isn't running.
  */
 
+import type { Job } from "@/components/JobCard";
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // ─── Job types ──────────────────────────────────────────────────────
@@ -25,8 +27,22 @@ export interface ApiJob {
     is_active: boolean;
 }
 
+interface JobsResponse {
+    jobs: ApiJob[];
+    total: number;
+}
+
+interface StatsResponse {
+    total_jobs: number;
+    total_companies: number;
+    sources: number;
+    platforms?: Record<string, unknown>;
+    jobs_last_24h?: number;
+    jobs_last_7d?: number;
+}
+
 // Normalise backend response into something the frontend expects
-function normaliseJob(j: ApiJob, index?: number): any {
+function normaliseJob(j: ApiJob, index?: number): Job {
     let kw = j.keywords_matched;
     if (Array.isArray(kw)) kw = JSON.stringify(kw);
     return {
@@ -43,7 +59,7 @@ export async function fetchJobs(params?: {
     source?: string;
     page?: number;
     limit?: number;
-}): Promise<{ jobs: any[]; total: number }> {
+}): Promise<{ jobs: Job[]; total: number }> {
     const sp = new URLSearchParams();
     if (params?.search) sp.set("search", params.search);
     if (params?.category) sp.set("keyword", params.category);   // backend uses "keyword"
@@ -57,7 +73,7 @@ export async function fetchJobs(params?: {
     try {
         const res = await fetch(url, { cache: "no-store" });
         if (!res.ok) throw new Error(`API ${res.status}`);
-        const data = await res.json();
+        const data: JobsResponse = await res.json();
         // Backend returns { jobs: [...], total, page, per_page, has_more }
         return {
             jobs: data.jobs.map((j: ApiJob, i: number) => normaliseJob(j, i + 1)),
@@ -69,7 +85,7 @@ export async function fetchJobs(params?: {
 }
 
 // ─── Fetch single job ───────────────────────────────────────────────
-export async function fetchJobById(id: string): Promise<any | null> {
+export async function fetchJobById(id: string): Promise<Job | null> {
     // Use the dedicated /jobs/{hash} endpoint instead of fetching all jobs
     try {
         // Try direct hash lookup first (most common case)
@@ -97,14 +113,14 @@ export async function fetchJobById(id: string): Promise<any | null> {
 }
 
 // ─── Fetch stats ────────────────────────────────────────────────────
-export async function fetchStats(): Promise<any> {
+export async function fetchStats(): Promise<StatsResponse> {
     try {
         const res = await fetch(`${API_BASE}/stats`, { cache: "no-store" });
         if (!res.ok) throw new Error(`API ${res.status}`);
-        const data = await res.json();
+        const data: StatsResponse = await res.json();
         return {
             total_jobs: data.total_jobs || 0,
-            total_companies: data.companies || 0,
+            total_companies: data.total_companies || 0,
             sources: Object.keys(data.platforms || {}).length,
             platforms: data.platforms || {},
             jobs_last_24h: data.jobs_last_24h || 0,
@@ -120,7 +136,7 @@ export async function fetchStats(): Promise<any> {
 }
 
 // ─── Mock data fallback ─────────────────────────────────────────────
-function getMockJobs() {
+function getMockJobs(): Job[] {
     return [
         { id: 1, internal_hash: "a1", title: "Senior ML Engineer", company: "Google", location: "Mountain View, CA", url: "https://careers.google.com", date_posted: "2026-03-04", source_ats: "greenhouse", salary_min: 180000, salary_max: 250000, keywords_matched: '["AI/ML"]', description: "Lead ML initiatives at scale." },
         { id: 2, internal_hash: "b2", title: "Backend Engineer", company: "Stripe", location: "San Francisco, CA", url: "https://stripe.com/jobs", date_posted: "2026-03-04", source_ats: "greenhouse", salary_min: 150000, salary_max: 200000, keywords_matched: '["SWE"]', description: "Build payment infrastructure." },

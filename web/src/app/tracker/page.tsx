@@ -138,7 +138,7 @@ export default function TrackerPage() {
                     <div className="text-center py-20 animate-fade-in">
                         <p className="text-6xl mb-4">📋</p>
                         <h2 className="text-xl font-bold text-text-primary mb-2">No tracked jobs yet</h2>
-                        <p className="text-text-secondary mb-6">Browse the job feed and click "Save" to start tracking your applications.</p>
+                        <p className="text-text-secondary mb-6">Browse the job feed and click Save to start tracking your applications.</p>
                         <a href="/jobs" className="btn-primary">Browse Jobs</a>
                     </div>
                 )}
