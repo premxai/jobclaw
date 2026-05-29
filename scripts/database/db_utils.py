@@ -386,7 +386,16 @@ def insert_job(conn, job_dict: dict) -> bool:
     Returns True if genuinely new (inserted), False if dedup hit.
     """
     internal_hash = _make_hash(job_dict)
-    keywords = json.dumps(job_dict.get("keywords_matched", []))
+
+    # Auto-populate keywords_matched if empty or missing
+    keywords_list = job_dict.get("keywords_matched")
+    if not keywords_list:
+        from scripts.ingestion.role_filter import matches_target_role
+
+        keywords_list = matches_target_role(job_dict.get("title", ""))
+        job_dict["keywords_matched"] = keywords_list
+
+    keywords = json.dumps(keywords_list)
     first_seen = datetime.now(timezone.utc).isoformat()
 
     if is_postgres():
