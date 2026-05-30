@@ -162,7 +162,7 @@ async def run_all(
                     ),
                 ),
                 label,
-                1200,
+                900,  # Reduced from 1200s (20min) to 900s (15min) for faster failure detection
             )
         )
 
@@ -222,14 +222,14 @@ async def run_all(
     # StreamingJobPusher can be re-enabled when scrapers are wired to call push() per job.
 
     # Fire all scrapers at once — each has its own session + rate limiter
-    # Global 20-minute timeout so nothing can hang forever
+    # Global 25-minute timeout so nothing can hang forever
     try:
         results = await asyncio.wait_for(
             asyncio.gather(*tasks, return_exceptions=True),
-            timeout=20 * 60,  # 20 minutes max
+            timeout=25 * 60,  # Increased from 20min to 25min to accommodate reduced ATS timeout
         )
     except TimeoutError:
-        _log("[orchestrator] GLOBAL TIMEOUT after 20 minutes -- aborting remaining scrapers", "ERROR")
+        _log("[orchestrator] GLOBAL TIMEOUT after 25 minutes -- aborting remaining scrapers", "ERROR")
         results = []
 
     # ── Summary ─────────────────────────────────────────────────────
