@@ -22,7 +22,7 @@ import os
 import random
 import sys
 import time
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 # Add project root to sys.path
@@ -43,10 +43,11 @@ from scripts.ingestion.role_filter import matches_target_role
 from scripts.ingestion.us_filter import is_us_location
 from scripts.utils.company_metadata import CompanyMetadata
 from scripts.utils.health_tracker import HealthTracker
-from scripts.utils.http_client import RateLimiter, create_session
+from scripts.utils.http_client import RateLimiter, consume_last_failure, create_session
 from scripts.utils.logger import _log
 from scripts.utils.response_cache import ResponseCache
 from scripts.utils.retry_queue import RetryQueue
+from scripts.utils.target_diagnostics import classify_failure
 
 # ── Platforms to skip by default ───────────────────────────────────────
 # v4: Workday and Workable are now scrapable via curl_cffi TLS impersonation.
@@ -58,14 +59,14 @@ DEFAULT_SKIP_PLATFORMS: set[str] = set()
 # from a queue, so memory stays bounded regardless of registry size.
 # Workers per platform — lower bounds are better for 24/7 stealth scraping
 PLATFORM_WORKERS = {
-    "greenhouse": 5,  # Public REST API — very tolerant, increased from 3
-    "lever": 5,  # Public REST API — very tolerant, increased from 3
-    "ashby": 5,  # Clean API, smaller volume — increased from 3
-    "smartrecruiters": 3,  # Enterprise — leave headroom, increased from 2
-    "workday": 2,  # Aggressive WAF — don't push past 2-3
+    "greenhouse": 4,  # Public REST API — tolerant, but keep headroom
+    "lever": 4,  # Public REST API — tolerant, but keep headroom
+    "ashby": 4,  # Clean API, smaller volume
+    "smartrecruiters": 2,  # Enterprise — leave headroom
+    "workday": 1,  # Aggressive WAF — keep minimal concurrency
     "workable": 1,  # Single worker — Workable 429s hard with concurrency
-    "rippling": 2,  # Large registry — careful increase from 1
-    "bamboohr": 2,
+    "rippling": 1,  # Large registry — careful concurrency
+    "bamboohr": 1,
     "gem": 3,  # Mid-market ATS — clean JSON API
 }
 DEFAULT_WORKERS = 3
@@ -179,34 +180,47 @@ async def _worker(
                 fetch_company_jobs(session, cname, ats, slug, rate_limiter=rate_limiter),
                 timeout=per_company_timeout,
             )
+            failure = consume_last_failure()
             if jobs:
                 cache.put(ats, slug, [j.to_dict() for j in jobs])
-            results.append((cname, ats, slug, jobs, None))
+            results.append((cname, ats, slug, jobs, None, failure))
             if circuit_breaker:
                 circuit_breaker.record_success(ats)
             # Update company metadata with scrape results
-            if company_metadata:
+            if company_metadata and jobs:
                 job_ids = [j.job_id for j in jobs] if jobs else []
                 company_metadata.update_after_scrape(ats, slug, len(jobs), job_ids)
-            # Mark success in retry queue (removes from queue if present)
-            if retry_queue:
+            # Mark success in retry queue only for clean runs.
+            if retry_queue and jobs and not failure:
                 retry_queue.mark_success(ats, slug)
         except TimeoutError:
+            failure = classify_failure(error="timeout", ats=ats, slug=slug)
             _log(f"[{ats}/{slug}] Hard timeout", "WARN")
-            results.append((cname, ats, slug, [], "timeout"))
+            results.append((cname, ats, slug, [], "timeout", failure))
             if circuit_breaker:
                 circuit_breaker.record_failure(ats)
             # Add to retry queue
             if retry_queue:
-                retry_queue.add_failure(cname, ats, slug, "timeout")
+                retry_queue.add_failure(cname, ats, slug, "timeout", failure_type=failure["category"], status_code=None)
         except Exception as e:
-            _log(f"[{ats}/{slug}] Fetch failed: {type(e).__name__}: {e or 'no detail'}", "ERROR")
-            results.append((cname, ats, slug, [], str(e)))
+            failure = consume_last_failure() or classify_failure(error=e, ats=ats, slug=slug)
+            _log(
+                f"[{ats}/{slug}] Fetch failed: {failure['category']}:{failure.get('status_code') or 'n/a'}:{failure.get('error') or e}",
+                "ERROR",
+            )
+            results.append((cname, ats, slug, [], str(e), failure))
             if circuit_breaker:
                 circuit_breaker.record_failure(ats)
             # Add to retry queue
             if retry_queue:
-                retry_queue.add_failure(cname, ats, slug, str(e))
+                retry_queue.add_failure(
+                    cname,
+                    ats,
+                    slug,
+                    str(e),
+                    failure_type=failure["category"],
+                    status_code=failure.get("status_code"),
+                )
 
         queue.task_done()
 
@@ -348,6 +362,9 @@ async def run_ats_scraper(
 
     all_results = []
     errors = []
+    failure_counts = Counter()
+    failure_by_ats = defaultdict(Counter)
+    failing_targets = Counter()
 
     # Proxy support: set PROXY_URL in env for rotating proxies
     proxy = os.environ.get("PROXY_URL")
@@ -405,9 +422,16 @@ async def run_ats_scraper(
     all_jobs = []
     company_job_ids = defaultdict(set)  # (ats, company) → {job_id, ...}
 
-    for name, ats, _slug, jobs, err in all_results:
+    for name, ats, slug, jobs, err, failure in all_results:
         if err:
             errors.append(f"{name}: {err}")
+        elif failure:
+            errors.append(f"{name}: {failure.get('category')}:{failure.get('status_code') or 'n/a'}:{failure.get('error') or ''}")
+        if failure:
+            category = str(failure.get("category", "unknown"))
+            failure_counts[category] += 1
+            failure_by_ats[ats][category] += 1
+            failing_targets[f"{ats}/{slug}"] += 1
         for job in jobs:
             all_jobs.append(job)
             company_job_ids[(ats, name)].add(job.job_id)
@@ -498,15 +522,13 @@ async def run_ats_scraper(
 
     # ── Health Tracking ───────────────────────────────────────────────
     # Record run metrics for monitoring and alerts
-    error_counts = {}
-    for err in errors:
-        # Categorize errors
-        if "429" in err or "rate" in err.lower():
-            error_counts["429"] = error_counts.get("429", 0) + 1
-        elif "timeout" in err.lower():
-            error_counts["timeout"] = error_counts.get("timeout", 0) + 1
-        else:
-            error_counts["other"] = error_counts.get("other", 0) + 1
+    error_counts = dict(sorted(failure_counts.items()))
+    if failure_by_ats:
+        breakdown = {ats: dict(sorted(counts.items())) for ats, counts in sorted(failure_by_ats.items())}
+        _log(f"ATS failure breakdown: {breakdown}")
+    if failing_targets:
+        top_failing = failing_targets.most_common(10)
+        _log(f"Top failing targets: {top_failing}")
 
     health_tracker.end_run(
         companies_scraped=final_stats["scraped"],
@@ -515,6 +537,8 @@ async def run_ats_scraper(
         new_jobs=new_jobs_inserted,
         errors=error_counts,
         retry_queue_size=retry_stats["queue_size"],
+        failure_breakdown={ats: dict(sorted(counts.items())) for ats, counts in sorted(failure_by_ats.items())},
+        top_failures=[{"target": target, "count": count} for target, count in failing_targets.most_common(10)],
     )
 
     # Check for alerts
