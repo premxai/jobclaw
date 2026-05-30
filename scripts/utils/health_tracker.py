@@ -52,6 +52,8 @@ class HealthTracker:
             "jobs_found": 0,
             "new_jobs": 0,
             "errors": {},
+            "failure_breakdown": {},
+            "top_failures": [],
             "retry_queue_size": 0,
         }
 
@@ -76,6 +78,8 @@ class HealthTracker:
         new_jobs: int,
         errors: dict,
         retry_queue_size: int,
+        failure_breakdown: dict | None = None,
+        top_failures: list | None = None,
     ) -> None:
         """Record metrics at the end of a run."""
         now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -89,6 +93,8 @@ class HealthTracker:
             "jobs_found": jobs_found,
             "new_jobs": new_jobs,
             "errors": errors,
+            "failure_breakdown": failure_breakdown or {},
+            "top_failures": top_failures or [],
             "retry_queue_size": retry_queue_size,
         }
         self.save()
@@ -125,6 +131,17 @@ class HealthTracker:
         if retry_size > 100:
             alerts.append({"level": "warning", "message": f"Large retry queue: {retry_size} companies pending"})
 
+        failure_breakdown = self._data.get("failure_breakdown", {})
+        anti_bot = 0
+        bad_target = 0
+        for counts in failure_breakdown.values():
+            anti_bot += counts.get("anti_bot", 0)
+            bad_target += counts.get("bad_target", 0)
+        if anti_bot > 0:
+            alerts.append({"level": "warning", "message": f"Anti-bot failures observed: {anti_bot}"})
+        if bad_target > 0:
+            alerts.append({"level": "warning", "message": f"Bad-target failures observed: {bad_target}"})
+
         # Check for stale data (no new jobs in 6+ hours)
         last_run = self._data.get("last_run")
         if last_run:
@@ -156,6 +173,9 @@ class HealthTracker:
         if errors:
             error_str = ", ".join(f"{k}={v}" for k, v in errors.items())
             lines.append(f"Errors: {error_str}")
+        top_failures = self._data.get("top_failures", [])
+        if top_failures:
+            lines.append(f"Top failures: {top_failures[:5]}")
 
         return "\n".join(lines)
 
