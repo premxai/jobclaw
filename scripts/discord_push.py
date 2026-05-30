@@ -448,8 +448,13 @@ async def push_new_jobs_to_discord():
         fresh_jobs = [j for j in jobs if not is_already_posted(posted_hashes, j["internal_hash"])]
         log(f"{len(fresh_jobs)} jobs after dedup ({len(jobs) - len(fresh_jobs)} already posted).")
 
+        # 24-hour age filter: only post jobs from the last 24 hours
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        fresh_jobs = [j for j in fresh_jobs if _is_fresh(j, cutoff)]
+        log(f"{len(fresh_jobs)} jobs after 24-hour filter.")
+
         if not fresh_jobs:
-            log("All unposted jobs already posted (dedup). Nothing new.")
+            log("All unposted jobs already posted (dedup) or older than 24 hours. Nothing new.")
             return 0
 
         # Quality gate — drop low-quality jobs (director/VP, no description, etc.)

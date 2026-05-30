@@ -5,6 +5,8 @@ curl_cffi>=0.14.0          # TLS fingerprint impersonation (Chrome/Safari/Edge) 
 discord.py>=2.3.0
 python-dateutil>=2.9.0     # Robust datetime parsing for job freshness checks
 python-dotenv>=1.0.0
+brotli>=1.1.0
+
 
 # Enterprise scraper (Google, Meta) - browser automation
 playwright>=1.40.0
