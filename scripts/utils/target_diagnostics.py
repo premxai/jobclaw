@@ -40,7 +40,7 @@ def _infer_ats_from_url(url: str) -> str | None:
     if not host:
         return None
     for ats, hints in _ATS_DOMAIN_HINTS.items():
-        if any(hint in host for hint in hints):
+        if any(host == hint or host.endswith(f".{hint}") for hint in hints):
             return ats
     return None
 
@@ -58,7 +58,8 @@ def normalize_registry_target(company: str, ats: str, slug: str) -> tuple[dict[s
         return None, f"unsupported_ats:{ats}"
 
     if ats == "workday":
-        if "myworkdayjobs.com" in slug:
+        workday_host = (urlparse(slug).hostname or "").lower()
+        if workday_host == "myworkdayjobs.com" or workday_host.endswith(".myworkdayjobs.com"):
             match = _WORKDAY_URL_RE.match(slug)
             if not match:
                 return None, "malformed_workday_url"
@@ -76,21 +77,21 @@ def normalize_registry_target(company: str, ats: str, slug: str) -> tuple[dict[s
             # Extract a likely slug when the source entry used a full board URL.
             host = (urlparse(slug).hostname or "").lower()
             path = urlparse(slug).path.strip("/")
-            if ats == "greenhouse" and "greenhouse.io" in host:
+            if ats == "greenhouse" and (host == "greenhouse.io" or host.endswith(".greenhouse.io")):
                 slug = path.split("/")[0]
-            elif ats == "lever" and "lever.co" in host:
+            elif ats == "lever" and (host == "lever.co" or host.endswith(".lever.co")):
                 slug = path.split("/")[0]
-            elif ats == "ashby" and "ashbyhq.com" in host:
+            elif ats == "ashby" and (host == "ashbyhq.com" or host.endswith(".ashbyhq.com")):
                 slug = path.split("/")[0]
-            elif ats == "workable" and "workable.com" in host:
+            elif ats == "workable" and (host == "workable.com" or host.endswith(".workable.com")):
                 slug = path.split("/")[0]
-            elif ats == "rippling" and "rippling.com" in host:
+            elif ats == "rippling" and (host == "rippling.com" or host.endswith(".rippling.com")):
                 slug = path.split("/")[0]
-            elif ats == "smartrecruiters" and "smartrecruiters.com" in host:
+            elif ats == "smartrecruiters" and (host == "smartrecruiters.com" or host.endswith(".smartrecruiters.com")):
                 slug = path.split("/")[0]
-            elif ats == "bamboohr" and "bamboohr.com" in host:
+            elif ats == "bamboohr" and (host == "bamboohr.com" or host.endswith(".bamboohr.com")):
                 slug = path.split("/")[0]
-            elif ats == "gem" and "gem.com" in host:
+            elif ats == "gem" and (host == "gem.com" or host.endswith(".gem.com")):
                 slug = path.split("/")[0]
 
         if any(ch in slug for ch in " /?#"):
