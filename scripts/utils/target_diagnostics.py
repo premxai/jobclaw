@@ -1,4 +1,5 @@
-"""Helpers for registry validation and scrape failure classification."""
+"""
+Helpers for registry validation and scrape failure classification."""
 
 from __future__ import annotations
 
