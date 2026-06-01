@@ -24,11 +24,13 @@ import asyncio
 import os
 import random
 import time
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Any
 
 from scripts.utils.logger import _log
 from scripts.utils.response_cache import ResponseCache
+from scripts.utils.target_diagnostics import classify_failure
 
 # Try curl_cffi first (TLS impersonation), fall back to aiohttp
 try:
@@ -198,10 +200,16 @@ class _HostBucket:
 
 
 class RateLimiter:
-    """Per-host rate limiter using token buckets."""
+    """Per-host rate limiter using token buckets.
+
+    Uses a shared class-level registry to maintain rate-limit state (e.g. cooldowns,
+    429 adaptive slowdowns) across all instances in the process lifetime.
+    """
+
+    _shared_buckets: dict[str, _HostBucket] = {}
+    _lock = asyncio.Lock()
 
     def __init__(self, overrides: dict[str, float] | None = None):
-        self._buckets: dict[str, _HostBucket] = {}
         self._rates = {**PLATFORM_RATE_LIMITS}
         if overrides:
             self._rates.update(overrides)
@@ -220,10 +228,10 @@ class RateLimiter:
 
     def _get_bucket(self, url: str) -> _HostBucket:
         key = self._host_key(url)
-        if key not in self._buckets:
+        if key not in self._shared_buckets:
             rps = self._rates.get(key, _DEFAULT_RPS)
-            self._buckets[key] = _HostBucket(rps=rps)
-        return self._buckets[key]
+            self._shared_buckets[key] = _HostBucket(rps=rps)
+        return self._shared_buckets[key]
 
     async def acquire(self, url: str):
         """Wait for permission to hit this URL's host."""
@@ -255,6 +263,7 @@ BASE_BACKOFF = 1.5  # seconds
 # Requests round-robin across all provided proxies. No-op when empty.
 _PROXY_POOL = [u.strip() for u in os.getenv("PROXY_URLS", os.getenv("PROXY_URL", "")).split(",") if u.strip()]
 _proxy_idx = 0
+_LAST_FAILURE: ContextVar[dict[str, object] | None] = ContextVar("jobclaw_last_failure", default=None)
 
 
 def _next_proxy() -> str | None:
@@ -265,6 +274,24 @@ def _next_proxy() -> str | None:
     proxy = _PROXY_POOL[_proxy_idx % len(_PROXY_POOL)]
     _proxy_idx += 1
     return proxy
+
+
+def record_request_failure(**failure: object) -> dict[str, object]:
+    """Store the latest terminal request failure for the current task."""
+    _LAST_FAILURE.set(failure)
+    return failure
+
+
+def consume_last_failure() -> dict[str, object] | None:
+    """Read and clear the latest request failure for the current task."""
+    failure = _LAST_FAILURE.get()
+    _LAST_FAILURE.set(None)
+    return failure
+
+
+def get_last_failure() -> dict[str, object] | None:
+    """Peek at the latest request failure for the current task."""
+    return _LAST_FAILURE.get()
 
 
 # Sentinel returned by fetch_with_retry() on HTTP 304 Not Modified
@@ -305,6 +332,7 @@ async def fetch_with_retry(
     For aiohttp:   response has .status, .json(), .text(), .headers
     """
     is_cffi = HAS_CURL_CFFI and isinstance(session, CffiAsyncSession)
+    _LAST_FAILURE.set(None)
 
     total_attempts = max_retries + 1
     for attempt in range(total_attempts):
@@ -364,6 +392,9 @@ async def fetch_with_retry(
                     _log(f"{tag}HTTP {status} on {url} — retries exhausted", "WARN")
                     if not is_cffi:
                         await resp.release()
+                    record_request_failure(
+                        **classify_failure(status_code=status, error=f"HTTP {status} retries exhausted", url=url)
+                    )
                     return None
 
                 retry_after = (resp.headers or {}).get("Retry-After")
@@ -391,6 +422,7 @@ async def fetch_with_retry(
                 _log(f"{tag}HTTP {status} on {url} — permanent error, skipping", "WARN")
                 if not is_cffi:
                     await resp.release()
+                record_request_failure(**classify_failure(status_code=status, error=f"HTTP {status}", url=url))
                 return None
 
             # Non-retryable error (403, etc.)
@@ -398,6 +430,7 @@ async def fetch_with_retry(
             _log(f"{tag}HTTP {status} on {url} — not retrying", "WARN")
             if not is_cffi:
                 await resp.release()
+            record_request_failure(**classify_failure(status_code=status, error=f"HTTP {status}", url=url))
             return None
 
         except TimeoutError:
@@ -408,6 +441,7 @@ async def fetch_with_retry(
                 await asyncio.sleep(wait)
             else:
                 _log(f"{tag}Timeout on {url} — retries exhausted", "WARN")
+                record_request_failure(**classify_failure(error="timeout", url=url))
                 return None
 
         except Exception as e:
@@ -418,6 +452,7 @@ async def fetch_with_retry(
                 await asyncio.sleep(wait)
             else:
                 _log(f"{tag}{type(e).__name__} on {url} — retries exhausted: {e}", "WARN")
+                record_request_failure(**classify_failure(error=e, url=url))
                 return None
 
     return None
@@ -527,8 +562,8 @@ class SessionManager:
     def __init__(
         self,
         rate_limiter: RateLimiter | None = None,
-        max_connections: int = 15,
-        max_per_host: int = 10,
+        max_connections: int = 12,
+        max_per_host: int = 4,
         proxy: str | None = None,
     ):
         self.rate_limiter = rate_limiter
@@ -576,8 +611,8 @@ class SessionManager:
 
 def create_session(
     rate_limiter: RateLimiter | None = None,
-    max_connections: int = 15,
-    max_per_host: int = 10,
+    max_connections: int = 12,
+    max_per_host: int = 4,
     proxy: str | None = None,
 ) -> SessionManager:
     """

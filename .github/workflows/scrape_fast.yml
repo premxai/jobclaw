@@ -9,7 +9,9 @@ name: "🚀 Fast Tier — RSS + GitHub + Greenhouse/Lever/Ashby (Every Hour)"
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
-  workflow_dispatch:    # Manual trigger only — cron disabled (Railway worker owns scheduling)
+  schedule:
+    - cron: '0 * * * *'      # Hourly at the top of the hour
+  workflow_dispatch:         # Manual trigger for testing/recovery
 
 permissions:
   contents: write              # Needed to push dedup file back to repo

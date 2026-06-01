@@ -24,6 +24,7 @@ RETRY_DELAYS = [
     86400,  # 24 hours
 ]
 MAX_RETRIES = len(RETRY_DELAYS)
+REVIEW_DELAY = 7 * 24 * 3600  # 7 days
 
 
 class RetryQueue:
@@ -67,14 +68,22 @@ class RetryQueue:
         self.path.parent.mkdir(parents=True, exist_ok=True)
         with open(self.path, "w", encoding="utf-8") as f:
             json.dump(
-                {"_comment": "Failed companies pending retry", "_schema_version": 1, "queue": self._queue}, f, indent=2
+                {"_comment": "Failed companies pending retry", "_schema_version": 2, "queue": self._queue}, f, indent=2
             )
 
     def _key(self, ats: str, slug: str) -> str:
         """Generate unique key for a company."""
         return f"{ats}:{slug}"
 
-    def add_failure(self, company: str, ats: str, slug: str, error: str) -> None:
+    def add_failure(
+        self,
+        company: str,
+        ats: str,
+        slug: str,
+        error: str,
+        failure_type: str = "transient",
+        status_code: int | None = None,
+    ) -> None:
         """
         Add a failed company to the retry queue.
 
@@ -96,28 +105,30 @@ class RetryQueue:
             idx, item = existing
             retry_count = item.get("retry_count", 0) + 1
 
-            if retry_count >= MAX_RETRIES:
-                # Drop from queue — too many failures
-                self._queue.pop(idx)
-                self._stats["dropped"] += 1
-                return
-
-            # Update with new retry schedule
-            delay = RETRY_DELAYS[retry_count]
-            next_retry = (now + timedelta(seconds=delay)).isoformat().replace("+00:00", "Z")
+            is_review = failure_type in {"bad_target", "anti_bot"} or status_code in {403, 404, 410, 422, 429}
+            if is_review or retry_count >= MAX_RETRIES:
+                delay = REVIEW_DELAY
+                retry_count = 0
+                next_retry = (now + timedelta(seconds=delay)).isoformat().replace("+00:00", "Z")
+            else:
+                delay = RETRY_DELAYS[retry_count]
+                next_retry = (now + timedelta(seconds=delay)).isoformat().replace("+00:00", "Z")
 
             self._queue[idx] = {
                 "company": company,
                 "ats": ats,
                 "slug": slug,
                 "error": error,
+                "failure_type": failure_type,
+                "status_code": status_code,
                 "failed_at": now_str,
                 "retry_count": retry_count,
                 "next_retry": next_retry,
             }
         else:
             # New failure — add to queue
-            delay = RETRY_DELAYS[0]
+            is_review = failure_type in {"bad_target", "anti_bot"} or status_code in {403, 404, 410, 422, 429}
+            delay = REVIEW_DELAY if is_review else RETRY_DELAYS[0]
             next_retry = (now + timedelta(seconds=delay)).isoformat().replace("+00:00", "Z")
 
             self._queue.append(
@@ -126,6 +137,8 @@ class RetryQueue:
                     "ats": ats,
                     "slug": slug,
                     "error": error,
+                    "failure_type": failure_type,
+                    "status_code": status_code,
                     "failed_at": now_str,
                     "retry_count": 0,
                     "next_retry": next_retry,
@@ -157,6 +170,8 @@ class RetryQueue:
                             "company": item["company"],
                             "ats": item["ats"],
                             "slug": item["slug"],
+                            "failure_type": item.get("failure_type", "transient"),
+                            "status_code": item.get("status_code"),
                         }
                     )
                     self._stats["retried"] += 1
@@ -191,9 +206,13 @@ class RetryQueue:
             return "Retry queue empty"
 
         by_ats = {}
+        by_type = {}
         for item in self._queue:
             ats = item.get("ats", "unknown")
             by_ats[ats] = by_ats.get(ats, 0) + 1
+            failure_type = item.get("failure_type", "transient")
+            by_type[failure_type] = by_type.get(failure_type, 0) + 1
 
         parts = [f"{ats}={count}" for ats, count in sorted(by_ats.items())]
-        return f"Retry queue: {len(self._queue)} companies ({', '.join(parts)})"
+        type_parts = [f"{failure_type}={count}" for failure_type, count in sorted(by_type.items())]
+        return f"Retry queue: {len(self._queue)} companies ({', '.join(parts)}; {'; '.join(type_parts)})"

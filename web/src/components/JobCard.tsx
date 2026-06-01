@@ -2,7 +2,7 @@
 import CompanyLogo from "./CompanyLogo";
 
 export interface Job {
-    id: number;
+    id: number | string;
     internal_hash: string;
     title: string;
     company: string;
@@ -12,11 +12,11 @@ export interface Job {
     source_ats: string;
     salary_min?: number | null;
     salary_max?: number | null;
-    salary_currency?: string;
-    keywords_matched?: string;
-    description?: string;
-    first_seen?: string;
-    status?: string;
+    salary_currency?: string | null;
+    keywords_matched?: string | null;
+    description?: string | null;
+    first_seen?: string | null;
+    status?: string | null;
     freshness_minutes?: number | null;  // computed by /jobs/match
     match_score?: number | null;        // cosine similarity 0-1
 }
@@ -56,7 +56,7 @@ function formatSalary(min?: number | null, max?: number | null): string | null {
     return null;
 }
 
-function getCategory(keywords?: string): string | null {
+function getCategory(keywords?: string | null): string | null {
     if (!keywords) return null;
     try {
         const parsed = JSON.parse(keywords);

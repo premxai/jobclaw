@@ -18,6 +18,7 @@ import json
 import re
 import sys
 from datetime import datetime, timezone, timedelta
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -32,6 +33,8 @@ from scripts.ingestion.ats_adapters import NormalizedJob, fetch_company_jobs
 from scripts.ingestion.job_board_adapters import fetch_all_job_boards
 from scripts.ingestion.role_filter import matches_target_role
 from scripts.ingestion.us_filter import is_us_location
+from scripts.utils.http_client import consume_last_failure
+from scripts.utils.target_diagnostics import normalize_registry_target
 
 CONFIG_DIR = PROJECT_ROOT / "config"
 DATA_DIR = PROJECT_ROOT / "data"
@@ -40,7 +43,7 @@ REGISTRY_FILE = CONFIG_DIR / "company_registry.json"
 JOBS_DB_FILE = DATA_DIR / "jobs.json"
 
 # ── Tuning ────────────────────────────────────────────────────────────
-MAX_CONCURRENT = 25  # Max parallel HTTP requests
+MAX_CONCURRENT = 12  # Max parallel HTTP requests
 REQUEST_TIMEOUT = 30  # Seconds per request
 MAX_RETRIES = 2  # Retry failed fetches
 RETRY_DELAY = 2  # Seconds between retries
@@ -68,63 +71,47 @@ def load_registry() -> list[dict[str, str]]:
     try:
         data = json.loads(REGISTRY_FILE.read_text(encoding="utf-8"))
 
-        flat_registry = []
+        flat_registry: list[dict[str, str]] = []
+        invalid_reasons: dict[str, int] = {}
+
+        def _append(company: str, ats: str, slug: str) -> None:
+            normalized, reason = normalize_registry_target(company, ats, slug)
+            if normalized:
+                flat_registry.append(normalized)
+            elif reason:
+                invalid_reasons[reason] = invalid_reasons.get(reason, 0) + 1
+
         if isinstance(data, list):
-            # Direct list of {company, ats, slug}
-            return data
-
-        # Known ATS platform keys in the grouped sections
-        _ATS_PLATFORMS = {
-            "greenhouse",
-            "lever",
-            "ashby",
-            "workday",
-            "workable",
-            "rippling",
-            "smartrecruiters",
-            "bamboohr",
-        }
-
-        # Handle {"companies": [...]} format (explicit company/ats/slug entries)
-        if "companies" in data and isinstance(data["companies"], list):
-            for c in data["companies"]:
-                name = c.get("company", "")
-                ats = c.get("ats", "")
-                slug = c.get("slug", "")
-                if name and ats and slug:
-                    flat_registry.append({"company": name, "ats": ats.lower(), "slug": slug})
-
-        # Also handle platform-grouped sections {platform: [{name, slug}]}
-        for platform, companies in data.items():
-            if platform == "companies" or not isinstance(companies, list):
-                continue
-            # Only process recognized ATS platform keys
-            ats_key = platform.lower()
-            if ats_key not in _ATS_PLATFORMS:
-                continue
-            for c in companies:
-                name = c.get("name", "") or c.get("company", "")
-                slug = c.get("slug") or c.get("url")
-                if not name or not slug:
+            for item in data:
+                if not isinstance(item, dict):
+                    invalid_reasons["non_dict_entry"] = invalid_reasons.get("non_dict_entry", 0) + 1
                     continue
+                _append(
+                    item.get("company", "") or item.get("name", ""),
+                    item.get("ats", ""),
+                    item.get("slug", "") or item.get("url", ""),
+                )
+        else:
+            # Handle {"companies": [...]} format (explicit company/ats/slug entries)
+            if "companies" in data and isinstance(data["companies"], list):
+                for c in data["companies"]:
+                    _append(c.get("company", ""), c.get("ats", ""), c.get("slug", "") or c.get("url", ""))
 
-                # Workday URLs → tenant:shard:site slug format
-                # e.g. https://microsoft.wd5.myworkdayjobs.com/Microsoft
-                #   → microsoft:5:Microsoft
-                if ats_key == "workday" and "myworkdayjobs.com" in slug:
-                    import re as _re
-
-                    m = _re.match(
-                        r"https?://([^.]+)\.wd(\d+)\.myworkdayjobs\.com/(?:en-[A-Za-z]{2}/)?(.+?)/?$",
-                        slug,
-                    )
-                    if m:
-                        slug = f"{m.group(1)}:{m.group(2)}:{m.group(3)}"
-                    else:
-                        _log(f"Workday URL parse failed: {slug}", "WARN")
+            # Also handle platform-grouped sections {platform: [{name, slug}]}
+            for platform, companies in data.items():
+                if platform == "companies" or not isinstance(companies, list):
+                    continue
+                for c in companies:
+                    name = c.get("name", "") or c.get("company", "")
+                    slug = c.get("slug") or c.get("url") or ""
+                    if not name or not slug:
+                        invalid_reasons["missing_fields"] = invalid_reasons.get("missing_fields", 0) + 1
                         continue
+                    _append(name, platform, slug)
 
-                flat_registry.append({"company": name, "ats": ats_key, "slug": slug})
+        if invalid_reasons:
+            summary = ", ".join(f"{k}={v}" for k, v in sorted(invalid_reasons.items()))
+            _log(f"Registry validation skipped {sum(invalid_reasons.values())} entries ({summary})", "WARN")
 
         return flat_registry
     except (json.JSONDecodeError, OSError) as e:
@@ -258,13 +245,32 @@ async def _fetch_with_retry(
         for attempt in range(MAX_RETRIES + 1):
             try:
                 jobs = await fetch_company_jobs(session, name, ats, slug)
+                failure = consume_last_failure()
+                if failure:
+                    status = failure.get("status_code")
+                    category = failure.get("category", "unknown")
+                    error_msg = f"{category}:{status or 'n/a'}:{failure.get('error', '')}"
+                    _log(f"[{ats}/{slug}] {error_msg}", "WARN")
+                    return (name, jobs, error_msg)
                 return (name, jobs, None)
             except Exception as e:
+                failure = consume_last_failure()
+                if failure:
+                    status = failure.get("status_code")
+                    category = failure.get("category", "unknown")
+                    error_msg = f"{category}:{status or 'n/a'}:{failure.get('error', '')}"
+                else:
+                    error_msg = str(e)
                 if attempt < MAX_RETRIES:
                     await asyncio.sleep(RETRY_DELAY * (attempt + 1))
                 else:
-                    return (name, [], str(e))
+                    return (name, [], error_msg)
 
+    failure = consume_last_failure()
+    if failure:
+        status = failure.get("status_code")
+        category = failure.get("category", "unknown")
+        return (name, [], f"{category}:{status or 'n/a'}:{failure.get('error', '')}")
     return (name, [], "Max retries exceeded")
 
 
@@ -307,12 +313,13 @@ async def run_cycle(window_hours: int = 24) -> dict[str, Any]:
 
     # 2. Parallel fetch
     semaphore = asyncio.Semaphore(MAX_CONCURRENT)
-    connector = aiohttp.TCPConnector(limit=MAX_CONCURRENT, limit_per_host=5)
+    connector = aiohttp.TCPConnector(limit=MAX_CONCURRENT, limit_per_host=3)
 
     all_jobs: list[NormalizedJob] = []
     errors: list[str] = []
     succeeded = 0
     failed = 0
+    failure_counts: Counter[str] = Counter()
 
     async with aiohttp.ClientSession(connector=connector) as session:
         tasks = [_fetch_with_retry(session, semaphore, company) for company in registry]
@@ -328,6 +335,7 @@ async def run_cycle(window_hours: int = 24) -> dict[str, Any]:
             if error:
                 errors.append(f"{name}: {error}")
                 failed += 1
+                failure_counts[error.split(":")[0]] += 1
             else:
                 succeeded += 1
                 all_jobs.extend(jobs)
@@ -355,6 +363,8 @@ async def run_cycle(window_hours: int = 24) -> dict[str, Any]:
 
     total_fetched = len(all_jobs)
     _log(f"Fetched {total_fetched} jobs from {succeeded} companies + job boards ({failed} failed)")
+    if failure_counts:
+        _log(f"Failure categories: {dict(sorted(failure_counts.items()))}")
 
     # 3. Filter by role keywords
     filtered = []

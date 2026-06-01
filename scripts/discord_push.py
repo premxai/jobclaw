@@ -52,10 +52,12 @@ _CATEGORY_WEBHOOKS = {
     "New Grad": os.getenv("DISCORD_WEBHOOK_NEWGRAD", ""),
     "Product": os.getenv("DISCORD_WEBHOOK_PRODUCT", ""),
     "Research": os.getenv("DISCORD_WEBHOOK_RESEARCH", ""),
+    "Uncategorized": os.getenv("DISCORD_WEBHOOK_GENERAL", ""),
 }
 
-# First configured webhook used as fallback for uncategorized jobs
-_FALLBACK_WEBHOOK = next((v for v in _CATEGORY_WEBHOOKS.values() if v), "")
+# General fallback webhook or first configured webhook
+_GENERAL_FALLBACK = os.getenv("DISCORD_WEBHOOK_GENERAL", "")
+_FALLBACK_WEBHOOK = _GENERAL_FALLBACK or next((v for v in _CATEGORY_WEBHOOKS.values() if v), "")
 
 _missing_webhooks = [k for k, v in _CATEGORY_WEBHOOKS.items() if not v]
 if len(_missing_webhooks) == len(_CATEGORY_WEBHOOKS):
@@ -246,6 +248,25 @@ def _build_job_embed(job: dict) -> dict:
 
     urgency = _urgency_prefix(job)
 
+    # Try to parse the actual job posting date for Discord's embed timestamp
+    import dateutil.parser
+
+    job_dt = None
+    for date_field in ["date_posted", "first_seen"]:
+        raw_val = job.get(date_field)
+        if raw_val:
+            try:
+                dt = dateutil.parser.parse(str(raw_val))
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=timezone.utc)
+                job_dt = dt
+                break
+            except Exception:
+                pass
+
+    if job_dt is None:
+        job_dt = datetime.now(timezone.utc)
+
     embed = {
         "title": f"{urgency}{emoji} {title}",
         "color": color,
@@ -256,8 +277,8 @@ def _build_job_embed(job: dict) -> dict:
             {"name": "🔗 Source", "value": ats_label, "inline": True},
             {"name": "🏷️ Category", "value": category, "inline": True},
         ],
-        "footer": {"text": f"JobClaw • {ats_label} • {datetime.now(timezone.utc).strftime('%H:%M UTC')}"},
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "footer": {"text": f"JobClaw • {ats_label} • {job_dt.strftime('%b %d, %Y')}"},
+        "timestamp": job_dt.isoformat(),
     }
 
     if url:
@@ -356,24 +377,28 @@ async def _post_to_webhook(session, webhook_url: str, embed: dict) -> bool:
     import asyncio
 
     for attempt in range(3):
-        resp = await session.post(webhook_url, headers=_DISCORD_HEADERS, json={"embeds": [embed]})
+        try:
+            async with session.post(webhook_url, headers=_DISCORD_HEADERS, json={"embeds": [embed]}) as resp:
+                if resp.status in (200, 204):
+                    return True
 
-        if resp.status in (200, 204):
-            return True
+                if resp.status == 429:
+                    try:
+                        data = await resp.json()
+                        wait = data.get("retry_after", 2.0)
+                    except Exception:
+                        wait = 2.0
+                    backoff = max(wait, 2.0) * (2**attempt)
+                    log(f"Rate limited — waiting {backoff:.1f}s (attempt {attempt + 1}/3)", "WARN")
+                    await asyncio.sleep(backoff)
+                    continue
 
-        if resp.status == 429:
-            try:
-                data = await resp.json()
-                wait = data.get("retry_after", 2.0)
-            except Exception:
-                wait = 2.0
-            backoff = max(wait, 2.0) * (2**attempt)
-            log(f"Rate limited — waiting {backoff:.1f}s (attempt {attempt + 1}/3)", "WARN")
-            await asyncio.sleep(backoff)
-            continue
-
-        log(f"Webhook returned HTTP {resp.status}", "WARN")
-        return False
+                log(f"Webhook returned HTTP {resp.status}", "WARN")
+                return False
+        except Exception as e:
+            log(f"HTTP post failed (attempt {attempt + 1}/3): {e}", "WARN")
+            if attempt < 2:
+                await asyncio.sleep(2.0 * (2**attempt))
 
     log("Webhook — retries exhausted", "WARN")
     return False
@@ -423,8 +448,13 @@ async def push_new_jobs_to_discord():
         fresh_jobs = [j for j in jobs if not is_already_posted(posted_hashes, j["internal_hash"])]
         log(f"{len(fresh_jobs)} jobs after dedup ({len(jobs) - len(fresh_jobs)} already posted).")
 
+        # 24-hour age filter: only post jobs from the last 24 hours
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=24)
+        fresh_jobs = [j for j in fresh_jobs if _is_fresh(j, cutoff)]
+        log(f"{len(fresh_jobs)} jobs after 24-hour filter.")
+
         if not fresh_jobs:
-            log("All unposted jobs already posted (dedup). Nothing new.")
+            log("All unposted jobs already posted (dedup) or older than 24 hours. Nothing new.")
             return 0
 
         # Quality gate — drop low-quality jobs (director/VP, no description, etc.)

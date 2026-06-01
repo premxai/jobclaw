@@ -172,6 +172,25 @@ class MarkdownTableParser:
         return all_jobs
 
 
+def _extract_url(text: str) -> str:
+    """Extract URL from markdown link, HTML anchor, or raw URL."""
+    if not text:
+        return ""
+    # 1. Try markdown link: [text](url)
+    md_match = re.search(r"\[[^\]]*\]\((https?://[^\s)]+)\)", text)
+    if md_match:
+        return md_match.group(1).strip()
+    # 2. Try HTML anchor tag: href="url" or href='url'
+    html_match = re.search(r"href=[\"'](https?://[^\"']+)[\"']", text, re.IGNORECASE)
+    if html_match:
+        return html_match.group(1).strip()
+    # 3. Try raw URL: http://... or https://...
+    raw_match = re.search(r"(https?://[^\s<>\"]+)", text)
+    if raw_match:
+        return raw_match.group(1).strip()
+    return ""
+
+
 def _parse_markdown_table(markdown: str, label: str) -> list[NormalizedJob]:
     """Extract job listings from markdown tables.
 
@@ -205,7 +224,7 @@ def _parse_markdown_table(markdown: str, label: str) -> list[NormalizedJob]:
                     header_indices["title"] = i
                 elif any(k in cl for k in ["location", "city"]):
                     header_indices["location"] = i
-                elif any(k in cl for k in ["link", "url", "apply", "application"]):
+                elif any(k in cl for k in ["link", "url", "apply", "application", "posting"]):
                     header_indices["url"] = i
                 elif any(k in cl for k in ["date", "posted", "added"]):
                     header_indices["date"] = i
@@ -231,21 +250,20 @@ def _parse_markdown_table(markdown: str, label: str) -> list[NormalizedJob]:
             else ""
         )
 
-        # Extract URL from markdown link [text](url)
+        # Extract URL using robust helper
         url_cell = (
             cells[header_indices.get("url", 3)]
             if header_indices.get("url") is not None and len(cells) > header_indices["url"]
             else ""
         )
-        url_match = re.search(r"\[([^\]]*)\]\(([^)]+)\)", url_cell)
-        job_url = url_match.group(2) if url_match else ""
+        job_url = _extract_url(url_cell)
 
-        # Also check for URLs in company/title cells
+        # Also check for URLs in other cells (like company/title) if not found
         if not job_url:
             for cell in cells:
-                url_match = re.search(r"\[([^\]]*)\]\(([^)]+)\)", cell)
-                if url_match and ("http" in url_match.group(2)):
-                    job_url = url_match.group(2)
+                found_url = _extract_url(cell)
+                if found_url:
+                    job_url = found_url
                     break
 
         # Strip HTML tags

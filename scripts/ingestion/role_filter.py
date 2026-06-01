@@ -208,15 +208,13 @@ _COMPILED_PATTERNS: list[tuple[re.Pattern, str]] = [
 
 ROLE_WEIGHTS: dict[str, float] = {
     "AI/ML": 1.0,
-    "Software Engineering": 1.0,
+    "SWE": 1.0,
     "Data Engineering": 0.8,
     "Data Science": 0.8,
-    "Infrastructure": 0.8,
-    "Security": 0.7,
-    "Backend": 0.9,
-    "Frontend": 0.7,
+    "Data Analyst": 0.7,
+    "New Grad": 0.7,
     "Product": 0.6,
-    "General Tech": 0.5,
+    "Research": 0.8,
 }
 
 

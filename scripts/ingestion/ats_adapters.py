@@ -32,8 +32,9 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from scripts.utils.http_client import HAS_CURL_CFFI, NOT_MODIFIED, RateLimiter, fetch_with_retry
+from scripts.utils.http_client import HAS_CURL_CFFI, NOT_MODIFIED, RateLimiter, fetch_with_retry, record_request_failure
 from scripts.utils.logger import _log
+from scripts.utils.target_diagnostics import classify_failure
 from scripts.utils.salary_parser import extract_experience, extract_salary, parse_salary_range
 
 
@@ -46,6 +47,10 @@ async def _parse_json(resp) -> Any:
         return resp.json()
     # aiohttp responses have .json() as an async method
     return await resp.json()
+
+
+def _record_parse_failure(ats: str, slug: str, message: str) -> None:
+    record_request_failure(**classify_failure(error=message, ats=ats, slug=slug))
 
 
 @dataclass
@@ -323,6 +328,7 @@ class GreenhouseAdapter:
             data = await _parse_json(resp)
         except Exception as e:
             _log(f"[greenhouse/{slug}] JSON decode error: {e}", "WARN")
+            _record_parse_failure("greenhouse", slug, f"JSON decode error: {e}")
             return []
 
         jobs = []
@@ -384,6 +390,7 @@ class LeverAdapter:
             data = await _parse_json(resp)
         except Exception as e:
             _log(f"[lever/{slug}] JSON decode error: {e}", "WARN")
+            _record_parse_failure("lever", slug, f"JSON decode error: {e}")
             return []
 
         if not isinstance(data, list):
@@ -469,6 +476,7 @@ class AshbyAdapter:
             data = await _parse_json(resp)
         except Exception as e:
             _log(f"[ashby/{slug}] JSON decode error: {e}", "WARN")
+            _record_parse_failure("ashby", slug, f"JSON decode error: {e}")
             return []
 
         jobs = []
@@ -621,12 +629,14 @@ class BambooHRAdapter:
             ct = (resp.headers.get("content-type") or "") if hasattr(resp.headers, "get") else ""
         if ct and "json" not in ct and "javascript" not in ct:
             _log(f"[bamboohr/{slug}] HTML response — company likely migrated off BambooHR (ct={ct})", "WARN")
+            _record_parse_failure("bamboohr", slug, f"HTML response content-type={ct}")
             return []
 
         try:
             data = await _parse_json(resp)
         except Exception as e:
             _log(f"[bamboohr/{slug}] JSON decode error: {e}", "WARN")
+            _record_parse_failure("bamboohr", slug, f"JSON decode error: {e}")
             return []
 
         jobs = []
@@ -705,6 +715,7 @@ class WorkdayAdapter:
         parts = slug.split(":")
         if len(parts) != 3:
             _log(f"[workday/{slug}] Invalid slug format (expected tenant:shard:site)", "WARN")
+            _record_parse_failure("workday", slug, "Invalid slug format")
             return []
         tenant, shard, site = parts
 
@@ -727,9 +738,12 @@ class WorkdayAdapter:
             rate_limiter,
         )
 
-        # If that failed and the site looks like a locale (en-us), probe common names
-        if data is None and site.lower().startswith("en-"):
+        # If that failed, probe common Workday site names regardless of the
+        # input shape. Many boards publish locale-looking or stale site slugs.
+        if data is None:
             for probe_site in WorkdayAdapter._COMMON_SITES:
+                if probe_site.lower() == site.lower():
+                    continue
                 data, api_url = await WorkdayAdapter._try_cxs(
                     session,
                     base_url,
@@ -743,9 +757,11 @@ class WorkdayAdapter:
                     site = probe_site
                     break
             if data is None:
+                _record_parse_failure("workday", slug, "Workday site probe failed")
                 return []
 
         if data is None:
+            _record_parse_failure("workday", slug, "Workday CXS discovery failed")
             return []
 
         all_jobs = []
@@ -875,6 +891,7 @@ class WorkableAdapter:
                 data = await _parse_json(resp)
             except Exception as e:
                 _log(f"[workable/{slug}] JSON decode error: {e}", "WARN")
+                _record_parse_failure("workable", slug, f"JSON decode error: {e}")
                 break
 
             for j in data.get("results", []):
@@ -947,6 +964,7 @@ class RipplingAdapter:
             data = await _parse_json(resp)
         except Exception as e:
             _log(f"[rippling/{slug}] JSON decode error: {e}", "WARN")
+            _record_parse_failure("rippling", slug, f"JSON decode error: {e}")
             return []
 
         if not isinstance(data, list):
@@ -1013,6 +1031,7 @@ class GemAdapter:
             data = await _parse_json(resp)
         except Exception as e:
             _log(f"[gem/{slug}] JSON decode error: {e}", "WARN")
+            _record_parse_failure("gem", slug, f"JSON decode error: {e}")
             return []
 
         if not isinstance(data, dict):
@@ -1085,5 +1104,6 @@ async def fetch_company_jobs(
     adapter = ADAPTERS.get(ats)
     if not adapter:
         _log(f"No adapter for ATS platform '{ats}' (company: {company})", "WARN")
+        _record_parse_failure(ats or "unknown", slug, "No adapter available")
         return []
     return await adapter.fetch(session, slug, company, rate_limiter=rate_limiter)

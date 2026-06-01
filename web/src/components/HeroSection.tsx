@@ -1,4 +1,4 @@
-import { Briefcase, Monitor, MonitorPlay, Code2 } from 'lucide-react';
+import { Briefcase, Monitor, Code2 } from 'lucide-react';
 
 export function HeroSection() {
     return (

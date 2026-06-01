@@ -149,7 +149,7 @@ export default function DashboardPage() {
                                 </div>
                                 <p className="text-xs text-text-secondary mt-3">
                                     {stats.appliedThisWeek >= weeklyGoal
-                                        ? "🎉 Goal reached! You're on fire this week."
+                                ? "🎉 Goal reached! You&apos;re on fire this week."
                                         : `${weeklyGoal - stats.appliedThisWeek} more to reach your weekly goal.`}
                                 </p>
                             </div>
@@ -158,7 +158,7 @@ export default function DashboardPage() {
                             <div className="bg-accent/5 rounded-xl border border-accent/20 p-6 flex flex-col justify-center animate-fade-in lg:col-span-2">
                                 <h3 className="font-semibold text-text-primary mb-2 text-lg">Keep up the momentum! 🚀</h3>
                                 <p className="text-text-secondary text-sm mb-4">
-                                    You're tracking {stats.total} jobs in your pipeline. Make sure to update statuses in your Kanban board when you hear back from recruiters.
+                                    You&apos;re tracking {stats.total} jobs in your pipeline. Make sure to update statuses in your Kanban board when you hear back from recruiters.
                                 </p>
                                 <div>
                                     <Link href="/tracker" className="text-sm font-medium text-accent hover:underline flex items-center gap-1">
