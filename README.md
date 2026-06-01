@@ -1,10 +1,23 @@
-# Architecture
-Autonomous multi-threaded job scraping system designed to scale 5,000+ top tech companies safely. Uses decoupled, lightweight micro-scrapers coordinated by an OS-level Task Scheduler, pushing data concurrently to an SQLite database (`jobclaw.db`) with WAL mode enabled.
+# JobClaw
+
+Autonomous multi-threaded job scraping system designed to scale 25,000+ top tech companies safely. Uses decoupled, lightweight micro-scrapers coordinated by an OS-level Task Scheduler, pushing data concurrently to an SQLite database (`jobclaw.db`) with WAL mode enabled.
+
+## Features
+
+- **Decoupled Architecture:** Built around a plugin pattern supporting GreenHouse, Lever, SmartRecruiters, Ashby, Workday, BambooHR, and direct API endpoints (e.g., Apple, Amazon, Meta, TikTok, etc.).
+- **Smart Data Layer:** Built-in deduplication mechanisms mapping `internal_hash` constraints in `SQLite` to prevent overlapping rows.
+- **Enterprise Stealth:** Leverages `curl_cffi` to mimic Chrome/Safari TLS fingerprints to bypass strict WAF constraints like CloudFlare or generic firewalls.
+- **AI Processing Layer:** Supports optional pipeline connections to build embeddings out of job descriptions, detect job matches from resumes, or auto-fetch job salary estimations via semantic matching.
+- **Discord Headless Broadcasting:** Polls the database to immediately relay newly uncovered jobs that surpass an internal "quality score" threshold matching certain constraints to your configured Discord Webhooks.
+- **FastAPI Backend:** Comes out of the box with a fully fledged, unauthenticated HTTP JSON API designed for frontend connectivity out-of-the-box (`http://localhost:8000`).
+- **Realtime Pipeline State:** A NextJS-powered frontend UI connects directly to JobClaw's internal states parsing active logs.
+- **Resiliency & Auto-Healing:** Implements `ScrapeTimer` monitoring and exponential back-off circuit breaking across its ATS adapter classes avoiding IP bans automatically.
 
 ## Micro-Scraper Architecture
 
 ```
 jobclaw/
+├── api/                             # FastAPI application
 ├── config/                          
 │   └── company_registry.json        # Central ATS targeting source of truth
 ├── data/
@@ -14,56 +27,65 @@ jobclaw/
 │   │   ├── init_db.py               # Main DB setup
 │   │   └── db_utils.py              # Common injection & deduplication utils
 │   ├── ingestion/
-│   │   ├── scrape_ats.py            # Micro-scraper: Greenhouse/Lever/Workday
-│   │   ├── scrape_rss.py            # Micro-scraper: RemoteOK/Wellfound/Aggregators
-│   │   ├── scrape_github.py         # Micro-scraper: Simplify/PittCSC/Markdown Repos
-│   │   └── scrape_openclaw.py       # Micro-scraper: LinkedIn/Indeed (Bot Bypass)
-│   ├── discord_bot.py               # Headless Broadcaster (runs as daemon)
-│   └── install_schedulers.ps1       # Registers all scrapers to OS Scheduler
+│   │   ├── ats_adapters.py          # Unified Interface returning `NormalizedJob`
+│   │   ├── parallel_ingestor.py     # Task orchestration handler using aiohttp
+│   │   ├── scrape_enterprise.py     # Micro-scraper: Apple/Microsoft/Meta (Bot Bypass)
+│   │   └── run_all_scrapers.py      # Entry-point for orchestrator execution
+│   ├── discord_push.py              # Headless Broadcaster (runs as daemon)
+│   └── ai/                          # AI Job embedding/matching logic
+└── web/                             # Next.js UI Application
 ```
 
 ### 1. Data Ingestion Lifecycle
-1. Unique scrapers wake up on independent schedules (e.g., ATS every 30 mins, RSS every 60 mins)
-2. They do not block each other nor do they conflict
-3. Each extracts, normalizes, applies role/time filters
-4. Each uses `INSERT OR IGNORE` to atomically add jobs with an `internal_hash` to the SQLite Database.
+1. Unique scrapers wake up on independent schedules triggered by GitHub Actions or OS-level Schedulers (ATS every 4 hours, Aggregators every hour).
+2. They do not block each other nor do they conflict; they process their tasks leveraging async event loops bounded by Semaphores enforcing max concurrency and host limitations.
+3. Each extracts, normalizes, applies role/time filters matching specific tech categories (AI/ML, SWE, Product, Data).
+4. Each uses `INSERT OR IGNORE` to atomically add jobs with an `internal_hash` to the SQLite/PostgreSQL Database tracking its individual status.
 
 ### 2. Discord Broadcasting Layer
-1. `discord_bot.py` is entirely separated from the ingestion loops
-2. It polls the database every 15 minutes checking for `status = 'unposted'`
-3. Jobs are flushed to Discord gracefully and marked as `posted` instantly
+1. `discord_push.py` is entirely separated from the ingestion loops.
+2. It polls the database every 15 minutes checking for `status = 'unposted'`.
+3. Jobs are flushed to Discord gracefully via JSON webhooks and marked as `posted` instantly.
 
 ---
 
 ## Execution Instructions
 
 ### Prerequisites
-- **OpenClaw**: `npm i -g @openclaw/cli` (Only needed for scrape_openclaw.py)
-- **Python 3.10+**: `pip install -r requirements.txt`
+- **Python 3.12+**: Built around the latest Python async capabilities (`pip install -r requirements.txt`)
 
 ### 1. Configure the Environment
 Create a `.env` file in the root directory:
 ```env
-DISCORD_BOT_TOKEN="your_token"
-DISCORD_CHANNEL_ID="channel_id"
-MINIMAX_API_KEY="your_minimax_key" # Required for OpenClaw Browser Bypass
+# Production PostgreSQL (Defaults to local SQLite WAL mode if omitted)
+DATABASE_URL="postgres://user:pass@host/db"
+
+# Discord Webhooks targeting specific categories
+DISCORD_WEBHOOK_SWE="https://discord.com/api/webhooks/..."
+DISCORD_WEBHOOK_AI="https://discord.com/api/webhooks/..."
 ```
 
-### 2. Initialize Database & Migrate Legacy Data
-```powershell
+### 2. Initialize Database
+```bash
 python scripts/database/init_db.py
 ```
 
 ### 3. Start the Background Scrapers (Production)
-Run the automated installation script as Administrator to link scripts to Windows Task Scheduler:
-```powershell
-.\scripts\install_schedulers.ps1
-```
-*(Or on Linux/MacOS, simply map the `scripts/ingestion/*.py` files to your CronTab)*
+Jobs can be executed ad-hoc based on execution tier types.
+```bash
+# Light payload - 1 minute runs covering RSS + Boards
+python scripts/ingestion/run_all_scrapers.py --tier fast
 
-### 4. Start the Headless Broadcaster
-In a background terminal, run:
-```powershell
-python scripts/discord_bot.py
+# Heavy payload - Full ATS shard extraction + Enterprise APIs
+python scripts/ingestion/run_all_scrapers.py --tier medium
 ```
-TODAY -- 2/23/2026
+
+### 4. Start the Application UI Layer
+In a background terminal, spin up the HTTP Server:
+```bash
+uvicorn api.main:app --reload --port 8000
+```
+Then spin up the Web Application:
+```bash
+cd web && npm install && npm run build
+```
