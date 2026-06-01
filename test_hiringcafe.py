@@ -1,18 +1,24 @@
-"""Test HiringCafe aggregator fetch."""
-
 import asyncio
 
-from scripts.ingestion.aggregator_adapters import HiringCafeAdapter
+import aiohttp
 
 
 async def main():
-    import aiohttp
-
     async with aiohttp.ClientSession() as session:
-        jobs = await HiringCafeAdapter.fetch(session)
-        print(f"Fetched {len(jobs)} jobs from HiringCafe.")
-        for j in jobs[:5]:
-            print(f"  {j.title} at {j.company}")
+        # Just manually hit the endpoint
+        payload = {
+            "query": "software engineer",
+            "location": "United States",
+            "limit": 50,
+        }
+        headers = {
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": "JobClaw/2.0",
+        }
+        async with session.post("https://hiring.cafe/api/search", json=payload, headers=headers) as resp:
+            print(f"Status: {resp.status}")
+            print(f"Body: {await resp.text()}")
 
 
 if __name__ == "__main__":
