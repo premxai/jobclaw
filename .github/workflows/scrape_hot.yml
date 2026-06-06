@@ -20,7 +20,7 @@ jobs:
   hot-scrape:
     name: Hot Scraper Run
     runs-on: ubuntu-latest
-    timeout-minutes: 6       # Setup ~90s + scraper gather capped at 90s + buffer
+    timeout-minutes: 15      # Setup + 192-target hot sweep; Railway owns production cadence
 
     steps:
       - uses: actions/checkout@v4
