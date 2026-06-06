@@ -70,7 +70,9 @@ def init_db():
         duration_seconds REAL DEFAULT 0,
         errors TEXT DEFAULT '',
         run_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        shard_index INTEGER DEFAULT 0
+        shard_index INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'success',
+        summary_json TEXT DEFAULT ''
     )
     """)
 
@@ -97,6 +99,10 @@ def init_db():
         total_jobs_found INTEGER DEFAULT 0,
         total_relevant_jobs_found INTEGER DEFAULT 0,
         avg_jobs_found REAL DEFAULT 0,
+        validated_metadata TEXT DEFAULT '',
+        last_failure_category TEXT DEFAULT '',
+        last_failure_at TEXT,
+        last_success_at TEXT,
         UNIQUE(ats_type, slug)
     )
     """)
@@ -160,6 +166,10 @@ def _migrate_schema(conn):
             ("total_jobs_found", "INTEGER DEFAULT 0"),
             ("total_relevant_jobs_found", "INTEGER DEFAULT 0"),
             ("avg_jobs_found", "REAL DEFAULT 0"),
+            ("validated_metadata", "TEXT DEFAULT ''"),
+            ("last_failure_category", "TEXT DEFAULT ''"),
+            ("last_failure_at", "TEXT"),
+            ("last_success_at", "TEXT"),
         ]:
             if col_name not in company_cols:
                 cursor.execute(f"ALTER TABLE companies ADD COLUMN {col_name} {col_type}")
@@ -169,6 +179,19 @@ def _migrate_schema(conn):
         conn.commit()
     except Exception:
         pass  # companies table may not exist yet (PostgreSQL path)
+
+    try:
+        cursor.execute("PRAGMA table_info(scraper_runs)")
+        run_cols = {row[1] for row in cursor.fetchall()}
+        for col_name, col_type in [
+            ("status", "TEXT DEFAULT 'success'"),
+            ("summary_json", "TEXT DEFAULT ''"),
+        ]:
+            if col_name not in run_cols:
+                cursor.execute(f"ALTER TABLE scraper_runs ADD COLUMN {col_name} {col_type}")
+        conn.commit()
+    except Exception:
+        pass  # scraper_runs table may not exist yet
 
 
 def migrate_old_data(conn):

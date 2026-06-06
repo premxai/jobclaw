@@ -247,7 +247,9 @@ def _ensure_postgres_schema(conn):
         duration_seconds REAL DEFAULT 0,
         errors TEXT DEFAULT '',
         run_at TEXT DEFAULT now()::text,
-        shard_index INTEGER DEFAULT 0
+        shard_index INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'success',
+        summary_json TEXT DEFAULT ''
     )
     """)
     cursor.execute("""
@@ -266,6 +268,10 @@ def _ensure_postgres_schema(conn):
         validation_checked_at TEXT,
         validation_failure_category TEXT DEFAULT '',
         validation_http_status INTEGER,
+        validated_metadata TEXT DEFAULT '',
+        last_failure_category TEXT DEFAULT '',
+        last_failure_at TEXT,
+        last_success_at TEXT,
         source_count INTEGER DEFAULT 1,
         priority_score REAL DEFAULT 0,
         next_scrape_at TEXT,
@@ -293,6 +299,10 @@ def _ensure_postgres_schema(conn):
         "ALTER TABLE companies ADD COLUMN IF NOT EXISTS validation_checked_at TEXT",
         "ALTER TABLE companies ADD COLUMN IF NOT EXISTS validation_failure_category TEXT DEFAULT ''",
         "ALTER TABLE companies ADD COLUMN IF NOT EXISTS validation_http_status INTEGER",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS validated_metadata TEXT DEFAULT ''",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS last_failure_category TEXT DEFAULT ''",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS last_failure_at TEXT",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS last_success_at TEXT",
         "ALTER TABLE companies ADD COLUMN IF NOT EXISTS source_count INTEGER DEFAULT 1",
         "ALTER TABLE companies ADD COLUMN IF NOT EXISTS priority_score REAL DEFAULT 0",
         "ALTER TABLE companies ADD COLUMN IF NOT EXISTS next_scrape_at TEXT",
@@ -304,6 +314,11 @@ def _ensure_postgres_schema(conn):
         cursor.execute(col_def)
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_next_scrape ON companies (is_dead, next_scrape_at)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_priority ON companies (priority_score DESC)")
+    for col_def in [
+        "ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'success'",
+        "ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS summary_json TEXT DEFAULT ''",
+    ]:
+        cursor.execute(col_def)
     conn.commit()
 
 
@@ -373,7 +388,9 @@ def _ensure_sqlite_schema(conn):
         duration_seconds REAL DEFAULT 0,
         errors TEXT DEFAULT '',
         run_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        shard_index INTEGER DEFAULT 0
+        shard_index INTEGER DEFAULT 0,
+        status TEXT DEFAULT 'success',
+        summary_json TEXT DEFAULT ''
     )
     """)
 
@@ -393,6 +410,10 @@ def _ensure_sqlite_schema(conn):
         validation_checked_at TEXT,
         validation_failure_category TEXT DEFAULT '',
         validation_http_status INTEGER,
+        validated_metadata TEXT DEFAULT '',
+        last_failure_category TEXT DEFAULT '',
+        last_failure_at TEXT,
+        last_success_at TEXT,
         source_count INTEGER DEFAULT 1,
         priority_score REAL DEFAULT 0,
         next_scrape_at TEXT,
@@ -412,6 +433,10 @@ def _ensure_sqlite_schema(conn):
         "ALTER TABLE companies ADD COLUMN validation_checked_at TEXT",
         "ALTER TABLE companies ADD COLUMN validation_failure_category TEXT DEFAULT ''",
         "ALTER TABLE companies ADD COLUMN validation_http_status INTEGER",
+        "ALTER TABLE companies ADD COLUMN validated_metadata TEXT DEFAULT ''",
+        "ALTER TABLE companies ADD COLUMN last_failure_category TEXT DEFAULT ''",
+        "ALTER TABLE companies ADD COLUMN last_failure_at TEXT",
+        "ALTER TABLE companies ADD COLUMN last_success_at TEXT",
         "ALTER TABLE companies ADD COLUMN source_count INTEGER DEFAULT 1",
         "ALTER TABLE companies ADD COLUMN priority_score REAL DEFAULT 0",
         "ALTER TABLE companies ADD COLUMN next_scrape_at TEXT",
@@ -436,6 +461,14 @@ def _ensure_sqlite_schema(conn):
     cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_companies_ats_slug ON companies (ats_type, slug)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_next_scrape ON companies (is_dead, next_scrape_at)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_priority ON companies (priority_score DESC)")
+    for col_def in [
+        "ALTER TABLE scraper_runs ADD COLUMN status TEXT DEFAULT 'success'",
+        "ALTER TABLE scraper_runs ADD COLUMN summary_json TEXT DEFAULT ''",
+    ]:
+        try:
+            cursor.execute(col_def)
+        except Exception:
+            pass
     conn.commit()
 
 
@@ -1151,6 +1184,7 @@ def update_company_last_scraped(
     job_count: int = 0,
     relevant_count: int = 0,
     failed: bool = False,
+    failure_category: str | None = None,
 ):
     """Update metadata for TTL backoff logic.
 
@@ -1205,7 +1239,8 @@ def update_company_last_scraped(
 
     last_job_found_at = now if job_found else company.get("last_job_found_at")
     failure_expr = "consecutive_failures + 1" if failed else "0"
-    dead_expr = "CASE WHEN consecutive_failures + 1 >= 10 THEN 1 ELSE is_dead END" if failed else "0"
+    failure_threshold = 2 if failure_category == "bad_target" else 10
+    dead_expr = f"CASE WHEN consecutive_failures + 1 >= {failure_threshold} THEN 1 ELSE is_dead END" if failed else "0"
 
     cursor.execute(
         f"""
@@ -1215,6 +1250,11 @@ def update_company_last_scraped(
             tier = {placeholder},
             consecutive_failures = {failure_expr},
             is_dead = {dead_expr},
+            validation_status = {placeholder},
+            validation_failure_category = {placeholder},
+            last_failure_category = {placeholder},
+            last_failure_at = {placeholder},
+            last_success_at = {placeholder},
             total_scrapes = {placeholder},
             total_jobs_found = {placeholder},
             total_relevant_jobs_found = {placeholder},
@@ -1227,6 +1267,11 @@ def update_company_last_scraped(
             now,
             last_job_found_at,
             tier,
+            "failed" if failed else "ok",
+            failure_category or "",
+            failure_category or "",
+            now if failed else company.get("last_failure_at"),
+            company.get("last_success_at") if failed else now,
             total_scrapes,
             total_jobs,
             total_relevant,
@@ -1239,10 +1284,78 @@ def update_company_last_scraped(
     conn.commit()
 
 
+def update_company_validated_metadata(conn, ats: str, slug: str, metadata: dict):
+    """Merge platform-specific validated metadata for a canonical company target."""
+    if not metadata:
+        return
+    cursor = conn.cursor()
+    placeholder = "%s" if is_postgres() else "?"
+    cursor.execute(
+        f"SELECT validated_metadata FROM companies WHERE ats_type = {placeholder} AND slug = {placeholder} LIMIT 1",
+        (ats, slug),
+    )
+    row = cursor.fetchone()
+    if not row:
+        return
+    existing = {}
+    raw = row[0] if row else ""
+    if raw:
+        try:
+            existing = json.loads(raw)
+        except Exception:
+            existing = {}
+    existing.update(metadata)
+    cursor.execute(
+        f"""
+        UPDATE companies
+        SET validated_metadata = {placeholder},
+            validation_status = 'ok',
+            validation_error = '',
+            validation_checked_at = {placeholder}
+        WHERE ats_type = {placeholder} AND slug = {placeholder}
+        """,
+        (json.dumps(existing, sort_keys=True), datetime.now(timezone.utc).isoformat(), ats, slug),
+    )
+    conn.commit()
+
+
+def clear_company_validated_metadata_key(conn, ats: str, slug: str, key: str):
+    """Remove one platform metadata key without changing validation status."""
+    cursor = conn.cursor()
+    placeholder = "%s" if is_postgres() else "?"
+    cursor.execute(
+        f"SELECT validated_metadata FROM companies WHERE ats_type = {placeholder} AND slug = {placeholder} LIMIT 1",
+        (ats, slug),
+    )
+    row = cursor.fetchone()
+    if not row:
+        return
+    existing = {}
+    raw = row[0] if row else ""
+    if raw:
+        try:
+            existing = json.loads(raw)
+        except Exception:
+            existing = {}
+    if key not in existing:
+        return
+    existing.pop(key, None)
+    cursor.execute(
+        f"""
+        UPDATE companies
+        SET validated_metadata = {placeholder},
+            validation_checked_at = {placeholder}
+        WHERE ats_type = {placeholder} AND slug = {placeholder}
+        """,
+        (json.dumps(existing, sort_keys=True), datetime.now(timezone.utc).isoformat(), ats, slug),
+    )
+    conn.commit()
+
+
 def mark_company_failure(conn, slug: str, permanent: bool = False):
     """
     Record a scrape failure for a company slug.
-    permanent=True (HTTP 404) -> marks is_dead=1 after 3 failures.
+    permanent=True (HTTP 404) -> marks is_dead=1 after 2 failures.
     permanent=False (timeout) -> marks is_dead=1 after 10 failures.
     Resets automatically on next successful scrape via update_company_last_scraped().
     """
@@ -1275,7 +1388,7 @@ def mark_company_failure(conn, slug: str, permanent: bool = False):
             """,
             (failure_status, failure_status, priority_score, next_scrape_at, slug),
         )
-        threshold = 3 if permanent else 10
+        threshold = 2 if permanent else 10
         cursor.execute(
             f"UPDATE companies SET is_dead = 1 WHERE slug = {placeholder} AND consecutive_failures >= {placeholder}",
             (slug, threshold),
@@ -1378,14 +1491,24 @@ def log_scraper_run(
     duration: float,
     errors: str = None,
     shard_index: int = 0,
+    status: str = "success",
+    summary_json: str | dict | None = None,
 ):
     """Log the performance metrics of a scraper run, including shard index."""
     cursor = conn.cursor()
     placeholder = "%s" if is_postgres() else "?"
+    if isinstance(summary_json, dict):
+        summary_json = json.dumps(summary_json, sort_keys=True)
     cursor.execute(
         f"""
-        INSERT INTO scraper_runs (scraper, companies_scraped, new_jobs, duration_seconds, errors, run_at, shard_index)
-        VALUES ({placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder})
+        INSERT INTO scraper_runs (
+            scraper, companies_scraped, new_jobs, duration_seconds, errors,
+            run_at, shard_index, status, summary_json
+        )
+        VALUES (
+            {placeholder}, {placeholder}, {placeholder}, {placeholder}, {placeholder},
+            {placeholder}, {placeholder}, {placeholder}, {placeholder}
+        )
     """,
         (
             script_name,
@@ -1395,6 +1518,8 @@ def log_scraper_run(
             errors or "",
             datetime.now(timezone.utc).isoformat(),
             shard_index,
+            status,
+            summary_json or "",
         ),
     )
     conn.commit()

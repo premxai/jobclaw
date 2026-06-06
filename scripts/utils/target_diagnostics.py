@@ -4,6 +4,7 @@ Helpers for registry validation and scrape failure classification."""
 from __future__ import annotations
 
 import re
+import json
 from urllib.parse import urlparse
 
 SUPPORTED_ATS = {
@@ -116,19 +117,23 @@ def classify_failure(
     if status_code in {404, 410, 422}:
         category = "bad_target"
     elif status_code == 429 or any(token in haystack for token in ("rate limit", "too many requests")):
-        category = "anti_bot"
+        category = "rate_limited"
     elif status_code == 403 or any(
         token in haystack for token in ("forbidden", "captcha", "blocked", "bot", "waf", "csrf", "challenge")
     ):
         category = "anti_bot"
     elif "timeout" in haystack:
         category = "timeout"
+    elif any(token in haystack for token in ("connection", "connect", "ssl", "dns", "network", "reset")):
+        category = "connection"
     elif any(
         token in haystack for token in ("json decode", "parse", "html response", "unexpected content", "malformed")
     ):
         category = "parse"
+    elif any(token in haystack for token in ("empty board", "no jobs", "empty response")):
+        category = "empty_board"
     elif status_code is not None and status_code >= 500:
-        category = "transient"
+        category = "connection"
     else:
         category = "unknown"
 
@@ -140,5 +145,33 @@ def classify_failure(
         "ats": ats,
         "slug": slug,
         "is_bad_target": category == "bad_target",
-        "is_anti_bot": category == "anti_bot",
+        "is_anti_bot": category in {"anti_bot", "rate_limited"},
     }
+
+
+def metadata_dict(company: dict) -> dict:
+    raw = company.get("validated_metadata") or ""
+    if isinstance(raw, dict):
+        return raw
+    if not raw:
+        return {}
+    try:
+        return json.loads(raw)
+    except Exception:
+        return {}
+
+
+def apply_cached_metadata(company: dict) -> tuple[str, bool]:
+    """Return the scrape slug, using validated platform metadata where available."""
+    ats = (company.get("ats") or "").lower()
+    slug = company.get("slug") or ""
+    if ats != "workday":
+        return slug, False
+    site = metadata_dict(company).get("workday_site")
+    if not site:
+        return slug, False
+    parts = slug.split(":")
+    if len(parts) != 3:
+        return slug, False
+    cached_slug = f"{parts[0]}:{parts[1]}:{site}"
+    return cached_slug, cached_slug != slug

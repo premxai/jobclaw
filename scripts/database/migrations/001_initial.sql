@@ -139,7 +139,9 @@ CREATE TABLE IF NOT EXISTS scraper_runs (
     duration_seconds  NUMERIC DEFAULT 0,
     errors            TEXT DEFAULT '',
     run_at            TIMESTAMPTZ DEFAULT NOW(),
-    shard_index       INTEGER DEFAULT 0
+    shard_index       INTEGER DEFAULT 0,
+    status            TEXT DEFAULT 'success',
+    summary_json      TEXT DEFAULT ''
 );
 
 CREATE INDEX IF NOT EXISTS idx_scraper_runs_run_at ON scraper_runs (run_at DESC);
@@ -168,8 +170,19 @@ CREATE TABLE IF NOT EXISTS companies (
     total_scrapes               INTEGER DEFAULT 0,
     total_jobs_found            INTEGER DEFAULT 0,
     total_relevant_jobs_found   INTEGER DEFAULT 0,
-    avg_jobs_found              REAL DEFAULT 0
+    avg_jobs_found              REAL DEFAULT 0,
+    validated_metadata          TEXT DEFAULT '',
+    last_failure_category       TEXT DEFAULT '',
+    last_failure_at             TEXT,
+    last_success_at             TEXT
 );
+
+ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'success';
+ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS summary_json TEXT DEFAULT '';
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS validated_metadata TEXT DEFAULT '';
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS last_failure_category TEXT DEFAULT '';
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS last_failure_at TEXT;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS last_success_at TEXT;
 
 ALTER TABLE companies DROP CONSTRAINT IF EXISTS companies_slug_key;
 DELETE FROM companies a

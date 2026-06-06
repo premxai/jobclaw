@@ -71,6 +71,8 @@ class ScraperRunResponse(BaseModel):
     new_jobs_found: int
     duration_s: float
     errors: str | None = None
+    status: str = "success"
+    summary_json: str = ""
 
 
 class HealthResponse(BaseModel):

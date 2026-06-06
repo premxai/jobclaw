@@ -28,6 +28,7 @@ Supported platforms:
 import hashlib
 import html
 import re
+from contextvars import ContextVar
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any
@@ -36,6 +37,23 @@ from scripts.utils.http_client import HAS_CURL_CFFI, NOT_MODIFIED, RateLimiter, 
 from scripts.utils.logger import _log
 from scripts.utils.target_diagnostics import classify_failure
 from scripts.utils.salary_parser import extract_experience, extract_salary, parse_salary_range
+
+_LAST_TARGET_METADATA: ContextVar[dict[str, object] | None] = ContextVar(
+    "jobclaw_last_target_metadata", default=None
+)
+
+
+def record_target_metadata(**metadata: object) -> dict[str, object]:
+    """Store platform-specific metadata discovered while scraping a target."""
+    _LAST_TARGET_METADATA.set(metadata)
+    return metadata
+
+
+def consume_target_metadata() -> dict[str, object] | None:
+    """Read and clear metadata discovered by the last adapter call in this task."""
+    metadata = _LAST_TARGET_METADATA.get()
+    _LAST_TARGET_METADATA.set(None)
+    return metadata
 
 
 async def _parse_json(resp) -> Any:
@@ -763,6 +781,7 @@ class WorkdayAdapter:
         if data is None:
             _record_parse_failure("workday", slug, "Workday CXS discovery failed")
             return []
+        record_target_metadata(workday_site=site)
 
         all_jobs = []
 

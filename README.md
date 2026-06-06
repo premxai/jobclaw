@@ -82,7 +82,9 @@ python scripts/ingestion/validate_targets.py --limit 500
 ### 4. Start the Background Scrapers (Production)
 Jobs can be executed ad-hoc based on execution tier types. ATS scrapers read due
 targets from Postgres `companies` using `next_scrape_at` and `priority_score`;
-`JOBCLAW_ATS_TARGET_LIMIT` caps how many targets one run claims.
+`JOBCLAW_ATS_TARGET_LIMIT` caps how many targets one run claims. Medium runs
+default to `JOBCLAW_MEDIUM_TARGET_LIMIT=800` and `JOBCLAW_WORKDAY_SHARDS=16`
+so Workday-heavy batches stay small and reliable.
 ```bash
 # Light payload - 1 minute runs covering RSS + Boards
 python scripts/ingestion/run_all_scrapers.py --tier fast
@@ -97,8 +99,9 @@ python scripts/worker/standalone_worker.py
 ```
 GitHub Actions scraper workflows are manual recovery tools only.
 
-Discord posting defaults to dry-run via `JOBCLAW_DISCORD_DRY_RUN=1`. Set it to
-`0` only after validating scrape quality and card previews.
+Discord posting defaults to dry-run via `JOBCLAW_DISCORD_DRY_RUN=1`, with
+`JOBCLAW_DISCORD_STRICT_QUALITY=1` rejecting generic aggregator/search/salary
+pages. Set dry-run to `0` only after validating scrape quality and card previews.
 
 ### 5. Start the Application UI Layer
 In a background terminal, spin up the HTTP Server:

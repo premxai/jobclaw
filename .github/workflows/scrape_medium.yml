@@ -1,4 +1,4 @@
-name: "⚡ Medium Tier — Workday/Rippling/SmartRecruiters (Hourly, 8-Shard)"
+name: "⚡ Medium Tier — Workday/Rippling/SmartRecruiters (Manual, 16-Shard)"
 
 # ┌────────────────────────────────────────────────────────────────────┐
 # │  MANUAL EMERGENCY TRIGGER ONLY — scheduling owned by Railway worker│
@@ -10,7 +10,7 @@ on:
   workflow_dispatch:         # Manual trigger for testing/recovery
     inputs:
       shard:
-        description: 'Shard override (0-3, or "auto")'
+        description: 'Shard override (0-15, or "auto")'
         default: 'auto'
 
 permissions:
@@ -36,9 +36,14 @@ jobs:
           pip install -r requirements.txt
           playwright install chromium
 
-      - name: Run medium-tier scrapers (Workday/Rippling/SmartRecruiters/BambooHR, 8-shard)
+      - name: Run medium-tier scrapers (Workday/Rippling/SmartRecruiters/BambooHR, 16-shard)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JOBCLAW_MEDIUM_TARGET_LIMIT: "800"
+          JOBCLAW_WORKDAY_SHARDS: "16"
+          JOBCLAW_DEGRADED_FAILS_WORKFLOW: "0"
+          JOBCLAW_DISCORD_DRY_RUN: "1"
+          JOBCLAW_DISCORD_STRICT_QUALITY: "1"
           DISCORD_WEBHOOK_AI: ${{ secrets.DISCORD_WEBHOOK_AI }}
           DISCORD_WEBHOOK_SWE: ${{ secrets.DISCORD_WEBHOOK_SWE }}
           DISCORD_WEBHOOK_DATA: ${{ secrets.DISCORD_WEBHOOK_DATA }}
@@ -46,11 +51,11 @@ jobs:
           DISCORD_WEBHOOK_PRODUCT: ${{ secrets.DISCORD_WEBHOOK_PRODUCT }}
           DISCORD_WEBHOOK_RESEARCH: ${{ secrets.DISCORD_WEBHOOK_RESEARCH }}
         run: |
-          # Shard rotation handled by orchestrator via DB (medium_ats_workday key, 8 shards)
+          # Shard rotation handled by orchestrator via DB (medium_ats_workday key, 16 shards)
           python scripts/ingestion/run_all_scrapers.py \
             --tier medium \
             --window 8 \
-            --total-shards 8
+            --total-shards 16
 
       - name: Commit dedup file
         if: always()

@@ -48,17 +48,22 @@ def get_next_shard(scraper_name: str, total_shards: int = 4) -> int:
 
 
 async def _run_with_timing(name: str, coro):
-    """Run a scraper coroutine and return (name, duration, error_or_None)."""
+    """Run a scraper coroutine and return (name, duration, error_or_None, status)."""
     start = time.time()
     try:
-        await coro
+        result = await coro
         dur = round(time.time() - start, 1)
+        status = result.get("status", "success") if isinstance(result, dict) else "success"
+        if status == "degraded":
+            reason = result.get("failures", {}) if isinstance(result, dict) else {}
+            _log(f"[orchestrator] DEGRADED {name} finished in {dur}s: {reason}", "WARN")
+            return (name, dur, "degraded", status)
         _log(f"[orchestrator] OK {name} finished in {dur}s")
-        return (name, dur, None)
+        return (name, dur, None, status)
     except Exception as e:
         dur = round(time.time() - start, 1)
         _log(f"[orchestrator] FAIL {name} after {dur}s: {e}", "ERROR")
-        return (name, dur, str(e))
+        return (name, dur, str(e), "failed")
 
 
 async def _with_timeout(coro, name: str, timeout_sec: int):
@@ -70,7 +75,7 @@ async def _with_timeout(coro, name: str, timeout_sec: int):
             f"SCRAPER_TIMEOUT: {name} exceeded {timeout_sec}s — partial results may be missing",
             "ERROR",
         )
-        return (name, timeout_sec, f"timeout after {timeout_sec}s")
+        return (name, timeout_sec, f"timeout after {timeout_sec}s", "degraded")
 
 
 async def run_all(
@@ -83,6 +88,7 @@ async def run_all(
     total_shards: int = 4,
     tier: str = None,
     platforms: set = None,
+    target_limit: int = None,
 ):
     """
     Launch all scrapers in parallel — ZERO-MISS coverage.
@@ -104,6 +110,15 @@ async def run_all(
     _log(f"[orchestrator] === SPEED SCRAPE STARTED at {ts} (window={window_hours}hr) ===")
 
     tasks = []
+    if target_limit is None:
+        if tier == "medium":
+            target_limit = int(os.getenv("JOBCLAW_MEDIUM_TARGET_LIMIT", "800"))
+        elif tier == "fast":
+            target_limit = int(os.getenv("JOBCLAW_FAST_TARGET_LIMIT", "3000"))
+        elif tier == "deep":
+            target_limit = int(os.getenv("JOBCLAW_DEEP_TARGET_LIMIT", "3000"))
+        else:
+            target_limit = int(os.getenv("JOBCLAW_ATS_TARGET_LIMIT", "3000"))
 
     # ── Always run: RSS (fastest) ───────────────────────────────────
     from scripts.ingestion.scrape_rss import run_rss_scraper
@@ -160,6 +175,7 @@ async def run_all(
                         total_shards=total_shards,
                         tier=company_tier,
                         platforms=platforms,
+                        target_limit=target_limit,
                     ),
                 ),
                 label,
@@ -224,6 +240,7 @@ async def run_all(
 
     # Fire all scrapers at once — each has its own session + rate limiter
     # Global 25-minute timeout so nothing can hang forever
+    global_timed_out = False
     try:
         results = await asyncio.wait_for(
             asyncio.gather(*tasks, return_exceptions=True),
@@ -231,6 +248,7 @@ async def run_all(
         )
     except TimeoutError:
         _log("[orchestrator] GLOBAL TIMEOUT after 25 minutes -- aborting remaining scrapers", "ERROR")
+        global_timed_out = True
         results = []
 
     # ── Summary ─────────────────────────────────────────────────────
@@ -239,18 +257,27 @@ async def run_all(
 
     successes = 0
     failures = 0
+    degraded = 0
     for r in results:
         if isinstance(r, Exception):
             _log(f"[orchestrator] Unhandled exception: {r}", "ERROR")
             failures += 1
         else:
-            name, dur, err = r
-            if err:
+            name, dur, err, status = r
+            if status == "degraded":
+                degraded += 1
+            elif err:
                 failures += 1
             else:
                 successes += 1
+    if global_timed_out:
+        degraded += 1
 
-    _log(f"[orchestrator] Results: {successes} succeeded, {failures} failed, total {total_dur}s")
+    run_status = "failed" if failures else "degraded" if degraded else "success"
+    _log(
+        f"[orchestrator] Results: {successes} succeeded, {degraded} degraded, {failures} failed, "
+        f"status={run_status}, total {total_dur}s"
+    )
 
     # ── AI Pipeline — dedup + salary backfill (deep tier only) ─────
     if run_brave:  # run_brave=True is the deep-tier flag
@@ -276,7 +303,9 @@ async def run_all(
 
     return {
         "duration_s": total_dur,
+        "status": run_status,
         "successes": successes,
+        "degraded": degraded,
         "failures": failures,
         "jobs_pushed": jobs_pushed,
     }
@@ -347,10 +376,11 @@ Legacy flags still work:
         shard_val = get_next_shard("fast_ats_ghla", _FAST_SHARDS)
         total_shards = _FAST_SHARDS
         db_tier = None
+        target_limit = int(os.getenv("JOBCLAW_FAST_TARGET_LIMIT", "3000"))
     elif tier == "medium":
-        # Group B: Workday (8-shard rotation) + Rippling + SmartRecruiters + BambooHR
-        # Workday 15,848 / 8 shards = ~2,000/run instead of ~4,000 with 4 shards
-        _MEDIUM_SHARDS = 8
+        # Group B: Workday-heavy platforms across a 16-shard rotation by default.
+        # Workday-heavy platforms are slow; keep each run small and reliable.
+        _MEDIUM_SHARDS = int(os.getenv("JOBCLAW_WORKDAY_SHARDS", "16"))
         skip_ats = False
         run_brave = False
         skip_github = False
@@ -360,6 +390,7 @@ Legacy flags still work:
         shard_val = get_next_shard("medium_ats_workday", _MEDIUM_SHARDS)
         total_shards = _MEDIUM_SHARDS  # must match shard key — do not use args.total_shards here
         db_tier = None
+        target_limit = int(os.getenv("JOBCLAW_MEDIUM_TARGET_LIMIT", "800"))
     elif tier == "deep":
         # Everything: ALL platforms + Workable + Brave Search — daily full sweep
         skip_ats = False
@@ -370,6 +401,7 @@ Legacy flags still work:
         platforms = None  # All platforms including workable
         shard_val = None  # No sharding — full sweep of all companies
         db_tier = None
+        target_limit = int(os.getenv("JOBCLAW_DEEP_TARGET_LIMIT", "3000"))
     else:
         # No tier specified — default to medium behavior
         skip_ats = False
@@ -380,6 +412,7 @@ Legacy flags still work:
         platforms = None
         shard_val = get_next_shard("custom_ats", total_shards)
         db_tier = "P2"
+        target_limit = int(os.getenv("JOBCLAW_ATS_TARGET_LIMIT", "3000"))
 
     # Override shard from CLI if explicitly set
     if args.shard is not None:
@@ -399,13 +432,14 @@ Legacy flags still work:
         f"Shard={shard_val if shard_val is not None else 'ALL'}/{total_shards if shard_val is not None else 'N/A'}, "
         f"ATS={'OFF' if skip_ats else 'ON'}, "
         f"Platforms={sorted(platforms) if platforms else 'ALL'}, "
+        f"TargetLimit={target_limit}, "
         f"Brave={'ON' if run_brave else 'OFF'}"
     )
 
     if sys.platform == "win32":
         asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-    asyncio.run(
+    result = asyncio.run(
         run_all(
             skip_ats=skip_ats,
             skip_github=skip_github,
@@ -416,8 +450,16 @@ Legacy flags still work:
             total_shards=total_shards,
             tier=db_tier,
             platforms=platforms,
+            target_limit=target_limit,
         )
     )
+    if result.get("status") == "degraded" and os.getenv("JOBCLAW_DEGRADED_FAILS_WORKFLOW", "0").lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }:
+        sys.exit(2)
 
 
 if __name__ == "__main__":

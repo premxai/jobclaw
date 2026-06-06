@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 from pathlib import Path
 
@@ -54,7 +55,7 @@ async def execute_fast():
 async def execute_medium():
     _log("[standalone-worker] Starting Medium Scraper...")
     try:
-        _MEDIUM_SHARDS = 8
+        _MEDIUM_SHARDS = int(os.getenv("JOBCLAW_WORKDAY_SHARDS", "16"))
         shard = get_next_shard("medium_ats_workday", _MEDIUM_SHARDS)
         await run_all(
             tier="medium",
@@ -66,6 +67,7 @@ async def execute_medium():
             platforms={"workday", "rippling", "smartrecruiters", "bamboohr"},
             shard=shard,
             total_shards=_MEDIUM_SHARDS,
+            target_limit=int(os.getenv("JOBCLAW_MEDIUM_TARGET_LIMIT", "800")),
         )
     except Exception as e:
         _log(f"[standalone-worker] Medium Scraper failed: {e}", "ERROR")

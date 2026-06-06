@@ -66,11 +66,13 @@ async def task_fast(ctx):
 
 
 async def task_medium(ctx):
-    """Medium tier: Workday + Rippling + SmartRecruiters, 8-shard rotation (every hour)."""
+    """Medium tier: Workday + Rippling + SmartRecruiters, 16-shard rotation (hourly)."""
+    import os
+
     from scripts.ingestion.run_all_scrapers import run_all, get_next_shard
 
     _log("[worker] Starting task_medium")
-    _MEDIUM_SHARDS = 8
+    _MEDIUM_SHARDS = int(os.getenv("JOBCLAW_WORKDAY_SHARDS", "16"))
     shard = get_next_shard("medium_ats_workday", _MEDIUM_SHARDS)
     await run_all(
         tier="medium",
@@ -82,6 +84,7 @@ async def task_medium(ctx):
         platforms={"workday", "rippling", "smartrecruiters", "bamboohr"},
         shard=shard,
         total_shards=_MEDIUM_SHARDS,
+        target_limit=int(os.getenv("JOBCLAW_MEDIUM_TARGET_LIMIT", "800")),
     )
 
 

@@ -189,17 +189,23 @@ async def deep_health_check():
         # Last scraper run
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT run_at, scraper, shard_index FROM scraper_runs ORDER BY run_at DESC LIMIT 1")
+            cursor.execute(
+                "SELECT run_at, scraper, shard_index, COALESCE(status, 'success') AS status "
+                "FROM scraper_runs ORDER BY run_at DESC LIMIT 1"
+            )
             last_run = cursor.fetchone()
             if isinstance(last_run, dict):
                 last_run_info = {
                     "run_at": last_run.get("run_at"),
                     "scraper": last_run.get("scraper"),
                     "shard_index": last_run.get("shard_index"),
+                    "status": last_run.get("status", "success"),
                 }
             else:
                 last_run_info = (
-                    {"run_at": last_run[0], "scraper": last_run[1], "shard_index": last_run[2]} if last_run else None
+                    {"run_at": last_run[0], "scraper": last_run[1], "shard_index": last_run[2], "status": last_run[3]}
+                    if last_run
+                    else None
                 )
         except Exception:
             last_run_info = None

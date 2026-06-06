@@ -229,7 +229,9 @@ def get_scraper_runs(limit: int = 20) -> list[dict]:
                 companies_scraped AS companies_fetched,
                 new_jobs AS new_jobs_found,
                 duration_seconds AS duration_s,
-                errors
+                errors,
+                COALESCE(status, 'success') AS status,
+                COALESCE(summary_json, '') AS summary_json
             FROM scraper_runs
             ORDER BY run_at DESC
             LIMIT {p}

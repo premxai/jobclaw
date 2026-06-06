@@ -18,6 +18,7 @@ v4 improvements over v3:
 """
 
 import asyncio
+import json
 import os
 import random
 import sys
@@ -37,9 +38,11 @@ from scripts.database.db_utils import (
     get_companies_by_tier,
     get_companies_for_scrape,
     get_due_companies_for_scrape,
+    clear_company_validated_metadata_key,
     update_company_last_scraped,
+    update_company_validated_metadata,
 )
-from scripts.ingestion.ats_adapters import NormalizedJob, fetch_company_jobs
+from scripts.ingestion.ats_adapters import NormalizedJob, consume_target_metadata, fetch_company_jobs
 from scripts.ingestion.parallel_ingestor import is_within_window
 from scripts.ingestion.role_filter import matches_target_role
 from scripts.ingestion.us_filter import is_us_location
@@ -49,7 +52,7 @@ from scripts.utils.http_client import RateLimiter, consume_last_failure, create_
 from scripts.utils.logger import _log
 from scripts.utils.response_cache import ResponseCache
 from scripts.utils.retry_queue import RetryQueue
-from scripts.utils.target_diagnostics import classify_failure
+from scripts.utils.target_diagnostics import apply_cached_metadata, classify_failure
 
 # ── Platforms to skip by default ───────────────────────────────────────
 # v4: Workday and Workable are now scrapable via curl_cffi TLS impersonation.
@@ -72,6 +75,7 @@ PLATFORM_WORKERS = {
     "gem": 3,  # Mid-market ATS — clean JSON API
 }
 DEFAULT_WORKERS = 3
+
 
 # ── Circuit Breaker ───────────────────────────────────────────────────
 # Lightweight per-platform circuit breaker. No external dependencies.
@@ -155,7 +159,8 @@ async def _worker(
 
         cname = company["company"]
         ats = company["ats"]
-        slug = company["slug"]
+        canonical_slug = company["slug"]
+        slug, used_cached_metadata = apply_cached_metadata(company)
 
         # Circuit breaker: skip if platform is in half-open cooldown
         if circuit_breaker and circuit_breaker.should_skip(ats):
@@ -169,7 +174,7 @@ async def _worker(
         if cached_data is not None:
             try:
                 jobs = [NormalizedJob(**j) for j in cached_data]
-                results.append((cname, ats, slug, jobs, None, None))
+                results.append((cname, ats, canonical_slug, jobs, None, None, None))
                 queue.task_done()
                 continue
             except Exception:
@@ -183,11 +188,17 @@ async def _worker(
                 timeout=per_company_timeout,
             )
             failure = consume_last_failure()
+            target_metadata = consume_target_metadata()
+            if used_cached_metadata:
+                target_metadata = dict(target_metadata or {})
+                target_metadata["_used_cached_metadata"] = True
             if jobs:
                 cache.put(ats, slug, [j.to_dict() for j in jobs])
-            results.append((cname, ats, slug, jobs, None, failure))
+            results.append((cname, ats, canonical_slug, jobs, None, failure, target_metadata))
             if circuit_breaker:
                 circuit_breaker.record_success(ats)
+            if used_cached_metadata:
+                _log(f"[{ats}/{canonical_slug}] Used cached metadata slug {slug}", "DEBUG")
             # Update company metadata with scrape results
             if company_metadata and jobs:
                 job_ids = [j.job_id for j in jobs] if jobs else []
@@ -198,7 +209,7 @@ async def _worker(
         except TimeoutError:
             failure = classify_failure(error="timeout", ats=ats, slug=slug)
             _log(f"[{ats}/{slug}] Hard timeout", "WARN")
-            results.append((cname, ats, slug, [], "timeout", failure))
+            results.append((cname, ats, canonical_slug, [], "timeout", failure, None))
             if circuit_breaker:
                 circuit_breaker.record_failure(ats)
             # Add to retry queue
@@ -210,7 +221,7 @@ async def _worker(
                 f"[{ats}/{slug}] Fetch failed: {failure['category']}:{failure.get('status_code') or 'n/a'}:{failure.get('error') or e}",
                 "ERROR",
             )
-            results.append((cname, ats, slug, [], str(e), failure))
+            results.append((cname, ats, canonical_slug, [], str(e), failure, None))
             if circuit_breaker:
                 circuit_breaker.record_failure(ats)
             # Add to retry queue
@@ -486,7 +497,9 @@ async def run_ats_scraper(
     company_job_ids = defaultdict(set)  # (ats, company) → {job_id, ...}
     raw_counts_by_target = defaultdict(int)  # (ats, slug) -> raw jobs fetched
 
-    for name, ats, slug, jobs, err, failure in all_results:
+    success_by_ats = defaultdict(int)
+    jobs_by_ats = defaultdict(int)
+    for name, ats, slug, jobs, err, failure, _target_metadata in all_results:
         target_key = (ats, slug)
         if err:
             errors.append(f"{name}: {err}")
@@ -499,6 +512,9 @@ async def run_ats_scraper(
             failure_counts[category] += 1
             failure_by_ats[ats][category] += 1
             failing_targets[f"{ats}/{slug}"] += 1
+        elif not err:
+            success_by_ats[ats] += 1
+        jobs_by_ats[ats] += len(jobs)
         for job in jobs:
             all_jobs.append(job)
             all_job_targets.append((job, target_key))
@@ -537,10 +553,15 @@ async def run_ats_scraper(
     new_jobs_inserted = 0
     try:
         # Feed scheduler metrics back into the canonical companies table.
-        for _name, ats, slug, _jobs, err, failure in all_results:
+        for _name, ats, slug, _jobs, err, failure, target_metadata in all_results:
             target_key = (ats, slug)
             raw_count = raw_counts_by_target[target_key]
             relevant_count = relevant_counts_by_target[target_key]
+            failure_category = str(failure.get("category", "")) if failure else None
+            used_cached_metadata = False
+            if target_metadata:
+                target_metadata = dict(target_metadata)
+                used_cached_metadata = bool(target_metadata.pop("_used_cached_metadata", False))
             update_company_last_scraped(
                 conn,
                 slug,
@@ -549,7 +570,13 @@ async def run_ats_scraper(
                 job_count=raw_count,
                 relevant_count=relevant_count,
                 failed=bool(err or failure) and raw_count == 0,
+                failure_category=failure_category,
             )
+            if used_cached_metadata and failure_category in {"bad_target", "parse", "empty_board"} and raw_count == 0:
+                clear_company_validated_metadata_key(conn, ats, slug, "workday_site")
+                continue
+            if target_metadata:
+                update_company_validated_metadata(conn, ats, slug, target_metadata)
 
         for job in time_filtered:
             j_dict = {
@@ -589,6 +616,36 @@ async def run_ats_scraper(
     duration = round(time.time() - start_time, 2)
 
     # Log system health metrics
+    attempted_by_ats = {ats: len(companies) for ats, companies in sorted(by_platform.items())}
+    failure_breakdown = {ats: dict(sorted(counts.items())) for ats, counts in sorted(failure_by_ats.items())}
+    platform_metrics = {
+        ats: {
+            "attempted": attempted_by_ats.get(ats, 0),
+            "succeeded": success_by_ats.get(ats, 0),
+            "failed": sum(failure_by_ats.get(ats, {}).values()),
+            "jobs_fetched": jobs_by_ats.get(ats, 0),
+            "timeouts": failure_by_ats.get(ats, {}).get("timeout", 0),
+        }
+        for ats in sorted(set(attempted_by_ats) | set(success_by_ats) | set(failure_by_ats) | set(jobs_by_ats))
+    }
+    bad_target_failures = failure_counts.get("bad_target", 0)
+    timeout_failures = failure_counts.get("timeout", 0)
+    critical_failures = timeout_failures + failure_counts.get("anti_bot", 0) + failure_counts.get("rate_limited", 0)
+    run_status = "degraded" if critical_failures or len(errors) >= 25 else "success"
+    summary = {
+        "status": run_status,
+        "platforms": platform_metrics,
+        "failures": dict(sorted(failure_counts.items())),
+        "bad_targets": bad_target_failures,
+        "targets_loaded": len(registry),
+        "targets_attempted": len(companies_to_scrape),
+        "jobs_fetched": len(all_jobs),
+        "candidates": len(time_filtered),
+    }
+    _log(f"ATS platform summary: {json.dumps(platform_metrics, sort_keys=True)}")
+    if run_status == "degraded":
+        _log(f"ATS run marked degraded: {json.dumps(summary, sort_keys=True)}", "WARN")
+
     err_str = "; ".join(errors[:20]) if errors else ""  # Cap error string length
     try:
         log_scraper_run(
@@ -599,6 +656,8 @@ async def run_ats_scraper(
             duration,
             err_str,
             shard_index=(shard if shard is not None else 0),
+            status=run_status,
+            summary_json=summary,
         )
     finally:
         conn.close()
@@ -607,8 +666,7 @@ async def run_ats_scraper(
     # Record run metrics for monitoring and alerts
     error_counts = dict(sorted(failure_counts.items()))
     if failure_by_ats:
-        breakdown = {ats: dict(sorted(counts.items())) for ats, counts in sorted(failure_by_ats.items())}
-        _log(f"ATS failure breakdown: {breakdown}")
+        _log(f"ATS failure breakdown: {failure_breakdown}")
     if failing_targets:
         top_failing = failing_targets.most_common(10)
         _log(f"Top failing targets: {top_failing}")
@@ -620,7 +678,7 @@ async def run_ats_scraper(
         new_jobs=new_jobs_inserted,
         errors=error_counts,
         retry_queue_size=retry_stats["queue_size"],
-        failure_breakdown={ats: dict(sorted(counts.items())) for ats, counts in sorted(failure_by_ats.items())},
+        failure_breakdown=failure_breakdown,
         top_failures=[{"target": target, "count": count} for target, count in failing_targets.most_common(10)],
     )
 
@@ -637,7 +695,7 @@ async def run_ats_scraper(
         f"Errors={len(errors)}, Duration={duration}s"
     )
 
-    return {"workday_companies": []}
+    return summary
 
 
 if __name__ == "__main__":

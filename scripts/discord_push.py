@@ -14,9 +14,12 @@ Setup:
 
 import json
 import os
+import re
 import sys
+from collections import Counter
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from urllib.parse import urlparse
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
@@ -70,6 +73,11 @@ def _discord_dry_run_enabled() -> bool:
     return raw not in {"0", "false", "no", "off"}
 
 
+def _strict_quality_enabled() -> bool:
+    raw = os.getenv("JOBCLAW_DISCORD_STRICT_QUALITY", "1").strip().lower()
+    return raw not in {"0", "false", "no", "off"}
+
+
 CATEGORY_EMOJIS = {
     "AI/ML": "🤖",
     "Data Science": "🔬",
@@ -117,6 +125,70 @@ ATS_LABELS = {
     "indeed": "Indeed",
     "glassdoor": "Glassdoor",
 }
+
+_TRUSTED_JOB_SOURCES = {
+    "greenhouse",
+    "lever",
+    "workday",
+    "ashby",
+    "smartrecruiters",
+    "rippling",
+    "workable",
+    "bamboohr",
+    "icims",
+    "github-swe-newgrad",
+    "github-ai-newgrad",
+    "github-internship",
+    "github-new-grad",
+    "ycombinator",
+    "wellfound",
+}
+_BLOCKED_URL_TOKENS = (
+    "/salary",
+    "/salaries",
+    "/jobs-in-",
+    "/career/",
+    "/browse",
+    "/search",
+    "q=",
+    "query=",
+    "keyword=",
+)
+_GENERIC_TITLE_RE = re.compile(
+    r"\b(\d[\d,]*\+?\s+.+jobs\s+hiring|salary in|jobs hiring now|job search|career salary)\b",
+    re.I,
+)
+
+
+def _passes_strict_job_quality(job: dict) -> tuple[bool, str]:
+    """Reject aggregator/search/salary pages before Discord posting."""
+    if not _strict_quality_enabled():
+        return True, ""
+    url = str(job.get("url") or "")
+    title = str(job.get("title") or "").strip()
+    company = str(job.get("company") or "").strip()
+    source = str(job.get("source_ats") or "").strip().lower()
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower()
+    haystack_url = f"{parsed.path}?{parsed.query}".lower()
+
+    if not parsed.scheme or not parsed.netloc:
+        return False, "invalid_url"
+    if not title or len(title) < 4:
+        return False, "missing_title"
+    if not company or company.lower() in {"unknown", "n/a", "none"}:
+        return False, "unknown_company"
+    if _GENERIC_TITLE_RE.search(title):
+        return False, "generic_title"
+    if any(token in haystack_url for token in _BLOCKED_URL_TOKENS):
+        return False, "non_job_url"
+    if source in {"indeed", "careerbuilder", "ziprecruiter"}:
+        return False, "blocked_aggregator"
+    if host.endswith(("indeed.com", "careerbuilder.com", "ziprecruiter.com")):
+        return False, "blocked_aggregator"
+    if source not in _TRUSTED_JOB_SOURCES and company.lower() == "unknown":
+        return False, "untrusted_unknown_company"
+    return True, ""
 
 
 def _is_fresh(job: dict, cutoff: datetime) -> bool:
@@ -478,6 +550,28 @@ async def push_new_jobs_to_discord():
 
         if not fresh_jobs:
             log("No jobs meet quality threshold — nothing to push.")
+            return 0
+
+        if _strict_quality_enabled():
+            before_strict = len(fresh_jobs)
+            strict_reasons: Counter[str] = Counter()
+            strict_jobs = []
+            for job in fresh_jobs:
+                ok, reason = _passes_strict_job_quality(job)
+                if ok:
+                    strict_jobs.append(job)
+                else:
+                    strict_reasons[reason] += 1
+            fresh_jobs = strict_jobs
+            dropped_strict = before_strict - len(fresh_jobs)
+            if dropped_strict:
+                log(
+                    "Strict quality filter: dropped "
+                    f"{dropped_strict} non-job/aggregator records. Reasons: {json.dumps(dict(strict_reasons))}."
+                )
+
+        if not fresh_jobs:
+            log("No jobs passed strict Discord quality filter — nothing to push.")
             return 0
 
         # Sort by quality score DESC — best jobs post first regardless of backlog size

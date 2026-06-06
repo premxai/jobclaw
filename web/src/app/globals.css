@@ -4,7 +4,7 @@
 
 /* ═══════════════════════════════════════════════════════════
    JobClaw — Warm Theme
-   Typography: Lexend | Theme: Warm Cream | Style: Clean
+   Typography: Geist/System | Theme: Warm Cream | Style: Clean
    ═══════════════════════════════════════════════════════════ */
 
 @layer base {
@@ -23,7 +23,7 @@
   body {
     background-color: #FAF7F2;
     color: #1A1A1A;
-    font-family: var(--font-lexend), 'Lexend', system-ui, sans-serif;
+    font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
     line-height: 1.6;
     min-height: 100vh;
   }
