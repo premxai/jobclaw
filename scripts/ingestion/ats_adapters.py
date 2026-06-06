@@ -82,9 +82,10 @@ class NormalizedJob:
 
     @property
     def dedup_key(self) -> str:
-        """Unique key for dedup: hash of title + company + location."""
-        raw = f"{self.title}|{self.company}|{self.location}".lower().strip()
-        return hashlib.sha256(raw.encode()).hexdigest()[:16]
+        """Unique key for dedup using deterministic UUID5."""
+        import uuid
+        raw = f"{self.source_ats}:{self.job_id}:{self.url}"
+        return str(uuid.uuid5(uuid.NAMESPACE_URL, raw))
 
 
 # ── Pre-compiled enrichment patterns ────────────────────────────────

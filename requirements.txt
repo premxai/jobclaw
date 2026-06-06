@@ -31,3 +31,4 @@ datasketch>=1.6.0            # MinHash LSH for semantic deduplication
 # Persistent worker infrastructure (Railway deployment)
 arq>=0.26.0                  # Async Redis task queue (asyncio-native, 0.26+ has async run_worker)
 apscheduler>=3.10.0          # In-process scheduler (replaces GitHub Actions crons)
+pytest>=8.0.0

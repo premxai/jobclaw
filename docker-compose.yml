@@ -7,6 +7,20 @@ version: "3.9"
 
 services:
 
+  # ── Web Frontend ──────────────────────────────────────────────────
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: jobclaw-web
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - api
+    restart: unless-stopped
+
   # ── API Server ────────────────────────────────────────────────────
   api:
     build:

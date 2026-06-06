@@ -372,12 +372,15 @@ async def close_pg_pool():
 # ═══════════════════════════════════════════════════════════════════════
 
 
+import uuid
+
 def _make_hash(job_dict: dict) -> str:
-    """Create the dedup hash from job dict."""
-    company_norm = job_dict.get("company", "Unknown").lower().strip()
+    """Create the dedup hash from job dict using deterministic UUID5."""
     source_ats = job_dict.get("source_ats", "unknown").lower().strip()
-    job_id_norm = str(job_dict.get("job_id", job_dict.get("url", ""))).lower().strip()
-    return f"{source_ats}::{company_norm}::{job_id_norm}"
+    job_id_norm = str(job_dict.get("job_id", "")).strip()
+    url = str(job_dict.get("url", "")).strip()
+    raw = f"{source_ats}:{job_id_norm}:{url}"
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, raw))
 
 
 def insert_job(conn, job_dict: dict) -> bool:

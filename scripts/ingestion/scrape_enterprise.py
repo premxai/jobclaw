@@ -882,7 +882,7 @@ def log(msg: str, level: str = "INFO"):
 
 
 async def _paginate_api(
-    api, session: aiohttp.ClientSession, name: str, rate_limiter: RateLimiter | None = None, max_pages: int = 25
+    api, session: aiohttp.ClientSession, name: str, rate_limiter: RateLimiter | None = None, max_pages: int = 500
 ) -> list[NormalizedJob]:
     """
     Paginate an enterprise API until it returns empty results.
@@ -1010,15 +1010,15 @@ async def run_enterprise_scraper():
 
         # Full pagination for all API companies (including Google via HTTP SSR)
         api_results = await asyncio.gather(
-            _paginate_api(apple_api, session, "Apple", rate_limiter=rate_limiter, max_pages=15),
-            _paginate_api(amazon_api, session, "Amazon", rate_limiter=rate_limiter, max_pages=20),
-            _paginate_api(microsoft_api, session, "Microsoft", rate_limiter=rate_limiter, max_pages=20),
-            _paginate_api(tiktok_api, session, "TikTok", rate_limiter=rate_limiter, max_pages=15),
-            _paginate_api(nvidia_api, session, "Nvidia", rate_limiter=rate_limiter, max_pages=20),
-            _paginate_api(uber_api, session, "Uber", rate_limiter=rate_limiter, max_pages=15),
-            _paginate_api(tesla_api, session, "Tesla", rate_limiter=rate_limiter, max_pages=1),
-            _paginate_api(cursor_api, session, "Cursor", rate_limiter=rate_limiter, max_pages=1),
-            google_api.fetch_all_jobs(max_pages=10, session=session, rate_limiter=rate_limiter),
+            _paginate_api(apple_api, session, "Apple", rate_limiter=rate_limiter),
+            _paginate_api(amazon_api, session, "Amazon", rate_limiter=rate_limiter),
+            _paginate_api(microsoft_api, session, "Microsoft", rate_limiter=rate_limiter),
+            _paginate_api(tiktok_api, session, "TikTok", rate_limiter=rate_limiter),
+            _paginate_api(nvidia_api, session, "Nvidia", rate_limiter=rate_limiter),
+            _paginate_api(uber_api, session, "Uber", rate_limiter=rate_limiter),
+            _paginate_api(tesla_api, session, "Tesla", rate_limiter=rate_limiter, max_pages=5),
+            _paginate_api(cursor_api, session, "Cursor", rate_limiter=rate_limiter, max_pages=2),
+            google_api.fetch_all_jobs(max_pages=100, session=session, rate_limiter=rate_limiter),
             meta_api.fetch_all_jobs(),
             return_exceptions=True,
         )
