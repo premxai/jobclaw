@@ -124,6 +124,7 @@ def is_postgres() -> bool:
 
 
 _schema_initialized = False
+_POSTGRES_SCHEMA_LOCK_ID = 839201742
 
 
 def get_connection():
@@ -141,7 +142,12 @@ def get_connection():
             conn = psycopg2.connect(DATABASE_URL)
             conn.autocommit = False
             if not _schema_initialized:
-                _ensure_postgres_schema(conn)
+                try:
+                    _ensure_postgres_schema(conn)
+                except Exception:
+                    conn.rollback()
+                    conn.close()
+                    raise
                 _schema_initialized = True
             return conn
         except ImportError as err:
@@ -163,6 +169,7 @@ def get_connection():
 def _ensure_postgres_schema(conn):
     """Create core tables on Postgres if they don't exist."""
     cursor = conn.cursor()
+    cursor.execute("SELECT pg_advisory_xact_lock(%s)", (_POSTGRES_SCHEMA_LOCK_ID,))
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS jobs (
         id SERIAL PRIMARY KEY,
@@ -209,6 +216,7 @@ def _ensure_postgres_schema(conn):
               AND column_name = 'is_active'
               AND data_type <> 'boolean'
         ) THEN
+            ALTER TABLE jobs ALTER COLUMN is_active DROP DEFAULT;
             ALTER TABLE jobs
             ALTER COLUMN is_active TYPE BOOLEAN
             USING CASE
