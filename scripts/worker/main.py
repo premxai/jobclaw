@@ -1,6 +1,8 @@
 """
-Worker entrypoint — now routes directly to the standalone worker
-to bypass Redis and prevent Upstash requests quota issues.
+Production worker entrypoint.
+
+Routes directly to the standalone Railway/Postgres scheduler. ARQ/Redis code is
+retained as a legacy fallback, but this is the canonical runtime path.
 """
 
 import asyncio

@@ -12,6 +12,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ```bash
 pip install -r requirements.txt
 python scripts/database/init_db.py   # Initialize DB schema
+python scripts/database/seed_companies.py  # Seed canonical companies table from registry
+python scripts/ingestion/validate_targets.py --limit 500  # Smoke-check slugs and quarantine bad targets
 ```
 
 ### Linting (Ruff — 120 char lines, Python 3.10 target)
@@ -52,7 +54,7 @@ docker compose up -d   # services: api (8000), postgres, redis, prometheus, graf
 ```bash
 cp .env.example .env   # then fill in secrets
 ```
-Key env vars: `DATABASE_URL` (Neon PostgreSQL URL; defaults to SQLite if unset), `DISCORD_WEBHOOK_AI/SWE/DATA/NEWGRAD/PRODUCT/RESEARCH` (per-category webhook URLs; at least one required), `BRAVE_SEARCH_API_KEY`, `JOBCLAW_API_KEY` (leave blank for dev).
+Key env vars: `DATABASE_URL` (Neon PostgreSQL URL; defaults to SQLite if unset), `DISCORD_WEBHOOK_AI/SWE/DATA/NEWGRAD/PRODUCT/RESEARCH` (per-category webhook URLs; at least one required for live posting), `JOBCLAW_DISCORD_DRY_RUN=1` (default safety mode), `BRAVE_SEARCH_API_KEY`, `JOBCLAW_API_KEY` (leave blank for dev).
 
 ### CI Validation (mirrors deploy.yml checks)
 ```bash
@@ -65,32 +67,35 @@ No formal test suite — `tests/` directory doesn't exist. The 12 `test_*.py` fi
 
 ### Data Flow
 ```
-company_registry.json → ATS/RSS/Enterprise scrapers
+company_registry.json → seed_companies.py → companies DB table → ATS/RSS/Enterprise scrapers
     → NormalizedJob dataclass
     → role_filter() + us_filter()
     → SHA256 dedup (internal_hash unique constraint)
     → SQLite INSERT (status='unposted')
     → discord_push.py (every 15 min via GitHub Actions)
-    → Discord channels by category
+    → Discord dry-run/live channels by category
     → status='posted'
 ```
 
-### Scraping Tiers & GitHub Actions Schedule
-| Workflow | Trigger | Sources |
-|---|---|---|
-| `scrape_hot.yml` | Every 5 min | `hot_companies.json` only |
-| `scrape_fast.yml` | Hourly | RSS feeds + GitHub boards |
-| `scrape_medium.yml` | Every 4 hrs | + Enterprise + 1 ATS shard |
-| `scrape_deep.yml` | Daily 11 PM | Everything + Brave + OpenClaw |
-| `discord_push.yml` | Every 15 min | Posts unposted jobs |
+### Scraping Tiers & Scheduling
+Production scheduling is owned by `scripts/worker/standalone_worker.py` on Railway/Postgres. GitHub Actions scraper workflows are manual recovery tools only.
 
-### Shard Rotation
-The 27,922-company registry is split into 4 shards. Each run processes 1 shard; `get_next_shard_from_db()` persists rotation state in the DB so ephemeral GitHub Actions runners maintain continuity. Do not break this — it guarantees 100% company coverage across runs.
+| Task | Trigger | Sources |
+|---|---|---|
+| `execute_hot` | Every 15 min | `hot_companies.json` only |
+| `execute_fast` | Hourly | RSS feeds + GitHub boards + due fast ATS targets |
+| `execute_medium` | Hourly +2 min | Enterprise + due slower ATS targets |
+| `execute_validate_targets` | Every 6 hours | Live slug smoke validation |
+| `execute_deep` | Daily 23:00 UTC | Everything + Brave + AI pipeline |
+| `execute_discord_push` | Every 15 min | Dry-run/live posts unposted jobs |
+
+### Due-Target Scheduling
+The raw registry is seeded into the canonical `companies` table and deduped by `(ats_type, slug)`. Runtime scrapers read non-quarantined DB targets ordered by `priority_score` where `next_scrape_at` is due. Shard arguments are retained for manual compatibility, but the Railway path is due-target scheduling.
 
 ### Anti-Bot Stack
 - **curl_cffi**: TLS fingerprint impersonation (Chrome/Safari/Edge) — bypasses Cloudflare/WAF
 - **UA rotation**: 50+ user agents per request
-- **Rate limiting**: Per-host bounded worker pools (Workday: 2 workers, Greenhouse: 5 workers)
+- **Rate limiting**: Per-host bounded worker pools (Workday/Workable/Rippling: 1 worker, Greenhouse/Lever/Ashby: 4 workers)
 - **Circuit breaker**: Skip platform after 15 consecutive failures
 - **TLS connection limit**: Capped at 15 concurrent to prevent exhaustion
 
@@ -130,14 +135,16 @@ Dual-mode structured logging via `scripts/utils/logger.py`:
 | `scripts/utils/retry_queue.py` | Failed job retry management across runs |
 | `scripts/ai/` | Embeddings, semantic dedup, salary estimation, job matching |
 | `scripts/discovery/` | Company career page discovery crawlers |
-| `config/company_registry.json` | 27,922 companies with ATS platform + slug |
+| `config/company_registry.json` | Raw registry input with ATS platform + slug |
+| `scripts/database/seed_companies.py` | Canonicalizes registry entries into `companies` |
+| `scripts/ingestion/validate_targets.py` | Live slug smoke validation + quarantine |
 | `config/hot_companies.json` | Fast-track companies (scraped every 5 min) |
 | `api/main.py` | FastAPI server — REST endpoints + WebSocket |
 
 ## Adding a New ATS Scraper
 1. Add adapter to `scripts/ingestion/ats_adapters.py` returning list of `NormalizedJob`
 2. Register companies in `config/company_registry.json` with `"ats": "<platform>"`
-3. The orchestrator will pick them up automatically via shard rotation
+3. The orchestrator will pick them up automatically when their `next_scrape_at` is due
 
 ## Ruff Ignore Rules (pyproject.toml)
 - `E402`: Module-level imports after `sys.path.insert()` — intentional project root setup pattern

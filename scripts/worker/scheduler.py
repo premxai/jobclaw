@@ -1,4 +1,8 @@
 """
+LEGACY ARQ scheduler — retained for compatibility, not the canonical runtime.
+
+Production scheduling runs directly in scripts/worker/standalone_worker.py.
+
 APScheduler — in-process cron that enqueues ARQ tasks on a schedule.
 
 Runs inside the same Railway process as the ARQ worker. Replaces all

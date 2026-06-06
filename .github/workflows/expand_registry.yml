@@ -1,7 +1,9 @@
-name: "🔍 Registry Expander — Discover New Companies (Daily 10PM UTC)"
+name: "🔍 Registry Expander — Manual Input Refresh"
 
 # ┌────────────────────────────────────────────────────────────────────┐
-# │  Runs once daily at 10 PM UTC (1 hr before deep scrape)           │
+# │  MANUAL INPUT REFRESH — Railway/Postgres companies table is the   │
+# │  canonical production runtime source. Run this intentionally when │
+# │  you want to refresh config/company_registry.json inputs.          │
 # │  Auto-discovers new companies from:                               │
 # │    1. GitHub company lists (always runs)                          │
 # │    2. Brave Search API site: queries (if API key is set)          │
@@ -10,8 +12,6 @@ name: "🔍 Registry Expander — Discover New Companies (Daily 10PM UTC)"
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
-  schedule:
-    - cron: '0 22 * * *'   # 10 PM UTC — runs 1 hour BEFORE deep scrape (avoids git push race)
   workflow_dispatch:
 
 permissions:

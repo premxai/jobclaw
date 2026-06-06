@@ -1,7 +1,7 @@
-name: "🚀 Fast Tier — RSS + GitHub + Greenhouse/Lever/Ashby (Every Hour)"
+name: "🚀 Fast Tier — Manual Backup"
 
 # ┌────────────────────────────────────────────────────────────────────┐
-# │  FAST TIER — runs every hour                                       │
+# │  MANUAL EMERGENCY TRIGGER ONLY — scheduling owned by Railway worker│
 # │  Scrapers: RSS feeds + GitHub repos + Group A ATS (4-shard)       │
 # │  ATS Group A: Greenhouse + Lever + Ashby (~10,801 total)          │
 # │  4-shard DB rotation = ~2,700 companies/run, full coverage/4hr    │
@@ -9,8 +9,6 @@ name: "🚀 Fast Tier — RSS + GitHub + Greenhouse/Lever/Ashby (Every Hour)"
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
-  schedule:
-    - cron: '0 * * * *'      # Hourly at the top of the hour
   workflow_dispatch:         # Manual trigger for testing/recovery
 
 permissions:

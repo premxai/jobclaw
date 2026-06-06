@@ -63,6 +63,12 @@ _missing_webhooks = [k for k, v in _CATEGORY_WEBHOOKS.items() if not v]
 if len(_missing_webhooks) == len(_CATEGORY_WEBHOOKS):
     log("No DISCORD_WEBHOOK_* env vars set — Discord push will be skipped.", "WARN")
 
+
+def _discord_dry_run_enabled() -> bool:
+    """Default to dry-run during production hardening unless explicitly disabled."""
+    raw = os.getenv("JOBCLAW_DISCORD_DRY_RUN", os.getenv("DISCORD_DRY_RUN", "1")).strip().lower()
+    return raw not in {"0", "false", "no", "off"}
+
 CATEGORY_EMOJIS = {
     "AI/ML": "🤖",
     "Data Science": "🔬",
@@ -422,7 +428,11 @@ async def push_new_jobs_to_discord():
 
     from scripts.database.db_utils import purge_stale_unposted
 
-    if not _FALLBACK_WEBHOOK:
+    dry_run = _discord_dry_run_enabled()
+    if dry_run:
+        log("Discord dry-run enabled — cards will be built and logged, not posted or marked posted.", "WARN")
+
+    if not dry_run and not _FALLBACK_WEBHOOK:
         log("No DISCORD_WEBHOOK_* secrets configured — cannot push. Set at least one webhook.", "ERROR")
         return 0
 
@@ -476,6 +486,22 @@ async def push_new_jobs_to_discord():
         if len(fresh_jobs) > 200:
             log(f"Capping batch to 200 (of {len(fresh_jobs)}) — remainder posted next run.")
             fresh_jobs = fresh_jobs[:200]
+
+        if dry_run:
+            preview = []
+            for job in fresh_jobs[:200]:
+                embed = _build_job_embed(job)
+                preview.append(
+                    {
+                        "hash": job["internal_hash"],
+                        "category": _get_category(job),
+                        "quality_score": job.get("quality_score") or 0,
+                        "title": embed.get("title", ""),
+                        "company": job.get("company", ""),
+                    }
+                )
+            log(f"DRY_RUN: would post {len(preview)} Discord cards. Preview: {json.dumps(preview[:10])}")
+            return len(preview)
 
         sent_count = 0
         failed_count = 0

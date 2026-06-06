@@ -158,9 +158,10 @@ class SalaryEstimator:
     def train(self) -> int:
         """Load salary data from the database. Returns number of salary records used."""
         conn = get_connection()
+        active_expr = "TRUE" if is_postgres() else "1"
         try:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(f"""
                 SELECT title, location, salary_min, salary_max, salary_currency
                 FROM jobs
                 WHERE salary_min IS NOT NULL
@@ -168,7 +169,7 @@ class SalaryEstimator:
                 AND salary_max IS NOT NULL
                 AND salary_max > 10000
                 AND salary_currency = 'USD'
-                AND is_active = 1
+                AND is_active = {active_expr}
             """)
             cols = [desc[0] for desc in cursor.description]
             rows = [dict(zip(cols, r)) for r in cursor.fetchall()]
@@ -271,15 +272,16 @@ class SalaryEstimator:
 
         conn = get_connection()
         ph = "%s" if is_postgres() else "?"
+        active_expr = "TRUE" if is_postgres() else "1"
         updated = 0
 
         try:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(f"""
                 SELECT internal_hash, title, location
                 FROM jobs
                 WHERE (salary_min IS NULL OR salary_min = 0)
-                AND is_active = 1
+                AND is_active = {active_expr}
                 LIMIT 5000
             """)
             cols = [desc[0] for desc in cursor.description]
@@ -288,7 +290,7 @@ class SalaryEstimator:
             for row in rows:
                 estimate = self.predict(row["title"], row["location"] or "")
                 if estimate and estimate["confidence"] >= 0.5:
-                    conn.execute(
+                    cursor.execute(
                         f"""
                         UPDATE jobs
                         SET salary_min = {ph}, salary_max = {ph}, salary_currency = {ph}

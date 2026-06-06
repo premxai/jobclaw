@@ -35,15 +35,17 @@ from scripts.database.db_utils import (
     log_scraper_run,
     mark_stale_jobs,
     get_companies_by_tier,
+    get_companies_for_scrape,
+    get_due_companies_for_scrape,
     update_company_last_scraped,
 )
 from scripts.ingestion.ats_adapters import NormalizedJob, fetch_company_jobs
-from scripts.ingestion.parallel_ingestor import is_within_window, load_registry
+from scripts.ingestion.parallel_ingestor import is_within_window
 from scripts.ingestion.role_filter import matches_target_role
 from scripts.ingestion.us_filter import is_us_location
 from scripts.utils.company_metadata import CompanyMetadata
 from scripts.utils.health_tracker import HealthTracker
-from scripts.utils.http_client import RateLimiter, consume_last_failure, create_session
+from scripts.utils.http_client import RateLimiter, consume_last_failure, create_session, set_response_cache
 from scripts.utils.logger import _log
 from scripts.utils.response_cache import ResponseCache
 from scripts.utils.retry_queue import RetryQueue
@@ -167,7 +169,7 @@ async def _worker(
         if cached_data is not None:
             try:
                 jobs = [NormalizedJob(**j) for j in cached_data]
-                results.append((cname, ats, slug, jobs, None))
+                results.append((cname, ats, slug, jobs, None, None))
                 queue.task_done()
                 continue
             except Exception:
@@ -232,6 +234,8 @@ async def run_ats_scraper(
     total_shards: int = 4,
     tier: str = None,
     platforms: set = None,
+    due_only: bool = True,
+    target_limit: int = None,
 ):
     """
     Micro-scraper exclusively for Direct ATS APIs (Greenhouse, Lever, etc.)
@@ -254,9 +258,11 @@ async def run_ats_scraper(
                -1 = auto-detect based on current 15-minute time slot.
                None = no sharding (process entire registry).
         total_shards: Number of shards to split registry into (default 4).
-        tier: Optional DB tier to fetch (P0, P1, P2). If provided, registry is ignored.
+        tier: Optional DB tier to fetch (P0, P1, P2). Kept for manual compatibility.
         platforms: Whitelist of ATS platform names to include (e.g. {"greenhouse", "lever"}).
                    None = all platforms. Used to bucket platforms by speed/tier.
+        due_only: Prefer targets whose next_scrape_at is due. Disable only for manual full sweeps.
+        target_limit: Maximum due targets to claim in one run. Defaults from JOBCLAW_ATS_TARGET_LIMIT.
     """
     start_time = time.time()
     _log(">>> Starting ATS Micro-Scraper v4 (curl_cffi TLS impersonation)")
@@ -264,33 +270,85 @@ async def run_ats_scraper(
     if skip_platforms is None:
         skip_platforms = DEFAULT_SKIP_PLATFORMS
 
-    if tier:
-        conn = get_connection()
-        try:
+    conn = get_connection()
+    try:
+        if target_limit is None:
+            target_limit = int(os.getenv("JOBCLAW_ATS_TARGET_LIMIT", "3000"))
+
+        if due_only:
+            registry = get_due_companies_for_scrape(
+                conn,
+                limit=target_limit,
+                platforms=platforms,
+                include_not_due=False,
+            )
+            _log(
+                f"Fetched {len(registry)} due canonical companies from DB "
+                f"(limit={target_limit}, platforms={sorted(platforms) if platforms else 'ALL'})."
+            )
+        elif tier and tier in {"P0", "P1", "P2", "P3"}:
             registry = get_companies_by_tier(conn, tier, shard, total_shards)
             _log(f"Fetched {len(registry)} companies for Tier {tier} (Shard {shard}/{total_shards}) from DB.")
+            shard = None  # DB tier helper already applied sharding
+        else:
+            registry = get_companies_for_scrape(conn, shard=shard, total_shards=total_shards, platforms=platforms)
+            _log(
+                f"Fetched {len(registry)} canonical companies from DB "
+                f"(Shard {shard}/{total_shards} if set, platforms={sorted(platforms) if platforms else 'ALL'})."
+            )
+    finally:
+        conn.close()
+
+    if not registry and due_only:
+        conn = get_connection()
+        try:
+            existing = get_due_companies_for_scrape(
+                conn,
+                limit=1,
+                platforms=platforms,
+                include_not_due=True,
+            )
         finally:
             conn.close()
-        # No further sharding needed if fetched from DB
-        shard = None
-        before_count = len(registry)
-        skipped = 0
-    else:
-        registry = load_registry()
-        if not registry:
-            _log("Empty registry — nothing to ingest.", "WARN")
+        if existing:
+            _log("No canonical companies are due for ATS ingestion right now.")
             return
 
-        # Filter out broken/rate-limited platforms
-        before_count = len(registry)
-        registry = [c for c in registry if c.get("ats", "").lower() not in skip_platforms]
-        skipped = before_count - len(registry)
-        if skipped:
-            _log(f"Skipping {skipped} companies on platforms: {', '.join(sorted(skip_platforms))}")
+    if not registry:
+        _log("Canonical companies table is empty — seeding from config/company_registry.json.", "WARN")
+        from scripts.database.seed_companies import seed_companies
+
+        seed_companies()
+        conn = get_connection()
+        try:
+            if due_only:
+                registry = get_due_companies_for_scrape(
+                    conn,
+                    limit=target_limit,
+                    platforms=platforms,
+                    include_not_due=False,
+                )
+            elif tier and tier in {"P0", "P1", "P2", "P3"}:
+                registry = get_companies_by_tier(conn, tier, shard, total_shards)
+            else:
+                registry = get_companies_for_scrape(conn, shard=shard, total_shards=total_shards, platforms=platforms)
+        finally:
+            conn.close()
+
+    if not registry:
+        _log("No due canonical companies available for ATS ingestion.", "WARN")
+        return
+
+    # Filter out broken/rate-limited platforms
+    before_count = len(registry)
+    registry = [c for c in registry if c.get("ats", "").lower() not in skip_platforms]
+    skipped = before_count - len(registry)
+    if skipped:
+        _log(f"Skipping {skipped} companies on platforms: {', '.join(sorted(skip_platforms))}")
 
     # ── Platform whitelist filter ───────────────────────────────────────
     # Allows tiers to target specific ATS types (e.g. fast tier = greenhouse/lever/ashby only)
-    if platforms:
+    if platforms and tier:
         before_platform_filter = len(registry)
         registry = [c for c in registry if c.get("ats", "").lower() in platforms]
         _log(f"Platform filter {sorted(platforms)}: {len(registry)} of {before_platform_filter} companies selected.")
@@ -298,7 +356,7 @@ async def run_ats_scraper(
     # ── Registry Sharding ──────────────────────────────────────────────
     # Split 10k+ companies into N rotating shards for shorter runs.
     # Auto-shard selects based on the current 15-min time slot.
-    if shard is not None:
+    if shard is not None and tier:
         if shard == -1:
             # Auto-detect shard from current time
             import datetime
@@ -318,6 +376,7 @@ async def run_ats_scraper(
     # Initialize shared infrastructure
     rate_limiter = RateLimiter()
     cache = ResponseCache()
+    set_response_cache(cache)
     breaker = CircuitBreaker(threshold=15)
     company_metadata = CompanyMetadata()
     retry_queue = RetryQueue()
@@ -371,38 +430,41 @@ async def run_ats_scraper(
     if proxy:
         _log(f"Using proxy: {proxy[:30]}...")
 
-    async with create_session(rate_limiter, proxy=proxy) as session:
-        # Build per-platform queues and launch bounded workers
-        # Shuffle companies within each platform for randomization (stealth)
-        worker_tasks = []
-        for platform, companies in by_platform.items():
-            # Shuffle to avoid predictable scraping patterns
-            random.shuffle(companies)
+    try:
+        async with create_session(rate_limiter, proxy=proxy) as session:
+            # Build per-platform queues and launch bounded workers
+            # Shuffle companies within each platform for randomization (stealth)
+            worker_tasks = []
+            for platform, companies in by_platform.items():
+                # Shuffle to avoid predictable scraping patterns
+                random.shuffle(companies)
 
-            q = asyncio.Queue()
-            for c in companies:
-                q.put_nowait(c)
+                q = asyncio.Queue()
+                for c in companies:
+                    q.put_nowait(c)
 
-            num_workers = PLATFORM_WORKERS.get(platform, DEFAULT_WORKERS)
-            for i in range(num_workers):
-                task = asyncio.create_task(
-                    _worker(
-                        f"{platform}-worker-{i}",
-                        q,
-                        session,
-                        rate_limiter,
-                        cache,
-                        all_results,
-                        errors,
-                        circuit_breaker=breaker,
-                        company_metadata=company_metadata,
-                        retry_queue=retry_queue,
+                num_workers = PLATFORM_WORKERS.get(platform, DEFAULT_WORKERS)
+                for i in range(num_workers):
+                    task = asyncio.create_task(
+                        _worker(
+                            f"{platform}-worker-{i}",
+                            q,
+                            session,
+                            rate_limiter,
+                            cache,
+                            all_results,
+                            errors,
+                            circuit_breaker=breaker,
+                            company_metadata=company_metadata,
+                            retry_queue=retry_queue,
+                        )
                     )
-                )
-                worker_tasks.append(task)
+                    worker_tasks.append(task)
 
-        # Wait for all workers to drain their queues
-        await asyncio.gather(*worker_tasks, return_exceptions=True)
+            # Wait for all workers to drain their queues
+            await asyncio.gather(*worker_tasks, return_exceptions=True)
+    finally:
+        set_response_cache(None)
 
     # Save company metadata after scraping
     company_metadata.save()
@@ -420,9 +482,12 @@ async def run_ats_scraper(
 
     # Flatten jobs + collect lifecycle data
     all_jobs = []
+    all_job_targets = []
     company_job_ids = defaultdict(set)  # (ats, company) → {job_id, ...}
+    raw_counts_by_target = defaultdict(int)  # (ats, slug) -> raw jobs fetched
 
     for name, ats, slug, jobs, err, failure in all_results:
+        target_key = (ats, slug)
         if err:
             errors.append(f"{name}: {err}")
         elif failure:
@@ -434,17 +499,9 @@ async def run_ats_scraper(
             failing_targets[f"{ats}/{slug}"] += 1
         for job in jobs:
             all_jobs.append(job)
+            all_job_targets.append((job, target_key))
+            raw_counts_by_target[target_key] += 1
             company_job_ids[(ats, name)].add(job.job_id)
-
-    # ── Database Tracking & Lifecycle ─────────────────────────────────
-    conn = get_connection()
-    try:
-        # Update last_scraped_at for all companies we tried
-        for c in registry:
-            found_any = len(company_job_ids.get((c["ats"], c["company"]), [])) > 0
-            update_company_last_scraped(conn, c["slug"], job_found=found_any)
-    finally:
-        conn.close()
 
     # Log circuit breaker health
     _log(f"Circuit breaker: {breaker.summary()}")
@@ -453,21 +510,43 @@ async def run_ats_scraper(
     _log(f"Fetched {len(all_jobs)} total raw jobs from ATS APIs.")
 
     # ── Filtering Pipeline ────────────────────────────────────────────
-    role_filtered = [j for j in all_jobs if matches_target_role(j.title)]
+    role_filtered_pairs = [(j, target) for j, target in all_job_targets if matches_target_role(j.title)]
+    role_filtered = [j for j, _target in role_filtered_pairs]
     _log(f"Role filter: {len(role_filtered)}/{len(all_jobs)} matched target tech roles.")
 
-    us_filtered = [j for j in role_filtered if is_us_location(j.location)]
+    us_filtered_pairs = [(j, target) for j, target in role_filtered_pairs if is_us_location(j.location)]
+    us_filtered = [j for j, _target in us_filtered_pairs]
     _log(f"US filter: {len(us_filtered)}/{len(role_filtered)} in United States.")
 
     # Always apply time filter — on GitHub Actions the DB is ephemeral,
     # so "first run" detection doesn't make sense for CI.
-    time_filtered = [j for j in us_filtered if is_within_window(j.date_posted, window_hours)]
+    time_filtered_pairs = [(j, target) for j, target in us_filtered_pairs if is_within_window(j.date_posted, window_hours)]
+    time_filtered = [j for j, _target in time_filtered_pairs]
     _log(f"{window_hours}hr filter: {len(time_filtered)}/{len(us_filtered)} within window.")
+
+    relevant_counts_by_target = defaultdict(int)
+    for _job, target_key in time_filtered_pairs:
+        relevant_counts_by_target[target_key] += 1
 
     # ── Database Insertion ────────────────────────────────────────────
     conn = get_connection()
     new_jobs_inserted = 0
     try:
+        # Feed scheduler metrics back into the canonical companies table.
+        for _name, ats, slug, _jobs, err, failure in all_results:
+            target_key = (ats, slug)
+            raw_count = raw_counts_by_target[target_key]
+            relevant_count = relevant_counts_by_target[target_key]
+            update_company_last_scraped(
+                conn,
+                slug,
+                job_found=raw_count > 0,
+                ats=ats,
+                job_count=raw_count,
+                relevant_count=relevant_count,
+                failed=bool(err or failure) and raw_count == 0,
+            )
+
         for job in time_filtered:
             j_dict = {
                 "title": job.title,

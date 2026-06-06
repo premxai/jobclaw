@@ -312,6 +312,12 @@ NOT_MODIFIED = _NotModified()
 _response_cache: ResponseCache | None = None
 
 
+def set_response_cache(cache: ResponseCache | None) -> None:
+    """Enable or disable process-wide HTTP conditional request metadata."""
+    global _response_cache
+    _response_cache = cache
+
+
 async def fetch_with_retry(
     session,  # aiohttp.ClientSession OR curl_cffi AsyncSession
     method: str,

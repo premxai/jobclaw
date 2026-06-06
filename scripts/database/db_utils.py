@@ -29,6 +29,15 @@ HOT_COMPANIES_PATH = Path(__file__).parent.parent.parent / "config" / "hot_compa
 
 _hot_slugs_cache = None
 
+TIER_INTERVALS = {
+    "P0": timedelta(minutes=15),
+    "P1": timedelta(hours=1),
+    "P2": timedelta(hours=24),
+    "P3": timedelta(days=7),
+}
+
+DEFAULT_TIER = "P2"
+
 
 def get_hot_slugs() -> set[str]:
     """Load and cache the list of hot company slugs."""
@@ -178,9 +187,9 @@ def _ensure_postgres_schema(conn):
         seniority_level TEXT,
         visa_sponsorship INTEGER,
         tech_stack TEXT,
-        is_active INTEGER DEFAULT 1,
+        is_active BOOLEAN DEFAULT TRUE,
         last_seen_at TEXT,
-        discord_posted INTEGER DEFAULT 0,
+        discord_posted BOOLEAN DEFAULT FALSE,
         embedding_json TEXT,
         quality_score REAL DEFAULT 0
     )
@@ -190,6 +199,26 @@ def _ensure_postgres_schema(conn):
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_pg_company ON jobs(company)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_pg_source_ats ON jobs(source_ats)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_pg_is_active ON jobs(is_active)")
+    cursor.execute("""
+    DO $$
+    BEGIN
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_name = 'jobs'
+              AND column_name = 'is_active'
+              AND data_type <> 'boolean'
+        ) THEN
+            ALTER TABLE jobs
+            ALTER COLUMN is_active TYPE BOOLEAN
+            USING CASE
+                WHEN is_active::text IN ('1', 'true', 't', 'yes') THEN TRUE
+                ELSE FALSE
+            END;
+            ALTER TABLE jobs ALTER COLUMN is_active SET DEFAULT TRUE;
+        END IF;
+    END $$;
+    """)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS runs (
         id SERIAL PRIMARY KEY,
@@ -216,22 +245,57 @@ def _ensure_postgres_schema(conn):
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS companies (
         id SERIAL PRIMARY KEY,
-        slug TEXT UNIQUE NOT NULL,
+        slug TEXT NOT NULL,
         name TEXT,
         ats_type TEXT,
         tier TEXT DEFAULT 'P2',
         last_scraped_at TEXT,
         last_job_found_at TEXT,
         consecutive_failures INTEGER DEFAULT 0,
-        is_dead INTEGER DEFAULT 0
+        is_dead INTEGER DEFAULT 0,
+        validation_status TEXT DEFAULT 'unknown',
+        validation_error TEXT DEFAULT '',
+        validation_checked_at TEXT,
+        validation_failure_category TEXT DEFAULT '',
+        validation_http_status INTEGER,
+        source_count INTEGER DEFAULT 1,
+        priority_score REAL DEFAULT 0,
+        next_scrape_at TEXT,
+        total_scrapes INTEGER DEFAULT 0,
+        total_jobs_found INTEGER DEFAULT 0,
+        total_relevant_jobs_found INTEGER DEFAULT 0,
+        avg_jobs_found REAL DEFAULT 0
     )
     """)
+    cursor.execute("ALTER TABLE companies DROP CONSTRAINT IF EXISTS companies_slug_key")
+    cursor.execute("""
+    DELETE FROM companies a
+    USING companies b
+    WHERE a.id > b.id
+      AND a.ats_type = b.ats_type
+      AND a.slug = b.slug
+    """)
+    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_companies_ats_slug ON companies (ats_type, slug)")
     # Migrate existing tables — ADD COLUMN IF NOT EXISTS is safe to run repeatedly
     for col_def in [
         "ALTER TABLE companies ADD COLUMN IF NOT EXISTS consecutive_failures INTEGER DEFAULT 0",
         "ALTER TABLE companies ADD COLUMN IF NOT EXISTS is_dead INTEGER DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS validation_status TEXT DEFAULT 'unknown'",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS validation_error TEXT DEFAULT ''",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS validation_checked_at TEXT",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS validation_failure_category TEXT DEFAULT ''",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS validation_http_status INTEGER",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS source_count INTEGER DEFAULT 1",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS priority_score REAL DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS next_scrape_at TEXT",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS total_scrapes INTEGER DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS total_jobs_found INTEGER DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS total_relevant_jobs_found INTEGER DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS avg_jobs_found REAL DEFAULT 0",
     ]:
         cursor.execute(col_def)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_next_scrape ON companies (is_dead, next_scrape_at)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_priority ON companies (priority_score DESC)")
     conn.commit()
 
 
@@ -308,25 +372,151 @@ def _ensure_sqlite_schema(conn):
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS companies (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        slug TEXT UNIQUE NOT NULL,
+        slug TEXT NOT NULL,
         name TEXT,
         ats_type TEXT,
         tier TEXT DEFAULT 'P2',
         last_scraped_at TEXT,
         last_job_found_at TEXT,
         consecutive_failures INTEGER DEFAULT 0,
-        is_dead INTEGER DEFAULT 0
+        is_dead INTEGER DEFAULT 0,
+        validation_status TEXT DEFAULT 'unknown',
+        validation_error TEXT DEFAULT '',
+        validation_checked_at TEXT,
+        validation_failure_category TEXT DEFAULT '',
+        validation_http_status INTEGER,
+        source_count INTEGER DEFAULT 1,
+        priority_score REAL DEFAULT 0,
+        next_scrape_at TEXT,
+        total_scrapes INTEGER DEFAULT 0,
+        total_jobs_found INTEGER DEFAULT 0,
+        total_relevant_jobs_found INTEGER DEFAULT 0,
+        avg_jobs_found REAL DEFAULT 0,
+        UNIQUE(ats_type, slug)
     )
     """)
+    _migrate_sqlite_companies_schema(conn)
     for col_def in [
         "ALTER TABLE companies ADD COLUMN consecutive_failures INTEGER DEFAULT 0",
         "ALTER TABLE companies ADD COLUMN is_dead INTEGER DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN validation_status TEXT DEFAULT 'unknown'",
+        "ALTER TABLE companies ADD COLUMN validation_error TEXT DEFAULT ''",
+        "ALTER TABLE companies ADD COLUMN validation_checked_at TEXT",
+        "ALTER TABLE companies ADD COLUMN validation_failure_category TEXT DEFAULT ''",
+        "ALTER TABLE companies ADD COLUMN validation_http_status INTEGER",
+        "ALTER TABLE companies ADD COLUMN source_count INTEGER DEFAULT 1",
+        "ALTER TABLE companies ADD COLUMN priority_score REAL DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN next_scrape_at TEXT",
+        "ALTER TABLE companies ADD COLUMN total_scrapes INTEGER DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN total_jobs_found INTEGER DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN total_relevant_jobs_found INTEGER DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN avg_jobs_found REAL DEFAULT 0",
     ]:
         try:
             cursor.execute(col_def)
         except Exception:
             pass  # Column already exists
+    cursor.execute("""
+        DELETE FROM companies
+        WHERE id NOT IN (
+            SELECT MIN(id)
+            FROM companies
+            WHERE ats_type IS NOT NULL AND slug IS NOT NULL
+            GROUP BY ats_type, slug
+        )
+    """)
+    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_companies_ats_slug ON companies (ats_type, slug)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_next_scrape ON companies (is_dead, next_scrape_at)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_priority ON companies (priority_score DESC)")
     conn.commit()
+
+
+def _migrate_sqlite_companies_schema(conn):
+    """Remove the old global slug UNIQUE constraint from SQLite companies tables."""
+    cursor = conn.cursor()
+    try:
+        row = cursor.execute("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'companies'").fetchone()
+        table_sql = row[0] if row else ""
+        if "slug TEXT UNIQUE NOT NULL" not in table_sql:
+            return
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS companies_new (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            slug TEXT NOT NULL,
+            name TEXT,
+            ats_type TEXT,
+            tier TEXT DEFAULT 'P2',
+            last_scraped_at TEXT,
+            last_job_found_at TEXT,
+            consecutive_failures INTEGER DEFAULT 0,
+            is_dead INTEGER DEFAULT 0,
+            validation_status TEXT DEFAULT 'unknown',
+            validation_error TEXT DEFAULT '',
+            validation_checked_at TEXT,
+            validation_failure_category TEXT DEFAULT '',
+            validation_http_status INTEGER,
+            source_count INTEGER DEFAULT 1,
+            priority_score REAL DEFAULT 0,
+            next_scrape_at TEXT,
+            total_scrapes INTEGER DEFAULT 0,
+            total_jobs_found INTEGER DEFAULT 0,
+            total_relevant_jobs_found INTEGER DEFAULT 0,
+            avg_jobs_found REAL DEFAULT 0,
+            UNIQUE(ats_type, slug)
+        )
+        """)
+
+        existing_cols = {r[1] for r in cursor.execute("PRAGMA table_info(companies)").fetchall()}
+        select_cols = [
+            "slug",
+            "name",
+            "ats_type",
+            "COALESCE(tier, 'P2') AS tier",
+            "last_scraped_at" if "last_scraped_at" in existing_cols else "NULL AS last_scraped_at",
+            "last_job_found_at" if "last_job_found_at" in existing_cols else "NULL AS last_job_found_at",
+            "COALESCE(consecutive_failures, 0) AS consecutive_failures"
+            if "consecutive_failures" in existing_cols
+            else "0 AS consecutive_failures",
+            "COALESCE(is_dead, 0) AS is_dead" if "is_dead" in existing_cols else "0 AS is_dead",
+            "COALESCE(validation_status, 'unknown') AS validation_status"
+            if "validation_status" in existing_cols
+            else "'unknown' AS validation_status",
+            "COALESCE(validation_error, '') AS validation_error"
+            if "validation_error" in existing_cols
+            else "'' AS validation_error",
+            "validation_checked_at" if "validation_checked_at" in existing_cols else "NULL AS validation_checked_at",
+            "COALESCE(validation_failure_category, '') AS validation_failure_category"
+            if "validation_failure_category" in existing_cols
+            else "'' AS validation_failure_category",
+            "validation_http_status" if "validation_http_status" in existing_cols else "NULL AS validation_http_status",
+            "COALESCE(source_count, 1) AS source_count" if "source_count" in existing_cols else "1 AS source_count",
+            "COALESCE(priority_score, 0) AS priority_score" if "priority_score" in existing_cols else "0 AS priority_score",
+            "next_scrape_at" if "next_scrape_at" in existing_cols else "NULL AS next_scrape_at",
+            "COALESCE(total_scrapes, 0) AS total_scrapes" if "total_scrapes" in existing_cols else "0 AS total_scrapes",
+            "COALESCE(total_jobs_found, 0) AS total_jobs_found" if "total_jobs_found" in existing_cols else "0 AS total_jobs_found",
+            "COALESCE(total_relevant_jobs_found, 0) AS total_relevant_jobs_found"
+            if "total_relevant_jobs_found" in existing_cols
+            else "0 AS total_relevant_jobs_found",
+            "COALESCE(avg_jobs_found, 0) AS avg_jobs_found" if "avg_jobs_found" in existing_cols else "0 AS avg_jobs_found",
+        ]
+        cursor.execute(f"""
+            INSERT OR IGNORE INTO companies_new (
+                slug, name, ats_type, tier, last_scraped_at, last_job_found_at,
+                consecutive_failures, is_dead, validation_status, validation_error,
+                validation_checked_at, validation_failure_category, validation_http_status, source_count,
+                priority_score, next_scrape_at, total_scrapes, total_jobs_found,
+                total_relevant_jobs_found, avg_jobs_found
+            )
+            SELECT {", ".join(select_cols)}
+            FROM companies
+            WHERE slug IS NOT NULL AND ats_type IS NOT NULL
+        """)
+        cursor.execute("DROP TABLE companies")
+        cursor.execute("ALTER TABLE companies_new RENAME TO companies")
+        conn.commit()
+    except Exception:
+        conn.rollback()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -505,10 +695,10 @@ def _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
                 description, salary_min, salary_max, salary_currency,
                 experience_years, remote_ok, job_type, seniority_level,
                 visa_sponsorship, tech_stack, is_active, last_seen_at, quality_score
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'unposted', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, 1, %s, %s)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'unposted', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE, %s, %s)
             ON CONFLICT (internal_hash) DO UPDATE SET
                 last_seen_at = EXCLUDED.last_seen_at,
-                is_active = 1,
+                is_active = TRUE,
                 quality_score = EXCLUDED.quality_score,
                 description = COALESCE(NULLIF(jobs.description, ''), EXCLUDED.description),
                 salary_min = COALESCE(jobs.salary_min, EXCLUDED.salary_min),
@@ -578,8 +768,9 @@ def mark_stale_jobs(conn, source_ats: str, company: str, active_job_ids: set[str
 
     placeholder = "%s" if is_postgres() else "?"
 
+    active_expr = "TRUE" if is_postgres() else "1"
     cursor.execute(
-        f"SELECT internal_hash FROM jobs WHERE source_ats = {placeholder} AND LOWER(company) = {placeholder} AND is_active = 1",
+        f"SELECT internal_hash FROM jobs WHERE source_ats = {placeholder} AND LOWER(company) = {placeholder} AND is_active = {active_expr}",
         (ats_norm, company_norm),
     )
     all_hashes = {row[0] for row in cursor.fetchall()}
@@ -588,8 +779,9 @@ def mark_stale_jobs(conn, source_ats: str, company: str, active_job_ids: set[str
     if stale_hashes:
         qs = ",".join(placeholder for _ in stale_hashes)
         params = [now] + list(stale_hashes)
+        inactive_expr = "FALSE" if is_postgres() else "0"
         cursor.execute(
-            f"UPDATE jobs SET is_active = 0, last_seen_at = {placeholder} WHERE internal_hash IN ({qs})",
+            f"UPDATE jobs SET is_active = {inactive_expr}, last_seen_at = {placeholder} WHERE internal_hash IN ({qs})",
             params,
         )
         conn.commit()
@@ -604,7 +796,7 @@ def get_unposted_jobs(conn):
         cursor.execute(
             """SELECT * FROM jobs
                WHERE status = 'unposted'
-                 AND is_active = 1
+                 AND is_active = TRUE
                  AND first_seen::timestamptz >= NOW() - INTERVAL '72 hours'
                ORDER BY first_seen ASC
                LIMIT 500"""
@@ -627,7 +819,7 @@ def get_unposted_jobs(conn):
         cursor.execute(
             """SELECT * FROM jobs
                WHERE status = 'unposted'
-                 AND is_active = 1
+                   AND is_active = 1
                  AND (
                    (date_posted != '' AND date_posted >= datetime('now', '-72 hours'))
                    OR (date_posted = '' AND first_seen >= datetime('now', '-72 hours'))
@@ -749,8 +941,9 @@ def get_companies_by_tier(conn, tier: str, shard: int = None, total_shards: int 
     now = datetime.now(timezone.utc)
     thirty_days_ago = (now - timedelta(days=30)).isoformat()
 
-    # Base query
-    query = f"SELECT * FROM companies WHERE tier = {placeholder}"
+    # Base query. Runtime scrapers read from the canonical companies table
+    # and skip quarantined/dead targets.
+    query = f"SELECT * FROM companies WHERE tier = {placeholder} AND COALESCE(is_dead, 0) = 0"
     params = [tier]
 
     # TTL Backoff for non-P0 tiers
@@ -790,7 +983,156 @@ def get_companies_by_tier(conn, tier: str, shard: int = None, total_shards: int 
     return all_companies
 
 
-def update_company_last_scraped(conn, slug: str, job_found: bool = False):
+def get_companies_for_scrape(
+    conn,
+    shard: int = None,
+    total_shards: int = 4,
+    platforms: set[str] | None = None,
+) -> list[dict]:
+    """Fetch all non-quarantined companies for runtime scraping."""
+    cursor = conn.cursor()
+    placeholder = "%s" if is_postgres() else "?"
+
+    query = "SELECT * FROM companies WHERE COALESCE(is_dead, 0) = 0"
+    params = []
+    if platforms:
+        qs = ",".join(placeholder for _ in platforms)
+        query += f" AND LOWER(ats_type) IN ({qs})"
+        params.extend(sorted(p.lower() for p in platforms))
+
+    cursor.execute(query, params)
+    if is_postgres():
+        cols = [desc[0] for desc in cursor.description]
+        rows = cursor.fetchall()
+        all_companies = [dict(zip(cols, row)) for row in rows]
+    else:
+        rows = cursor.fetchall()
+        all_companies = [dict(r) if hasattr(r, "keys") else dict(zip([d[0] for d in cursor.description], r)) for r in rows]
+
+    for c in all_companies:
+        if "ats_type" in c and "ats" not in c:
+            c["ats"] = c["ats_type"]
+        if "name" in c and "company" not in c:
+            c["company"] = c["name"]
+
+    if shard is not None and all_companies:
+        if shard == -1:
+            shard = get_next_shard_from_db(conn, "ats_auto", total_shards)
+        all_companies.sort(key=lambda x: f"{x.get('ats', '')}:{x.get('slug', '')}")
+        chunk_size = len(all_companies) // total_shards
+        remainder = len(all_companies) % total_shards
+        start_idx = shard * chunk_size + min(shard, remainder)
+        end_idx = start_idx + chunk_size + (1 if shard < remainder else 0)
+        return all_companies[start_idx:end_idx]
+
+    return all_companies
+
+
+def _parse_dt(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except Exception:
+        return None
+
+
+def compute_company_priority(company: dict) -> float:
+    """Score runtime targets for due-target scheduling."""
+    tier = company.get("tier") or DEFAULT_TIER
+    score = {"P0": 100.0, "P1": 60.0, "P2": 20.0, "P3": 5.0}.get(tier, 20.0)
+
+    source_count = int(company.get("source_count") or 1)
+    total_jobs = int(company.get("total_jobs_found") or 0)
+    total_relevant = int(company.get("total_relevant_jobs_found") or 0)
+    failures = int(company.get("consecutive_failures") or 0)
+
+    score += min(source_count, 10) * 0.5
+    score += min(total_jobs, 100) * 0.2
+    score += min(total_relevant, 50) * 1.5
+    score -= failures * 8
+
+    last_job = _parse_dt(company.get("last_job_found_at"))
+    if last_job:
+        age_hours = max(0.0, (datetime.now(timezone.utc) - last_job).total_seconds() / 3600)
+        if age_hours < 24:
+            score += 25
+        elif age_hours < 168:
+            score += 10
+
+    return max(0.0, round(score, 2))
+
+
+def compute_next_scrape_at(company: dict, job_count: int = 0, relevant_count: int = 0, failed: bool = False) -> str:
+    """Calculate the next due time for a target."""
+    now = datetime.now(timezone.utc)
+    tier = company.get("tier") or DEFAULT_TIER
+    interval = TIER_INTERVALS.get(tier, TIER_INTERVALS[DEFAULT_TIER])
+
+    failures = int(company.get("consecutive_failures") or 0)
+    if failed:
+        interval = min(timedelta(days=7), interval * max(2, min(8, failures + 1)))
+    elif relevant_count > 0:
+        interval = min(interval, timedelta(hours=1))
+    elif job_count > 0:
+        interval = min(interval, timedelta(hours=4))
+    elif failures >= 5:
+        interval = min(timedelta(days=7), interval * 3)
+
+    return (now + interval).isoformat()
+
+
+def get_due_companies_for_scrape(
+    conn,
+    limit: int = 1000,
+    platforms: set[str] | None = None,
+    include_not_due: bool = False,
+) -> list[dict]:
+    """Fetch highest-priority canonical targets due for scraping."""
+    cursor = conn.cursor()
+    placeholder = "%s" if is_postgres() else "?"
+    now = datetime.now(timezone.utc).isoformat()
+
+    query = "SELECT * FROM companies WHERE COALESCE(is_dead, 0) = 0"
+    params = []
+    if platforms:
+        qs = ",".join(placeholder for _ in platforms)
+        query += f" AND LOWER(ats_type) IN ({qs})"
+        params.extend(sorted(p.lower() for p in platforms))
+    if not include_not_due:
+        query += f" AND (next_scrape_at IS NULL OR next_scrape_at <= {placeholder})"
+        params.append(now)
+
+    query += f" ORDER BY priority_score DESC, COALESCE(next_scrape_at, '') ASC, tier ASC, slug ASC LIMIT {placeholder}"
+    params.append(limit)
+    cursor.execute(query, params)
+
+    if is_postgres():
+        cols = [desc[0] for desc in cursor.description]
+        rows = [dict(zip(cols, row)) for row in cursor.fetchall()]
+    else:
+        rows = [dict(r) if hasattr(r, "keys") else dict(zip([d[0] for d in cursor.description], r)) for r in cursor.fetchall()]
+
+    for c in rows:
+        if "ats_type" in c and "ats" not in c:
+            c["ats"] = c["ats_type"]
+        if "name" in c and "company" not in c:
+            c["company"] = c["name"]
+    return rows
+
+
+def update_company_last_scraped(
+    conn,
+    slug: str,
+    job_found: bool = False,
+    ats: str | None = None,
+    job_count: int = 0,
+    relevant_count: int = 0,
+    failed: bool = False,
+):
     """Update metadata for TTL backoff logic.
 
     Dynamic Tier Promotion: If a P2 company posts a job, promote it to P1 for
@@ -799,19 +1141,82 @@ def update_company_last_scraped(conn, slug: str, job_found: bool = False):
     cursor = conn.cursor()
     now = datetime.now(timezone.utc).isoformat()
     placeholder = "%s" if is_postgres() else "?"
+    target_clause = f"slug = {placeholder}"
+    target_params = [slug]
+    if ats:
+        target_clause += f" AND ats_type = {placeholder}"
+        target_params.append(ats)
 
-    if job_found:
-        # Dynamic Promotion P2 -> P1
-        cursor.execute(
-            f"UPDATE companies SET last_scraped_at = {placeholder}, last_job_found_at = {placeholder}, tier = CASE WHEN tier = 'P2' THEN 'P1' ELSE tier END WHERE slug = {placeholder}",
-            (now, now, slug),
-        )
-        cursor.execute(
-            f"UPDATE companies SET consecutive_failures = 0, is_dead = 0 WHERE slug = {placeholder}",
-            (slug,),
-        )
+    cursor.execute(f"SELECT * FROM companies WHERE {target_clause} LIMIT 1", tuple(target_params))
+    row = cursor.fetchone()
+    if row is None:
+        return
+    if is_postgres():
+        cols = [desc[0] for desc in cursor.description]
+        company = dict(zip(cols, row))
     else:
-        cursor.execute(f"UPDATE companies SET last_scraped_at = {placeholder} WHERE slug = {placeholder}", (now, slug))
+        company = dict(row) if hasattr(row, "keys") else dict(zip([d[0] for d in cursor.description], row))
+
+    job_found = job_found or job_count > 0
+    previous_scrapes = int(company.get("total_scrapes") or 0)
+    previous_jobs = int(company.get("total_jobs_found") or 0)
+    total_scrapes = previous_scrapes + 1
+    total_jobs = previous_jobs + max(0, job_count)
+    total_relevant = int(company.get("total_relevant_jobs_found") or 0) + max(0, relevant_count)
+    avg_jobs = round(total_jobs / total_scrapes, 2) if total_scrapes else 0
+
+    tier = company.get("tier") or DEFAULT_TIER
+    if relevant_count > 0 and tier in {"P2", "P3"}:
+        tier = "P1"
+    elif job_count == 0 and previous_scrapes >= 10 and tier == "P2":
+        tier = "P3"
+
+    company.update(
+        {
+            "tier": tier,
+            "consecutive_failures": int(company.get("consecutive_failures") or 0) + (1 if failed else 0),
+            "total_scrapes": total_scrapes,
+            "total_jobs_found": total_jobs,
+            "total_relevant_jobs_found": total_relevant,
+            "avg_jobs_found": avg_jobs,
+        }
+    )
+    priority_score = compute_company_priority(company)
+    next_scrape_at = compute_next_scrape_at(company, job_count=job_count, relevant_count=relevant_count, failed=failed)
+
+    last_job_found_at = now if job_found else company.get("last_job_found_at")
+    failure_expr = "consecutive_failures + 1" if failed else "0"
+    dead_expr = "CASE WHEN consecutive_failures + 1 >= 10 THEN 1 ELSE is_dead END" if failed else "0"
+
+    cursor.execute(
+        f"""
+        UPDATE companies
+        SET last_scraped_at = {placeholder},
+            last_job_found_at = {placeholder},
+            tier = {placeholder},
+            consecutive_failures = {failure_expr},
+            is_dead = {dead_expr},
+            total_scrapes = {placeholder},
+            total_jobs_found = {placeholder},
+            total_relevant_jobs_found = {placeholder},
+            avg_jobs_found = {placeholder},
+            priority_score = {placeholder},
+            next_scrape_at = {placeholder}
+        WHERE {target_clause}
+        """,
+        (
+            now,
+            last_job_found_at,
+            tier,
+            total_scrapes,
+            total_jobs,
+            total_relevant,
+            avg_jobs,
+            priority_score,
+            next_scrape_at,
+            *target_params,
+        ),
+    )
     conn.commit()
 
 
@@ -825,9 +1230,31 @@ def mark_company_failure(conn, slug: str, permanent: bool = False):
     try:
         placeholder = "%s" if is_postgres() else "?"
         cursor = conn.cursor()
+        failure_status = "bad_target" if permanent else "failed"
+        cursor.execute(f"SELECT * FROM companies WHERE slug = {placeholder} LIMIT 1", (slug,))
+        row = cursor.fetchone()
+        if row:
+            if is_postgres():
+                cols = [desc[0] for desc in cursor.description]
+                company = dict(zip(cols, row))
+            else:
+                company = dict(row) if hasattr(row, "keys") else dict(zip([d[0] for d in cursor.description], row))
+        else:
+            company = {"tier": DEFAULT_TIER, "consecutive_failures": 0}
+        company["consecutive_failures"] = int(company.get("consecutive_failures") or 0) + 1
+        priority_score = compute_company_priority(company)
+        next_scrape_at = compute_next_scrape_at(company, failed=True)
         cursor.execute(
-            f"UPDATE companies SET consecutive_failures = consecutive_failures + 1 WHERE slug = {placeholder}",
-            (slug,),
+            f"""
+            UPDATE companies
+            SET consecutive_failures = consecutive_failures + 1,
+                validation_status = {placeholder},
+                validation_failure_category = {placeholder},
+                priority_score = {placeholder},
+                next_scrape_at = {placeholder}
+            WHERE slug = {placeholder}
+            """,
+            (failure_status, failure_status, priority_score, next_scrape_at, slug),
         )
         threshold = 3 if permanent else 10
         cursor.execute(
@@ -840,6 +1267,88 @@ def mark_company_failure(conn, slug: str, permanent: bool = False):
             conn.rollback()
         except Exception:
             pass
+
+
+def record_company_validation(conn, ats: str, slug: str, result: dict):
+    """Persist live target validation status and quarantine repeated bad targets."""
+    cursor = conn.cursor()
+    placeholder = "%s" if is_postgres() else "?"
+    now = datetime.now(timezone.utc).isoformat()
+
+    status = str(result.get("status") or "unknown")
+    category = str(result.get("category") or "")
+    error = str(result.get("error") or "")
+    http_status = result.get("status_code")
+    is_good = status == "ok"
+    is_bad_target = category == "bad_target" or status == "bad_target"
+    cursor.execute(
+        f"SELECT * FROM companies WHERE ats_type = {placeholder} AND slug = {placeholder} LIMIT 1",
+        (ats, slug),
+    )
+    row = cursor.fetchone()
+    if row:
+        if is_postgres():
+            cols = [desc[0] for desc in cursor.description]
+            company = dict(zip(cols, row))
+        else:
+            company = dict(row) if hasattr(row, "keys") else dict(zip([d[0] for d in cursor.description], row))
+    else:
+        company = {"tier": DEFAULT_TIER, "consecutive_failures": 0}
+
+    if is_good:
+        company["consecutive_failures"] = 0
+        company["is_dead"] = 0
+        priority_score = compute_company_priority(company)
+        cursor.execute(
+            f"""
+            UPDATE companies
+            SET validation_status = {placeholder},
+                validation_error = '',
+                validation_checked_at = {placeholder},
+                validation_failure_category = '',
+                validation_http_status = {placeholder},
+                consecutive_failures = 0,
+                is_dead = 0,
+                priority_score = {placeholder},
+                next_scrape_at = CASE
+                    WHEN next_scrape_at IS NULL OR next_scrape_at > {placeholder} THEN {placeholder}
+                    ELSE next_scrape_at
+                END
+            WHERE ats_type = {placeholder} AND slug = {placeholder}
+            """,
+            (status, now, http_status, priority_score, now, now, ats, slug),
+        )
+    else:
+        company["consecutive_failures"] = int(company.get("consecutive_failures") or 0) + 1
+        priority_score = compute_company_priority(company)
+        next_scrape_at = compute_next_scrape_at(company, failed=True)
+        cursor.execute(
+            f"""
+            UPDATE companies
+            SET validation_status = {placeholder},
+                validation_error = {placeholder},
+                validation_checked_at = {placeholder},
+                validation_failure_category = {placeholder},
+                validation_http_status = {placeholder},
+                consecutive_failures = consecutive_failures + 1,
+                priority_score = {placeholder},
+                next_scrape_at = {placeholder}
+            WHERE ats_type = {placeholder} AND slug = {placeholder}
+            """,
+            (status, error[:1000], now, category, http_status, priority_score, next_scrape_at, ats, slug),
+        )
+        threshold = 3 if is_bad_target else 10
+        cursor.execute(
+            f"""
+            UPDATE companies
+            SET is_dead = 1
+            WHERE ats_type = {placeholder}
+              AND slug = {placeholder}
+              AND consecutive_failures >= {placeholder}
+            """,
+            (ats, slug, threshold),
+        )
+    conn.commit()
 
 
 def log_scraper_run(

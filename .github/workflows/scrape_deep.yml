@@ -7,8 +7,6 @@ name: "🌊 Deep Tier — All 27,923 Companies (Daily 11PM UTC)"
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
-  schedule:
-    - cron: '0 23 * * *'     # Daily at 11 PM UTC
   workflow_dispatch:         # Manual trigger for testing/recovery
 
 permissions:

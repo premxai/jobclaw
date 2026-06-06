@@ -7,8 +7,6 @@ name: "📢 Discord Push — Post Unposted Jobs (Every 15min)"
 # └──────────────────────────────────────────────────────────────────────┘
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'   # Every 15 minutes
   workflow_dispatch:         # Manual trigger for testing/recovery
 
 permissions:

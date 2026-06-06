@@ -19,7 +19,7 @@ Autonomous multi-threaded job scraping system designed to scale 25,000+ top tech
 jobclaw/
 ├── api/                             # FastAPI application
 ├── config/                          
-│   └── company_registry.json        # Central ATS targeting source of truth
+│   └── company_registry.json        # Raw registry input for seeding/validation
 ├── data/
 │   └── jobclaw.db                   # SQLite WAL database for high-concurrency 
 ├── scripts/
@@ -68,19 +68,39 @@ DISCORD_WEBHOOK_AI="https://discord.com/api/webhooks/..."
 ### 2. Initialize Database
 ```bash
 python scripts/database/init_db.py
+python scripts/database/seed_companies.py
 ```
 
-### 3. Start the Background Scrapers (Production)
-Jobs can be executed ad-hoc based on execution tier types.
+### 3. Validate ATS Targets
+Smoke-validation records target health in the canonical `companies` table. Bad
+targets are quarantined (`is_dead = 1`) after repeated failures; raw registry
+entries are not deleted.
+```bash
+python scripts/ingestion/validate_targets.py --limit 500
+```
+
+### 4. Start the Background Scrapers (Production)
+Jobs can be executed ad-hoc based on execution tier types. ATS scrapers read due
+targets from Postgres `companies` using `next_scrape_at` and `priority_score`;
+`JOBCLAW_ATS_TARGET_LIMIT` caps how many targets one run claims.
 ```bash
 # Light payload - 1 minute runs covering RSS + Boards
 python scripts/ingestion/run_all_scrapers.py --tier fast
 
-# Heavy payload - Full ATS shard extraction + Enterprise APIs
+# Heavy payload - due slower ATS targets + Enterprise APIs
 python scripts/ingestion/run_all_scrapers.py --tier medium
 ```
 
-### 4. Start the Application UI Layer
+Production scheduling is owned by the Railway standalone worker:
+```bash
+python scripts/worker/standalone_worker.py
+```
+GitHub Actions scraper workflows are manual recovery tools only.
+
+Discord posting defaults to dry-run via `JOBCLAW_DISCORD_DRY_RUN=1`. Set it to
+`0` only after validating scrape quality and card previews.
+
+### 5. Start the Application UI Layer
 In a background terminal, spin up the HTTP Server:
 ```bash
 uvicorn api.main:app --reload --port 8000

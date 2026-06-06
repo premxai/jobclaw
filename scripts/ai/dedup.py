@@ -162,6 +162,7 @@ class JobDeduplicator:
         """
         conn = get_connection()
         ph = "%s" if is_postgres() else "?"
+        active_expr = "TRUE" if is_postgres() else "1"
 
         try:
             cursor = conn.cursor()
@@ -170,7 +171,7 @@ class JobDeduplicator:
                 SELECT internal_hash, title, company, source_ats,
                        description, location, salary_min
                 FROM jobs
-                WHERE is_active = 1
+                WHERE is_active = {active_expr}
                 ORDER BY first_seen DESC
                 LIMIT {ph}
             """,
@@ -320,6 +321,8 @@ class JobDeduplicator:
         merged = 0
 
         try:
+            cursor = conn.cursor()
+            inactive_expr = "FALSE" if is_postgres() else "0"
             for cluster in clusters:
                 # Sort by completeness: salary > description length
                 cluster.sort(key=lambda x: (x["has_salary"], x["description_len"]), reverse=True)
@@ -329,8 +332,8 @@ class JobDeduplicator:
                 duplicates = cluster[1:]
 
                 for dup in duplicates:
-                    conn.execute(
-                        f"UPDATE jobs SET is_active = 0, status = 'archived' WHERE internal_hash = {ph}",
+                    cursor.execute(
+                        f"UPDATE jobs SET is_active = {inactive_expr}, status = 'archived' WHERE internal_hash = {ph}",
                         (dup["internal_hash"],),
                     )
                     merged += 1

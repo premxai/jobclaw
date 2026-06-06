@@ -1,4 +1,6 @@
 """
+LEGACY JSON INGESTOR — not used by the production Railway/Postgres path.
+
 Parallel ATS Job Ingestor.
 
 Fetches jobs from all companies in the registry concurrently using asyncio + aiohttp.
@@ -11,6 +13,9 @@ Usage:
 
     # Standalone test
     python scripts/ingestion/parallel_ingestor.py
+
+Production scrapers use scripts/ingestion/scrape_ats.py with the canonical
+companies DB table. Keep this module for compatibility/debugging only.
 """
 
 import asyncio

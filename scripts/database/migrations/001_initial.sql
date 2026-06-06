@@ -50,6 +50,25 @@ CREATE TABLE IF NOT EXISTS jobs (
 -- Primary lookup
 CREATE INDEX IF NOT EXISTS idx_jobs_hash ON jobs (internal_hash);
 
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'jobs'
+          AND column_name = 'is_active'
+          AND data_type <> 'boolean'
+    ) THEN
+        ALTER TABLE jobs
+        ALTER COLUMN is_active TYPE BOOLEAN
+        USING CASE
+            WHEN is_active::text IN ('1', 'true', 't', 'yes') THEN TRUE
+            ELSE FALSE
+        END;
+        ALTER TABLE jobs ALTER COLUMN is_active SET DEFAULT TRUE;
+    END IF;
+END $$;
+
 -- Time-series queries (newest first)
 CREATE INDEX IF NOT EXISTS idx_jobs_first_seen ON jobs (first_seen DESC);
 CREATE INDEX IF NOT EXISTS idx_jobs_last_seen ON jobs (last_seen_at DESC);
@@ -109,6 +128,59 @@ CREATE TABLE IF NOT EXISTS runs (
 
 CREATE INDEX IF NOT EXISTS idx_runs_timestamp ON runs (timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_runs_script ON runs (script_name);
+
+-- ── Canonical Scraper Runs Table ───────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS scraper_runs (
+    id                SERIAL PRIMARY KEY,
+    scraper           TEXT NOT NULL,
+    companies_scraped INTEGER DEFAULT 0,
+    new_jobs          INTEGER DEFAULT 0,
+    duration_seconds  NUMERIC DEFAULT 0,
+    errors            TEXT DEFAULT '',
+    run_at            TIMESTAMPTZ DEFAULT NOW(),
+    shard_index       INTEGER DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_scraper_runs_run_at ON scraper_runs (run_at DESC);
+CREATE INDEX IF NOT EXISTS idx_scraper_runs_scraper ON scraper_runs (scraper);
+
+-- ── Canonical Companies Table ──────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS companies (
+    id                          SERIAL PRIMARY KEY,
+    slug                        TEXT NOT NULL,
+    name                        TEXT,
+    ats_type                    TEXT,
+    tier                        TEXT DEFAULT 'P2',
+    last_scraped_at             TEXT,
+    last_job_found_at           TEXT,
+    consecutive_failures        INTEGER DEFAULT 0,
+    is_dead                     INTEGER DEFAULT 0,
+    validation_status           TEXT DEFAULT 'unknown',
+    validation_error            TEXT DEFAULT '',
+    validation_checked_at       TEXT,
+    validation_failure_category TEXT DEFAULT '',
+    validation_http_status      INTEGER,
+    source_count                INTEGER DEFAULT 1,
+    priority_score              REAL DEFAULT 0,
+    next_scrape_at              TEXT,
+    total_scrapes               INTEGER DEFAULT 0,
+    total_jobs_found            INTEGER DEFAULT 0,
+    total_relevant_jobs_found   INTEGER DEFAULT 0,
+    avg_jobs_found              REAL DEFAULT 0
+);
+
+ALTER TABLE companies DROP CONSTRAINT IF EXISTS companies_slug_key;
+DELETE FROM companies a
+USING companies b
+WHERE a.id > b.id
+  AND a.ats_type = b.ats_type
+  AND a.slug = b.slug;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_companies_ats_slug ON companies (ats_type, slug);
+CREATE INDEX IF NOT EXISTS idx_companies_tier_alive ON companies (tier, is_dead);
+CREATE INDEX IF NOT EXISTS idx_companies_next_scrape ON companies (is_dead, next_scrape_at);
+CREATE INDEX IF NOT EXISTS idx_companies_priority ON companies (priority_score DESC);
 
 
 -- ── Applications Table (for future Kanban tracker) ──────────────────

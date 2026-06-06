@@ -24,9 +24,7 @@ def get_db():
         import psycopg2
         import psycopg2.extras
 
-        conn = psycopg2.connect(DATABASE_URL)
-        conn.cursor_factory = psycopg2.extras.RealDictCursor
-        return conn
+        return psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
 
     conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.row_factory = sqlite3.Row
@@ -110,7 +108,7 @@ def get_jobs(
             ORDER BY {order_clause}
             LIMIT {p} OFFSET {p}
         """
-        cursor.execute(query, extra_params + params + [per_page, offset])
+        cursor.execute(query, params + extra_params + [per_page, offset])
         rows = cursor.fetchall()
         return [_row_to_dict(r) for r in rows], total
     finally:
@@ -217,15 +215,27 @@ def get_stats() -> dict:
 
 
 def get_scraper_runs(limit: int = 20) -> list[dict]:
-    """Get recent scraper run logs."""
+    """Get recent scraper run logs from canonical scraper_runs table."""
     conn = get_db()
     p = _ph()
     try:
         cursor = conn.cursor()
-        if _is_pg():
-            cursor.execute(f"SELECT * FROM runs ORDER BY timestamp DESC LIMIT {p}", (limit,))
-        else:
-            cursor.execute(f"SELECT rowid as id, * FROM runs ORDER BY timestamp DESC LIMIT {p}", (limit,))
+        cursor.execute(
+            f"""
+            SELECT
+                id,
+                scraper AS script_name,
+                run_at AS timestamp,
+                companies_scraped AS companies_fetched,
+                new_jobs AS new_jobs_found,
+                duration_seconds AS duration_s,
+                errors
+            FROM scraper_runs
+            ORDER BY run_at DESC
+            LIMIT {p}
+            """,
+            (limit,),
+        )
         return [dict(r) for r in cursor.fetchall()]
     finally:
         conn.close()

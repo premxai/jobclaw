@@ -18,7 +18,7 @@ from pathlib import Path
 
 import numpy as np
 
-from scripts.database.db_utils import get_connection
+from scripts.database.db_utils import get_connection, is_postgres
 
 
 class ResumeMatcher:
@@ -53,13 +53,14 @@ class ResumeMatcher:
             raise ValueError("No resume loaded. Call load_resume() first.")
 
         conn = get_connection()
+        active_expr = "TRUE" if is_postgres() else "1"
         try:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(f"""
                 SELECT internal_hash, title, company, location, url,
                        salary_min, salary_max, keywords_matched, embedding_json
                 FROM jobs
-                WHERE embedding_json IS NOT NULL AND is_active = 1
+                WHERE embedding_json IS NOT NULL AND is_active = {active_expr}
             """)
             cols = [desc[0] for desc in cursor.description]
 

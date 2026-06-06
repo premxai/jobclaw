@@ -98,8 +98,34 @@ async def execute_discord_push():
         _log(f"[standalone-worker] Discord Push failed: {e}", "ERROR")
 
 
+async def execute_validate_targets():
+    _log("[standalone-worker] Starting target validation...")
+    try:
+        from scripts.ingestion.validate_targets import validate_targets
+
+        result = await validate_targets(limit=500, concurrency=6)
+        _log(f"[standalone-worker] Target validation complete: {result}")
+    except Exception as e:
+        _log(f"[standalone-worker] Target validation failed: {e}", "ERROR")
+
+
 async def main():
     _log("[standalone-worker] JobClaw Standalone Persistent Worker starting...")
+
+    try:
+        from scripts.database.db_utils import get_companies_for_scrape, get_connection
+        from scripts.database.seed_companies import seed_companies
+
+        conn = get_connection()
+        try:
+            has_companies = bool(get_companies_for_scrape(conn, shard=0, total_shards=1))
+        finally:
+            conn.close()
+        if not has_companies:
+            _log("[standalone-worker] Companies table empty — seeding canonical targets.")
+            seed_companies()
+    except Exception as e:
+        _log(f"[standalone-worker] Company seed check failed: {e}", "WARN")
 
     scheduler = AsyncIOScheduler(timezone="UTC")
 
@@ -139,7 +165,16 @@ async def main():
         replace_existing=True,
     )
 
-    # 5. Deep tier — daily at 23:00 UTC
+    # 5. Target validation — every 6 hours, offset away from scraper starts
+    scheduler.add_job(
+        execute_validate_targets,
+        CronTrigger(hour="*/6", minute=40),
+        id="validate_targets",
+        name="Target Validation (every 6 hours)",
+        replace_existing=True,
+    )
+
+    # 6. Deep tier — daily at 23:00 UTC
     scheduler.add_job(
         execute_deep,
         CronTrigger(hour=23, minute=0),

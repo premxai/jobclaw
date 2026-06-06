@@ -14,18 +14,22 @@ def check_database():
     try:
         conn = get_connection()
         backend = "PostgreSQL" if is_postgres() else "SQLite"
-        total = conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
-        active = conn.execute("SELECT COUNT(*) FROM jobs WHERE is_active=1").fetchone()[0]
-        sources = conn.execute(
-            "SELECT source_ats, COUNT(*) c FROM jobs GROUP BY source_ats ORDER BY c DESC LIMIT 15"
-        ).fetchall()
+        cursor = conn.cursor()
+        active_expr = "TRUE" if is_postgres() else "1"
+        cursor.execute("SELECT COUNT(*) FROM jobs")
+        total = cursor.fetchone()[0]
+        cursor.execute(f"SELECT COUNT(*) FROM jobs WHERE is_active = {active_expr}")
+        active = cursor.fetchone()[0]
+        cursor.execute("SELECT source_ats, COUNT(*) c FROM jobs GROUP BY source_ats ORDER BY c DESC LIMIT 15")
+        sources = cursor.fetchall()
 
         # Recent jobs — syntax differs per backend
         if is_postgres():
             recent_q = "SELECT COUNT(*) FROM jobs WHERE first_seen >= NOW() - INTERVAL '24 hours'"
         else:
             recent_q = "SELECT COUNT(*) FROM jobs WHERE first_seen >= datetime('now','-24 hours')"
-        recent = conn.execute(recent_q).fetchone()[0]
+        cursor.execute(recent_q)
+        recent = cursor.fetchone()[0]
         conn.close()
 
         print(f"Backend: {backend}")
@@ -50,7 +54,7 @@ def check_imports():
         ("Enterprise", "scripts.ingestion.scrape_enterprise", None),
         ("Discord", "scripts.discord_push", "push_new_jobs_to_discord"),
         ("DB Utils", "scripts.database.db_utils", "get_connection"),
-        ("Role Filter", "scripts.ingestion.role_filter", "passes_role_filter"),
+        ("Role Filter", "scripts.ingestion.role_filter", "is_target_role"),
     ]
     for name, mod, fn in checks:
         try:

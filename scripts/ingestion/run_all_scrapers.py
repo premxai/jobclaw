@@ -148,6 +148,7 @@ async def run_all(
 
         shard_label = f", shard={shard}/{total_shards}" if shard is not None else ""
         label = f"ATS Boards ({'filtered' if ats_skip else 'all'}{shard_label})"
+        company_tier = tier if tier in {"P0", "P1", "P2", "P3"} else None
         tasks.append(
             _with_timeout(
                 _run_with_timing(
@@ -157,7 +158,7 @@ async def run_all(
                         skip_platforms=ats_skip,
                         shard=shard,
                         total_shards=total_shards,
-                        tier=tier,
+                        tier=company_tier,
                         platforms=platforms,
                     ),
                 ),

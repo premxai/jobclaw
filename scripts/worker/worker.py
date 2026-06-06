@@ -1,4 +1,9 @@
 """
+LEGACY ARQ Worker — retained for compatibility, not the canonical runtime.
+
+The production Railway path currently uses scripts/worker/standalone_worker.py
+via scripts/worker/main.py to avoid Redis/Upstash quota issues.
+
 ARQ Worker — async task definitions for the Railway persistent worker.
 
 Each function here is an ARQ task. The worker picks tasks off the Redis

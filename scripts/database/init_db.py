@@ -60,18 +60,49 @@ def init_db():
     # Run schema migrations for existing databases
     _migrate_schema(conn)
 
-    # Create the run history table for monitoring health
+    # Create the canonical run history table for monitoring health
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS runs (
+    CREATE TABLE IF NOT EXISTS scraper_runs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        script_name TEXT NOT NULL,
-        timestamp TEXT NOT NULL,
-        companies_fetched INTEGER,
-        new_jobs_found INTEGER,
-        duration_s REAL,
-        errors TEXT
+        scraper TEXT NOT NULL,
+        companies_scraped INTEGER DEFAULT 0,
+        new_jobs INTEGER DEFAULT 0,
+        duration_seconds REAL DEFAULT 0,
+        errors TEXT DEFAULT '',
+        run_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        shard_index INTEGER DEFAULT 0
     )
     """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS companies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        slug TEXT NOT NULL,
+        name TEXT,
+        ats_type TEXT,
+        tier TEXT DEFAULT 'P2',
+        last_scraped_at TEXT,
+        last_job_found_at TEXT,
+        consecutive_failures INTEGER DEFAULT 0,
+        is_dead INTEGER DEFAULT 0,
+        validation_status TEXT DEFAULT 'unknown',
+        validation_error TEXT DEFAULT '',
+        validation_checked_at TEXT,
+        validation_failure_category TEXT DEFAULT '',
+        validation_http_status INTEGER,
+        source_count INTEGER DEFAULT 1,
+        priority_score REAL DEFAULT 0,
+        next_scrape_at TEXT,
+        total_scrapes INTEGER DEFAULT 0,
+        total_jobs_found INTEGER DEFAULT 0,
+        total_relevant_jobs_found INTEGER DEFAULT 0,
+        avg_jobs_found REAL DEFAULT 0,
+        UNIQUE(ats_type, slug)
+    )
+    """)
+    cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_companies_ats_slug ON companies (ats_type, slug)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_next_scrape ON companies (is_dead, next_scrape_at)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_priority ON companies (priority_score DESC)")
 
     conn.commit()
     logging.info(f"SQLite DB initialized at {DB_PATH} with WAL mode enabled.")
@@ -117,9 +148,24 @@ def _migrate_schema(conn):
         for col_name, col_type in [
             ("consecutive_failures", "INTEGER DEFAULT 0"),
             ("is_dead", "INTEGER DEFAULT 0"),
+            ("validation_status", "TEXT DEFAULT 'unknown'"),
+            ("validation_error", "TEXT DEFAULT ''"),
+            ("validation_checked_at", "TEXT"),
+            ("validation_failure_category", "TEXT DEFAULT ''"),
+            ("validation_http_status", "INTEGER"),
+            ("source_count", "INTEGER DEFAULT 1"),
+            ("priority_score", "REAL DEFAULT 0"),
+            ("next_scrape_at", "TEXT"),
+            ("total_scrapes", "INTEGER DEFAULT 0"),
+            ("total_jobs_found", "INTEGER DEFAULT 0"),
+            ("total_relevant_jobs_found", "INTEGER DEFAULT 0"),
+            ("avg_jobs_found", "REAL DEFAULT 0"),
         ]:
             if col_name not in company_cols:
                 cursor.execute(f"ALTER TABLE companies ADD COLUMN {col_name} {col_type}")
+        cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_companies_ats_slug ON companies (ats_type, slug)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_next_scrape ON companies (is_dead, next_scrape_at)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_priority ON companies (priority_score DESC)")
         conn.commit()
     except Exception:
         pass  # companies table may not exist yet (PostgreSQL path)

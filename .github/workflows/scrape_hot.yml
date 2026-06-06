@@ -7,8 +7,6 @@ name: "🔥 Hot Scraper — 192 Companies Every 5min"
 # └──────────────────────────────────────────────────────────────────────┘
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'   # Every 15 minutes (best balance of speed vs GitHub runner cost)
   workflow_dispatch:         # Manual trigger for testing/recovery
 
 permissions:

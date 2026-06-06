@@ -52,12 +52,20 @@ async def lifespan(app: FastAPI):
     # Validate DB exists
     from api.database import DB_PATH
 
-    if not DB_PATH.exists():
+    try:
+        from scripts.database.db_utils import get_connection
+
+        schema_conn = get_connection()
+        schema_conn.close()
+    except Exception:
+        pass
+
+    if not _is_pg() and not DB_PATH.exists():
         print(f"⚠️  Database not found at {DB_PATH}")
         print("   Run the scraper first: python scripts/ingestion/run_all_scrapers.py")
     else:
         conn = get_db()
-        total = conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
+        total = _scalar(conn, "SELECT COUNT(*) FROM jobs")
         conn.close()
         print(f"✅ Database connected: {total} jobs in JobClaw")
 
@@ -109,6 +117,18 @@ from api.auth import APIKeyMiddleware
 app.add_middleware(APIKeyMiddleware)
 
 
+def _scalar(conn, sql: str, params: tuple = ()):
+    """Execute a scalar query against SQLite or psycopg2 connections."""
+    cursor = conn.cursor()
+    cursor.execute(sql, params)
+    row = cursor.fetchone()
+    if row is None:
+        return None
+    if isinstance(row, dict):
+        return next(iter(row.values()))
+    return row[0]
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # STATIC DASHBOARD ROUTE
 # ═══════════════════════════════════════════════════════════════════════
@@ -140,7 +160,7 @@ async def health_check():
     """API health check with database status."""
     try:
         conn = get_db()
-        total = conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
+        total = _scalar(conn, "SELECT COUNT(*) FROM jobs")
         conn.close()
         return HealthResponse(status="ok", database="connected", total_jobs=total)
     except Exception as e:
@@ -155,22 +175,32 @@ async def deep_health_check():
     # 1. Database connectivity + stats
     try:
         conn = get_db()
-        total = conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
-        active = conn.execute("SELECT COUNT(*) FROM jobs WHERE is_active = 1").fetchone()[0]
-        unposted = conn.execute("SELECT COUNT(*) FROM jobs WHERE status = 'unposted'").fetchone()[0]
+        total = _scalar(conn, "SELECT COUNT(*) FROM jobs")
+        active_expr = "TRUE" if _is_pg() else "1"
+        active = _scalar(conn, f"SELECT COUNT(*) FROM jobs WHERE is_active = {active_expr}")
+        unposted = _scalar(conn, "SELECT COUNT(*) FROM jobs WHERE status = 'unposted'")
 
         if _is_pg():
             freshness_q = "SELECT COUNT(*) FROM jobs WHERE first_seen >= NOW() - INTERVAL '24 hours'"
         else:
             freshness_q = "SELECT COUNT(*) FROM jobs WHERE first_seen >= datetime('now', '-24 hours')"
-        recent = conn.execute(freshness_q).fetchone()[0]
+        recent = _scalar(conn, freshness_q)
 
         # Last scraper run
         try:
             cursor = conn.cursor()
-            cursor.execute("SELECT started_at, tier FROM scraper_runs ORDER BY started_at DESC LIMIT 1")
+            cursor.execute("SELECT run_at, scraper, shard_index FROM scraper_runs ORDER BY run_at DESC LIMIT 1")
             last_run = cursor.fetchone()
-            last_run_info = {"started_at": last_run[0], "tier": last_run[1]} if last_run else None
+            if isinstance(last_run, dict):
+                last_run_info = {
+                    "run_at": last_run.get("run_at"),
+                    "scraper": last_run.get("scraper"),
+                    "shard_index": last_run.get("shard_index"),
+                }
+            else:
+                last_run_info = (
+                    {"run_at": last_run[0], "scraper": last_run[1], "shard_index": last_run[2]} if last_run else None
+                )
         except Exception:
             last_run_info = None
 
@@ -316,9 +346,13 @@ async def match_jobs(
             if hot_only and r.get("slug") not in hot_slugs:
                 continue
             # Fetch full job record
-            row = conn.execute(
-                "SELECT * FROM jobs WHERE internal_hash = ? AND is_active = 1", (r["internal_hash"],)
-            ).fetchone()
+            p = _ph()
+            active_expr = "TRUE" if _is_pg() else "1"
+            cursor = conn.cursor()
+            cursor.execute(
+                f"SELECT * FROM jobs WHERE internal_hash = {p} AND is_active = {active_expr}", (r["internal_hash"],)
+            )
+            row = cursor.fetchone()
             if not row:
                 continue
             # Compute freshness
@@ -336,7 +370,7 @@ async def match_jobs(
             job_dict = (
                 dict(row)
                 if hasattr(row, "keys")
-                else dict(zip([d[0] for d in conn.execute("PRAGMA table_info(jobs)").fetchall()], row))
+                else dict(zip([d[0] for d in cursor.description], row))
             )
             job_dict["match_score"] = r["similarity"]
             job_dict["freshness_minutes"] = freshness_min
@@ -583,8 +617,9 @@ def _ensure_applications_table():
     """Create applications table if it doesn't exist (SQLite and PostgreSQL)."""
     conn = get_db()
     try:
+        cursor = conn.cursor()
         if _is_pg():
-            conn.execute("""
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS applications (
                     id SERIAL PRIMARY KEY,
                     job_hash TEXT,
@@ -599,7 +634,7 @@ def _ensure_applications_table():
                 )
             """)
         else:
-            conn.execute("""
+            cursor.execute("""
                 CREATE TABLE IF NOT EXISTS applications (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     job_hash TEXT,
@@ -806,13 +841,14 @@ async def prometheus_metrics():
     lines = []
     try:
         conn = get_db()
-        total = conn.execute("SELECT COUNT(*) FROM jobs").fetchone()[0]
-        active = conn.execute("SELECT COUNT(*) FROM jobs WHERE is_active = 1").fetchone()[0]
-        unposted = conn.execute("SELECT COUNT(*) FROM jobs WHERE status = 'unposted'").fetchone()[0]
+        total = _scalar(conn, "SELECT COUNT(*) FROM jobs")
+        active_expr = "TRUE" if _is_pg() else "1"
+        active = _scalar(conn, f"SELECT COUNT(*) FROM jobs WHERE is_active = {active_expr}")
+        unposted = _scalar(conn, "SELECT COUNT(*) FROM jobs WHERE status = 'unposted'")
 
         # Per-platform counts
         cursor = conn.cursor()
-        cursor.execute("SELECT source_ats, COUNT(*) FROM jobs WHERE is_active = 1 GROUP BY source_ats")
+        cursor.execute(f"SELECT source_ats, COUNT(*) FROM jobs WHERE is_active = {active_expr} GROUP BY source_ats")
         platform_counts = cursor.fetchall()
 
         conn.close()
@@ -831,7 +867,11 @@ async def prometheus_metrics():
 
         lines.append("# HELP jobclaw_jobs_by_platform Active jobs per ATS platform")
         lines.append("# TYPE jobclaw_jobs_by_platform gauge")
-        for platform, count in platform_counts:
+        for row in platform_counts:
+            if isinstance(row, dict):
+                platform, count = row.get("source_ats"), row.get("count")
+            else:
+                platform, count = row
             safe_name = (platform or "unknown").replace('"', '\\"')
             lines.append(f'jobclaw_jobs_by_platform{{platform="{safe_name}"}} {count}')
 

@@ -163,11 +163,13 @@ class JobEmbedder:
         """
         conn = get_connection()
         ph = "%s" if is_postgres() else "?"
+        active_expr = "TRUE" if is_postgres() else "1"
 
         try:
             # Ensure embedding column exists
             try:
-                conn.execute("ALTER TABLE jobs ADD COLUMN embedding_json TEXT")
+                cursor = conn.cursor()
+                cursor.execute("ALTER TABLE jobs ADD COLUMN embedding_json TEXT")
                 conn.commit()
             except Exception:
                 conn.rollback()  # Required for PG after failed ALTER
@@ -178,7 +180,7 @@ class JobEmbedder:
                 f"""
                 SELECT internal_hash, title, company, location, description, keywords_matched
                 FROM jobs
-                WHERE embedding_json IS NULL AND is_active = 1
+                WHERE embedding_json IS NULL AND is_active = {active_expr}
                 ORDER BY first_seen DESC
                 LIMIT {ph}
             """,
@@ -200,9 +202,12 @@ class JobEmbedder:
             embeddings = self.embedder.embed_batch(texts)
 
             # Store in DB
+            update_cursor = conn.cursor()
             for i, (hash_val, emb) in enumerate(zip(hashes, embeddings)):
                 emb_json = json.dumps(emb.tolist())
-                conn.execute(f"UPDATE jobs SET embedding_json = {ph} WHERE internal_hash = {ph}", (emb_json, hash_val))
+                update_cursor.execute(
+                    f"UPDATE jobs SET embedding_json = {ph} WHERE internal_hash = {ph}", (emb_json, hash_val)
+                )
                 if (i + 1) % 500 == 0:
                     conn.commit()
                     print(f"  Stored {i + 1}/{len(hashes)} embeddings...")
@@ -222,12 +227,13 @@ class JobEmbedder:
         query_vec = self.embed_text(query_text)
 
         conn = get_connection()
+        active_expr = "TRUE" if is_postgres() else "1"
         try:
             cursor = conn.cursor()
-            cursor.execute("""
+            cursor.execute(f"""
                 SELECT internal_hash, title, company, location, url, embedding_json
                 FROM jobs
-                WHERE embedding_json IS NOT NULL AND is_active = 1
+                WHERE embedding_json IS NOT NULL AND is_active = {active_expr}
                 LIMIT 5000
             """)
             cols = [desc[0] for desc in cursor.description]

@@ -51,6 +51,12 @@ _CATEGORY_WEBHOOKS = {
 
 # Fallback webhook definition
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK_URL", "") or next((v for v in _CATEGORY_WEBHOOKS.values() if v), "")
+DISCORD_DRY_RUN = os.getenv("JOBCLAW_DISCORD_DRY_RUN", os.getenv("DISCORD_DRY_RUN", "1")).strip().lower() not in {
+    "0",
+    "false",
+    "no",
+    "off",
+}
 
 # How old can a job be to still be considered "fresh" for hot-alerts
 # (jobs older than this from the DB's first_seen are already known)
@@ -126,6 +132,10 @@ async def _send_hot_discord_alert(job: dict, minutes_old: float):
     }
 
     payload = {"embeds": [embed]}
+
+    if DISCORD_DRY_RUN:
+        _log_hot(f"DRY_RUN: would send hot alert for {job['company']} — {job['title']}")
+        return
 
     try:
         import urllib.request

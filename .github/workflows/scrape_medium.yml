@@ -7,8 +7,6 @@ name: "⚡ Medium Tier — Workday/Rippling/SmartRecruiters (Hourly, 8-Shard)"
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
-  schedule:
-    - cron: '0 */4 * * *'    # Every 4 hours
   workflow_dispatch:         # Manual trigger for testing/recovery
     inputs:
       shard:
