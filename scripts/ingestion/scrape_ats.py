@@ -491,7 +491,9 @@ async def run_ats_scraper(
         if err:
             errors.append(f"{name}: {err}")
         elif failure:
-            errors.append(f"{name}: {failure.get('category')}:{failure.get('status_code') or 'n/a'}:{failure.get('error') or ''}")
+            errors.append(
+                f"{name}: {failure.get('category')}:{failure.get('status_code') or 'n/a'}:{failure.get('error') or ''}"
+            )
         if failure:
             category = str(failure.get("category", "unknown"))
             failure_counts[category] += 1
@@ -520,7 +522,9 @@ async def run_ats_scraper(
 
     # Always apply time filter — on GitHub Actions the DB is ephemeral,
     # so "first run" detection doesn't make sense for CI.
-    time_filtered_pairs = [(j, target) for j, target in us_filtered_pairs if is_within_window(j.date_posted, window_hours)]
+    time_filtered_pairs = [
+        (j, target) for j, target in us_filtered_pairs if is_within_window(j.date_posted, window_hours)
+    ]
     time_filtered = [j for j, _target in time_filtered_pairs]
     _log(f"{window_hours}hr filter: {len(time_filtered)}/{len(us_filtered)} within window.")
 

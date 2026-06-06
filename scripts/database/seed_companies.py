@@ -39,7 +39,9 @@ def load_registry() -> list[dict[str, str]]:
     if isinstance(data, dict):
         if isinstance(data.get("companies"), list):
             for c in data["companies"]:
-                append(c.get("company", "") or c.get("name", ""), c.get("ats", ""), c.get("slug", "") or c.get("url", ""))
+                append(
+                    c.get("company", "") or c.get("name", ""), c.get("ats", ""), c.get("slug", "") or c.get("url", "")
+                )
 
         for platform, companies in data.items():
             if platform == "companies" or not isinstance(companies, list):

@@ -117,11 +117,15 @@ def classify_failure(
         category = "bad_target"
     elif status_code == 429 or any(token in haystack for token in ("rate limit", "too many requests")):
         category = "anti_bot"
-    elif status_code == 403 or any(token in haystack for token in ("forbidden", "captcha", "blocked", "bot", "waf", "csrf", "challenge")):
+    elif status_code == 403 or any(
+        token in haystack for token in ("forbidden", "captcha", "blocked", "bot", "waf", "csrf", "challenge")
+    ):
         category = "anti_bot"
     elif "timeout" in haystack:
         category = "timeout"
-    elif any(token in haystack for token in ("json decode", "parse", "html response", "unexpected content", "malformed")):
+    elif any(
+        token in haystack for token in ("json decode", "parse", "html response", "unexpected content", "malformed")
+    ):
         category = "parse"
     elif status_code is not None and status_code >= 500:
         category = "transient"

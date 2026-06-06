@@ -51,23 +51,45 @@ async def _probe(session, limiter: RateLimiter, company: dict) -> dict:
         if ats == "greenhouse":
             url = f"https://boards-api.greenhouse.io/v1/boards/{slug}/jobs"
             resp = await fetch_with_retry(
-                session, "GET", url, rate_limiter=limiter, log_tag=f"validate/greenhouse/{slug}", params={"content": "false"}, max_retries=1
+                session,
+                "GET",
+                url,
+                rate_limiter=limiter,
+                log_tag=f"validate/greenhouse/{slug}",
+                params={"content": "false"},
+                max_retries=1,
             )
         elif ats == "lever":
             url = f"https://api.lever.co/v0/postings/{slug}"
-            resp = await fetch_with_retry(session, "GET", url, rate_limiter=limiter, log_tag=f"validate/lever/{slug}", max_retries=1)
+            resp = await fetch_with_retry(
+                session, "GET", url, rate_limiter=limiter, log_tag=f"validate/lever/{slug}", max_retries=1
+            )
         elif ats == "ashby":
             url = f"https://api.ashbyhq.com/posting-api/job-board/{slug}"
-            resp = await fetch_with_retry(session, "GET", url, rate_limiter=limiter, log_tag=f"validate/ashby/{slug}", max_retries=1)
+            resp = await fetch_with_retry(
+                session, "GET", url, rate_limiter=limiter, log_tag=f"validate/ashby/{slug}", max_retries=1
+            )
         elif ats == "smartrecruiters":
             url = f"https://api.smartrecruiters.com/v1/companies/{slug}/postings"
             resp = await fetch_with_retry(
-                session, "GET", url, rate_limiter=limiter, log_tag=f"validate/smartrecruiters/{slug}", params={"limit": 1, "offset": 0}, max_retries=1
+                session,
+                "GET",
+                url,
+                rate_limiter=limiter,
+                log_tag=f"validate/smartrecruiters/{slug}",
+                params={"limit": 1, "offset": 0},
+                max_retries=1,
             )
         elif ats == "bamboohr":
             url = f"https://{slug}.bamboohr.com/careers/list"
             resp = await fetch_with_retry(
-                session, "GET", url, rate_limiter=limiter, log_tag=f"validate/bamboohr/{slug}", headers={"Accept": "application/json"}, max_retries=1
+                session,
+                "GET",
+                url,
+                rate_limiter=limiter,
+                log_tag=f"validate/bamboohr/{slug}",
+                headers={"Accept": "application/json"},
+                max_retries=1,
             )
         elif ats == "workable":
             url = f"https://apply.workable.com/api/v3/accounts/{slug}/jobs"
@@ -82,7 +104,9 @@ async def _probe(session, limiter: RateLimiter, company: dict) -> dict:
             )
         elif ats == "rippling":
             url = f"https://ats.rippling.com/api/v1/board/{slug}/jobs"
-            resp = await fetch_with_retry(session, "GET", url, rate_limiter=limiter, log_tag=f"validate/rippling/{slug}", max_retries=1)
+            resp = await fetch_with_retry(
+                session, "GET", url, rate_limiter=limiter, log_tag=f"validate/rippling/{slug}", max_retries=1
+            )
         elif ats == "workday":
             parts = slug.split(":")
             if len(parts) != 3 or not parts[1].isdigit():
@@ -108,7 +132,11 @@ async def _probe(session, limiter: RateLimiter, company: dict) -> dict:
             return {"status": "unsupported", "category": "bad_target", "error": f"unsupported_ats:{ats}"}
 
         if resp:
-            return {"status": "ok", "category": "ok", "status_code": getattr(resp, "status_code", getattr(resp, "status", 200))}
+            return {
+                "status": "ok",
+                "category": "ok",
+                "status_code": getattr(resp, "status_code", getattr(resp, "status", 200)),
+            }
 
         failure = consume_last_failure() or classify_failure(error="empty validation response", ats=ats, slug=slug)
         return {
@@ -154,6 +182,7 @@ async def validate_targets(limit: int = 200, platforms: set[str] | None = None, 
     counts = Counter()
 
     async with create_session(limiter) as session:
+
         async def run_one(target):
             async with semaphore:
                 result = await _probe(session, limiter, target)
@@ -174,7 +203,9 @@ async def validate_targets(limit: int = 200, platforms: set[str] | None = None, 
 def main():
     parser = argparse.ArgumentParser(description="Smoke-validate canonical ATS targets.")
     parser.add_argument("--limit", type=int, default=200, help="Targets to validate. Use 0 for all.")
-    parser.add_argument("--platform", action="append", choices=sorted(CORE_PLATFORMS), help="Limit to one or more ATS platforms.")
+    parser.add_argument(
+        "--platform", action="append", choices=sorted(CORE_PLATFORMS), help="Limit to one or more ATS platforms."
+    )
     parser.add_argument("--concurrency", type=int, default=8)
     args = parser.parse_args()
 

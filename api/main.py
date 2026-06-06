@@ -367,11 +367,7 @@ async def match_jobs(
                 except Exception:
                     pass
 
-            job_dict = (
-                dict(row)
-                if hasattr(row, "keys")
-                else dict(zip([d[0] for d in cursor.description], row))
-            )
+            job_dict = dict(row) if hasattr(row, "keys") else dict(zip([d[0] for d in cursor.description], row))
             job_dict["match_score"] = r["similarity"]
             job_dict["freshness_minutes"] = freshness_min
             enriched.append(job_dict)

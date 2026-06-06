@@ -32,7 +32,14 @@ from scripts.ingestion.ats_adapters import NormalizedJob, _enrich_job, _strip_ht
 from scripts.ingestion.parallel_ingestor import is_within_window
 from scripts.ingestion.role_filter import is_target_role
 from scripts.ingestion.us_filter import is_us_location
-from scripts.utils.http_client import HAS_CURL_CFFI, RateLimiter, consume_last_failure, create_session, fetch_with_retry, random_headers
+from scripts.utils.http_client import (
+    HAS_CURL_CFFI,
+    RateLimiter,
+    consume_last_failure,
+    create_session,
+    fetch_with_retry,
+    random_headers,
+)
 from scripts.utils.logger import _log
 from scripts.utils.response_cache import ResponseCache
 

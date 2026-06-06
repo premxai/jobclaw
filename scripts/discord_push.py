@@ -69,6 +69,7 @@ def _discord_dry_run_enabled() -> bool:
     raw = os.getenv("JOBCLAW_DISCORD_DRY_RUN", os.getenv("DISCORD_DRY_RUN", "1")).strip().lower()
     return raw not in {"0", "false", "no", "off"}
 
+
 CATEGORY_EMOJIS = {
     "AI/ML": "🤖",
     "Data Science": "🔬",

@@ -491,14 +491,20 @@ def _migrate_sqlite_companies_schema(conn):
             else "'' AS validation_failure_category",
             "validation_http_status" if "validation_http_status" in existing_cols else "NULL AS validation_http_status",
             "COALESCE(source_count, 1) AS source_count" if "source_count" in existing_cols else "1 AS source_count",
-            "COALESCE(priority_score, 0) AS priority_score" if "priority_score" in existing_cols else "0 AS priority_score",
+            "COALESCE(priority_score, 0) AS priority_score"
+            if "priority_score" in existing_cols
+            else "0 AS priority_score",
             "next_scrape_at" if "next_scrape_at" in existing_cols else "NULL AS next_scrape_at",
             "COALESCE(total_scrapes, 0) AS total_scrapes" if "total_scrapes" in existing_cols else "0 AS total_scrapes",
-            "COALESCE(total_jobs_found, 0) AS total_jobs_found" if "total_jobs_found" in existing_cols else "0 AS total_jobs_found",
+            "COALESCE(total_jobs_found, 0) AS total_jobs_found"
+            if "total_jobs_found" in existing_cols
+            else "0 AS total_jobs_found",
             "COALESCE(total_relevant_jobs_found, 0) AS total_relevant_jobs_found"
             if "total_relevant_jobs_found" in existing_cols
             else "0 AS total_relevant_jobs_found",
-            "COALESCE(avg_jobs_found, 0) AS avg_jobs_found" if "avg_jobs_found" in existing_cols else "0 AS avg_jobs_found",
+            "COALESCE(avg_jobs_found, 0) AS avg_jobs_found"
+            if "avg_jobs_found" in existing_cols
+            else "0 AS avg_jobs_found",
         ]
         cursor.execute(f"""
             INSERT OR IGNORE INTO companies_new (
@@ -1007,7 +1013,9 @@ def get_companies_for_scrape(
         all_companies = [dict(zip(cols, row)) for row in rows]
     else:
         rows = cursor.fetchall()
-        all_companies = [dict(r) if hasattr(r, "keys") else dict(zip([d[0] for d in cursor.description], r)) for r in rows]
+        all_companies = [
+            dict(r) if hasattr(r, "keys") else dict(zip([d[0] for d in cursor.description], r)) for r in rows
+        ]
 
     for c in all_companies:
         if "ats_type" in c and "ats" not in c:
@@ -1114,7 +1122,10 @@ def get_due_companies_for_scrape(
         cols = [desc[0] for desc in cursor.description]
         rows = [dict(zip(cols, row)) for row in cursor.fetchall()]
     else:
-        rows = [dict(r) if hasattr(r, "keys") else dict(zip([d[0] for d in cursor.description], r)) for r in cursor.fetchall()]
+        rows = [
+            dict(r) if hasattr(r, "keys") else dict(zip([d[0] for d in cursor.description], r))
+            for r in cursor.fetchall()
+        ]
 
     for c in rows:
         if "ats_type" in c and "ats" not in c:
