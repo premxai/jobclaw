@@ -37,9 +37,11 @@ from scripts.utils.http_client import (
     HAS_CURL_CFFI,
     NOT_MODIFIED,
     RateLimiter,
+    consume_last_failure,
     fetch_with_retry,
     record_request_failure,
 )
+from scripts.utils.ats_slug_aliases import get_ats_slug_aliases
 from scripts.utils.logger import _log
 from scripts.utils.target_diagnostics import classify_failure
 from scripts.utils.salary_parser import extract_experience, extract_salary, parse_salary_range
@@ -1129,4 +1131,26 @@ async def fetch_company_jobs(
         _log(f"No adapter for ATS platform '{ats}' (company: {company})", "WARN")
         _record_parse_failure(ats or "unknown", slug, "No adapter available")
         return []
-    return await adapter.fetch(session, slug, company, rate_limiter=rate_limiter)
+    jobs = await adapter.fetch(session, slug, company, rate_limiter=rate_limiter)
+    failure = consume_last_failure()
+    if jobs or not failure or failure.get("category") != "bad_target":
+        if failure:
+            record_request_failure(**failure)
+        return jobs
+
+    for alias_ats, alias_slug in get_ats_slug_aliases(company, ats, slug):
+        alias_adapter = ADAPTERS.get(alias_ats)
+        if not alias_adapter:
+            continue
+        _log(f"[{ats}/{slug}] Trying repaired slug {alias_ats}/{alias_slug} for {company}", "INFO")
+        alias_jobs = await alias_adapter.fetch(session, alias_slug, company, rate_limiter=rate_limiter)
+        alias_failure = consume_last_failure()
+        if alias_jobs:
+            record_target_metadata(resolved_ats=alias_ats, resolved_slug=alias_slug)
+            _log(f"[{ats}/{slug}] Repaired via {alias_ats}/{alias_slug}: {len(alias_jobs)} jobs", "INFO")
+            return alias_jobs
+        if alias_failure:
+            failure = alias_failure
+
+    record_request_failure(**failure)
+    return []

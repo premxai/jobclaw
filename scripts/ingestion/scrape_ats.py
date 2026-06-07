@@ -34,6 +34,7 @@ from scripts.database.db_utils import (
     claim_adaptive_companies_for_scrape,
     get_connection,
     insert_job,
+    is_postgres,
     log_scraper_run,
     mark_stale_jobs,
     get_companies_by_tier,
@@ -55,7 +56,7 @@ from scripts.utils.logger import _log
 from scripts.utils.platform_budgets import DEFAULT_WORKERS, PLATFORM_WORKERS, apply_platform_budgets
 from scripts.utils.response_cache import ResponseCache
 from scripts.utils.retry_queue import RetryQueue
-from scripts.utils.target_diagnostics import apply_cached_metadata, classify_failure
+from scripts.utils.target_diagnostics import apply_cached_target_metadata, classify_failure
 
 # ── Platforms to skip by default ───────────────────────────────────────
 # v4: Workday and Workable are now scrapable via curl_cffi TLS impersonation.
@@ -72,6 +73,42 @@ QUEUE_MODES = {"shadow", "active"}
 def _queue_mode() -> str:
     mode = os.getenv("JOBCLAW_QUEUE_MODE", "active").strip().lower()
     return mode if mode in QUEUE_MODES else "off"
+
+
+def _target_key(target: dict) -> str:
+    return f"{str(target.get('ats') or '').lower()}:{target.get('slug') or ''}"
+
+
+def _load_previous_selected_keys(conn) -> set[str]:
+    """Load selected target keys from the most recent ATS run summary."""
+    cursor = conn.cursor()
+    placeholder = "%s" if is_postgres() else "?"
+    try:
+        cursor.execute(
+            f"""
+            SELECT summary_json
+            FROM scraper_runs
+            WHERE scraper = {placeholder}
+              AND COALESCE(summary_json, '') <> ''
+            ORDER BY run_at DESC, id DESC
+            LIMIT 5
+            """,
+            ("scrape_ats",),
+        )
+        for row in cursor.fetchall():
+            raw = row[0] if not isinstance(row, dict) else row.get("summary_json")
+            if not raw:
+                continue
+            try:
+                summary = json.loads(raw)
+            except Exception:
+                continue
+            selected = summary.get("queue", {}).get("selected_keys") or []
+            if selected:
+                return set(str(k) for k in selected)
+    except Exception:
+        return set()
+    return set()
 
 
 # ── Circuit Breaker ───────────────────────────────────────────────────
@@ -155,9 +192,9 @@ async def _worker(
             break
 
         cname = company["company"]
-        ats = company["ats"]
+        canonical_ats = company["ats"]
         canonical_slug = company["slug"]
-        slug, used_cached_metadata = apply_cached_metadata(company)
+        ats, slug, used_cached_metadata = apply_cached_target_metadata(company)
 
         # Circuit breaker: skip if platform is in half-open cooldown
         if circuit_breaker and circuit_breaker.should_skip(ats):
@@ -171,7 +208,7 @@ async def _worker(
         if cached_data is not None:
             try:
                 jobs = [NormalizedJob(**j) for j in cached_data]
-                results.append((cname, ats, canonical_slug, jobs, None, None, None))
+                results.append((cname, canonical_ats, canonical_slug, jobs, None, None, None))
                 queue.task_done()
                 continue
             except Exception:
@@ -191,42 +228,44 @@ async def _worker(
                 target_metadata["_used_cached_metadata"] = True
             if jobs:
                 cache.put(ats, slug, [j.to_dict() for j in jobs])
-            results.append((cname, ats, canonical_slug, jobs, None, failure, target_metadata))
+            results.append((cname, canonical_ats, canonical_slug, jobs, None, failure, target_metadata))
             if circuit_breaker:
                 circuit_breaker.record_success(ats)
             if used_cached_metadata:
-                _log(f"[{ats}/{canonical_slug}] Used cached metadata slug {slug}", "DEBUG")
+                _log(f"[{canonical_ats}/{canonical_slug}] Used cached target {ats}/{slug}", "DEBUG")
             # Update company metadata with scrape results
             if company_metadata and jobs:
                 job_ids = [j.job_id for j in jobs] if jobs else []
-                company_metadata.update_after_scrape(ats, slug, len(jobs), job_ids)
+                company_metadata.update_after_scrape(canonical_ats, canonical_slug, len(jobs), job_ids)
             # Mark success in retry queue only for clean runs.
             if retry_queue and jobs and not failure:
-                retry_queue.mark_success(ats, slug)
+                retry_queue.mark_success(canonical_ats, canonical_slug)
         except TimeoutError:
             failure = classify_failure(error="timeout", ats=ats, slug=slug)
             _log(f"[{ats}/{slug}] Hard timeout", "WARN")
-            results.append((cname, ats, canonical_slug, [], "timeout", failure, None))
+            results.append((cname, canonical_ats, canonical_slug, [], "timeout", failure, None))
             if circuit_breaker:
                 circuit_breaker.record_failure(ats)
             # Add to retry queue
             if retry_queue:
-                retry_queue.add_failure(cname, ats, slug, "timeout", failure_type=failure["category"], status_code=None)
+                retry_queue.add_failure(
+                    cname, canonical_ats, canonical_slug, "timeout", failure_type=failure["category"], status_code=None
+                )
         except Exception as e:
             failure = consume_last_failure() or classify_failure(error=e, ats=ats, slug=slug)
             _log(
                 f"[{ats}/{slug}] Fetch failed: {failure['category']}:{failure.get('status_code') or 'n/a'}:{failure.get('error') or e}",
                 "ERROR",
             )
-            results.append((cname, ats, canonical_slug, [], str(e), failure, None))
+            results.append((cname, canonical_ats, canonical_slug, [], str(e), failure, None))
             if circuit_breaker:
                 circuit_breaker.record_failure(ats)
             # Add to retry queue
             if retry_queue:
                 retry_queue.add_failure(
                     cname,
-                    ats,
-                    slug,
+                    canonical_ats,
+                    canonical_slug,
                     str(e),
                     failure_type=failure["category"],
                     status_code=failure.get("status_code"),
@@ -284,9 +323,15 @@ async def run_ats_scraper(
         "mode": queue_mode,
         "lease_owner": lease_owner if queue_mode == "active" else "",
         "claimed": 0,
+        "claimed_sample": [],
         "released_skipped": 0,
         "budget_dropped": 0,
         "budgets": {},
+        "selected_keys": [],
+        "selected_sample": [],
+        "deferred_sample": [],
+        "previous_overlap": 0,
+        "previous_overlap_sample": [],
     }
 
     conn = get_connection()
@@ -305,6 +350,7 @@ async def run_ats_scraper(
                 include_not_due=False,
             )
             queue_metrics["claimed"] = len(registry)
+            queue_metrics["claimed_sample"] = [_target_key(c) for c in registry[:20]]
             _log(
                 f"Claimed {len(registry)} adaptive queue companies "
                 f"(limit={target_limit}, lease={lease_seconds}s, platforms={sorted(platforms) if platforms else 'ALL'})."
@@ -433,8 +479,28 @@ async def run_ats_scraper(
     if queue_mode in QUEUE_MODES:
         before_budget = len(registry)
         registry, budget_dropped, budget_metrics = apply_platform_budgets(registry)
+        selected_keys = [_target_key(c) for c in registry]
+        deferred_keys = [_target_key(c) for c in budget_dropped]
         queue_metrics["budget_dropped"] += len(budget_dropped)
         queue_metrics["budgets"] = budget_metrics
+        queue_metrics["selected_keys"] = selected_keys
+        queue_metrics["selected_sample"] = selected_keys[:25]
+        queue_metrics["deferred_sample"] = deferred_keys[:25]
+        conn = get_connection()
+        try:
+            previous_selected = _load_previous_selected_keys(conn)
+        finally:
+            conn.close()
+        overlap = sorted(previous_selected & set(selected_keys))
+        queue_metrics["previous_overlap"] = len(overlap)
+        queue_metrics["previous_overlap_sample"] = overlap[:25]
+        _log(
+            "Queue selection: "
+            f"selected={len(selected_keys)}, deferred={len(deferred_keys)}, "
+            f"previous_overlap={len(overlap)}. "
+            f"selected_sample={queue_metrics['selected_sample'][:10]}, "
+            f"deferred_sample={queue_metrics['deferred_sample'][:10]}"
+        )
         if budget_dropped and queue_mode == "active":
             conn = get_connection()
             try:

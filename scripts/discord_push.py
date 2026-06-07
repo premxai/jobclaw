@@ -68,8 +68,8 @@ if len(_missing_webhooks) == len(_CATEGORY_WEBHOOKS):
 
 
 def _discord_dry_run_enabled() -> bool:
-    """Default to dry-run during production hardening unless explicitly disabled."""
-    raw = os.getenv("JOBCLAW_DISCORD_DRY_RUN", os.getenv("DISCORD_DRY_RUN", "1")).strip().lower()
+    """Post live by default unless dry-run is explicitly enabled."""
+    raw = os.getenv("JOBCLAW_DISCORD_DRY_RUN", os.getenv("DISCORD_DRY_RUN", "0")).strip().lower()
     return raw not in {"0", "false", "no", "off"}
 
 

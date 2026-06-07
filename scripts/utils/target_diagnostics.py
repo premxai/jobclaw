@@ -161,17 +161,28 @@ def metadata_dict(company: dict) -> dict:
         return {}
 
 
-def apply_cached_metadata(company: dict) -> tuple[str, bool]:
-    """Return the scrape slug, using validated platform metadata where available."""
+def apply_cached_target_metadata(company: dict) -> tuple[str, str, bool]:
+    """Return the scrape ATS/slug, using validated platform metadata where available."""
     ats = (company.get("ats") or "").lower()
     slug = company.get("slug") or ""
+    metadata = metadata_dict(company)
+    resolved_ats = str(metadata.get("resolved_ats") or "").strip().lower()
+    resolved_slug = str(metadata.get("resolved_slug") or "").strip()
+    if resolved_ats and resolved_slug and resolved_ats in SUPPORTED_ATS:
+        return resolved_ats, resolved_slug, resolved_ats != ats or resolved_slug != slug
     if ats != "workday":
-        return slug, False
-    site = metadata_dict(company).get("workday_site")
+        return ats, slug, False
+    site = metadata.get("workday_site")
     if not site:
-        return slug, False
+        return ats, slug, False
     parts = slug.split(":")
     if len(parts) != 3:
-        return slug, False
+        return ats, slug, False
     cached_slug = f"{parts[0]}:{parts[1]}:{site}"
-    return cached_slug, cached_slug != slug
+    return ats, cached_slug, cached_slug != slug
+
+
+def apply_cached_metadata(company: dict) -> tuple[str, bool]:
+    """Return the scrape slug, using validated platform metadata where available."""
+    _ats, slug, used_cache = apply_cached_target_metadata(company)
+    return slug, used_cache

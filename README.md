@@ -102,9 +102,9 @@ python scripts/worker/standalone_worker.py
 ```
 GitHub Actions scraper workflows are manual recovery tools only.
 
-Discord posting defaults to dry-run via `JOBCLAW_DISCORD_DRY_RUN=1`, with
-`JOBCLAW_DISCORD_STRICT_QUALITY=1` rejecting generic aggregator/search/salary
-pages. Set dry-run to `0` only after validating scrape quality and card previews.
+Discord posting is live when `JOBCLAW_DISCORD_DRY_RUN=0`, with
+`JOBCLAW_DISCORD_STRICT_QUALITY=1` and `JOBCLAW_DIRECT_SOURCE_ONLY=1` rejecting
+generic aggregator/search/salary pages before any card is sent.
 
 ### 5. Start the Application UI Layer
 In a background terminal, spin up the HTTP Server:

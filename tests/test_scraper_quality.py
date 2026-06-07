@@ -3,7 +3,8 @@ import unittest
 
 from scripts.discord_push import _passes_strict_job_quality
 from scripts.database.db_utils import classify_job_quality
-from scripts.utils.target_diagnostics import apply_cached_metadata, classify_failure
+from scripts.utils.ats_slug_aliases import get_ats_slug_aliases
+from scripts.utils.target_diagnostics import apply_cached_metadata, apply_cached_target_metadata, classify_failure
 
 
 class FailureClassificationTests(unittest.TestCase):
@@ -47,6 +48,24 @@ class WorkdayMetadataTests(unittest.TestCase):
 
         self.assertFalse(used_cache)
         self.assertEqual(slug, "acme")
+
+    def test_cached_resolved_target_rewrites_ats_and_slug(self):
+        ats, slug, used_cache = apply_cached_target_metadata(
+            {
+                "ats": "greenhouse",
+                "slug": "openai",
+                "validated_metadata": '{"resolved_ats":"ashby","resolved_slug":"OpenAI"}',
+            }
+        )
+
+        self.assertTrue(used_cache)
+        self.assertEqual(ats, "ashby")
+        self.assertEqual(slug, "OpenAI")
+
+    def test_known_priority_slug_aliases(self):
+        aliases = get_ats_slug_aliases("OpenAI", "greenhouse", "openai")
+
+        self.assertIn(("ashby", "OpenAI"), aliases)
 
 
 class DiscordStrictQualityTests(unittest.TestCase):

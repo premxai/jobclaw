@@ -51,7 +51,7 @@ _CATEGORY_WEBHOOKS = {
 
 # Fallback webhook definition
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK_URL", "") or next((v for v in _CATEGORY_WEBHOOKS.values() if v), "")
-DISCORD_DRY_RUN = os.getenv("JOBCLAW_DISCORD_DRY_RUN", os.getenv("DISCORD_DRY_RUN", "1")).strip().lower() not in {
+DISCORD_DRY_RUN = os.getenv("JOBCLAW_DISCORD_DRY_RUN", os.getenv("DISCORD_DRY_RUN", "0")).strip().lower() not in {
     "0",
     "false",
     "no",
