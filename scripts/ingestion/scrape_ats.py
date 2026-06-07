@@ -53,7 +53,7 @@ from scripts.utils.company_metadata import CompanyMetadata
 from scripts.utils.health_tracker import HealthTracker
 from scripts.utils.http_client import RateLimiter, consume_last_failure, create_session, set_response_cache
 from scripts.utils.logger import _log
-from scripts.utils.platform_budgets import DEFAULT_WORKERS, PLATFORM_WORKERS, apply_platform_budgets
+from scripts.utils.platform_budgets import DEFAULT_WORKERS, PLATFORM_WORKERS, apply_platform_budgets, platform_target_cap
 from scripts.utils.response_cache import ResponseCache
 from scripts.utils.retry_queue import RetryQueue
 from scripts.utils.target_diagnostics import apply_cached_target_metadata, classify_failure
@@ -109,6 +109,53 @@ def _load_previous_selected_keys(conn) -> set[str]:
     except Exception:
         return set()
     return set()
+
+
+def _platform_claim_multiplier() -> int:
+    return max(1, int(os.getenv("JOBCLAW_PLATFORM_CLAIM_MULTIPLIER", "4")))
+
+
+def _claim_active_targets_by_platform(
+    conn,
+    target_limit: int,
+    platforms: set[str] | None,
+    lease_owner: str,
+    lease_seconds: int,
+) -> tuple[list[dict], dict[str, int]]:
+    """Claim due targets fairly across requested platforms before budgeting.
+
+    A global claim can be dominated by one high-score platform. Claiming a
+    multiple of each platform's budget cap first gives every requested ATS a
+    chance, while apply_platform_budgets still controls final request volume.
+    """
+    if not platforms or len(platforms) <= 1:
+        rows = claim_adaptive_companies_for_scrape(
+            conn,
+            limit=target_limit,
+            platforms=platforms,
+            lease_owner=lease_owner,
+            lease_seconds=lease_seconds,
+            include_not_due=False,
+        )
+        key = next(iter(platforms)) if platforms and len(platforms) == 1 else "all"
+        return rows, {str(key): len(rows)}
+
+    multiplier = _platform_claim_multiplier()
+    registry: list[dict] = []
+    claim_counts: dict[str, int] = {}
+    for platform in sorted(str(p).lower() for p in platforms):
+        claim_limit = min(target_limit, platform_target_cap(platform) * multiplier)
+        claimed = claim_adaptive_companies_for_scrape(
+            conn,
+            limit=claim_limit,
+            platforms={platform},
+            lease_owner=lease_owner,
+            lease_seconds=lease_seconds,
+            include_not_due=False,
+        )
+        registry.extend(claimed)
+        claim_counts[platform] = len(claimed)
+    return registry, claim_counts
 
 
 # ── Circuit Breaker ───────────────────────────────────────────────────
@@ -341,19 +388,20 @@ async def run_ats_scraper(
 
         if due_only and queue_mode == "active":
             lease_seconds = int(os.getenv("JOBCLAW_QUEUE_LEASE_SECONDS", "300"))
-            registry = claim_adaptive_companies_for_scrape(
+            registry, claim_by_platform = _claim_active_targets_by_platform(
                 conn,
-                limit=target_limit,
-                platforms=platforms,
-                lease_owner=lease_owner,
-                lease_seconds=lease_seconds,
-                include_not_due=False,
+                target_limit,
+                platforms,
+                lease_owner,
+                lease_seconds,
             )
             queue_metrics["claimed"] = len(registry)
+            queue_metrics["claim_by_platform"] = claim_by_platform
             queue_metrics["claimed_sample"] = [_target_key(c) for c in registry[:20]]
             _log(
                 f"Claimed {len(registry)} adaptive queue companies "
-                f"(limit={target_limit}, lease={lease_seconds}s, platforms={sorted(platforms) if platforms else 'ALL'})."
+                f"(limit={target_limit}, lease={lease_seconds}s, platforms={sorted(platforms) if platforms else 'ALL'}, "
+                f"by_platform={claim_by_platform})."
             )
         elif due_only:
             registry = get_due_companies_for_scrape(

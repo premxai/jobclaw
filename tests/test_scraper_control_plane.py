@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 import scripts.database.db_utils as db_utils
 from scripts.database.db_utils import _ensure_sqlite_schema, claim_adaptive_companies_for_scrape
-from scripts.utils.platform_budgets import apply_platform_budgets
+from scripts.utils.platform_budgets import apply_platform_budgets, platform_target_cap
 
 
 class ScraperControlPlaneTests(unittest.TestCase):
@@ -75,6 +75,17 @@ class ScraperControlPlaneTests(unittest.TestCase):
         self.assertEqual(len(selected), 1)
         self.assertEqual(len(dropped), 4)
         self.assertEqual(metrics["workday"]["cap"], 1)
+
+    def test_platform_target_cap_uses_budget_workers_and_estimate(self):
+        old = os.environ.get("JOBCLAW_PLATFORM_BUDGET_SECONDS_WORKDAY")
+        os.environ["JOBCLAW_PLATFORM_BUDGET_SECONDS_WORKDAY"] = "90"
+        try:
+            self.assertEqual(platform_target_cap("workday"), 2)
+        finally:
+            if old is None:
+                os.environ.pop("JOBCLAW_PLATFORM_BUDGET_SECONDS_WORKDAY", None)
+            else:
+                os.environ["JOBCLAW_PLATFORM_BUDGET_SECONDS_WORKDAY"] = old
 
 
 if __name__ == "__main__":

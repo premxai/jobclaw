@@ -87,7 +87,10 @@ per-platform budgets, and checkpoints target health after each scrape.
 `JOBCLAW_ATS_TARGET_LIMIT` caps how many targets one run can claim before
 platform budgets defer the rest. Medium runs default to
 `JOBCLAW_MEDIUM_TARGET_LIMIT=800` and `JOBCLAW_WORKDAY_SHARDS=16` so
-Workday-heavy batches stay small and reliable.
+Workday-heavy batches stay small and reliable. Multi-platform runs claim targets
+per platform before applying budgets, controlled by
+`JOBCLAW_PLATFORM_CLAIM_MULTIPLIER=4`, so one high-score ATS cannot crowd out
+the rest of the batch.
 ```bash
 # Light payload - 1 minute runs covering RSS + Boards
 python scripts/ingestion/run_all_scrapers.py --tier fast

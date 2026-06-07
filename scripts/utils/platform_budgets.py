@@ -45,6 +45,15 @@ def platform_budget_seconds(platform: str) -> int:
     return int(os.getenv(key, str(PLATFORM_DEFAULT_BUDGET_SECONDS.get(platform, 180))))
 
 
+def platform_target_cap(platform: str) -> int:
+    """Return the number of targets a platform budget can attempt."""
+    platform = str(platform or "").lower()
+    workers = max(1, PLATFORM_WORKERS.get(platform, DEFAULT_WORKERS))
+    estimate = max(1, PLATFORM_ESTIMATED_SECONDS.get(platform, 10))
+    budget = platform_budget_seconds(platform)
+    return max(1, int((budget * workers) / estimate))
+
+
 def apply_platform_budgets(registry: list[dict]) -> tuple[list[dict], list[dict], dict]:
     """Cap target counts by platform time/request budgets."""
     by_platform = defaultdict(list)
@@ -55,10 +64,10 @@ def apply_platform_budgets(registry: list[dict]) -> tuple[list[dict], list[dict]
     dropped = []
     budget_metrics = {}
     for platform, targets in sorted(by_platform.items()):
-        workers = max(1, PLATFORM_WORKERS.get(platform, DEFAULT_WORKERS))
-        estimate = max(1, PLATFORM_ESTIMATED_SECONDS.get(platform, 10))
         budget = platform_budget_seconds(platform)
-        cap = max(1, int((budget * workers) / estimate))
+        estimate = max(1, PLATFORM_ESTIMATED_SECONDS.get(platform, 10))
+        workers = max(1, PLATFORM_WORKERS.get(platform, DEFAULT_WORKERS))
+        cap = platform_target_cap(platform)
         keep = targets[:cap]
         selected.extend(keep)
         dropped.extend(targets[cap:])
