@@ -39,9 +39,9 @@ def _log(msg: str, level: str = "INFO", tag: str = "ingestor") -> None:
     ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     entry = f"{ts} | {level} | [{tag}] {msg}"
     try:
-        print(entry)
+        print(entry, flush=True)
     except UnicodeEncodeError:
-        print(entry.encode("ascii", errors="replace").decode("ascii"))
+        print(entry.encode("ascii", errors="replace").decode("ascii"), flush=True)
     with _log_lock, open(LOGS_DIR / "system.log", "a", encoding="utf-8") as f:
         f.write(entry + "\n")
 

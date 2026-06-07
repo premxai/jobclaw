@@ -187,6 +187,8 @@ async def main():
 
     scheduler.start()
     _log("[standalone-worker] Scheduler started and running. Press Ctrl+C to exit.")
+    for job in scheduler.get_jobs():
+        _log(f"[standalone-worker] Scheduled job {job.id}: next_run={job.next_run_time}")
 
     # Keep the process alive
     try:
