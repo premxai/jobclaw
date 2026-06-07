@@ -1,13 +1,11 @@
 name: "🔥 Hot Scraper — 192 Companies Every 15min"
 
 # ┌──────────────────────────────────────────────────────────────────────┐
-# │  SCHEDULED HOT SWEEP — frequent high-priority company monitoring.   │
-# │  Staggered away from fast/medium scrapes and Discord posting.       │
+# │  MANUAL BACKUP — Railway worker owns lightweight hot monitoring.    │
+# │  Use this only for emergency recovery or comparing GitHub runners.  │
 # └──────────────────────────────────────────────────────────────────────┘
 
 on:
-  schedule:
-    - cron: "7,22,37,52 * * * *"
   workflow_dispatch:         # Manual trigger for testing/recovery
 
 permissions:

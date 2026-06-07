@@ -24,6 +24,21 @@ from scripts.ingestion.scrape_hot import run_hot_scraper
 from scripts.utils.logger import _log
 
 
+def env_flag(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() not in {"0", "false", "no", "off", ""}
+
+
+def add_job_if_enabled(scheduler: AsyncIOScheduler, enabled: bool, *args, **kwargs) -> None:
+    job_id = kwargs.get("id", "unknown")
+    if enabled:
+        scheduler.add_job(*args, **kwargs)
+    else:
+        _log(f"[standalone-worker] Schedule disabled: {job_id}")
+
+
 async def execute_hot():
     _log("[standalone-worker] Starting Hot Scraper...")
     try:
@@ -131,8 +146,21 @@ async def main():
 
     scheduler = AsyncIOScheduler(timezone="UTC")
 
-    # 1. Hot companies — every 15 minutes
-    scheduler.add_job(
+    _bulk_fallback = env_flag("JOBCLAW_RAILWAY_BULK_FALLBACK", False)
+    enabled_tasks = {
+        "hot": env_flag("JOBCLAW_RAILWAY_ENABLE_HOT", True),
+        "fast": env_flag("JOBCLAW_RAILWAY_ENABLE_FAST", _bulk_fallback),
+        "medium": env_flag("JOBCLAW_RAILWAY_ENABLE_MEDIUM", _bulk_fallback),
+        "deep": env_flag("JOBCLAW_RAILWAY_ENABLE_DEEP", _bulk_fallback),
+        "discord_push": env_flag("JOBCLAW_RAILWAY_ENABLE_DISCORD", True),
+        "validate_targets": env_flag("JOBCLAW_RAILWAY_ENABLE_VALIDATION", True),
+    }
+    _log(f"[standalone-worker] Enabled schedules: {enabled_tasks}")
+
+    # 1. Hot companies — every 15 minutes. Lightweight Railway-owned freshness path.
+    add_job_if_enabled(
+        scheduler,
+        enabled_tasks["hot"],
         execute_hot,
         IntervalTrigger(minutes=15),
         id="hot",
@@ -140,8 +168,10 @@ async def main():
         replace_existing=True,
     )
 
-    # 2. Fast tier — every hour at :00
-    scheduler.add_job(
+    # 2. Fast tier — disabled on Railway by default; GitHub Actions owns bulk scraping.
+    add_job_if_enabled(
+        scheduler,
+        enabled_tasks["fast"],
         execute_fast,
         CronTrigger(minute=0),
         id="fast",
@@ -149,8 +179,10 @@ async def main():
         replace_existing=True,
     )
 
-    # 3. Medium tier — every hour at :02 (offset to avoid DB collisions)
-    scheduler.add_job(
+    # 3. Medium tier — disabled on Railway by default; use only as fallback.
+    add_job_if_enabled(
+        scheduler,
+        enabled_tasks["medium"],
         execute_medium,
         CronTrigger(minute=2),
         id="medium",
@@ -158,8 +190,10 @@ async def main():
         replace_existing=True,
     )
 
-    # 4. Discord push — every 15 minutes (offset by 5 min to push fresh scraped jobs)
-    scheduler.add_job(
+    # 4. Discord push — Railway-owned so one persistent process owns posting.
+    add_job_if_enabled(
+        scheduler,
+        enabled_tasks["discord_push"],
         execute_discord_push,
         CronTrigger(minute="5,20,35,50"),
         id="discord_push",
@@ -168,7 +202,9 @@ async def main():
     )
 
     # 5. Target validation — every 6 hours, offset away from scraper starts
-    scheduler.add_job(
+    add_job_if_enabled(
+        scheduler,
+        enabled_tasks["validate_targets"],
         execute_validate_targets,
         CronTrigger(hour="*/6", minute=40),
         id="validate_targets",
@@ -176,8 +212,10 @@ async def main():
         replace_existing=True,
     )
 
-    # 6. Deep tier — daily at 23:00 UTC
-    scheduler.add_job(
+    # 6. Deep tier — disabled on Railway by default; GitHub Actions owns full sweeps.
+    add_job_if_enabled(
+        scheduler,
+        enabled_tasks["deep"],
         execute_deep,
         CronTrigger(hour=23, minute=0),
         id="deep",
