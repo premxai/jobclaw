@@ -8,6 +8,7 @@ Provides read-only query functions for the REST API.
 import json
 import os
 import sqlite3
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 DB_PATH = Path(__file__).parent.parent / "data" / "jobclaw.db"
@@ -166,8 +167,8 @@ def get_stats() -> dict:
     try:
         cursor = conn.cursor()
 
-        def _scalar(sql):
-            cursor.execute(sql)
+        def _scalar(sql, params=()):
+            cursor.execute(sql, params)
             row = cursor.fetchone()
             if isinstance(row, (list, tuple)):
                 return row[0]
@@ -182,6 +183,15 @@ def get_stats() -> dict:
         unposted = _scalar("SELECT COUNT(*) FROM jobs WHERE status = 'unposted'")
         posted = _scalar("SELECT COUNT(*) FROM jobs WHERE status = 'posted'")
         companies = _scalar(f"SELECT COUNT(DISTINCT company) FROM jobs WHERE is_active = {active}")
+
+        quality_states = {}
+        try:
+            cursor.execute(
+                "SELECT COALESCE(quality_state, 'needs_review') AS state, COUNT(*) AS cnt FROM jobs GROUP BY state"
+            )
+            quality_states = {dict(r).get("state", "needs_review"): dict(r).get("cnt", 0) for r in cursor.fetchall()}
+        except Exception:
+            quality_states = {}
 
         # Platform breakdown
         cursor.execute(f"SELECT source_ats, COUNT(*) as cnt FROM jobs WHERE is_active = {active} GROUP BY source_ats")
@@ -199,6 +209,45 @@ def get_stats() -> dict:
             last_24h = _scalar("SELECT COUNT(*) FROM jobs WHERE first_seen >= datetime('now', '-1 day')")
             last_7d = _scalar("SELECT COUNT(*) FROM jobs WHERE first_seen >= datetime('now', '-7 days')")
 
+        queue = {}
+        try:
+            now = datetime.now(timezone.utc).isoformat()
+            stale_hot_cutoff = (datetime.now(timezone.utc) - timedelta(hours=6)).isoformat()
+            p = _ph()
+            queue = {
+                "mode": os.getenv("JOBCLAW_QUEUE_MODE", "shadow"),
+                "backlog_due": _scalar(
+                    f"""
+                    SELECT COUNT(*) FROM companies
+                    WHERE COALESCE(is_dead, 0) = 0
+                      AND (COALESCE(next_due_at, next_scrape_at) IS NULL
+                           OR COALESCE(next_due_at, next_scrape_at) <= {p})
+                    """,
+                    (now,),
+                ),
+                "leased": _scalar(
+                    f"""
+                    SELECT COUNT(*) FROM companies
+                    WHERE COALESCE(is_dead, 0) = 0
+                      AND lease_until IS NOT NULL
+                      AND lease_until > {p}
+                    """,
+                    (now,),
+                ),
+                "dead_targets": _scalar("SELECT COUNT(*) FROM companies WHERE COALESCE(is_dead, 0) = 1"),
+                "stale_hot_targets": _scalar(
+                    f"""
+                    SELECT COUNT(*) FROM companies
+                    WHERE tier IN ('P0', 'P1')
+                      AND COALESCE(is_dead, 0) = 0
+                      AND (last_success_at IS NULL OR last_success_at < {p})
+                    """,
+                    (stale_hot_cutoff,),
+                ),
+            }
+        except Exception:
+            queue = {}
+
         return {
             "total_jobs": total,
             "active_jobs": active_count,
@@ -207,6 +256,8 @@ def get_stats() -> dict:
             "posted_jobs": posted,
             "companies": companies,
             "platforms": platforms,
+            "quality_states": quality_states,
+            "queue": queue,
             "jobs_last_24h": last_24h,
             "jobs_last_7d": last_7d,
         }

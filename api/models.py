@@ -26,6 +26,11 @@ class JobResponse(BaseModel):
     experience_years: int | None = None
     is_active: bool = True
     last_seen_at: str | None = None
+    quality_state: str | None = None
+    quality_reasons: str | None = None
+    canonical_company: str | None = None
+    canonical_title: str | None = None
+    source_confidence: float | None = None
 
 
 class JobListResponse(BaseModel):
@@ -57,6 +62,8 @@ class StatsOverview(BaseModel):
     posted_jobs: int
     companies: int
     platforms: dict[str, int]  # ats → count
+    quality_states: dict[str, int] = Field(default_factory=dict)
+    queue: dict = Field(default_factory=dict)
     jobs_last_24h: int
     jobs_last_7d: int
 

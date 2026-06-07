@@ -46,7 +46,13 @@ def init_db():
         visa_sponsorship INTEGER,
         tech_stack TEXT,
         is_active INTEGER DEFAULT 1,
-        last_seen_at TEXT
+        last_seen_at TEXT,
+        quality_score REAL DEFAULT 0,
+        quality_state TEXT DEFAULT 'needs_review',
+        quality_reasons TEXT DEFAULT '[]',
+        canonical_company TEXT DEFAULT '',
+        canonical_title TEXT DEFAULT '',
+        source_confidence REAL DEFAULT 0
     )
     """)
 
@@ -56,6 +62,7 @@ def init_db():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_company ON jobs(company)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_source_ats ON jobs(source_ats)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_is_active ON jobs(is_active)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_jobs_quality_state ON jobs(quality_state)")
 
     # Run schema migrations for existing databases
     _migrate_schema(conn)
@@ -103,12 +110,26 @@ def init_db():
         last_failure_category TEXT DEFAULT '',
         last_failure_at TEXT,
         last_success_at TEXT,
+        next_due_at TEXT,
+        lease_until TEXT,
+        lease_owner TEXT DEFAULT '',
+        last_attempt_at TEXT,
+        health_state TEXT DEFAULT 'unknown',
+        scrape_score REAL DEFAULT 0,
+        avg_duration_ms REAL DEFAULT 0,
+        yield_rate REAL DEFAULT 0,
+        fresh_job_rate REAL DEFAULT 0,
+        platform_budget_key TEXT DEFAULT '',
         UNIQUE(ats_type, slug)
     )
     """)
     cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_companies_ats_slug ON companies (ats_type, slug)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_next_scrape ON companies (is_dead, next_scrape_at)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_priority ON companies (priority_score DESC)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_lease ON companies (lease_until)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_companies_queue ON companies (is_dead, health_state, next_due_at, scrape_score DESC)"
+    )
 
     conn.commit()
     logging.info(f"SQLite DB initialized at {DB_PATH} with WAL mode enabled.")
@@ -135,6 +156,12 @@ def _migrate_schema(conn):
         ("tech_stack", "TEXT"),
         ("is_active", "INTEGER DEFAULT 1"),
         ("last_seen_at", "TEXT"),
+        ("quality_score", "REAL DEFAULT 0"),
+        ("quality_state", "TEXT DEFAULT 'needs_review'"),
+        ("quality_reasons", "TEXT DEFAULT '[]'"),
+        ("canonical_company", "TEXT DEFAULT ''"),
+        ("canonical_title", "TEXT DEFAULT ''"),
+        ("source_confidence", "REAL DEFAULT 0"),
     ]
 
     for col_name, col_type in migrations:
@@ -170,12 +197,26 @@ def _migrate_schema(conn):
             ("last_failure_category", "TEXT DEFAULT ''"),
             ("last_failure_at", "TEXT"),
             ("last_success_at", "TEXT"),
+            ("next_due_at", "TEXT"),
+            ("lease_until", "TEXT"),
+            ("lease_owner", "TEXT DEFAULT ''"),
+            ("last_attempt_at", "TEXT"),
+            ("health_state", "TEXT DEFAULT 'unknown'"),
+            ("scrape_score", "REAL DEFAULT 0"),
+            ("avg_duration_ms", "REAL DEFAULT 0"),
+            ("yield_rate", "REAL DEFAULT 0"),
+            ("fresh_job_rate", "REAL DEFAULT 0"),
+            ("platform_budget_key", "TEXT DEFAULT ''"),
         ]:
             if col_name not in company_cols:
                 cursor.execute(f"ALTER TABLE companies ADD COLUMN {col_name} {col_type}")
         cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_companies_ats_slug ON companies (ats_type, slug)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_next_scrape ON companies (is_dead, next_scrape_at)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_priority ON companies (priority_score DESC)")
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_lease ON companies (lease_until)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_companies_queue ON companies (is_dead, health_state, next_due_at, scrape_score DESC)"
+        )
         conn.commit()
     except Exception:
         pass  # companies table may not exist yet (PostgreSQL path)

@@ -31,6 +31,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.database.db_utils import (
+    claim_adaptive_companies_for_scrape,
     get_connection,
     insert_job,
     log_scraper_run,
@@ -38,6 +39,7 @@ from scripts.database.db_utils import (
     get_companies_by_tier,
     get_companies_for_scrape,
     get_due_companies_for_scrape,
+    release_company_leases,
     clear_company_validated_metadata_key,
     update_company_last_scraped,
     update_company_validated_metadata,
@@ -50,6 +52,7 @@ from scripts.utils.company_metadata import CompanyMetadata
 from scripts.utils.health_tracker import HealthTracker
 from scripts.utils.http_client import RateLimiter, consume_last_failure, create_session, set_response_cache
 from scripts.utils.logger import _log
+from scripts.utils.platform_budgets import DEFAULT_WORKERS, PLATFORM_WORKERS, apply_platform_budgets
 from scripts.utils.response_cache import ResponseCache
 from scripts.utils.retry_queue import RetryQueue
 from scripts.utils.target_diagnostics import apply_cached_metadata, classify_failure
@@ -63,18 +66,12 @@ DEFAULT_SKIP_PLATFORMS: set[str] = set()
 # Workers per platform — NOT coroutines-per-platform. Each worker pulls
 # from a queue, so memory stays bounded regardless of registry size.
 # Workers per platform — lower bounds are better for 24/7 stealth scraping
-PLATFORM_WORKERS = {
-    "greenhouse": 4,  # Public REST API — tolerant, but keep headroom
-    "lever": 4,  # Public REST API — tolerant, but keep headroom
-    "ashby": 4,  # Clean API, smaller volume
-    "smartrecruiters": 2,  # Enterprise — leave headroom
-    "workday": 1,  # Aggressive WAF — keep minimal concurrency
-    "workable": 1,  # Single worker — Workable 429s hard with concurrency
-    "rippling": 1,  # Large registry — careful concurrency
-    "bamboohr": 1,
-    "gem": 3,  # Mid-market ATS — clean JSON API
-}
-DEFAULT_WORKERS = 3
+QUEUE_MODES = {"shadow", "active"}
+
+
+def _queue_mode() -> str:
+    mode = os.getenv("JOBCLAW_QUEUE_MODE", "shadow").strip().lower()
+    return mode if mode in QUEUE_MODES else "off"
 
 
 # ── Circuit Breaker ───────────────────────────────────────────────────
@@ -281,12 +278,38 @@ async def run_ats_scraper(
     if skip_platforms is None:
         skip_platforms = DEFAULT_SKIP_PLATFORMS
 
+    queue_mode = _queue_mode()
+    lease_owner = f"ats:{os.getpid()}:{int(start_time)}"
+    queue_metrics = {
+        "mode": queue_mode,
+        "lease_owner": lease_owner if queue_mode == "active" else "",
+        "claimed": 0,
+        "released_skipped": 0,
+        "budget_dropped": 0,
+        "budgets": {},
+    }
+
     conn = get_connection()
     try:
         if target_limit is None:
             target_limit = int(os.getenv("JOBCLAW_ATS_TARGET_LIMIT", "3000"))
 
-        if due_only:
+        if due_only and queue_mode == "active":
+            lease_seconds = int(os.getenv("JOBCLAW_QUEUE_LEASE_SECONDS", "300"))
+            registry = claim_adaptive_companies_for_scrape(
+                conn,
+                limit=target_limit,
+                platforms=platforms,
+                lease_owner=lease_owner,
+                lease_seconds=lease_seconds,
+                include_not_due=False,
+            )
+            queue_metrics["claimed"] = len(registry)
+            _log(
+                f"Claimed {len(registry)} adaptive queue companies "
+                f"(limit={target_limit}, lease={lease_seconds}s, platforms={sorted(platforms) if platforms else 'ALL'})."
+            )
+        elif due_only:
             registry = get_due_companies_for_scrape(
                 conn,
                 limit=target_limit,
@@ -407,6 +430,23 @@ async def run_ats_scraper(
                 registry.append(rc)
     _log(retry_queue.get_queue_summary())
 
+    if queue_mode in QUEUE_MODES:
+        before_budget = len(registry)
+        registry, budget_dropped, budget_metrics = apply_platform_budgets(registry)
+        queue_metrics["budget_dropped"] += len(budget_dropped)
+        queue_metrics["budgets"] = budget_metrics
+        if budget_dropped and queue_mode == "active":
+            conn = get_connection()
+            try:
+                queue_metrics["released_skipped"] += release_company_leases(conn, budget_dropped, lease_owner)
+            finally:
+                conn.close()
+        if budget_dropped:
+            _log(
+                f"Final adaptive platform budgets selected {len(registry)}/{before_budget} targets "
+                f"and deferred {len(budget_dropped)}."
+            )
+
     # ── Skip Unchanged Companies ──────────────────────────────────────
     # Filter out companies that were recently scraped and haven't changed.
     # This is the biggest optimization: 12k → ~2-3k companies per cycle.
@@ -415,6 +455,14 @@ async def run_ats_scraper(
         should_scrape, reason = company_metadata.should_scrape(c["ats"], c["slug"])
         if should_scrape:
             companies_to_scrape.append(c)
+    scrape_keys = {f"{x.get('ats')}:{x.get('slug')}" for x in companies_to_scrape}
+    metadata_skipped = [c for c in registry if f"{c.get('ats')}:{c.get('slug')}" not in scrape_keys]
+    if metadata_skipped and queue_mode == "active":
+        conn = get_connection()
+        try:
+            queue_metrics["released_skipped"] += release_company_leases(conn, metadata_skipped, lease_owner)
+        finally:
+            conn.close()
 
     skip_stats = company_metadata.get_stats()
     _log(
@@ -641,6 +689,7 @@ async def run_ats_scraper(
         "targets_attempted": len(companies_to_scrape),
         "jobs_fetched": len(all_jobs),
         "candidates": len(time_filtered),
+        "queue": queue_metrics,
     }
     _log(f"ATS platform summary: {json.dumps(platform_metrics, sort_keys=True)}")
     if run_status == "degraded":

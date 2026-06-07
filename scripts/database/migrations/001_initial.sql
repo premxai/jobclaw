@@ -37,6 +37,12 @@ CREATE TABLE IF NOT EXISTS jobs (
     salary_currency  TEXT DEFAULT 'USD',
     experience_years INTEGER,
     is_active        BOOLEAN DEFAULT TRUE,
+    quality_score    REAL DEFAULT 0,
+    quality_state    TEXT DEFAULT 'needs_review',
+    quality_reasons  TEXT DEFAULT '[]',
+    canonical_company TEXT DEFAULT '',
+    canonical_title  TEXT DEFAULT '',
+    source_confidence REAL DEFAULT 0,
 
     -- Full-text search vector (auto-populated by trigger)
     search_vector    TSVECTOR
@@ -78,6 +84,7 @@ CREATE INDEX IF NOT EXISTS idx_jobs_active ON jobs (is_active) WHERE is_active =
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs (status);
 CREATE INDEX IF NOT EXISTS idx_jobs_ats ON jobs (source_ats);
 CREATE INDEX IF NOT EXISTS idx_jobs_company ON jobs (company);
+CREATE INDEX IF NOT EXISTS idx_jobs_quality_state ON jobs (quality_state);
 
 -- Composite for common queries
 CREATE INDEX IF NOT EXISTS idx_jobs_ats_company ON jobs (source_ats, company);
@@ -174,15 +181,41 @@ CREATE TABLE IF NOT EXISTS companies (
     validated_metadata          TEXT DEFAULT '',
     last_failure_category       TEXT DEFAULT '',
     last_failure_at             TEXT,
-    last_success_at             TEXT
+    last_success_at             TEXT,
+    next_due_at                 TEXT,
+    lease_until                 TEXT,
+    lease_owner                 TEXT DEFAULT '',
+    last_attempt_at             TEXT,
+    health_state                TEXT DEFAULT 'unknown',
+    scrape_score                REAL DEFAULT 0,
+    avg_duration_ms             REAL DEFAULT 0,
+    yield_rate                  REAL DEFAULT 0,
+    fresh_job_rate              REAL DEFAULT 0,
+    platform_budget_key         TEXT DEFAULT ''
 );
 
 ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'success';
 ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS summary_json TEXT DEFAULT '';
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS quality_score REAL DEFAULT 0;
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS quality_state TEXT DEFAULT 'needs_review';
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS quality_reasons TEXT DEFAULT '[]';
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS canonical_company TEXT DEFAULT '';
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS canonical_title TEXT DEFAULT '';
+ALTER TABLE jobs ADD COLUMN IF NOT EXISTS source_confidence REAL DEFAULT 0;
 ALTER TABLE companies ADD COLUMN IF NOT EXISTS validated_metadata TEXT DEFAULT '';
 ALTER TABLE companies ADD COLUMN IF NOT EXISTS last_failure_category TEXT DEFAULT '';
 ALTER TABLE companies ADD COLUMN IF NOT EXISTS last_failure_at TEXT;
 ALTER TABLE companies ADD COLUMN IF NOT EXISTS last_success_at TEXT;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS next_due_at TEXT;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS lease_until TEXT;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS lease_owner TEXT DEFAULT '';
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS last_attempt_at TEXT;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS health_state TEXT DEFAULT 'unknown';
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS scrape_score REAL DEFAULT 0;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS avg_duration_ms REAL DEFAULT 0;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS yield_rate REAL DEFAULT 0;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS fresh_job_rate REAL DEFAULT 0;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS platform_budget_key TEXT DEFAULT '';
 
 ALTER TABLE companies DROP CONSTRAINT IF EXISTS companies_slug_key;
 DELETE FROM companies a
@@ -194,6 +227,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_companies_ats_slug ON companies (ats_type,
 CREATE INDEX IF NOT EXISTS idx_companies_tier_alive ON companies (tier, is_dead);
 CREATE INDEX IF NOT EXISTS idx_companies_next_scrape ON companies (is_dead, next_scrape_at);
 CREATE INDEX IF NOT EXISTS idx_companies_priority ON companies (priority_score DESC);
+CREATE INDEX IF NOT EXISTS idx_companies_lease ON companies (lease_until);
+CREATE INDEX IF NOT EXISTS idx_companies_queue ON companies (is_dead, health_state, next_due_at, scrape_score DESC);
 
 
 -- ── Applications Table (for future Kanban tracker) ──────────────────

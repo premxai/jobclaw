@@ -11,6 +11,7 @@ Docs: http://localhost:8000/docs
 import json
 import os
 import sys
+import datetime as _dt
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -210,6 +211,30 @@ async def deep_health_check():
         except Exception:
             last_run_info = None
 
+        try:
+            now_iso = _dt.datetime.now(_dt.timezone.utc).isoformat()
+            due_query = (
+                "SELECT COUNT(*) FROM companies "
+                "WHERE COALESCE(is_dead, 0) = 0 "
+                "AND (COALESCE(next_due_at, next_scrape_at) IS NULL "
+                f"OR COALESCE(next_due_at, next_scrape_at) <= {_ph()})"
+            )
+            leased_query = (
+                "SELECT COUNT(*) FROM companies "
+                "WHERE COALESCE(is_dead, 0) = 0 "
+                "AND lease_until IS NOT NULL "
+                f"AND lease_until > {_ph()}"
+            )
+            dead_query = "SELECT COUNT(*) FROM companies WHERE COALESCE(is_dead, 0) = 1"
+            queue_info = {
+                "mode": os.getenv("JOBCLAW_QUEUE_MODE", "shadow"),
+                "backlog_due": _scalar(conn, due_query, (now_iso,)),
+                "leased": _scalar(conn, leased_query, (now_iso,)),
+                "dead_targets": _scalar(conn, dead_query),
+            }
+        except Exception:
+            queue_info = {}
+
         conn.close()
         checks["checks"]["database"] = {
             "status": "ok",
@@ -218,6 +243,7 @@ async def deep_health_check():
             "unposted": unposted,
             "jobs_last_24h": recent,
             "last_run": last_run_info,
+            "queue": queue_info,
         }
     except Exception as e:
         checks["status"] = "degraded"

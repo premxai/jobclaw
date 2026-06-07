@@ -19,10 +19,12 @@ For async PostgreSQL:
 
 import json
 import os
+import re
 import sqlite3
 import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from urllib.parse import urlparse
 
 DB_PATH = Path(__file__).parent.parent.parent / "data" / "jobclaw.db"
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
@@ -40,6 +42,31 @@ TIER_INTERVALS = {
 DEFAULT_TIER = "P2"
 PG_CONNECT_TIMEOUT = int(os.getenv("JOBCLAW_PG_CONNECT_TIMEOUT", "15"))
 PG_CONNECT_RETRIES = int(os.getenv("JOBCLAW_PG_CONNECT_RETRIES", "3"))
+DIRECT_ATS_SOURCES = {
+    "greenhouse",
+    "lever",
+    "ashby",
+    "workday",
+    "workable",
+    "rippling",
+    "smartrecruiters",
+    "bamboohr",
+    "icims",
+}
+_BLOCKED_JOB_URL_TOKENS = (
+    "/salary",
+    "/salaries",
+    "/jobs-in-",
+    "/browse",
+    "/search",
+    "q=",
+    "query=",
+    "keyword=",
+)
+_GENERIC_JOB_TITLE_RE = re.compile(
+    r"\b(\d[\d,]*\+?\s+.+jobs\s+hiring|salary in|jobs hiring now|job search|career salary)\b",
+    re.I,
+)
 
 
 def get_hot_slugs() -> set[str]:
@@ -109,6 +136,52 @@ def compute_quality_score(job_dict: dict) -> float:
         score -= 30
 
     return max(0.0, min(100.0, score))
+
+
+def classify_job_quality(job_dict: dict) -> tuple[str, list[str], str, str, float]:
+    """Classify whether a job is safe for public surfaces."""
+    title = str(job_dict.get("title") or "").strip()
+    company = str(job_dict.get("company") or "").strip()
+    url = str(job_dict.get("url") or "").strip()
+    source = str(job_dict.get("source_ats") or "").strip().lower()
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower()
+    haystack_url = f"{parsed.path}?{parsed.query}".lower()
+    reasons: list[str] = []
+
+    if source not in DIRECT_ATS_SOURCES:
+        reasons.append("non_direct_source")
+    if not parsed.scheme or not parsed.netloc:
+        reasons.append("invalid_apply_url")
+    if any(token in haystack_url for token in _BLOCKED_JOB_URL_TOKENS):
+        reasons.append("non_job_url")
+    if host.endswith(("indeed.com", "careerbuilder.com", "ziprecruiter.com")):
+        reasons.append("aggregator_host")
+    if not title or len(title) < 4 or _GENERIC_JOB_TITLE_RE.search(title):
+        reasons.append("generic_title")
+    if not company or company.lower() in {"unknown", "n/a", "none"}:
+        reasons.append("unknown_company")
+    if "@" in company and title.lower() in company.lower():
+        reasons.append("malformed_company_title")
+
+    reason_set = set(reasons)
+    confidence = 1.0
+    if "non_direct_source" in reason_set:
+        confidence -= 0.45
+    if {"invalid_apply_url", "non_job_url", "aggregator_host"} & reason_set:
+        confidence -= 0.35
+    if {"generic_title", "unknown_company", "malformed_company_title"} & reason_set:
+        confidence -= 0.25
+    confidence = max(0.0, round(confidence, 2))
+
+    if not reasons:
+        state = "accepted"
+    elif {"invalid_apply_url", "non_job_url", "aggregator_host", "generic_title"} & reason_set:
+        state = "rejected"
+    else:
+        state = "needs_review"
+
+    return state, reasons, company, title, confidence
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -212,7 +285,12 @@ def _ensure_postgres_schema(conn):
         last_seen_at TEXT,
         discord_posted BOOLEAN DEFAULT FALSE,
         embedding_json TEXT,
-        quality_score REAL DEFAULT 0
+        quality_score REAL DEFAULT 0,
+        quality_state TEXT DEFAULT 'needs_review',
+        quality_reasons TEXT DEFAULT '[]',
+        canonical_company TEXT DEFAULT '',
+        canonical_title TEXT DEFAULT '',
+        source_confidence REAL DEFAULT 0
     )
     """)
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_pg_status ON jobs(status)")
@@ -220,6 +298,15 @@ def _ensure_postgres_schema(conn):
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_pg_company ON jobs(company)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_pg_source_ats ON jobs(source_ats)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_pg_is_active ON jobs(is_active)")
+    for col_def in [
+        "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS quality_state TEXT DEFAULT 'needs_review'",
+        "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS quality_reasons TEXT DEFAULT '[]'",
+        "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS canonical_company TEXT DEFAULT ''",
+        "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS canonical_title TEXT DEFAULT ''",
+        "ALTER TABLE jobs ADD COLUMN IF NOT EXISTS source_confidence REAL DEFAULT 0",
+    ]:
+        cursor.execute(col_def)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_jobs_quality_state ON jobs(quality_state)")
     cursor.execute("""
     DO $$
     BEGIN
@@ -286,6 +373,16 @@ def _ensure_postgres_schema(conn):
         last_failure_category TEXT DEFAULT '',
         last_failure_at TEXT,
         last_success_at TEXT,
+        next_due_at TEXT,
+        lease_until TEXT,
+        lease_owner TEXT DEFAULT '',
+        last_attempt_at TEXT,
+        health_state TEXT DEFAULT 'unknown',
+        scrape_score REAL DEFAULT 0,
+        avg_duration_ms REAL DEFAULT 0,
+        yield_rate REAL DEFAULT 0,
+        fresh_job_rate REAL DEFAULT 0,
+        platform_budget_key TEXT DEFAULT '',
         source_count INTEGER DEFAULT 1,
         priority_score REAL DEFAULT 0,
         next_scrape_at TEXT,
@@ -317,6 +414,16 @@ def _ensure_postgres_schema(conn):
         "ALTER TABLE companies ADD COLUMN IF NOT EXISTS last_failure_category TEXT DEFAULT ''",
         "ALTER TABLE companies ADD COLUMN IF NOT EXISTS last_failure_at TEXT",
         "ALTER TABLE companies ADD COLUMN IF NOT EXISTS last_success_at TEXT",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS next_due_at TEXT",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS lease_until TEXT",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS lease_owner TEXT DEFAULT ''",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS last_attempt_at TEXT",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS health_state TEXT DEFAULT 'unknown'",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS scrape_score REAL DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS avg_duration_ms REAL DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS yield_rate REAL DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS fresh_job_rate REAL DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN IF NOT EXISTS platform_budget_key TEXT DEFAULT ''",
         "ALTER TABLE companies ADD COLUMN IF NOT EXISTS source_count INTEGER DEFAULT 1",
         "ALTER TABLE companies ADD COLUMN IF NOT EXISTS priority_score REAL DEFAULT 0",
         "ALTER TABLE companies ADD COLUMN IF NOT EXISTS next_scrape_at TEXT",
@@ -328,6 +435,10 @@ def _ensure_postgres_schema(conn):
         cursor.execute(col_def)
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_next_scrape ON companies (is_dead, next_scrape_at)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_priority ON companies (priority_score DESC)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_lease ON companies (lease_until)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_companies_queue ON companies (is_dead, health_state, next_due_at, scrape_score DESC)"
+    )
     for col_def in [
         "ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'success'",
         "ALTER TABLE scraper_runs ADD COLUMN IF NOT EXISTS summary_json TEXT DEFAULT ''",
@@ -365,7 +476,12 @@ def _ensure_sqlite_schema(conn):
         tech_stack TEXT,
         is_active INTEGER DEFAULT 1,
         last_seen_at TEXT,
-        quality_score REAL DEFAULT 0
+        quality_score REAL DEFAULT 0,
+        quality_state TEXT DEFAULT 'needs_review',
+        quality_reasons TEXT DEFAULT '[]',
+        canonical_company TEXT DEFAULT '',
+        canonical_title TEXT DEFAULT '',
+        source_confidence REAL DEFAULT 0
     )
     """)
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_status ON jobs(status)")
@@ -378,8 +494,20 @@ def _ensure_sqlite_schema(conn):
         cursor.execute("ALTER TABLE jobs ADD COLUMN quality_score REAL DEFAULT 0")
     except sqlite3.OperationalError:
         pass
+    for col_def in [
+        "ALTER TABLE jobs ADD COLUMN quality_state TEXT DEFAULT 'needs_review'",
+        "ALTER TABLE jobs ADD COLUMN quality_reasons TEXT DEFAULT '[]'",
+        "ALTER TABLE jobs ADD COLUMN canonical_company TEXT DEFAULT ''",
+        "ALTER TABLE jobs ADD COLUMN canonical_title TEXT DEFAULT ''",
+        "ALTER TABLE jobs ADD COLUMN source_confidence REAL DEFAULT 0",
+    ]:
+        try:
+            cursor.execute(col_def)
+        except sqlite3.OperationalError:
+            pass
 
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_quality ON jobs(quality_score)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_jobs_quality_state ON jobs(quality_state)")
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS runs (
@@ -428,6 +556,16 @@ def _ensure_sqlite_schema(conn):
         last_failure_category TEXT DEFAULT '',
         last_failure_at TEXT,
         last_success_at TEXT,
+        next_due_at TEXT,
+        lease_until TEXT,
+        lease_owner TEXT DEFAULT '',
+        last_attempt_at TEXT,
+        health_state TEXT DEFAULT 'unknown',
+        scrape_score REAL DEFAULT 0,
+        avg_duration_ms REAL DEFAULT 0,
+        yield_rate REAL DEFAULT 0,
+        fresh_job_rate REAL DEFAULT 0,
+        platform_budget_key TEXT DEFAULT '',
         source_count INTEGER DEFAULT 1,
         priority_score REAL DEFAULT 0,
         next_scrape_at TEXT,
@@ -451,6 +589,16 @@ def _ensure_sqlite_schema(conn):
         "ALTER TABLE companies ADD COLUMN last_failure_category TEXT DEFAULT ''",
         "ALTER TABLE companies ADD COLUMN last_failure_at TEXT",
         "ALTER TABLE companies ADD COLUMN last_success_at TEXT",
+        "ALTER TABLE companies ADD COLUMN next_due_at TEXT",
+        "ALTER TABLE companies ADD COLUMN lease_until TEXT",
+        "ALTER TABLE companies ADD COLUMN lease_owner TEXT DEFAULT ''",
+        "ALTER TABLE companies ADD COLUMN last_attempt_at TEXT",
+        "ALTER TABLE companies ADD COLUMN health_state TEXT DEFAULT 'unknown'",
+        "ALTER TABLE companies ADD COLUMN scrape_score REAL DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN avg_duration_ms REAL DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN yield_rate REAL DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN fresh_job_rate REAL DEFAULT 0",
+        "ALTER TABLE companies ADD COLUMN platform_budget_key TEXT DEFAULT ''",
         "ALTER TABLE companies ADD COLUMN source_count INTEGER DEFAULT 1",
         "ALTER TABLE companies ADD COLUMN priority_score REAL DEFAULT 0",
         "ALTER TABLE companies ADD COLUMN next_scrape_at TEXT",
@@ -475,6 +623,10 @@ def _ensure_sqlite_schema(conn):
     cursor.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_companies_ats_slug ON companies (ats_type, slug)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_next_scrape ON companies (is_dead, next_scrape_at)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_priority ON companies (priority_score DESC)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_companies_lease ON companies (lease_until)")
+    cursor.execute(
+        "CREATE INDEX IF NOT EXISTS idx_companies_queue ON companies (is_dead, health_state, next_due_at, scrape_score DESC)"
+    )
     for col_def in [
         "ALTER TABLE scraper_runs ADD COLUMN status TEXT DEFAULT 'success'",
         "ALTER TABLE scraper_runs ADD COLUMN summary_json TEXT DEFAULT ''",
@@ -648,6 +800,14 @@ def insert_job(conn, job_dict: dict) -> bool:
 
     keywords = json.dumps(keywords_list)
     first_seen = datetime.now(timezone.utc).isoformat()
+    quality_state, quality_reasons, canonical_company, canonical_title, source_confidence = classify_job_quality(
+        job_dict
+    )
+    job_dict["quality_state"] = quality_state
+    job_dict["quality_reasons"] = quality_reasons
+    job_dict["canonical_company"] = canonical_company
+    job_dict["canonical_title"] = canonical_title
+    job_dict["source_confidence"] = source_confidence
 
     if is_postgres():
         return _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen)
@@ -667,8 +827,9 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
                 date_posted, source_ats, first_seen, status, keywords_matched,
                 description, salary_min, salary_max, salary_currency,
                 experience_years, remote_ok, job_type, seniority_level,
-                visa_sponsorship, tech_stack, is_active, last_seen_at, quality_score
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'unposted', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)
+                visa_sponsorship, tech_stack, is_active, last_seen_at, quality_score,
+                quality_state, quality_reasons, canonical_company, canonical_title, source_confidence
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'unposted', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
                 internal_hash,
@@ -693,6 +854,11 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
                 tech_stack_json,
                 first_seen,
                 compute_quality_score(job_dict),
+                job_dict["quality_state"],
+                json.dumps(job_dict["quality_reasons"]),
+                job_dict["canonical_company"],
+                job_dict["canonical_title"],
+                job_dict["source_confidence"],
             ),
         )
         conn.commit()
@@ -702,10 +868,21 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
             cursor.execute(
                 """
                 UPDATE jobs
-                SET last_seen_at = ?, is_active = 1, quality_score = ?
+                SET last_seen_at = ?, is_active = 1, quality_score = ?,
+                    quality_state = ?, quality_reasons = ?,
+                    canonical_company = ?, canonical_title = ?, source_confidence = ?
                 WHERE internal_hash = ?
             """,
-                (first_seen, compute_quality_score(job_dict), internal_hash),
+                (
+                    first_seen,
+                    compute_quality_score(job_dict),
+                    job_dict["quality_state"],
+                    json.dumps(job_dict["quality_reasons"]),
+                    job_dict["canonical_company"],
+                    job_dict["canonical_title"],
+                    job_dict["source_confidence"],
+                    internal_hash,
+                ),
             )
             if job_dict.get("description"):
                 tech_stack_json = json.dumps(job_dict["tech_stack"]) if job_dict.get("tech_stack") else None
@@ -755,12 +932,18 @@ def _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
                 date_posted, source_ats, first_seen, status, keywords_matched,
                 description, salary_min, salary_max, salary_currency,
                 experience_years, remote_ok, job_type, seniority_level,
-                visa_sponsorship, tech_stack, is_active, last_seen_at, quality_score
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'unposted', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE, %s, %s)
+                visa_sponsorship, tech_stack, is_active, last_seen_at, quality_score,
+                quality_state, quality_reasons, canonical_company, canonical_title, source_confidence
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'unposted', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (internal_hash) DO UPDATE SET
                 last_seen_at = EXCLUDED.last_seen_at,
                 is_active = TRUE,
                 quality_score = EXCLUDED.quality_score,
+                quality_state = EXCLUDED.quality_state,
+                quality_reasons = EXCLUDED.quality_reasons,
+                canonical_company = EXCLUDED.canonical_company,
+                canonical_title = EXCLUDED.canonical_title,
+                source_confidence = EXCLUDED.source_confidence,
                 description = COALESCE(NULLIF(jobs.description, ''), EXCLUDED.description),
                 salary_min = COALESCE(jobs.salary_min, EXCLUDED.salary_min),
                 salary_max = COALESCE(jobs.salary_max, EXCLUDED.salary_max),
@@ -798,6 +981,11 @@ def _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
                 tech_stack_json,
                 first_seen,
                 compute_quality_score(job_dict),
+                job_dict["quality_state"],
+                json.dumps(job_dict["quality_reasons"]),
+                job_dict["canonical_company"],
+                job_dict["canonical_title"],
+                job_dict["source_confidence"],
             ),
         )
         result = cursor.fetchone()
@@ -852,13 +1040,17 @@ def mark_stale_jobs(conn, source_ats: str, company: str, active_job_ids: set[str
 
 def get_unposted_jobs(conn):
     """Fetch jobs ready to be sent to Discord (last 72 hours)."""
+    direct_only = os.getenv("JOBCLAW_DIRECT_SOURCE_ONLY", "1").strip().lower() in {"1", "true", "yes", "on"}
+    quality_clause_pg = "AND COALESCE(quality_state, 'needs_review') = 'accepted'" if direct_only else ""
+    quality_clause_sqlite = "AND COALESCE(quality_state, 'needs_review') = 'accepted'" if direct_only else ""
     if is_postgres():
         cursor = conn.cursor()
         cursor.execute(
-            """SELECT * FROM jobs
+            f"""SELECT * FROM jobs
                WHERE status = 'unposted'
                  AND is_active = TRUE
                  AND first_seen::timestamptz >= NOW() - INTERVAL '72 hours'
+                 {quality_clause_pg}
                ORDER BY first_seen ASC
                LIMIT 500"""
         )
@@ -878,13 +1070,14 @@ def get_unposted_jobs(conn):
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute(
-            """SELECT * FROM jobs
+            f"""SELECT * FROM jobs
                WHERE status = 'unposted'
                    AND is_active = 1
                  AND (
                    (date_posted != '' AND date_posted >= datetime('now', '-72 hours'))
                    OR (date_posted = '' AND first_seen >= datetime('now', '-72 hours'))
                  )
+                 {quality_clause_sqlite}
                ORDER BY first_seen ASC
                LIMIT 500"""
         )
@@ -1190,6 +1383,230 @@ def get_due_companies_for_scrape(
     return rows
 
 
+def _normalize_company_rows(rows: list[dict]) -> list[dict]:
+    """Normalize DB company rows into scraper target shape."""
+    for c in rows:
+        if "ats_type" in c and "ats" not in c:
+            c["ats"] = c["ats_type"]
+        if "name" in c and "company" not in c:
+            c["company"] = c["name"]
+    return rows
+
+
+def claim_adaptive_companies_for_scrape(
+    conn,
+    limit: int = 250,
+    platforms: set[str] | None = None,
+    lease_owner: str = "",
+    lease_seconds: int = 300,
+    include_not_due: bool = False,
+) -> list[dict]:
+    """Claim queue targets with a short DB lease so workers do not duplicate work."""
+    cursor = conn.cursor()
+    placeholder = "%s" if is_postgres() else "?"
+    now = datetime.now(timezone.utc).isoformat()
+    lease_until = (datetime.now(timezone.utc) + timedelta(seconds=lease_seconds)).isoformat()
+    owner = lease_owner or f"jobclaw:{os.getpid()}"
+
+    platform_sql = ""
+    params: list = []
+    if platforms:
+        qs = ",".join(placeholder for _ in platforms)
+        platform_sql = f" AND LOWER(ats_type) IN ({qs})"
+        params.extend(sorted(p.lower() for p in platforms))
+
+    due_sql = ""
+    if not include_not_due:
+        due_sql = (
+            f" AND (COALESCE(next_due_at, next_scrape_at) IS NULL "
+            f"OR COALESCE(next_due_at, next_scrape_at) <= {placeholder})"
+        )
+        params.append(now)
+
+    if is_postgres():
+        cursor.execute(
+            f"""
+            WITH picked AS (
+                SELECT id
+                FROM companies
+                WHERE COALESCE(is_dead, 0) = 0
+                  AND (lease_until IS NULL OR lease_until <= {placeholder} OR lease_owner = {placeholder})
+                  {platform_sql}
+                  {due_sql}
+                ORDER BY
+                  CASE COALESCE(tier, 'P2') WHEN 'P0' THEN 0 WHEN 'P1' THEN 1 WHEN 'P2' THEN 2 ELSE 3 END,
+                  COALESCE(scrape_score, 0) DESC,
+                  COALESCE(priority_score, 0) DESC,
+                  COALESCE(fresh_job_rate, 0) DESC,
+                  COALESCE(next_due_at, next_scrape_at, '') ASC,
+                  slug ASC
+                LIMIT {placeholder}
+                FOR UPDATE SKIP LOCKED
+            )
+            UPDATE companies c
+            SET lease_until = {placeholder},
+                lease_owner = {placeholder},
+                last_attempt_at = {placeholder}
+            FROM picked
+            WHERE c.id = picked.id
+            RETURNING c.*
+            """,
+            (now, owner, *params, limit, lease_until, owner, now),
+        )
+        cols = [desc[0] for desc in cursor.description]
+        rows = [dict(zip(cols, row)) for row in cursor.fetchall()]
+    else:
+        cursor.execute("BEGIN IMMEDIATE")
+        cursor.execute(
+            f"""
+            SELECT *
+            FROM companies
+            WHERE COALESCE(is_dead, 0) = 0
+              AND (lease_until IS NULL OR lease_until <= {placeholder} OR lease_owner = {placeholder})
+              {platform_sql}
+              {due_sql}
+            ORDER BY
+              CASE COALESCE(tier, 'P2') WHEN 'P0' THEN 0 WHEN 'P1' THEN 1 WHEN 'P2' THEN 2 ELSE 3 END,
+              COALESCE(scrape_score, 0) DESC,
+              COALESCE(priority_score, 0) DESC,
+              COALESCE(fresh_job_rate, 0) DESC,
+              COALESCE(next_due_at, next_scrape_at, '') ASC,
+              slug ASC
+            LIMIT {placeholder}
+            """,
+            (now, owner, *params, limit),
+        )
+        rows = [
+            dict(r) if hasattr(r, "keys") else dict(zip([d[0] for d in cursor.description], r))
+            for r in cursor.fetchall()
+        ]
+        ids = [r["id"] for r in rows]
+        if ids:
+            qs = ",".join("?" for _ in ids)
+            cursor.execute(
+                f"""
+                UPDATE companies
+                SET lease_until = ?,
+                    lease_owner = ?,
+                    last_attempt_at = ?
+                WHERE id IN ({qs})
+                """,
+                (lease_until, owner, now, *ids),
+            )
+    conn.commit()
+    return _normalize_company_rows(rows)
+
+
+def release_company_leases(conn, targets: list[dict], lease_owner: str = "") -> int:
+    """Release active leases for skipped targets."""
+    if not targets:
+        return 0
+    cursor = conn.cursor()
+    placeholder = "%s" if is_postgres() else "?"
+    released = 0
+    for target in targets:
+        params = [target.get("ats") or target.get("ats_type"), target.get("slug")]
+        owner_clause = ""
+        if lease_owner:
+            owner_clause = f" AND lease_owner = {placeholder}"
+            params.append(lease_owner)
+        cursor.execute(
+            f"""
+            UPDATE companies
+            SET lease_until = NULL,
+                lease_owner = ''
+            WHERE ats_type = {placeholder}
+              AND slug = {placeholder}
+              {owner_clause}
+            """,
+            tuple(params),
+        )
+        released += cursor.rowcount
+    conn.commit()
+    return released
+
+
+def get_scraper_control_snapshot(conn) -> dict:
+    """Return queue/control-plane metrics for API health and operator reports."""
+    cursor = conn.cursor()
+    now = datetime.now(timezone.utc).isoformat()
+    placeholder = "%s" if is_postgres() else "?"
+
+    def scalar(sql: str, params: tuple = ()) -> int:
+        cursor.execute(sql, params)
+        row = cursor.fetchone()
+        return int(row[0] if row else 0)
+
+    active_expr = "COALESCE(is_dead, 0) = 0"
+    backlog = scalar(
+        f"""
+        SELECT COUNT(*) FROM companies
+        WHERE {active_expr}
+          AND (COALESCE(next_due_at, next_scrape_at) IS NULL
+               OR COALESCE(next_due_at, next_scrape_at) <= {placeholder})
+        """,
+        (now,),
+    )
+    leased = scalar(
+        f"SELECT COUNT(*) FROM companies WHERE {active_expr} AND lease_until IS NOT NULL AND lease_until > {placeholder}",
+        (now,),
+    )
+    dead = scalar("SELECT COUNT(*) FROM companies WHERE COALESCE(is_dead, 0) = 1")
+    stale_hot = scalar(
+        f"""
+        SELECT COUNT(*) FROM companies
+        WHERE tier IN ('P0', 'P1')
+          AND {active_expr}
+          AND (last_success_at IS NULL OR last_success_at < {placeholder})
+        """,
+        ((datetime.now(timezone.utc) - timedelta(hours=6)).isoformat(),),
+    )
+
+    cursor.execute(
+        f"""
+        SELECT COALESCE(ats_type, 'unknown') AS platform,
+               COUNT(*) AS targets,
+               SUM(CASE WHEN COALESCE(is_dead, 0) = 1 THEN 1 ELSE 0 END) AS dead,
+               SUM(CASE WHEN lease_until IS NOT NULL AND lease_until > {placeholder} THEN 1 ELSE 0 END) AS leased,
+               AVG(COALESCE(scrape_score, priority_score, 0)) AS avg_score
+        FROM companies
+        GROUP BY COALESCE(ats_type, 'unknown')
+        ORDER BY targets DESC
+        """,
+        (now,),
+    )
+    platforms = []
+    for row in cursor.fetchall():
+        d = dict(row) if hasattr(row, "keys") else dict(zip([desc[0] for desc in cursor.description], row))
+        platforms.append(d)
+
+    cursor.execute(
+        """
+        SELECT COALESCE(ats_type, 'unknown') AS ats_type, slug, COALESCE(name, '') AS name,
+               COALESCE(last_failure_category, validation_failure_category, '') AS failure_category,
+               COALESCE(consecutive_failures, 0) AS consecutive_failures
+        FROM companies
+        WHERE COALESCE(consecutive_failures, 0) > 0
+        ORDER BY consecutive_failures DESC, last_failure_at DESC
+        LIMIT 10
+        """
+    )
+    failing_targets = [
+        dict(row) if hasattr(row, "keys") else dict(zip([desc[0] for desc in cursor.description], row))
+        for row in cursor.fetchall()
+    ]
+
+    return {
+        "mode": os.getenv("JOBCLAW_QUEUE_MODE", "shadow"),
+        "backlog_due": backlog,
+        "leased": leased,
+        "dead_targets": dead,
+        "stale_hot_targets": stale_hot,
+        "platforms": platforms,
+        "top_failing_targets": failing_targets,
+    }
+
+
 def update_company_last_scraped(
     conn,
     slug: str,
@@ -1231,6 +1648,8 @@ def update_company_last_scraped(
     total_jobs = previous_jobs + max(0, job_count)
     total_relevant = int(company.get("total_relevant_jobs_found") or 0) + max(0, relevant_count)
     avg_jobs = round(total_jobs / total_scrapes, 2) if total_scrapes else 0
+    yield_rate = round(total_jobs / total_scrapes, 4) if total_scrapes else 0
+    fresh_job_rate = round(total_relevant / total_scrapes, 4) if total_scrapes else 0
 
     tier = company.get("tier") or DEFAULT_TIER
     if relevant_count > 0 and tier in {"P2", "P3"}:
@@ -1255,6 +1674,10 @@ def update_company_last_scraped(
     failure_expr = "consecutive_failures + 1" if failed else "0"
     failure_threshold = 2 if failure_category == "bad_target" else 10
     dead_expr = f"CASE WHEN consecutive_failures + 1 >= {failure_threshold} THEN 1 ELSE is_dead END" if failed else "0"
+    new_failures = int(company.get("consecutive_failures") or 0) + (1 if failed else 0)
+    will_be_dead = failed and new_failures >= failure_threshold
+    health_state = "quarantined" if will_be_dead else ("degraded" if failed else "healthy")
+    scrape_score = round(priority_score + min(fresh_job_rate * 25, 25) + min(yield_rate * 5, 25) - new_failures * 5, 2)
 
     cursor.execute(
         f"""
@@ -1274,7 +1697,15 @@ def update_company_last_scraped(
             total_relevant_jobs_found = {placeholder},
             avg_jobs_found = {placeholder},
             priority_score = {placeholder},
-            next_scrape_at = {placeholder}
+            next_scrape_at = {placeholder},
+            next_due_at = {placeholder},
+            lease_until = NULL,
+            lease_owner = '',
+            health_state = {placeholder},
+            scrape_score = {placeholder},
+            yield_rate = {placeholder},
+            fresh_job_rate = {placeholder},
+            platform_budget_key = {placeholder}
         WHERE {target_clause}
         """,
         (
@@ -1292,6 +1723,12 @@ def update_company_last_scraped(
             avg_jobs,
             priority_score,
             next_scrape_at,
+            next_scrape_at,
+            health_state,
+            scrape_score,
+            yield_rate,
+            fresh_job_rate,
+            ats or company.get("ats_type") or "",
             *target_params,
         ),
     )
@@ -1396,15 +1833,35 @@ def mark_company_failure(conn, slug: str, permanent: bool = False):
             SET consecutive_failures = consecutive_failures + 1,
                 validation_status = {placeholder},
                 validation_failure_category = {placeholder},
+                last_failure_category = {placeholder},
+                last_failure_at = {placeholder},
+                health_state = {placeholder},
                 priority_score = {placeholder},
-                next_scrape_at = {placeholder}
+                next_scrape_at = {placeholder},
+                next_due_at = {placeholder}
             WHERE slug = {placeholder}
             """,
-            (failure_status, failure_status, priority_score, next_scrape_at, slug),
+            (
+                failure_status,
+                failure_status,
+                failure_status,
+                datetime.now(timezone.utc).isoformat(),
+                "degraded",
+                priority_score,
+                next_scrape_at,
+                next_scrape_at,
+                slug,
+            ),
         )
         threshold = 2 if permanent else 10
         cursor.execute(
-            f"UPDATE companies SET is_dead = 1 WHERE slug = {placeholder} AND consecutive_failures >= {placeholder}",
+            f"""
+            UPDATE companies
+            SET is_dead = 1,
+                health_state = 'quarantined'
+            WHERE slug = {placeholder}
+              AND consecutive_failures >= {placeholder}
+            """,
             (slug, threshold),
         )
         conn.commit()
@@ -1455,14 +1912,20 @@ def record_company_validation(conn, ats: str, slug: str, result: dict):
                 validation_http_status = {placeholder},
                 consecutive_failures = 0,
                 is_dead = 0,
+                health_state = 'healthy',
+                last_success_at = {placeholder},
                 priority_score = {placeholder},
                 next_scrape_at = CASE
                     WHEN next_scrape_at IS NULL OR next_scrape_at > {placeholder} THEN {placeholder}
                     ELSE next_scrape_at
+                END,
+                next_due_at = CASE
+                    WHEN next_due_at IS NULL OR next_due_at > {placeholder} THEN {placeholder}
+                    ELSE next_due_at
                 END
             WHERE ats_type = {placeholder} AND slug = {placeholder}
             """,
-            (status, now, http_status, priority_score, now, now, ats, slug),
+            (status, now, http_status, now, priority_score, now, now, now, now, ats, slug),
         )
     else:
         company["consecutive_failures"] = int(company.get("consecutive_failures") or 0) + 1
@@ -1477,17 +1940,36 @@ def record_company_validation(conn, ats: str, slug: str, result: dict):
                 validation_failure_category = {placeholder},
                 validation_http_status = {placeholder},
                 consecutive_failures = consecutive_failures + 1,
+                last_failure_category = {placeholder},
+                last_failure_at = {placeholder},
+                health_state = {placeholder},
                 priority_score = {placeholder},
-                next_scrape_at = {placeholder}
+                next_scrape_at = {placeholder},
+                next_due_at = {placeholder}
             WHERE ats_type = {placeholder} AND slug = {placeholder}
             """,
-            (status, error[:1000], now, category, http_status, priority_score, next_scrape_at, ats, slug),
+            (
+                status,
+                error[:1000],
+                now,
+                category,
+                http_status,
+                category,
+                now,
+                "degraded",
+                priority_score,
+                next_scrape_at,
+                next_scrape_at,
+                ats,
+                slug,
+            ),
         )
         threshold = 3 if is_bad_target else 10
         cursor.execute(
             f"""
             UPDATE companies
-            SET is_dead = 1
+            SET is_dead = 1,
+                health_state = 'quarantined'
             WHERE ats_type = {placeholder}
               AND slug = {placeholder}
               AND consecutive_failures >= {placeholder}

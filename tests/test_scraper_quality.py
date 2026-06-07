@@ -2,6 +2,7 @@ import os
 import unittest
 
 from scripts.discord_push import _passes_strict_job_quality
+from scripts.database.db_utils import classify_job_quality
 from scripts.utils.target_diagnostics import apply_cached_metadata, classify_failure
 
 
@@ -107,6 +108,41 @@ class DiscordStrictQualityTests(unittest.TestCase):
                 ok, reason = _passes_strict_job_quality(job)
                 self.assertFalse(ok)
                 self.assertEqual(reason, expected_reason)
+
+
+class JobQualityClassifierTests(unittest.TestCase):
+    def test_accepts_direct_ats_job(self):
+        state, reasons, company, title, confidence = classify_job_quality(
+            {
+                "title": "Founding AI Engineer",
+                "company": "Acme AI",
+                "url": "https://jobs.ashbyhq.com/acme/123",
+                "source_ats": "ashby",
+            }
+        )
+
+        self.assertEqual(state, "accepted")
+        self.assertEqual(reasons, [])
+        self.assertEqual(company, "Acme AI")
+        self.assertEqual(title, "Founding AI Engineer")
+        self.assertEqual(confidence, 1.0)
+
+    def test_rejects_non_job_aggregator_record(self):
+        state, reasons, _company, _title, confidence = classify_job_quality(
+            {
+                "title": "Software Engineer Salary in Austin",
+                "company": "Indeed",
+                "url": "https://www.indeed.com/career/software-engineer/salaries/Austin--TX",
+                "source_ats": "indeed",
+            }
+        )
+
+        self.assertEqual(state, "rejected")
+        self.assertIn("non_direct_source", reasons)
+        self.assertIn("non_job_url", reasons)
+        self.assertIn("aggregator_host", reasons)
+        self.assertIn("generic_title", reasons)
+        self.assertLess(confidence, 0.5)
 
 
 if __name__ == "__main__":
