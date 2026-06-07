@@ -195,7 +195,7 @@ async def run_all(
                 _with_timeout(
                     _run_with_timing("Brave Search (LinkedIn/Indeed/Glassdoor)", run_brave_scraper()),
                     "Brave Search (LinkedIn/Indeed/Glassdoor)",
-                    120,
+                    int(os.getenv("JOBCLAW_BRAVE_TIMEOUT_SECONDS", "240")),
                 )
             )
         else:

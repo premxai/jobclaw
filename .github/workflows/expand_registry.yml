@@ -1,4 +1,4 @@
-name: "🔍 Registry Expander — Manual Input Refresh"
+name: "🔍 Registry Expander — Daily Input Refresh"
 
 # ┌────────────────────────────────────────────────────────────────────┐
 # │  MANUAL INPUT REFRESH — Railway/Postgres companies table is the   │
@@ -12,10 +12,16 @@ name: "🔍 Registry Expander — Manual Input Refresh"
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
+  schedule:
+    - cron: "17 7 * * *"
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: registry-expander
+  cancel-in-progress: true
 
 jobs:
   expand-registry:

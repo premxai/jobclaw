@@ -1,16 +1,21 @@
 name: "📢 Discord Push — Post Unposted Jobs (Every 15min)"
 
 # ┌──────────────────────────────────────────────────────────────────────┐
-# │  MANUAL EMERGENCY TRIGGER ONLY — scheduling owned by Railway worker  │
-# │  The Railway ARQ worker enqueues task_discord_push every 15 min via  │
-# │  APScheduler. Use this workflow only for manual testing/recovery.    │
+# │  SCHEDULED DISCORD PUSH — posts accepted direct-source jobs.         │
+# │  Runs every 15 minutes, offset after hot/fast/medium scrapes.        │
 # └──────────────────────────────────────────────────────────────────────┘
 
 on:
+  schedule:
+    - cron: "14,29,44,59 * * * *"
   workflow_dispatch:         # Manual trigger for testing/recovery
 
 permissions:
   contents: write
+
+concurrency:
+  group: discord-push
+  cancel-in-progress: true
 
 jobs:
   discord-push:

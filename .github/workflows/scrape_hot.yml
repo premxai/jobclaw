@@ -1,12 +1,13 @@
-name: "🔥 Hot Scraper — 192 Companies Every 5min"
+name: "🔥 Hot Scraper — 192 Companies Every 15min"
 
 # ┌──────────────────────────────────────────────────────────────────────┐
-# │  MANUAL EMERGENCY TRIGGER ONLY — scheduling owned by Railway worker │
-# │  The Railway ARQ worker enqueues task_hot every 5 minutes via       │
-# │  APScheduler. Use this workflow only for manual testing/recovery.   │
+# │  SCHEDULED HOT SWEEP — frequent high-priority company monitoring.   │
+# │  Staggered away from fast/medium scrapes and Discord posting.       │
 # └──────────────────────────────────────────────────────────────────────┘
 
 on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
   workflow_dispatch:         # Manual trigger for testing/recovery
 
 permissions:
@@ -20,7 +21,7 @@ jobs:
   hot-scrape:
     name: Hot Scraper Run
     runs-on: ubuntu-latest
-    timeout-minutes: 15      # Setup + 192-target hot sweep; Railway owns production cadence
+    timeout-minutes: 15      # Setup + 192-target hot sweep
 
     steps:
       - uses: actions/checkout@v4

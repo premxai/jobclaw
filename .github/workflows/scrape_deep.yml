@@ -1,16 +1,21 @@
-name: "🌊 Deep Tier — All 27,923 Companies (Daily 11PM UTC)"
+name: "🌊 Deep Tier — Daily Full Sweep"
 
 # ┌────────────────────────────────────────────────────────────────────┐
-# │  MANUAL EMERGENCY TRIGGER ONLY — scheduling owned by Railway worker│
-# │  The Railway ARQ worker enqueues task_deep daily at 23:00 UTC via  │
-# │  APScheduler. Use this workflow only for manual testing/recovery.  │
+# │  SCHEDULED DEEP TIER — full scrape/enrichment sweep once per day.  │
+# │  Runs at 08:17 UTC, away from registry refresh and hourly scrapes. │
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
+  schedule:
+    - cron: "17 8 * * *"
   workflow_dispatch:         # Manual trigger for testing/recovery
 
 permissions:
   contents: write              # Needed to push dedup file back to repo
+
+concurrency:
+  group: deep-scraper
+  cancel-in-progress: true
 
 jobs:
   deep-scrape:
@@ -28,7 +33,9 @@ jobs:
           cache: 'pip'
 
       - name: Install Python dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
 
       - name: Run deep-tier scrapers
         env:

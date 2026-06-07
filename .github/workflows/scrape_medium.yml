@@ -1,12 +1,13 @@
-name: "⚡ Medium Tier — Workday/Rippling/SmartRecruiters (Manual, 16-Shard)"
+name: "⚡ Medium Tier — Hourly Slow ATS"
 
 # ┌────────────────────────────────────────────────────────────────────┐
-# │  MANUAL EMERGENCY TRIGGER ONLY — scheduling owned by Railway worker│
-# │  The Railway ARQ worker enqueues task_medium hourly at :02 via    │
-# │  APScheduler. Use this workflow only for manual testing/recovery.  │
+# │  SCHEDULED MEDIUM TIER — Workday/Rippling/SmartRecruiters/BambooHR │
+# │  Runs hourly at :33 UTC, offset from fast tier and Discord pushes. │
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
+  schedule:
+    - cron: "33 * * * *"
   workflow_dispatch:         # Manual trigger for testing/recovery
     inputs:
       shard:
@@ -15,6 +16,10 @@ on:
 
 permissions:
   contents: write              # Needed to push dedup file back to repo
+
+concurrency:
+  group: medium-scraper
+  cancel-in-progress: true
 
 jobs:
   medium-scrape:

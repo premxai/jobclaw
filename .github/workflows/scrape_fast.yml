@@ -1,18 +1,22 @@
-name: "🚀 Fast Tier — Manual Backup"
+name: "🚀 Fast Tier — Hourly Direct ATS"
 
 # ┌────────────────────────────────────────────────────────────────────┐
-# │  MANUAL EMERGENCY TRIGGER ONLY — scheduling owned by Railway worker│
-# │  Scrapers: RSS feeds + GitHub repos + Group A ATS (4-shard)       │
-# │  ATS Group A: Greenhouse + Lever + Ashby (~10,801 total)          │
-# │  4-shard DB rotation = ~2,700 companies/run, full coverage/4hr    │
-# │  Duration: ~8-12 minutes per run                                   │
+# │  SCHEDULED FAST TIER — RSS + GitHub + direct ATS queue.            │
+# │  Active queue leases prevent duplicate claims across workers.      │
+# │  Runs hourly at :03 UTC, offset from hot/medium/Discord workflows. │
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
+  schedule:
+    - cron: "3 * * * *"
   workflow_dispatch:         # Manual trigger for testing/recovery
 
 permissions:
   contents: write              # Needed to push dedup file back to repo
+
+concurrency:
+  group: fast-scraper
+  cancel-in-progress: true
 
 jobs:
   fast-scrape:

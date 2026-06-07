@@ -96,11 +96,21 @@ python scripts/ingestion/run_all_scrapers.py --tier fast
 python scripts/ingestion/run_all_scrapers.py --tier medium
 ```
 
-Production scheduling is owned by the Railway standalone worker:
-```bash
-python scripts/worker/standalone_worker.py
-```
-GitHub Actions scraper workflows are manual recovery tools only.
+Production scheduling is owned by GitHub Actions, with the Postgres queue leases
+preventing duplicate target claims if another worker is also running:
+
+| Workflow | Schedule |
+| --- | --- |
+| Hot scraper | Every 15 minutes at `:07`, `:22`, `:37`, `:52` UTC |
+| Fast tier | Hourly at `:03` UTC |
+| Medium tier | Hourly at `:33` UTC |
+| Discord push | Every 15 minutes at `:14`, `:29`, `:44`, `:59` UTC |
+| Registry expander | Daily at `07:17` UTC |
+| Deep tier | Daily at `08:17` UTC |
+
+The Railway standalone worker remains available if you prefer a persistent
+worker process, but avoid running both schedulers long-term unless you intend to
+use the DB leases as a horizontal scale test.
 
 Discord posting is live when `JOBCLAW_DISCORD_DRY_RUN=0`, with
 `JOBCLAW_DISCORD_STRICT_QUALITY=1` and `JOBCLAW_DIRECT_SOURCE_ONLY=1` rejecting
