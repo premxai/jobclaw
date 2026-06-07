@@ -215,7 +215,7 @@ def get_stats() -> dict:
             stale_hot_cutoff = (datetime.now(timezone.utc) - timedelta(hours=6)).isoformat()
             p = _ph()
             queue = {
-                "mode": os.getenv("JOBCLAW_QUEUE_MODE", "shadow"),
+                "mode": os.getenv("JOBCLAW_QUEUE_MODE", "active"),
                 "backlog_due": _scalar(
                     f"""
                     SELECT COUNT(*) FROM companies

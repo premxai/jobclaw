@@ -70,7 +70,7 @@ QUEUE_MODES = {"shadow", "active"}
 
 
 def _queue_mode() -> str:
-    mode = os.getenv("JOBCLAW_QUEUE_MODE", "shadow").strip().lower()
+    mode = os.getenv("JOBCLAW_QUEUE_MODE", "active").strip().lower()
     return mode if mode in QUEUE_MODES else "off"
 
 

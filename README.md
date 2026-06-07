@@ -81,10 +81,13 @@ python scripts/ingestion/validate_targets.py --limit 500
 
 ### 4. Start the Background Scrapers (Production)
 Jobs can be executed ad-hoc based on execution tier types. ATS scrapers read due
-targets from Postgres `companies` using `next_scrape_at` and `priority_score`;
-`JOBCLAW_ATS_TARGET_LIMIT` caps how many targets one run claims. Medium runs
-default to `JOBCLAW_MEDIUM_TARGET_LIMIT=800` and `JOBCLAW_WORKDAY_SHARDS=16`
-so Workday-heavy batches stay small and reliable.
+targets from Postgres `companies` through the adaptive control plane. The
+default `JOBCLAW_QUEUE_MODE=active` claims targets with short DB leases, applies
+per-platform budgets, and checkpoints target health after each scrape.
+`JOBCLAW_ATS_TARGET_LIMIT` caps how many targets one run can claim before
+platform budgets defer the rest. Medium runs default to
+`JOBCLAW_MEDIUM_TARGET_LIMIT=800` and `JOBCLAW_WORKDAY_SHARDS=16` so
+Workday-heavy batches stay small and reliable.
 ```bash
 # Light payload - 1 minute runs covering RSS + Boards
 python scripts/ingestion/run_all_scrapers.py --tier fast

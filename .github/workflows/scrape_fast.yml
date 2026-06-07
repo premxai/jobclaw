@@ -37,6 +37,13 @@ jobs:
       - name: Run fast-tier scrapers (RSS + GitHub + Greenhouse/Lever/Ashby)
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JOBCLAW_QUEUE_MODE: "active"
+          JOBCLAW_QUEUE_LEASE_SECONDS: "300"
+          JOBCLAW_DEGRADED_FAILS_WORKFLOW: "0"
+          JOBCLAW_DIRECT_SOURCE_ONLY: "1"
+          JOBCLAW_BRAVE_ENRICHMENT_ONLY: "1"
+          JOBCLAW_DISCORD_DRY_RUN: "1"
+          JOBCLAW_DISCORD_STRICT_QUALITY: "1"
           DISCORD_WEBHOOK_AI: ${{ secrets.DISCORD_WEBHOOK_AI }}
           DISCORD_WEBHOOK_SWE: ${{ secrets.DISCORD_WEBHOOK_SWE }}
           DISCORD_WEBHOOK_DATA: ${{ secrets.DISCORD_WEBHOOK_DATA }}

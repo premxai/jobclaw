@@ -1597,7 +1597,7 @@ def get_scraper_control_snapshot(conn) -> dict:
     ]
 
     return {
-        "mode": os.getenv("JOBCLAW_QUEUE_MODE", "shadow"),
+        "mode": os.getenv("JOBCLAW_QUEUE_MODE", "active"),
         "backlog_due": backlog,
         "leased": leased,
         "dead_targets": dead,

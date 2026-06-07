@@ -227,7 +227,7 @@ async def deep_health_check():
             )
             dead_query = "SELECT COUNT(*) FROM companies WHERE COALESCE(is_dead, 0) = 1"
             queue_info = {
-                "mode": os.getenv("JOBCLAW_QUEUE_MODE", "shadow"),
+                "mode": os.getenv("JOBCLAW_QUEUE_MODE", "active"),
                 "backlog_due": _scalar(conn, due_query, (now_iso,)),
                 "leased": _scalar(conn, leased_query, (now_iso,)),
                 "dead_targets": _scalar(conn, dead_query),
