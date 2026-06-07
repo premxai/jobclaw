@@ -33,7 +33,13 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any
 
-from scripts.utils.http_client import HAS_CURL_CFFI, NOT_MODIFIED, RateLimiter, fetch_with_retry, record_request_failure
+from scripts.utils.http_client import (
+    HAS_CURL_CFFI,
+    NOT_MODIFIED,
+    RateLimiter,
+    fetch_with_retry,
+    record_request_failure,
+)
 from scripts.utils.logger import _log
 from scripts.utils.target_diagnostics import classify_failure
 from scripts.utils.salary_parser import extract_experience, extract_salary, parse_salary_range

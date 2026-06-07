@@ -20,6 +20,7 @@ For async PostgreSQL:
 import json
 import os
 import sqlite3
+import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
@@ -37,6 +38,8 @@ TIER_INTERVALS = {
 }
 
 DEFAULT_TIER = "P2"
+PG_CONNECT_TIMEOUT = int(os.getenv("JOBCLAW_PG_CONNECT_TIMEOUT", "15"))
+PG_CONNECT_RETRIES = int(os.getenv("JOBCLAW_PG_CONNECT_RETRIES", "3"))
 
 
 def get_hot_slugs() -> set[str]:
@@ -139,7 +142,18 @@ def get_connection():
         try:
             import psycopg2
 
-            conn = psycopg2.connect(DATABASE_URL)
+            last_error = None
+            for attempt in range(1, PG_CONNECT_RETRIES + 1):
+                try:
+                    conn = psycopg2.connect(DATABASE_URL, connect_timeout=PG_CONNECT_TIMEOUT)
+                    break
+                except psycopg2.OperationalError as err:
+                    last_error = err
+                    if attempt >= PG_CONNECT_RETRIES:
+                        raise
+                    time.sleep(min(2 * attempt, 6))
+            else:
+                raise last_error
             conn.autocommit = False
             if not _schema_initialized:
                 try:
