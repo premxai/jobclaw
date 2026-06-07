@@ -148,16 +148,16 @@ async def main():
 
     _bulk_fallback = env_flag("JOBCLAW_RAILWAY_BULK_FALLBACK", False)
     enabled_tasks = {
-        "hot": env_flag("JOBCLAW_RAILWAY_ENABLE_HOT", True),
+        "hot": env_flag("JOBCLAW_RAILWAY_ENABLE_HOT", False),
         "fast": env_flag("JOBCLAW_RAILWAY_ENABLE_FAST", _bulk_fallback),
         "medium": env_flag("JOBCLAW_RAILWAY_ENABLE_MEDIUM", _bulk_fallback),
         "deep": env_flag("JOBCLAW_RAILWAY_ENABLE_DEEP", _bulk_fallback),
-        "discord_push": env_flag("JOBCLAW_RAILWAY_ENABLE_DISCORD", True),
-        "validate_targets": env_flag("JOBCLAW_RAILWAY_ENABLE_VALIDATION", True),
+        "discord_push": env_flag("JOBCLAW_RAILWAY_ENABLE_DISCORD", False),
+        "validate_targets": env_flag("JOBCLAW_RAILWAY_ENABLE_VALIDATION", False),
     }
     _log(f"[standalone-worker] Enabled schedules: {enabled_tasks}")
 
-    # 1. Hot companies — every 15 minutes. Lightweight Railway-owned freshness path.
+    # 1. Hot companies — disabled on Railway by default; GitHub Actions owns scheduling.
     add_job_if_enabled(
         scheduler,
         enabled_tasks["hot"],
@@ -190,7 +190,7 @@ async def main():
         replace_existing=True,
     )
 
-    # 4. Discord push — Railway-owned so one persistent process owns posting.
+    # 4. Discord push — disabled on Railway by default; GitHub Actions owns scheduling.
     add_job_if_enabled(
         scheduler,
         enabled_tasks["discord_push"],

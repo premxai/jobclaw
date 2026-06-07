@@ -96,25 +96,25 @@ python scripts/ingestion/run_all_scrapers.py --tier fast
 python scripts/ingestion/run_all_scrapers.py --tier medium
 ```
 
-Production scheduling is split by workload. GitHub Actions owns bulk scraping so
-larger ATS runs use fresh hosted runners and visible per-run logs. Railway owns
-the always-on control-plane tasks that benefit from a persistent process:
+Production scheduling is owned by GitHub Actions so every scraper run has a
+fresh hosted runner, visible logs, and one central timing surface:
 
-| Owner | Task | Schedule |
+| Workflow | Schedule |
 | --- | --- |
-| Railway worker | Hot scraper | Every 15 minutes |
-| Railway worker | Discord push | `:05`, `:20`, `:35`, `:50` UTC |
-| Railway worker | Target validation | Every 6 hours at `:40` UTC |
-| GitHub Actions | Fast tier | Hourly at `:03` UTC |
-| GitHub Actions | Medium tier | Hourly at `:33` UTC |
-| GitHub Actions | Registry expander | Daily at `07:17` UTC |
-| GitHub Actions | Deep tier | Daily at `08:17` UTC |
+| Hot scraper | Every 15 minutes at `:07`, `:22`, `:37`, `:52` UTC |
+| Fast tier | Hourly at `:03` UTC |
+| Discord push | Every 15 minutes at `:14`, `:29`, `:44`, `:59` UTC |
+| Medium tier | Hourly at `:33` UTC |
+| Target validation | Every 6 hours at `:41` UTC |
+| Registry expander | Daily at `07:17` UTC |
+| Deep tier | Daily at `08:17` UTC |
 
-The Railway worker defaults to `JOBCLAW_RAILWAY_ENABLE_FAST=0`,
-`JOBCLAW_RAILWAY_ENABLE_MEDIUM=0`, and `JOBCLAW_RAILWAY_ENABLE_DEEP=0` so it
-does not duplicate GitHub's bulk ATS runs. If GitHub Actions is unavailable, set
-`JOBCLAW_RAILWAY_BULK_FALLBACK=1` or enable an individual Railway bulk task to
-temporarily move scraping back to Railway. Postgres queue leases still prevent
+Railway worker scheduling is disabled by default with
+`JOBCLAW_RAILWAY_ENABLE_HOT=0`, `JOBCLAW_RAILWAY_ENABLE_DISCORD=0`,
+`JOBCLAW_RAILWAY_ENABLE_VALIDATION=0`, `JOBCLAW_RAILWAY_ENABLE_FAST=0`,
+`JOBCLAW_RAILWAY_ENABLE_MEDIUM=0`, and `JOBCLAW_RAILWAY_ENABLE_DEEP=0`. If
+GitHub Actions is unavailable, set `JOBCLAW_RAILWAY_BULK_FALLBACK=1` or enable
+specific Railway fallback tasks temporarily. Postgres queue leases still prevent
 duplicate target claims if both environments overlap during an incident.
 
 Discord posting is live when `JOBCLAW_DISCORD_DRY_RUN=0`, with

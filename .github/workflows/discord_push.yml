@@ -1,11 +1,13 @@
 name: "📢 Discord Push — Post Unposted Jobs (Every 15min)"
 
 # ┌──────────────────────────────────────────────────────────────────────┐
-# │  MANUAL BACKUP — Railway worker owns Discord posting.               │
-# │  Use this only for emergency recovery/testing to avoid duplicates.   │
+# │  SCHEDULED DISCORD PUSH — posts accepted direct-source jobs.         │
+# │  Runs every 15 minutes, offset after scraper workflows.              │
 # └──────────────────────────────────────────────────────────────────────┘
 
 on:
+  schedule:
+    - cron: "14,29,44,59 * * * *"
   workflow_dispatch:         # Manual trigger for testing/recovery
 
 permissions:

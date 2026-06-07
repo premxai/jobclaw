@@ -1,0 +1,41 @@
+name: "🩺 Target Validation — ATS Slug Health"
+
+# ┌────────────────────────────────────────────────────────────────────┐
+# │  SCHEDULED TARGET VALIDATION — cheap ATS endpoint smoke checks.    │
+# │  Keeps slug quarantine/revival state fresh without full scraping.  │
+# └────────────────────────────────────────────────────────────────────┘
+
+on:
+  schedule:
+    - cron: "41 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: target-validation
+  cancel-in-progress: true
+
+jobs:
+  validate-targets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Validate ATS targets
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JOBCLAW_PG_CONNECT_TIMEOUT: "15"
+          JOBCLAW_PG_CONNECT_RETRIES: "3"
+        run: python scripts/ingestion/validate_targets.py --limit 500 --concurrency 6
