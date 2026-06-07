@@ -44,9 +44,7 @@ from scripts.utils.logger import _log
 from scripts.utils.target_diagnostics import classify_failure
 from scripts.utils.salary_parser import extract_experience, extract_salary, parse_salary_range
 
-_LAST_TARGET_METADATA: ContextVar[dict[str, object] | None] = ContextVar(
-    "jobclaw_last_target_metadata", default=None
-)
+_LAST_TARGET_METADATA: ContextVar[dict[str, object] | None] = ContextVar("jobclaw_last_target_metadata", default=None)
 
 
 def record_target_metadata(**metadata: object) -> dict[str, object]:
