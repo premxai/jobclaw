@@ -53,7 +53,12 @@ from scripts.utils.company_metadata import CompanyMetadata
 from scripts.utils.health_tracker import HealthTracker
 from scripts.utils.http_client import RateLimiter, consume_last_failure, create_session, set_response_cache
 from scripts.utils.logger import _log
-from scripts.utils.platform_budgets import DEFAULT_WORKERS, PLATFORM_WORKERS, apply_platform_budgets, platform_target_cap
+from scripts.utils.platform_budgets import (
+    DEFAULT_WORKERS,
+    PLATFORM_WORKERS,
+    apply_platform_budgets,
+    platform_target_cap,
+)
 from scripts.utils.response_cache import ResponseCache
 from scripts.utils.retry_queue import RetryQueue
 from scripts.utils.target_diagnostics import apply_cached_target_metadata, classify_failure
