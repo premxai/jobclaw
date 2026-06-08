@@ -108,12 +108,21 @@ app = FastAPI(
 )
 
 # CORS — lock to frontend origins; wildcard + credentials=True is a spec violation
-_allowed_origins = os.getenv(
-    "CORS_ORIGINS", "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:3001"
-).split(",")
+_default_cors_origins = ",".join(
+    [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "https://norinote.xyz",
+        "https://www.norinote.xyz",
+    ]
+)
+_allowed_origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", _default_cors_origins).split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
+    allow_origin_regex=os.getenv("CORS_ORIGIN_REGEX", r"https://.*\.up\.railway\.app"),
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["Content-Type", "X-API-Key", "Authorization"],
@@ -194,7 +203,7 @@ async def deep_health_check():
         unposted = _scalar(conn, "SELECT COUNT(*) FROM jobs WHERE status = 'unposted'")
 
         if _is_pg():
-            freshness_q = "SELECT COUNT(*) FROM jobs WHERE first_seen >= NOW() - INTERVAL '24 hours'"
+            freshness_q = "SELECT COUNT(*) FROM jobs WHERE first_seen::timestamptz >= NOW() - INTERVAL '24 hours'"
         else:
             freshness_q = "SELECT COUNT(*) FROM jobs WHERE first_seen >= datetime('now', '-24 hours')"
         recent = _scalar(conn, freshness_q)
@@ -262,7 +271,19 @@ async def deep_health_check():
         checks["checks"]["database"] = {"status": "error", "error": str(e)}
 
     # 2. Discord configuration
-    webhook = bool(os.getenv("DISCORD_WEBHOOK_URL"))
+    webhook = any(
+        bool(os.getenv(name))
+        for name in (
+            "DISCORD_WEBHOOK_URL",
+            "DISCORD_WEBHOOK_AI",
+            "DISCORD_WEBHOOK_SWE",
+            "DISCORD_WEBHOOK_DATA",
+            "DISCORD_WEBHOOK_NEWGRAD",
+            "DISCORD_WEBHOOK_PRODUCT",
+            "DISCORD_WEBHOOK_RESEARCH",
+            "DISCORD_WEBHOOK_GENERAL",
+        )
+    )
     bot = bool(os.getenv("DISCORD_BOT_TOKEN")) and bool(os.getenv("DISCORD_CHANNEL_ID"))
     checks["checks"]["discord"] = {
         "status": "ok" if (webhook or bot) else "unconfigured",

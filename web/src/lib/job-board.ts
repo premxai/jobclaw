@@ -160,6 +160,7 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
 ];
 
 const API_BASE = "/api";
+const API_FALLBACK_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://api.norinote.xyz").replace(/\/$/, "");
 const BOARD_FRESHNESS_HOURS = 48;
 const BOARD_REFRESH_INTERVAL_MS = 60 * 1000;
 const ENABLE_MOCK_JOBS = process.env.NEXT_PUBLIC_ENABLE_MOCK_JOBS === "1";
@@ -274,6 +275,19 @@ export function mapApiJobToBoardJob(job: ApiJob, index: number): BoardJob {
   };
 }
 
+async function fetchJson<T>(path: string): Promise<T> {
+  try {
+    const localResponse = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
+    if (localResponse.ok) return (await localResponse.json()) as T;
+  } catch {
+    // Fall back to the public API below.
+  }
+
+  const fallbackResponse = await fetch(`${API_FALLBACK_BASE}${path}`, { cache: "no-store", credentials: "omit" });
+  if (!fallbackResponse.ok) throw new Error(`Fallback API ${fallbackResponse.status}`);
+  return (await fallbackResponse.json()) as T;
+}
+
 async function fetchJobsWithParams(params: URLSearchParams): Promise<BoardJob[]> {
   const jobs: BoardJob[] = [];
 
@@ -281,10 +295,7 @@ async function fetchJobsWithParams(params: URLSearchParams): Promise<BoardJob[]>
     const pageParams = new URLSearchParams(params);
     pageParams.set("page", String(page));
 
-    const response = await fetch(`${API_BASE}/jobs?${pageParams.toString()}`, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Jobs API ${response.status}`);
-
-    const data = (await response.json()) as JobsResponse;
+    const data = await fetchJson<JobsResponse>(`/jobs?${pageParams.toString()}`);
     jobs.push(...(data.jobs || []).map(mapApiJobToBoardJob).filter((job) => job.applicationUrl !== "#"));
 
     if (!data.has_more) break;
@@ -345,9 +356,7 @@ export { BOARD_FRESHNESS_HOURS, BOARD_REFRESH_INTERVAL_MS };
 
 export async function fetchLastRefresh(): Promise<string> {
   try {
-    const response = await fetch(`${API_BASE}/stats/runs?limit=1`, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Runs API ${response.status}`);
-    const runs = (await response.json()) as RunsResponseItem[];
+    const runs = await fetchJson<RunsResponseItem[]>("/stats/runs?limit=1");
     return runs[0]?.run_at || new Date().toISOString();
   } catch {
     return new Date().toISOString();

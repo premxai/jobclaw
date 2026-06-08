@@ -31,6 +31,22 @@ def env_flag(name: str, default: bool) -> bool:
     return raw.strip().lower() not in {"0", "false", "no", "off", ""}
 
 
+def discord_configured() -> bool:
+    webhook_names = (
+        "DISCORD_WEBHOOK_URL",
+        "DISCORD_WEBHOOK_AI",
+        "DISCORD_WEBHOOK_SWE",
+        "DISCORD_WEBHOOK_DATA",
+        "DISCORD_WEBHOOK_NEWGRAD",
+        "DISCORD_WEBHOOK_PRODUCT",
+        "DISCORD_WEBHOOK_RESEARCH",
+        "DISCORD_WEBHOOK_GENERAL",
+    )
+    return any(os.getenv(name) for name in webhook_names) or (
+        bool(os.getenv("DISCORD_BOT_TOKEN")) and bool(os.getenv("DISCORD_CHANNEL_ID"))
+    )
+
+
 def add_job_if_enabled(scheduler: AsyncIOScheduler, enabled: bool, *args, **kwargs) -> None:
     job_id = kwargs.get("id", "unknown")
     if enabled:
@@ -152,7 +168,7 @@ async def main():
         "fast": env_flag("JOBCLAW_RAILWAY_ENABLE_FAST", _bulk_fallback),
         "medium": env_flag("JOBCLAW_RAILWAY_ENABLE_MEDIUM", _bulk_fallback),
         "deep": env_flag("JOBCLAW_RAILWAY_ENABLE_DEEP", _bulk_fallback),
-        "discord_push": env_flag("JOBCLAW_RAILWAY_ENABLE_DISCORD", False),
+        "discord_push": env_flag("JOBCLAW_RAILWAY_ENABLE_DISCORD", discord_configured()),
         "validate_targets": env_flag("JOBCLAW_RAILWAY_ENABLE_VALIDATION", False),
     }
     _log(f"[standalone-worker] Enabled schedules: {enabled_tasks}")
