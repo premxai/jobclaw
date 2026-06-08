@@ -89,6 +89,12 @@ Then validate the website:
 https://YOUR-WEB-DOMAIN.up.railway.app
 ```
 
+Then validate the website's own proxy path:
+
+```text
+https://YOUR-WEB-DOMAIN.up.railway.app/status
+```
+
 ## What Common Failures Mean
 
 `Invalid value for '--port': '${PORT:-8000}'`:
@@ -104,6 +110,10 @@ Actions `secrets.DATABASE_URL`.
 
 Website says `Connecting to JobClaw API`:
 The web service cannot reach the API. Check `JOBCLAW_API_INTERNAL_URL` and API deploy status.
+
+Website `/status` shows a failed API or scraper row:
+Use the failed row to decide whether the issue is API boot, database wiring,
+fresh job output, or scraper run history.
 
 Website says `No jobs were posted in the last 48 hours`:
 The API is reachable, but the DB has no fresh jobs for the board. Run a scraper workflow and recheck `/jobs?recent_hours=48`.

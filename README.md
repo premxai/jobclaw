@@ -148,3 +148,5 @@ python scripts/ops/check_web_wiring.py \
 
 You can also run the same check from GitHub Actions with the manual
 **🧭 Web/API Wiring Check** workflow.
+
+The deployed website also exposes a browser status page at `/status`.
