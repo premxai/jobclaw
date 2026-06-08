@@ -32,10 +32,19 @@ export default function JobBoard() {
 
     loadBoard();
     const interval = window.setInterval(() => loadBoard({ silent: true }), BOARD_REFRESH_INTERVAL_MS);
+    const refreshOnFocus = () => loadBoard({ silent: true });
+    const refreshOnVisible = () => {
+      if (document.visibilityState === "visible") loadBoard({ silent: true });
+    };
+
+    window.addEventListener("focus", refreshOnFocus);
+    document.addEventListener("visibilitychange", refreshOnVisible);
 
     return () => {
       mounted = false;
       window.clearInterval(interval);
+      window.removeEventListener("focus", refreshOnFocus);
+      document.removeEventListener("visibilitychange", refreshOnVisible);
     };
   }, []);
 
@@ -54,7 +63,7 @@ export default function JobBoard() {
   const rangeEnd = Math.min(filteredJobs.length, page * JOBS_PER_PAGE);
 
   return (
-    <section className="mx-auto flex h-full w-full max-w-[880px] flex-col justify-center px-4 py-3 sm:px-6">
+    <section className="mx-auto flex h-full w-full max-w-[880px] flex-col justify-center px-4 py-[clamp(0.5rem,1.2dvh,0.75rem)] sm:px-6">
       <div className="mb-2">
         <CategoryTabs jobs={jobs} activeCategory={activeCategory} onChange={setActiveCategory} />
       </div>
@@ -63,15 +72,17 @@ export default function JobBoard() {
         {loading ? (
           <div className="divide-y divide-black/10">
             {Array.from({ length: JOBS_PER_PAGE }).map((_, index) => (
-              <div key={index} className="grid h-[42px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-1.5 sm:px-5">
+              <div
+                key={index}
+                className="grid h-[clamp(34px,4.7dvh,42px)] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-[clamp(0.25rem,0.55dvh,0.375rem)] sm:px-5"
+              >
                 <div className="space-y-2">
                   <div className="h-4 w-52 max-w-full animate-pulse rounded-full bg-white/60" />
                   <div className="h-3 w-[min(260px,100%)] animate-pulse rounded-full bg-white/50" />
                 </div>
                 <div className="flex gap-2">
                   <div className="h-6 w-16 animate-pulse rounded-full bg-white/55" />
-                  <div className="hidden h-6 w-20 animate-pulse rounded-full bg-white/55 sm:block" />
-                  <div className="h-8 w-8 animate-pulse rounded-full bg-white/55" />
+                  <div className="h-7 w-7 animate-pulse rounded-full bg-white/55 sm:h-8 sm:w-8" />
                 </div>
               </div>
             ))}
@@ -94,7 +105,7 @@ export default function JobBoard() {
           </div>
         )}
 
-        <div className="flex h-10 items-center justify-between border-t border-black/10 bg-white/18 px-4 sm:px-5">
+        <div className="flex h-[clamp(34px,4.5dvh,40px)] items-center justify-between border-t border-black/10 bg-white/18 px-4 sm:px-5">
           <p className="text-xs font-medium text-zinc-500">
             Page {filteredJobs.length ? page : 0} of {filteredJobs.length ? totalPages : 0}
           </p>
@@ -103,7 +114,7 @@ export default function JobBoard() {
               type="button"
               onClick={() => setPage((current) => Math.max(1, current - 1))}
               disabled={page <= 1 || loading || !filteredJobs.length}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 text-zinc-700 transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-zinc-100 disabled:hover:text-zinc-700"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-zinc-700 transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-zinc-100 disabled:hover:text-zinc-700 sm:h-8 sm:w-8"
               aria-label="Previous page"
             >
               <ChevronLeft className="h-4 w-4" aria-hidden="true" />
@@ -115,7 +126,7 @@ export default function JobBoard() {
               type="button"
               onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
               disabled={page >= totalPages || loading || !filteredJobs.length}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-zinc-100 text-zinc-700 transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-zinc-100 disabled:hover:text-zinc-700"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-zinc-700 transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-zinc-100 disabled:hover:text-zinc-700 sm:h-8 sm:w-8"
               aria-label="Next page"
             >
               <ChevronRight className="h-4 w-4" aria-hidden="true" />

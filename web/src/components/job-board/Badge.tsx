@@ -1,16 +1,16 @@
-import { Clock, MapPin } from "lucide-react";
+import { MapPin } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
 interface BadgeProps {
   children: React.ReactNode;
   tone?: "neutral" | "remote" | "hybrid";
-  icon?: "location" | "clock";
+  icon?: "location";
   className?: string;
 }
 
 export default function Badge({ children, tone = "neutral", icon, className }: BadgeProps) {
-  const Icon = icon === "location" ? MapPin : icon === "clock" ? Clock : null;
+  const Icon = icon === "location" ? MapPin : null;
 
   return (
     <span

@@ -12,15 +12,12 @@ export type DiscordJobCategory =
 export type BoardCategory = "All Roles" | "AI/ML" | "SWE" | "Data" | "Other";
 export type BoardJobCategory = Exclude<BoardCategory, "All Roles">;
 
-export type JobType = "Full-time" | "Internship" | "Contract";
-
 export interface BoardJob {
   id: string;
   title: string;
   category: BoardJobCategory;
   description: string;
   location: string;
-  jobType: JobType;
   isHot: boolean;
   applicationUrl: string;
   postedAt: string;
@@ -82,7 +79,6 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
     category: "AI/ML",
     description: "JobClaw Demo",
     location: "Remote",
-    jobType: "Full-time",
     isHot: false,
     applicationUrl: "https://example.com/apply/machine-learning-engineer",
     postedAt: "2026-06-06",
@@ -95,7 +91,6 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
     category: "AI/ML",
     description: "JobClaw Demo",
     location: "Remote",
-    jobType: "Internship",
     isHot: false,
     applicationUrl: "https://example.com/apply/ai-engineer-intern",
     postedAt: "2026-06-06",
@@ -108,7 +103,6 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
     category: "Data",
     description: "JobClaw Demo",
     location: "Remote",
-    jobType: "Full-time",
     isHot: false,
     applicationUrl: "https://example.com/apply/data-scientist",
     postedAt: "2026-06-05",
@@ -121,7 +115,6 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
     category: "SWE",
     description: "JobClaw Demo",
     location: "San Francisco, CA",
-    jobType: "Full-time",
     isHot: false,
     applicationUrl: "https://example.com/apply/founding-ai-engineer",
     postedAt: "2026-06-05",
@@ -134,7 +127,6 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
     category: "Other",
     description: "JobClaw Demo",
     location: "Remote",
-    jobType: "Full-time",
     isHot: false,
     applicationUrl: "https://example.com/apply/product-designer",
     postedAt: "2026-06-04",
@@ -147,7 +139,6 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
     category: "Other",
     description: "JobClaw Demo",
     location: "New York, NY",
-    jobType: "Full-time",
     isHot: false,
     applicationUrl: "https://example.com/apply/product-manager",
     postedAt: "2026-06-03",
@@ -160,7 +151,6 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
     category: "Other",
     description: "JobClaw Demo",
     location: "Remote",
-    jobType: "Contract",
     isHot: false,
     applicationUrl: "https://example.com/apply/growth-marketer",
     postedAt: "2026-06-02",
@@ -171,7 +161,7 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
 
 const API_BASE = "/api";
 const BOARD_FRESHNESS_HOURS = 48;
-const BOARD_REFRESH_INTERVAL_MS = 15 * 60 * 1000;
+const BOARD_REFRESH_INTERVAL_MS = 60 * 1000;
 const ENABLE_MOCK_JOBS = process.env.NEXT_PUBLIC_ENABLE_MOCK_JOBS === "1";
 
 function keywordText(job: ApiJob): string {
@@ -227,13 +217,6 @@ function classifyCategory(job: ApiJob): BoardJob["category"] {
   return "Other";
 }
 
-function classifyJobType(job: ApiJob): JobType {
-  const text = `${job.title || ""} ${job.description || ""}`.toLowerCase();
-  if (/\b(intern|internship|new grad|graduate)\b/.test(text)) return "Internship";
-  if (/\b(contract|contractor|freelance|temporary)\b/.test(text)) return "Contract";
-  return "Full-time";
-}
-
 function cleanLocation(location?: string): string {
   const raw = location?.replace(/\s+/g, " ").trim();
   if (!raw || /^(unknown|n\/a|none|null|not specified|location tbd)$/i.test(raw)) return "Remote";
@@ -283,7 +266,6 @@ export function mapApiJobToBoardJob(job: ApiJob, index: number): BoardJob {
     category,
     description: companyLabel(job.company, sourceLabel(job.source_ats)),
     location: cleanLocation(job.location),
-    jobType: classifyJobType(job),
     isHot: isHotJob(job),
     applicationUrl: job.url || "#",
     postedAt: job.date_posted || job.first_seen || new Date().toISOString(),
