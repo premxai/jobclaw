@@ -1,6 +1,6 @@
 import { ArrowRight } from "lucide-react";
 
-import Badge, { locationTone } from "./Badge";
+import Badge from "./Badge";
 import type { BoardJob } from "@/lib/job-board";
 
 interface JobRowProps {
@@ -9,22 +9,22 @@ interface JobRowProps {
 
 export default function JobRow({ job }: JobRowProps) {
   return (
-    <article className="group grid min-h-[48px] gap-2 border-b border-black/10 px-4 py-2 transition-colors duration-200 last:border-b-0 hover:bg-white/36 sm:px-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-5">
+    <article className="group grid min-h-[42px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-black/10 px-4 py-1.5 transition-colors duration-200 last:border-b-0 hover:bg-white/36 sm:px-5">
       <div className="min-w-0">
         <div className="flex min-w-0 items-center gap-2">
           <h2 className="truncate text-sm font-semibold tracking-tight text-zinc-900 sm:text-[15px]">{job.title}</h2>
         </div>
-        <p className="mt-0.5 line-clamp-1 max-w-2xl text-[11px] leading-4 text-zinc-500 sm:text-xs">
+        <p className="mt-0.5 truncate text-[11px] leading-4 text-zinc-500 sm:text-xs">
           {job.description}
         </p>
       </div>
 
-      <div className="flex min-w-0 items-center gap-2 lg:justify-end">
+      <div className="flex min-w-0 items-center gap-2 justify-end">
         <div className="flex min-w-0 flex-nowrap items-center gap-2">
-          <Badge tone={locationTone(job.locationType)} icon="location" className="max-w-[168px] truncate sm:max-w-[210px]">
+          <Badge tone="neutral" icon="location" className="max-w-[98px] truncate bg-white/58 sm:max-w-[190px]">
             {job.location}
           </Badge>
-          <Badge tone="neutral" icon="clock">
+          <Badge tone="neutral" icon="clock" className="hidden bg-white/58 sm:inline-flex">
             {job.jobType}
           </Badge>
         </div>

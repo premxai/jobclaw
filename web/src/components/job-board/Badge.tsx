@@ -1,7 +1,6 @@
 import { Clock, MapPin } from "lucide-react";
 
 import { cn } from "@/lib/utils";
-import type { LocationType } from "@/lib/job-board";
 
 interface BadgeProps {
   children: React.ReactNode;
@@ -27,10 +26,4 @@ export default function Badge({ children, tone = "neutral", icon, className }: B
       {children}
     </span>
   );
-}
-
-export function locationTone(locationType: LocationType): "remote" | "hybrid" | "neutral" {
-  if (locationType === "Remote") return "remote";
-  if (locationType === "Hybrid") return "hybrid";
-  return "neutral";
 }

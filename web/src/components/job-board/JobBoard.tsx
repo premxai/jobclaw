@@ -8,7 +8,7 @@ import JobRow from "./JobRow";
 import { BOARD_REFRESH_INTERVAL_MS, fetchBoardJobs } from "@/lib/job-board";
 import type { BoardCategory, BoardDataStatus, BoardJob } from "@/lib/job-board";
 
-const JOBS_PER_PAGE = 10;
+const JOBS_PER_PAGE = 12;
 
 export default function JobBoard() {
   const [jobs, setJobs] = useState<BoardJob[]>([]);
@@ -63,14 +63,14 @@ export default function JobBoard() {
         {loading ? (
           <div className="divide-y divide-black/10">
             {Array.from({ length: JOBS_PER_PAGE }).map((_, index) => (
-              <div key={index} className="grid h-[48px] gap-3 px-4 py-2 sm:px-5 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div key={index} className="grid h-[42px] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-1.5 sm:px-5">
                 <div className="space-y-2">
                   <div className="h-4 w-52 max-w-full animate-pulse rounded-full bg-white/60" />
-                  <div className="h-3 w-[min(420px,100%)] animate-pulse rounded-full bg-white/50" />
+                  <div className="h-3 w-[min(260px,100%)] animate-pulse rounded-full bg-white/50" />
                 </div>
                 <div className="flex gap-2">
                   <div className="h-6 w-16 animate-pulse rounded-full bg-white/55" />
-                  <div className="h-6 w-20 animate-pulse rounded-full bg-white/55" />
+                  <div className="hidden h-6 w-20 animate-pulse rounded-full bg-white/55 sm:block" />
                   <div className="h-8 w-8 animate-pulse rounded-full bg-white/55" />
                 </div>
               </div>
@@ -83,7 +83,7 @@ export default function JobBoard() {
             ))}
           </div>
         ) : (
-          <div className="flex h-[480px] items-center justify-center px-6 text-center">
+          <div className="flex min-h-[132px] items-center justify-center px-6 text-center">
             <p className="max-w-sm text-sm font-semibold leading-6 text-zinc-800 sm:text-base">
               {dataStatus === "unavailable"
                 ? "JobClaw is waiting for the backend API. Check the API URL or Railway deployment."
