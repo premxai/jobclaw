@@ -14,6 +14,11 @@ If the API cannot connect to Postgres, the website cannot show real jobs.
 If the website does not know the API URL, it cannot show real jobs.
 Mock jobs are disabled by default in production.
 
+The API must use the same `DATABASE_URL` that GitHub Actions uses in
+`secrets.DATABASE_URL`. GitHub scrapers write jobs there; the API reads jobs
+from there. If Railway points to a different Postgres database, the API may boot
+but the website will still look empty.
+
 ## API Service Variables
 
 Set these on the Railway API/backend service:
@@ -24,7 +29,8 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:3001,https://YOUR-WEB-DOMAIN
 JOBCLAW_API_KEY=
 ```
 
-Use the real Railway Postgres variable reference or the real Neon connection string.
+Use the same real Railway Postgres variable reference or Neon connection string
+that is configured as the GitHub Actions `DATABASE_URL` secret.
 Do not use example values like `user:password@ep-xxx`.
 
 The API start command is defined in `railway.toml`:
@@ -73,9 +79,13 @@ The start command is not running through `sh -c`. Pull the latest commit and red
 `password authentication failed for user 'user'`:
 `DATABASE_URL` is still the fake example value. Replace it with the real Postgres URL.
 
+API `/health` works but `/jobs?recent_hours=48` returns empty:
+The API may be connected to the wrong Postgres database, or no scraper has found
+fresh jobs in that database. Compare Railway API `DATABASE_URL` with GitHub
+Actions `secrets.DATABASE_URL`.
+
 Website says `Connecting to JobClaw API`:
 The web service cannot reach the API. Check `NEXT_PUBLIC_API_URL`, `JOBCLAW_API_INTERNAL_URL`, and API deploy status.
 
 Website says `No jobs were posted in the last 48 hours`:
 The API is reachable, but the DB has no fresh jobs for the board. Run a scraper workflow and recheck `/jobs?recent_hours=48`.
-
