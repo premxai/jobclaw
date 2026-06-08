@@ -102,7 +102,6 @@ On **worker**:
 ```env
 DATABASE_URL=<same Neon/Postgres URL used by GitHub Actions secrets.DATABASE_URL>
 CORS_ORIGINS=https://norinote.xyz,https://www.norinote.xyz,http://localhost:3000,http://localhost:3001
-PORT=8000
 ```
 
 On **web**:
@@ -110,15 +109,19 @@ On **web**:
 ```env
 JOBCLAW_API_INTERNAL_URL=https://api.norinote.xyz
 NEXT_PUBLIC_ENABLE_MOCK_JOBS=0
-PORT=3000
 ```
 
-When Railway asks for target ports, use the same values:
+When Railway asks for target ports, use the port from each service's deploy log.
+For example, if the worker log says:
 
 ```text
-api.norinote.xyz  -> worker target port 8000
-www.norinote.xyz  -> web target port 3000
+Uvicorn running on http://0.0.0.0:8080
 ```
+
+then set `api.norinote.xyz` target port to `8080`.
+
+For the web service, use the port shown by the Next.js start log. It is usually
+`3000`, unless Railway sets a different `PORT`.
 
 ## Validation Order
 
