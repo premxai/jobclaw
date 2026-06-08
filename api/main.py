@@ -118,7 +118,11 @@ _default_cors_origins = ",".join(
         "https://www.norinote.xyz",
     ]
 )
-_allowed_origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", _default_cors_origins).split(",") if origin.strip()]
+_allowed_origins = [
+    origin.strip()
+    for origin in os.getenv("CORS_ORIGINS", _default_cors_origins).split(",")
+    if origin.strip()
+]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
