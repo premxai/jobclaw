@@ -39,6 +39,9 @@ The API start command is defined in `railway.toml`:
 sh -c 'uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000}'
 ```
 
+If Postgres is misconfigured, the API starts in degraded mode so `/health`,
+`/health/deep`, and the website `/status` page can explain the database error.
+
 ## Web Service Variables
 
 Set these on the Railway web/frontend service:

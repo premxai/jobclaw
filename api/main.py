@@ -54,8 +54,6 @@ async def lifespan(app: FastAPI):
     # Validate DB exists
     from api.database import DB_PATH
 
-    validate_database_url()
-
     try:
         from scripts.database.db_utils import get_connection
 
@@ -68,10 +66,15 @@ async def lifespan(app: FastAPI):
         print(f"⚠️  Database not found at {DB_PATH}")
         print("   Run the scraper first: python scripts/ingestion/run_all_scrapers.py")
     else:
-        conn = get_db()
-        total = _scalar(conn, "SELECT COUNT(*) FROM jobs")
-        conn.close()
-        print(f"✅ Database connected: {total} jobs in JobClaw")
+        try:
+            validate_database_url()
+            conn = get_db()
+            total = _scalar(conn, "SELECT COUNT(*) FROM jobs")
+            conn.close()
+            print(f"✅ Database connected: {total} jobs in JobClaw")
+        except Exception as exc:
+            print(f"⚠️  Database unavailable at startup: {exc}")
+            print("   API will start in degraded mode; check /health and /health/deep.")
 
     # Create applications table on startup (not import time)
     try:

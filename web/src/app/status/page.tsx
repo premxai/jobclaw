@@ -101,13 +101,17 @@ export default function StatusPage() {
     const jobsLast24h = stats.data?.jobs_last_24h || 0;
     const freshCount = freshJobs.data?.jobs?.length || 0;
     const acceptedCount = acceptedJobs.data?.jobs?.length || 0;
+    const apiStatus = typeof health.data?.status === "string" ? health.data.status : "unknown";
+    const databaseStatus = typeof health.data?.database === "string" ? health.data.database : "unknown";
 
     setChecks([
       {
         key: "api",
         label: "API health",
-        state: health.ok ? "pass" : "fail",
-        detail: health.ok ? "The website can reach /api/health." : `API health failed: ${health.error || health.status}`,
+        state: health.ok ? (apiStatus === "ok" ? "pass" : "warn") : "fail",
+        detail: health.ok
+          ? `The website can reach /api/health. API status: ${apiStatus}; database: ${databaseStatus}.`
+          : `API health failed: ${health.error || health.status}`,
       },
       {
         key: "db",
