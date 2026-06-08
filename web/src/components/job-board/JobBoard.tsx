@@ -63,8 +63,8 @@ export default function JobBoard() {
   const rangeEnd = Math.min(filteredJobs.length, page * JOBS_PER_PAGE);
 
   return (
-    <section className="mx-auto flex h-full w-full max-w-[900px] flex-col justify-center px-4 py-4 sm:px-6">
-      <div className="mb-3">
+    <section className="mx-auto flex h-full w-full max-w-[880px] flex-col justify-center px-4 py-[clamp(0.5rem,1.2dvh,0.75rem)] sm:px-6">
+      <div className="mb-2">
         <CategoryTabs jobs={jobs} activeCategory={activeCategory} onChange={setActiveCategory} />
       </div>
 
@@ -74,7 +74,7 @@ export default function JobBoard() {
             {Array.from({ length: JOBS_PER_PAGE }).map((_, index) => (
               <div
                 key={index}
-                className="grid h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 sm:h-[66px] sm:px-7"
+                className="grid h-[clamp(34px,4.7dvh,42px)] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-[clamp(0.25rem,0.55dvh,0.375rem)] sm:px-5"
               >
                 <div className="space-y-2">
                   <div className="h-4 w-56 max-w-full animate-pulse rounded-full bg-[#EFE5D6]" />
@@ -105,8 +105,8 @@ export default function JobBoard() {
           </div>
         )}
 
-        <div className="flex h-11 items-center justify-between border-t border-[rgba(139,94,52,0.15)] bg-[#FFFEFB] px-5 sm:px-7">
-          <p className="text-sm font-medium text-[#6B6B6B]">
+        <div className="flex h-[clamp(34px,4.5dvh,40px)] items-center justify-between border-t border-[rgba(139,94,52,0.15)] bg-[#FFFEFB] px-4 sm:px-5">
+          <p className="text-xs font-medium text-[#6B6B6B]">
             Page {filteredJobs.length ? page : 0} of {filteredJobs.length ? totalPages : 0}
           </p>
           <div className="flex items-center gap-2">
@@ -114,19 +114,19 @@ export default function JobBoard() {
               type="button"
               onClick={() => setPage((current) => Math.max(1, current - 1))}
               disabled={page <= 1 || loading || !filteredJobs.length}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#E8CFA8] bg-[#FFFEFB] text-[#333333] transition hover:-translate-y-0.5 hover:bg-[#171717] hover:text-white disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0 disabled:hover:bg-[#FFFEFB] disabled:hover:text-[#333333]"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#E8CFA8] bg-[#FFFEFB] text-[#333333] transition hover:-translate-y-0.5 hover:bg-[#171717] hover:text-white disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0 disabled:hover:bg-[#FFFEFB] disabled:hover:text-[#333333] sm:h-8 sm:w-8"
               aria-label="Previous page"
             >
               <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </button>
-            <span className="min-w-12 text-center text-sm font-semibold text-[#6B6B6B]">
+            <span className="min-w-12 text-center text-xs font-semibold text-[#6B6B6B]">
               {filteredJobs.length ? `${rangeStart}-${rangeEnd}` : "0"}
             </span>
             <button
               type="button"
               onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
               disabled={page >= totalPages || loading || !filteredJobs.length}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#E8CFA8] bg-[#FFFEFB] text-[#333333] transition hover:-translate-y-0.5 hover:bg-[#171717] hover:text-white disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0 disabled:hover:bg-[#FFFEFB] disabled:hover:text-[#333333]"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#E8CFA8] bg-[#FFFEFB] text-[#333333] transition hover:-translate-y-0.5 hover:bg-[#171717] hover:text-white disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0 disabled:hover:bg-[#FFFEFB] disabled:hover:text-[#333333] sm:h-8 sm:w-8"
               aria-label="Next page"
             >
               <ChevronRight className="h-4 w-4" aria-hidden="true" />
