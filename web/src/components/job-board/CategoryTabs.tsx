@@ -17,7 +17,7 @@ function countForCategory(jobs: BoardJob[], category: BoardCategory): number {
 
 export default function CategoryTabs({ jobs, activeCategory, onChange }: CategoryTabsProps) {
   return (
-    <div className="mx-auto flex w-fit max-w-full flex-wrap justify-center gap-3 rounded-[22px] border border-[#e7cda9]/70 bg-[#fff5e6]/55 p-1.5 shadow-[0_10px_34px_rgba(86,55,22,0.13)] backdrop-blur-md">
+    <div className="mx-auto flex w-fit max-w-full flex-wrap justify-center gap-3 sm:gap-5">
       {BOARD_CATEGORIES.map((category) => {
         const isActive = activeCategory === category;
         const count = countForCategory(jobs, category);
@@ -28,10 +28,10 @@ export default function CategoryTabs({ jobs, activeCategory, onChange }: Categor
             type="button"
             onClick={() => onChange(category)}
             className={cn(
-              "group inline-flex h-9 shrink-0 items-center gap-2 rounded-[17px] border px-3.5 text-sm font-semibold transition-all duration-200 sm:h-10 sm:px-4",
+              "group inline-flex h-10 shrink-0 items-center gap-2.5 rounded-[18px] border px-4 text-sm font-semibold transition-all duration-200 sm:h-11 sm:px-5 sm:text-[15px]",
               isActive
-                ? "border-[#11100f] bg-[#1b1a18] text-[#fff8ee] shadow-[0_3px_0_rgba(0,0,0,0.32),0_10px_22px_rgba(41,27,12,0.16)]"
-                : "border-[#e5c7a2] bg-[#fff8ed]/84 text-[#3e3a34] shadow-[0_2px_0_rgba(139,92,43,0.12)] hover:-translate-y-0.5 hover:border-[#d9b88f] hover:bg-[#fffaf3]",
+                ? "border-[#171717] bg-[#171717] text-white shadow-[0_8px_20px_rgba(0,0,0,0.16)]"
+                : "border-[#E8CFA8] bg-[#FFFDF7] text-[#333333] shadow-[0_1px_0_rgba(120,80,40,0.08)] hover:-translate-y-0.5 hover:bg-white",
             )}
             aria-pressed={isActive}
           >
@@ -39,7 +39,7 @@ export default function CategoryTabs({ jobs, activeCategory, onChange }: Categor
             <span
               className={cn(
                 "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold",
-                isActive ? "bg-[#fff8ee]/18 text-[#fff8ee]" : "bg-[#eadcc8] text-[#746a5e] group-hover:bg-[#e3d1ba]",
+                isActive ? "bg-white/15 text-white" : "bg-[#EFE5D6] text-[#6B6B6B]",
               )}
             >
               {count}
