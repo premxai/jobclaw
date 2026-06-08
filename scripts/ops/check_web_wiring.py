@@ -182,7 +182,7 @@ def main() -> int:
         print("- If /health fails: fix or redeploy the API service first.")
         print("- If total_jobs is 0: API is connected to an empty/wrong DB.")
         print("- If recent jobs are 0: run/check scraper workflows or widen the freshness window.")
-        print("- If web fails but API passes: set NEXT_PUBLIC_API_URL and JOBCLAW_API_INTERNAL_URL on the web service.")
+        print("- If web fails but API passes: set JOBCLAW_API_INTERNAL_URL on the web service and redeploy.")
         return 1
 
     print("Diagnosis: API, DB, fresh jobs, and scraper run history are wired.")

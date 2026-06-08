@@ -11,7 +11,7 @@ JobClaw has three separate moving parts:
 3. **Web service**: Next.js app that reads jobs from the API and renders the board.
 
 If the API cannot connect to Postgres, the website cannot show real jobs.
-If the website does not know the API URL, it cannot show real jobs.
+If the website service does not know the API URL, it cannot proxy `/api` to real jobs.
 Mock jobs are disabled by default in production.
 
 The API must use the same `DATABASE_URL` that GitHub Actions uses in
@@ -44,10 +44,12 @@ sh -c 'uvicorn api.main:app --host 0.0.0.0 --port ${PORT:-8000}'
 Set these on the Railway web/frontend service:
 
 ```env
-NEXT_PUBLIC_API_URL=https://YOUR-API-DOMAIN.up.railway.app
 JOBCLAW_API_INTERNAL_URL=https://YOUR-API-DOMAIN.up.railway.app
 NEXT_PUBLIC_ENABLE_MOCK_JOBS=0
 ```
+
+The browser calls the web service at same-origin `/api`; Next.js proxies those
+requests to `JOBCLAW_API_INTERNAL_URL`. This avoids most CORS confusion.
 
 `NEXT_PUBLIC_ENABLE_MOCK_JOBS=0` prevents the board from silently showing placeholder jobs.
 
@@ -101,7 +103,7 @@ fresh jobs in that database. Compare Railway API `DATABASE_URL` with GitHub
 Actions `secrets.DATABASE_URL`.
 
 Website says `Connecting to JobClaw API`:
-The web service cannot reach the API. Check `NEXT_PUBLIC_API_URL`, `JOBCLAW_API_INTERNAL_URL`, and API deploy status.
+The web service cannot reach the API. Check `JOBCLAW_API_INTERNAL_URL` and API deploy status.
 
 Website says `No jobs were posted in the last 48 hours`:
 The API is reachable, but the DB has no fresh jobs for the board. Run a scraper workflow and recheck `/jobs?recent_hours=48`.

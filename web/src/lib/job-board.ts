@@ -147,7 +147,7 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
   },
 ];
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
+const API_BASE = "/api";
 const BOARD_FRESHNESS_HOURS = 48;
 const BOARD_REFRESH_INTERVAL_MS = 15 * 60 * 1000;
 const ENABLE_MOCK_JOBS = process.env.NEXT_PUBLIC_ENABLE_MOCK_JOBS === "1";
