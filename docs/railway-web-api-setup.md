@@ -61,6 +61,14 @@ python scripts/ops/check_web_wiring.py \
   --web-url https://YOUR-WEB-DOMAIN.up.railway.app
 ```
 
+Or run it from GitHub:
+
+1. Open **Actions**.
+2. Select **🧭 Web/API Wiring Check**.
+3. Click **Run workflow**.
+4. Paste the API URL and optional web URL.
+5. Read the pass/fail report in the workflow logs.
+
 Validate the API first:
 
 ```text

@@ -1,0 +1,45 @@
+name: "🧭 Web/API Wiring Check"
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: "FastAPI base URL, e.g. https://your-api.up.railway.app"
+        required: true
+        type: string
+      web_url:
+        description: "Optional web URL, e.g. https://your-web.up.railway.app"
+        required: false
+        type: string
+      hours:
+        description: "Fresh job window to check"
+        required: false
+        default: "48"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  check-web-wiring:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check web/API/database wiring
+        env:
+          API_URL: ${{ inputs.api_url }}
+          WEB_URL: ${{ inputs.web_url }}
+          HOURS: ${{ inputs.hours }}
+        run: |
+          cmd=(python scripts/ops/check_web_wiring.py --api-url "$API_URL" --hours "$HOURS")
+          if [ -n "$WEB_URL" ]; then
+            cmd+=(--web-url "$WEB_URL")
+          fi
+          "${cmd[@]}"

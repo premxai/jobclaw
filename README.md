@@ -145,3 +145,6 @@ python scripts/ops/check_web_wiring.py \
   --api-url https://YOUR-API-DOMAIN.up.railway.app \
   --web-url https://YOUR-WEB-DOMAIN.up.railway.app
 ```
+
+You can also run the same check from GitHub Actions with the manual
+**🧭 Web/API Wiring Check** workflow.
