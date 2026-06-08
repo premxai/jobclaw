@@ -58,6 +58,31 @@
 }
 
 @layer components {
+  .job-board-shell {
+    --job-board-row-height: clamp(36px, calc((100svh - 224px) / 9), 50px);
+    --job-board-footer-height: clamp(30px, 4.5svh, 38px);
+  }
+
+  @supports (height: 100dvh) {
+    .job-board-shell {
+      --job-board-row-height: clamp(36px, calc((100dvh - 224px) / 9), 50px);
+      --job-board-footer-height: clamp(30px, 4.5dvh, 38px);
+    }
+  }
+
+  @media (max-height: 700px) {
+    .job-board-shell {
+      --job-board-row-height: clamp(34px, calc((100dvh - 198px) / 9), 44px);
+      --job-board-footer-height: 32px;
+    }
+  }
+
+  @media (max-height: 600px) {
+    .job-board-shell {
+      --job-board-row-height: clamp(32px, calc((100dvh - 176px) / 9), 38px);
+      --job-board-footer-height: 30px;
+    }
+  }
 
   /* Job card — uniform height with flex layout */
   .job-card {

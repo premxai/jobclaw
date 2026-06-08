@@ -63,27 +63,27 @@ export default function JobBoard() {
   const rangeEnd = Math.min(filteredJobs.length, page * JOBS_PER_PAGE);
 
   return (
-    <section className="mx-auto flex h-full w-full max-w-[880px] flex-col px-4 pb-3 pt-[clamp(2.25rem,7dvh,4.75rem)] sm:px-6">
-      <div className="mx-auto mb-3 max-w-xl px-5 py-3 text-center">
-        <h1 className="text-[clamp(1.55rem,3.6vw,2.45rem)] font-bold leading-none tracking-tight text-[#171717]">
+    <section className="job-board-shell mx-auto flex h-full min-h-0 w-full max-w-[880px] flex-col px-3 py-[clamp(0.4rem,1.6dvh,2rem)] sm:px-5">
+      <div className="mx-auto mb-[clamp(0.2rem,0.8dvh,0.75rem)] max-w-xl px-4 py-[clamp(0.15rem,0.6dvh,0.65rem)] text-center">
+        <h1 className="text-[clamp(1.2rem,3vw,2.25rem)] font-bold leading-[0.96] tracking-tight text-[#171717]">
           Hey, I am Nori
         </h1>
-        <p className="mt-2 text-xs font-semibold leading-5 text-[#4f4a42] sm:text-sm">
+        <p className="mt-1 text-[clamp(0.68rem,1.2vw,0.875rem)] font-semibold leading-[1.35] text-[#4f4a42]">
           Check my notes below for job postings from the last 48 hours.
         </p>
       </div>
 
-      <div className="mb-2">
+      <div className="mb-[clamp(0.2rem,0.7dvh,0.5rem)] shrink-0">
         <CategoryTabs jobs={jobs} activeCategory={activeCategory} onChange={setActiveCategory} />
       </div>
 
-      <div className="overflow-hidden rounded-[22px] border border-[#E8CFA8] bg-[#FFFEFB] shadow-[0_20px_60px_rgba(120,80,40,0.12)]">
+      <div className="shrink-0 overflow-hidden rounded-[22px] border border-[#E8CFA8] bg-[#FFFEFB] shadow-[0_20px_60px_rgba(120,80,40,0.12)]">
         {loading ? (
           <div className="divide-y divide-[rgba(139,94,52,0.15)]">
             {Array.from({ length: JOBS_PER_PAGE }).map((_, index) => (
               <div
                 key={index}
-                className="grid h-[clamp(34px,4.7dvh,42px)] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-[clamp(0.25rem,0.55dvh,0.375rem)] sm:px-5"
+                className="grid h-[var(--job-board-row-height)] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-1 sm:px-5"
               >
                 <div className="space-y-2">
                   <div className="h-4 w-56 max-w-full animate-pulse rounded-full bg-[#EFE5D6]" />
@@ -114,7 +114,7 @@ export default function JobBoard() {
           </div>
         )}
 
-        <div className="flex h-[clamp(34px,4.5dvh,40px)] items-center justify-between border-t border-[rgba(139,94,52,0.15)] bg-[#FFFEFB] px-4 sm:px-5">
+        <div className="flex h-[var(--job-board-footer-height)] items-center justify-between border-t border-[rgba(139,94,52,0.15)] bg-[#FFFEFB] px-4 sm:px-5">
           <p className="text-xs font-medium text-[#6B6B6B]">
             Page {filteredJobs.length ? page : 0} of {filteredJobs.length ? totalPages : 0}
           </p>
