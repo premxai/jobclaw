@@ -2,6 +2,7 @@ import asyncio
 import os
 import sys
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 # Add project root to sys.path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -22,6 +23,16 @@ from scripts.discord_push import push_new_jobs_to_discord
 from scripts.ingestion.run_all_scrapers import get_next_shard, run_all
 from scripts.ingestion.scrape_hot import run_hot_scraper
 from scripts.utils.logger import _log
+
+SCHEDULER_TIMEZONE = os.getenv("JOBCLAW_SCHEDULER_TIMEZONE", "America/New_York")
+
+
+def get_scheduler_timezone():
+    try:
+        return ZoneInfo(SCHEDULER_TIMEZONE)
+    except Exception as e:
+        _log(f"[standalone-worker] Invalid scheduler timezone {SCHEDULER_TIMEZONE!r}: {e}; falling back to UTC", "WARN")
+        return ZoneInfo("UTC")
 
 
 def env_flag(name: str, default: bool) -> bool:
@@ -160,7 +171,8 @@ async def main():
     except Exception as e:
         _log(f"[standalone-worker] Company seed check failed: {e}", "WARN")
 
-    scheduler = AsyncIOScheduler(timezone="UTC")
+    scheduler = AsyncIOScheduler(timezone=get_scheduler_timezone())
+    _log(f"[standalone-worker] Scheduler timezone: {SCHEDULER_TIMEZONE}")
 
     _bulk_fallback = env_flag("JOBCLAW_RAILWAY_BULK_FALLBACK", False)
     enabled_tasks = {
@@ -206,7 +218,7 @@ async def main():
         replace_existing=True,
     )
 
-    # 4. Discord push — disabled on Railway by default; GitHub Actions owns scheduling.
+    # 4. Discord push — enabled automatically on Railway when webhooks are configured.
     add_job_if_enabled(
         scheduler,
         enabled_tasks["discord_push"],
@@ -217,7 +229,7 @@ async def main():
         replace_existing=True,
     )
 
-    # 5. Target validation — every 6 hours, offset away from scraper starts
+    # 5. Target validation — every 6 hours Eastern, offset away from scraper starts
     add_job_if_enabled(
         scheduler,
         enabled_tasks["validate_targets"],
@@ -235,7 +247,7 @@ async def main():
         execute_deep,
         CronTrigger(hour=23, minute=0),
         id="deep",
-        name="Deep Tier (daily 23:00 UTC)",
+        name="Deep Tier (daily 23:00 Eastern)",
         replace_existing=True,
     )
 

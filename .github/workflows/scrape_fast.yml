@@ -3,7 +3,8 @@ name: "🚀 Fast Tier — Hourly Direct ATS"
 # ┌────────────────────────────────────────────────────────────────────┐
 # │  SCHEDULED FAST TIER — RSS + GitHub + direct ATS queue.            │
 # │  Active queue leases prevent duplicate claims across workers.      │
-# │  Runs hourly at :03 UTC, offset from hot/medium/Discord workflows. │
+# │  Runs hourly at :03 Eastern, offset from hot/medium/Discord.       │
+# │  GitHub cron is UTC; minute cadence is unchanged across timezones. │
 # └────────────────────────────────────────────────────────────────────┘
 
 on:

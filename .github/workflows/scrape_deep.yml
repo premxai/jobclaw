@@ -2,12 +2,13 @@ name: "🌊 Deep Tier — Daily Full Sweep"
 
 # ┌────────────────────────────────────────────────────────────────────┐
 # │  SCHEDULED DEEP TIER — full scrape/enrichment sweep once per day.  │
-# │  Runs at 08:17 UTC, away from registry refresh and hourly scrapes. │
+# │  Runs at 08:17 Eastern, away from registry and hourly scrapes.     │
+# │  GitHub cron is UTC; 12:17 UTC maps to 08:17 Eastern during EDT.   │
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
   schedule:
-    - cron: "17 8 * * *"
+    - cron: "17 12 * * *"
   workflow_dispatch:         # Manual trigger for testing/recovery
 
 permissions:

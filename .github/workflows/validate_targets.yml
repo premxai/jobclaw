@@ -3,11 +3,12 @@ name: "🩺 Target Validation — ATS Slug Health"
 # ┌────────────────────────────────────────────────────────────────────┐
 # │  SCHEDULED TARGET VALIDATION — cheap ATS endpoint smoke checks.    │
 # │  Keeps slug quarantine/revival state fresh without full scraping.  │
+# │  Runs every 6 hours in Eastern Time at :41. GitHub cron is UTC.    │
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
   schedule:
-    - cron: "41 */6 * * *"
+    - cron: "41 4,10,16,22 * * *"
   workflow_dispatch:
 
 permissions:

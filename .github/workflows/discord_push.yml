@@ -2,7 +2,8 @@ name: "📢 Discord Push — Post Unposted Jobs (Every 15min)"
 
 # ┌──────────────────────────────────────────────────────────────────────┐
 # │  SCHEDULED DISCORD PUSH — posts accepted direct-source jobs.         │
-# │  Runs every 15 minutes, offset after scraper workflows.              │
+# │  Runs every 15 minutes in Eastern Time, after scraper workflows.     │
+# │  GitHub cron is UTC; minute cadence is unchanged across timezones.   │
 # └──────────────────────────────────────────────────────────────────────┘
 
 on:

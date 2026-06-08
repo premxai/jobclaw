@@ -2,7 +2,8 @@ name: "⚡ Medium Tier — Hourly Slow ATS"
 
 # ┌────────────────────────────────────────────────────────────────────┐
 # │  SCHEDULED MEDIUM TIER — Workday/Rippling/SmartRecruiters/BambooHR │
-# │  Runs hourly at :33 UTC, offset from fast tier and Discord pushes. │
+# │  Runs hourly at :33 Eastern, offset from fast tier and Discord.    │
+# │  GitHub cron is UTC; minute cadence is unchanged across timezones. │
 # └────────────────────────────────────────────────────────────────────┘
 
 on:

@@ -2,7 +2,8 @@ name: "🔥 Hot Scraper — 192 Companies Every 15min"
 
 # ┌──────────────────────────────────────────────────────────────────────┐
 # │  SCHEDULED HOT SWEEP — high-priority company monitoring.            │
-# │  Runs every 15 minutes, staggered from Discord posting.             │
+# │  Runs every 15 minutes in Eastern Time, staggered from Discord.     │
+# │  GitHub cron is UTC; minute cadence is unchanged across timezones.  │
 # └──────────────────────────────────────────────────────────────────────┘
 
 on:

@@ -9,11 +9,12 @@ name: "🔍 Registry Expander — Daily Input Refresh"
 # │    2. Brave Search API site: queries (if API key is set)          │
 # │  Commits changes back to the repo so the next scraper run         │
 # │  picks up the expanded registry automatically                     │
+# │  Runs at 07:17 Eastern. GitHub cron is UTC; 11:17 UTC during EDT. │
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
   schedule:
-    - cron: "17 7 * * *"
+    - cron: "17 11 * * *"
   workflow_dispatch:
 
 permissions:
