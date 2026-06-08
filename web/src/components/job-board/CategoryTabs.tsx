@@ -17,7 +17,7 @@ function countForCategory(jobs: BoardJob[], category: BoardCategory): number {
 
 export default function CategoryTabs({ jobs, activeCategory, onChange }: CategoryTabsProps) {
   return (
-    <div className="flex flex-wrap justify-center gap-2">
+    <div className="mx-auto flex w-fit max-w-full flex-wrap justify-center gap-2 rounded-2xl border border-white/45 bg-white/38 p-1.5 shadow-[0_12px_40px_rgba(41,29,12,0.12)] backdrop-blur-2xl">
       {BOARD_CATEGORIES.map((category) => {
         const isActive = activeCategory === category;
         const count = countForCategory(jobs, category);
@@ -28,10 +28,10 @@ export default function CategoryTabs({ jobs, activeCategory, onChange }: Categor
             type="button"
             onClick={() => onChange(category)}
             className={cn(
-              "group inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-sm font-semibold transition-all duration-200 backdrop-blur-xl sm:h-10 sm:px-4",
+              "group inline-flex h-9 shrink-0 items-center gap-2 rounded-full border px-3.5 text-sm font-semibold transition-all duration-200 backdrop-blur-2xl sm:h-10 sm:px-4",
               isActive
-                ? "bg-black/90 text-white shadow-[0_8px_20px_rgba(0,0,0,0.14)]"
-                : "bg-white/45 text-zinc-700 shadow-sm ring-1 ring-white/55 hover:bg-white/65 hover:text-zinc-950",
+                ? "border-black/80 bg-black/88 text-white shadow-[0_8px_20px_rgba(0,0,0,0.14)]"
+                : "border-white/45 bg-white/42 text-zinc-700 shadow-sm hover:bg-white/60 hover:text-zinc-950",
             )}
             aria-pressed={isActive}
           >

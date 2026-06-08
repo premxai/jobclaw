@@ -9,7 +9,8 @@ export type DiscordJobCategory =
   | "Research"
   | "Uncategorized";
 
-export type BoardCategory = "All Roles" | DiscordJobCategory;
+export type BoardCategory = "All Roles" | "AI/ML" | "SWE" | "Data" | "Other";
+export type BoardJobCategory = Exclude<BoardCategory, "All Roles">;
 
 export type LocationType = "Remote" | "Hybrid" | "On-site";
 export type JobType = "Full-time" | "Internship" | "Contract";
@@ -17,7 +18,7 @@ export type JobType = "Full-time" | "Internship" | "Contract";
 export interface BoardJob {
   id: string;
   title: string;
-  category: DiscordJobCategory;
+  category: BoardJobCategory;
   description: string;
   location: string;
   locationType: LocationType;
@@ -60,16 +61,21 @@ export const BOARD_CATEGORIES: BoardCategory[] = [
   "All Roles",
   "AI/ML",
   "SWE",
+  "Data",
+  "Other",
+];
+
+const DISCORD_JOB_CATEGORIES = new Set<DiscordJobCategory>([
+  "AI/ML",
   "Data Science",
   "Data Engineering",
   "Data Analyst",
+  "SWE",
   "New Grad",
   "Product",
   "Research",
   "Uncategorized",
-];
-
-const DISCORD_JOB_CATEGORIES = new Set<DiscordJobCategory>(BOARD_CATEGORIES.filter((category) => category !== "All Roles"));
+]);
 
 export const MOCK_BOARD_JOBS: BoardJob[] = [
   {
@@ -89,7 +95,7 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
   {
     id: "mock-ai-intern",
     title: "AI Engineer Intern",
-    category: "New Grad",
+    category: "AI/ML",
     description: "Early-career AI role focused on evaluation, tooling, and applied product use cases.",
     location: "Remote",
     locationType: "Remote",
@@ -103,7 +109,7 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
   {
     id: "mock-data-scientist",
     title: "Data Scientist",
-    category: "Data Science",
+    category: "Data",
     description: "Use product and marketplace data to ship sharper insights for real teams.",
     location: "Remote",
     locationType: "Remote",
@@ -131,7 +137,7 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
   {
     id: "mock-product-designer",
     title: "Product Designer",
-    category: "Product",
+    category: "Other",
     description: "Shape product flows from user research through polished, shippable UI.",
     location: "Remote",
     locationType: "Remote",
@@ -145,7 +151,7 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
   {
     id: "mock-product-manager",
     title: "Product Manager",
-    category: "Product",
+    category: "Other",
     description: "Guide roadmap, customer insight, and execution for a focused product team.",
     location: "New York, NY",
     locationType: "Hybrid",
@@ -159,7 +165,7 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
   {
     id: "mock-growth-marketer",
     title: "Growth Marketer",
-    category: "Uncategorized",
+    category: "Other",
     description: "Run acquisition, lifecycle, and retention experiments with measurable impact.",
     location: "Remote",
     locationType: "Remote",
@@ -198,32 +204,36 @@ function parseKeywordCategories(keywords: ApiJob["keywords_matched"]): string[] 
     .filter(Boolean);
 }
 
+function boardCategoryFromDiscord(category: DiscordJobCategory): BoardJobCategory {
+  if (category === "AI/ML") return "AI/ML";
+  if (category === "SWE") return "SWE";
+  if (category === "Data Science" || category === "Data Engineering" || category === "Data Analyst") return "Data";
+  return "Other";
+}
+
 function classifyCategory(job: ApiJob): BoardJob["category"] {
   const primaryDiscordCategory = parseKeywordCategories(job.keywords_matched).find((category): category is DiscordJobCategory =>
     DISCORD_JOB_CATEGORIES.has(category as DiscordJobCategory),
   );
-  if (primaryDiscordCategory) return primaryDiscordCategory;
+  if (primaryDiscordCategory) return boardCategoryFromDiscord(primaryDiscordCategory);
 
   const text = `${job.title || ""} ${job.description || ""} ${keywordText(job)}`.toLowerCase();
 
-  if (/\b(intern|internship|new grad|graduate|campus hire|early career)\b/.test(text)) return "New Grad";
   if (/\b(data scientist|decision scientist|analytics scientist|predictive modeler|statistical analyst)\b/.test(text)) {
-    return "Data Science";
+    return "Data";
   }
   if (/\b(data engineer|analytics engineer|etl|data pipeline|data platform|data warehouse|lakehouse)\b/.test(text)) {
-    return "Data Engineering";
+    return "Data";
   }
   if (/\b(data analyst|business intelligence analyst|bi analyst|reporting analyst|business analyst)\b/.test(text)) {
-    return "Data Analyst";
+    return "Data";
   }
   if (/\b(ai|ml|machine learning|llm|research scientist|deep learning)\b/.test(text)) return "AI/ML";
   if (/\b(software engineer|software developer|frontend|backend|full stack|fullstack|devops|sre|infrastructure|platform engineer|mobile engineer|ios engineer|android engineer|security engineer)\b/.test(text)) {
     return "SWE";
   }
-  if (/\b(product manager|product management|\bpm\b)\b/.test(text)) return "Product";
-  if (/\b(research associate|research engineer|computational biologist)\b/.test(text)) return "Research";
 
-  return "Uncategorized";
+  return "Other";
 }
 
 function classifyLocation(location?: string): LocationType {
@@ -268,36 +278,16 @@ function sourceLabel(source?: string): string {
 function roleDescription(job: ApiJob, category: BoardJob["category"]): string {
   const company = job.company?.trim() || "the hiring team";
 
-  if (category === "New Grad") {
-    return `Early-career role at ${company} focused on learning, shipping, and real product work.`;
-  }
-
   if (category === "AI/ML") {
     return `Work on AI, data, and model-driven systems with ${company}.`;
   }
 
-  if (category === "Data Science") {
-    return `Turn data into models, analysis, and product insight with ${company}.`;
-  }
-
-  if (category === "Data Engineering") {
-    return `Build data pipelines, platforms, and reliable analytics systems with ${company}.`;
-  }
-
-  if (category === "Data Analyst") {
-    return `Analyze business and product data to help ${company} make better decisions.`;
+  if (category === "Data") {
+    return `Work with data, analytics, and decision systems at ${company}.`;
   }
 
   if (category === "SWE") {
     return `Build production software and reliable systems with ${company}.`;
-  }
-
-  if (category === "Product") {
-    return `Guide roadmap, customer insight, and execution for ${company}.`;
-  }
-
-  if (category === "Research") {
-    return `Explore technical research problems and ship rigorous work with ${company}.`;
   }
 
   return `Review a fresh direct role from ${company}.`;
