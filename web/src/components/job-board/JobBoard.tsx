@@ -64,6 +64,15 @@ export default function JobBoard() {
 
   return (
     <section className="mx-auto flex h-full w-full max-w-[880px] flex-col justify-center px-4 py-[clamp(0.5rem,1.2dvh,0.75rem)] sm:px-6">
+      <div className="mx-auto mb-3 max-w-xl text-center">
+        <h1 className="text-[clamp(1.8rem,4.4vw,3rem)] font-bold leading-none tracking-tight text-[#171717]">
+          Hey, I am Nori
+        </h1>
+        <p className="mt-2 text-sm font-medium leading-5 text-[#5f5a52] sm:text-base">
+          Check out the notes below for job postings from the last 48 hours.
+        </p>
+      </div>
+
       <div className="mb-2">
         <CategoryTabs jobs={jobs} activeCategory={activeCategory} onChange={setActiveCategory} />
       </div>
