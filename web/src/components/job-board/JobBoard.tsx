@@ -68,21 +68,21 @@ export default function JobBoard() {
         <CategoryTabs jobs={jobs} activeCategory={activeCategory} onChange={setActiveCategory} />
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-white/45 bg-white/68 shadow-[0_18px_70px_rgba(41,29,12,0.16)] backdrop-blur-2xl">
+      <div className="overflow-hidden rounded-[24px] border border-[#e4c6a0] bg-[#fff8ec]/88 shadow-[0_18px_54px_rgba(80,51,19,0.17),inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-md">
         {loading ? (
-          <div className="divide-y divide-black/10">
+          <div className="divide-y divide-[#ead7bd]/80">
             {Array.from({ length: JOBS_PER_PAGE }).map((_, index) => (
               <div
                 key={index}
                 className="grid h-[clamp(34px,4.7dvh,42px)] grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-[clamp(0.25rem,0.55dvh,0.375rem)] sm:px-5"
               >
                 <div className="space-y-2">
-                  <div className="h-4 w-52 max-w-full animate-pulse rounded-full bg-white/60" />
-                  <div className="h-3 w-[min(260px,100%)] animate-pulse rounded-full bg-white/50" />
+                  <div className="h-4 w-52 max-w-full animate-pulse rounded-full bg-[#ead7bd]/70" />
+                  <div className="h-3 w-[min(260px,100%)] animate-pulse rounded-full bg-[#efdfc8]/70" />
                 </div>
                 <div className="flex gap-2">
-                  <div className="h-6 w-16 animate-pulse rounded-full bg-white/55" />
-                  <div className="h-7 w-7 animate-pulse rounded-full bg-white/55 sm:h-8 sm:w-8" />
+                  <div className="h-6 w-16 animate-pulse rounded-full bg-[#efdfc8]/70" />
+                  <div className="h-7 w-7 animate-pulse rounded-full bg-[#efdfc8]/70 sm:h-8 sm:w-8" />
                 </div>
               </div>
             ))}
@@ -95,7 +95,7 @@ export default function JobBoard() {
           </div>
         ) : (
           <div className="flex min-h-[132px] items-center justify-center px-6 text-center">
-            <p className="max-w-sm text-sm font-semibold leading-6 text-zinc-800 sm:text-base">
+            <p className="max-w-sm text-sm font-semibold leading-6 text-[#2f2921] sm:text-base">
               {dataStatus === "unavailable"
                 ? "JobClaw is waiting for the backend API. Check the API URL or Railway deployment."
                 : activeCategory === "All Roles"
@@ -105,8 +105,8 @@ export default function JobBoard() {
           </div>
         )}
 
-        <div className="flex h-[clamp(34px,4.5dvh,40px)] items-center justify-between border-t border-black/10 bg-white/18 px-4 sm:px-5">
-          <p className="text-xs font-medium text-zinc-500">
+        <div className="flex h-[clamp(34px,4.5dvh,40px)] items-center justify-between border-t border-[#ead7bd]/90 bg-[#fff2df]/45 px-4 sm:px-5">
+          <p className="text-xs font-medium text-[#6f6457]">
             Page {filteredJobs.length ? page : 0} of {filteredJobs.length ? totalPages : 0}
           </p>
           <div className="flex items-center gap-2">
@@ -114,19 +114,19 @@ export default function JobBoard() {
               type="button"
               onClick={() => setPage((current) => Math.max(1, current - 1))}
               disabled={page <= 1 || loading || !filteredJobs.length}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-zinc-700 transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-zinc-100 disabled:hover:text-zinc-700 sm:h-8 sm:w-8"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#e2c5a0] bg-[#fff8ed]/80 text-[#3d352c] shadow-[0_2px_0_rgba(139,92,43,0.12)] transition hover:-translate-y-0.5 hover:bg-[#1b1a18] hover:text-[#fff8ee] disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0 disabled:hover:bg-[#fff8ed]/80 disabled:hover:text-[#3d352c] sm:h-8 sm:w-8"
               aria-label="Previous page"
             >
               <ChevronLeft className="h-4 w-4" aria-hidden="true" />
             </button>
-            <span className="min-w-12 text-center text-xs font-semibold text-zinc-500">
+            <span className="min-w-12 text-center text-xs font-semibold text-[#6f6457]">
               {filteredJobs.length ? `${rangeStart}-${rangeEnd}` : "0"}
             </span>
             <button
               type="button"
               onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
               disabled={page >= totalPages || loading || !filteredJobs.length}
-              className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-zinc-700 transition hover:bg-black hover:text-white disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:bg-zinc-100 disabled:hover:text-zinc-700 sm:h-8 sm:w-8"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#e2c5a0] bg-[#fff8ed]/80 text-[#3d352c] shadow-[0_2px_0_rgba(139,92,43,0.12)] transition hover:-translate-y-0.5 hover:bg-[#1b1a18] hover:text-[#fff8ee] disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0 disabled:hover:bg-[#fff8ed]/80 disabled:hover:text-[#3d352c] sm:h-8 sm:w-8"
               aria-label="Next page"
             >
               <ChevronRight className="h-4 w-4" aria-hidden="true" />
