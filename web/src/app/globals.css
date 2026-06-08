@@ -61,42 +61,32 @@
   .jobclaw-home-bg {
     background-color: #fff4e2;
     background-position: top center;
-    background-size: 100vw auto;
-  }
-
-  @media (min-aspect-ratio: 1672/941) {
-    .jobclaw-home-bg {
-      background-size: auto 100vh;
-    }
+    background-size: max(100vw, 177.79vh) auto;
   }
 
   @supports (height: 100svh) {
-    @media (min-aspect-ratio: 1672/941) {
-      .jobclaw-home-bg {
-        background-size: auto 100svh;
-      }
+    .jobclaw-home-bg {
+      background-size: max(100vw, 177.79svh) auto;
     }
   }
 
   @supports (height: 100dvh) {
-    @media (min-aspect-ratio: 1672/941) {
-      .jobclaw-home-bg {
-        background-size: auto 100dvh;
-      }
+    .jobclaw-home-bg {
+      background-size: max(100vw, 177.79dvh) auto;
     }
   }
 
   @media (max-width: 1024px) {
     .jobclaw-home-bg {
       background-position: top center;
-      background-size: max(1400px, calc(100vh * 1.7779)) auto;
+      background-size: max(1400px, 100vw, 177.79vh) auto;
     }
   }
 
   @supports (height: 100svh) {
     @media (max-width: 1024px) {
       .jobclaw-home-bg {
-        background-size: max(1400px, calc(100svh * 1.7779)) auto;
+        background-size: max(1400px, 100vw, 177.79svh) auto;
       }
     }
   }
@@ -104,7 +94,7 @@
   @supports (height: 100dvh) {
     @media (max-width: 1024px) {
       .jobclaw-home-bg {
-        background-size: max(1400px, calc(100dvh * 1.7779)) auto;
+        background-size: max(1400px, 100vw, 177.79dvh) auto;
       }
     }
   }
