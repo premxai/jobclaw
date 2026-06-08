@@ -12,6 +12,7 @@ import json
 import os
 import sys
 import datetime as _dt
+from collections.abc import Mapping, Sequence
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -131,9 +132,14 @@ def _scalar(conn, sql: str, params: tuple = ()):
     row = cursor.fetchone()
     if row is None:
         return None
-    if isinstance(row, dict):
+    if isinstance(row, Mapping):
         return next(iter(row.values()))
-    return row[0]
+    if isinstance(row, Sequence) and not isinstance(row, (str, bytes, bytearray)):
+        return row[0] if row else None
+    try:
+        return row[0]
+    except Exception:
+        return None
 
 
 # ═══════════════════════════════════════════════════════════════════════

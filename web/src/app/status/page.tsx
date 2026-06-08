@@ -25,7 +25,9 @@ interface JobsResponse {
 
 interface RunResponse {
   scraper?: string;
+  script_name?: string;
   run_at?: string;
+  timestamp?: string;
   status?: string;
 }
 
@@ -69,7 +71,9 @@ async function getJson<T>(path: string): Promise<{ ok: boolean; status: number; 
 function formatRun(runs: RunResponse[] | null): string {
   const latest = runs?.[0];
   if (!latest) return "No scraper runs returned from /stats/runs.";
-  return `${latest.scraper || "scraper"} ${latest.status || "run"} at ${latest.run_at || "unknown time"}`;
+  return `${latest.scraper || latest.script_name || "scraper"} ${latest.status || "run"} at ${
+    latest.run_at || latest.timestamp || "unknown time"
+  }`;
 }
 
 function checkingRows(): StatusCheck[] {

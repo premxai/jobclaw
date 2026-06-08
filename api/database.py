@@ -8,7 +8,9 @@ Provides read-only query functions for the REST API.
 import json
 import os
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from collections.abc import Mapping, Sequence
+from decimal import Decimal
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 DB_PATH = Path(__file__).parent.parent / "data" / "jobclaw.db"
@@ -53,13 +55,46 @@ def get_db():
     return conn
 
 
+def _row_to_mapping(row) -> dict:
+    """Convert sqlite/psycopg rows into a plain dict."""
+    if row is None:
+        return {}
+    return dict(row)
+
+
+def _first_value(row, default=0):
+    """Read the first selected value from sqlite rows or psycopg dict rows."""
+    if row is None:
+        return default
+    if isinstance(row, Mapping):
+        return next(iter(row.values()), default)
+    if isinstance(row, Sequence) and not isinstance(row, (str, bytes, bytearray)):
+        return row[0] if row else default
+    try:
+        return row[0]
+    except Exception:
+        return default
+
+
+def _json_safe(value):
+    """Normalize DB-native values before Pydantic/JSON serialization."""
+    if isinstance(value, (datetime, date)):
+        return value.isoformat()
+    if isinstance(value, Decimal):
+        return float(value)
+    return value
+
+
 def _row_to_dict(row) -> dict:
-    """Convert a row to a dict with parsed keywords."""
-    d = dict(row)
+    """Convert a row to a dict with parsed keywords and JSON-safe values."""
+    d = {key: _json_safe(value) for key, value in _row_to_mapping(row).items()}
     if d.get("keywords_matched"):
-        try:
-            d["keywords_matched"] = json.loads(d["keywords_matched"])
-        except (json.JSONDecodeError, TypeError):
+        if isinstance(d["keywords_matched"], str):
+            try:
+                d["keywords_matched"] = json.loads(d["keywords_matched"])
+            except (json.JSONDecodeError, TypeError):
+                d["keywords_matched"] = []
+        elif not isinstance(d["keywords_matched"], list):
             d["keywords_matched"] = []
     else:
         d["keywords_matched"] = []
@@ -124,7 +159,7 @@ def get_jobs(
         cursor = conn.cursor()
         cursor.execute(f"SELECT COUNT(*) FROM jobs {where}", params)
         row = cursor.fetchone()
-        total = row[0] if row else 0
+        total = _first_value(row, 0)
 
         offset = (page - 1) * per_page
 
@@ -188,7 +223,7 @@ def get_companies(ats: str = None) -> list[dict]:
                 GROUP BY company, source_ats
                 ORDER BY job_count DESC
             """)
-        return [dict(r) for r in cursor.fetchall()]
+        return [_row_to_dict(r) for r in cursor.fetchall()]
     finally:
         conn.close()
 
@@ -203,12 +238,7 @@ def get_stats() -> dict:
         def _scalar(sql, params=()):
             cursor.execute(sql, params)
             row = cursor.fetchone()
-            if isinstance(row, (list, tuple)):
-                return row[0]
-            if isinstance(row, dict):
-                return list(row.values())[0]
-            # sqlite3.Row — use index access
-            return row[0]
+            return _first_value(row, 0)
 
         total = _scalar("SELECT COUNT(*) FROM jobs")
         active_count = _scalar(f"SELECT COUNT(*) FROM jobs WHERE is_active = {active}")
@@ -222,7 +252,10 @@ def get_stats() -> dict:
             cursor.execute(
                 "SELECT COALESCE(quality_state, 'needs_review') AS state, COUNT(*) AS cnt FROM jobs GROUP BY state"
             )
-            quality_states = {dict(r).get("state", "needs_review"): dict(r).get("cnt", 0) for r in cursor.fetchall()}
+            quality_states = {
+                str(_row_to_mapping(r).get("state") or "needs_review"): int(_row_to_mapping(r).get("cnt") or 0)
+                for r in cursor.fetchall()
+            }
         except Exception:
             quality_states = {}
 
@@ -231,13 +264,13 @@ def get_stats() -> dict:
         rows = cursor.fetchall()
         platforms = {}
         for r in rows:
-            d = dict(r)
-            platforms[d.get("source_ats", "")] = d.get("cnt", 0)
+            d = _row_to_mapping(r)
+            platforms[str(d.get("source_ats") or "unknown")] = int(d.get("cnt") or 0)
 
         # Recent counts
         if _is_pg():
-            last_24h = _scalar("SELECT COUNT(*) FROM jobs WHERE first_seen >= NOW() - INTERVAL '1 day'")
-            last_7d = _scalar("SELECT COUNT(*) FROM jobs WHERE first_seen >= NOW() - INTERVAL '7 days'")
+            last_24h = _scalar("SELECT COUNT(*) FROM jobs WHERE first_seen::timestamptz >= NOW() - INTERVAL '1 day'")
+            last_7d = _scalar("SELECT COUNT(*) FROM jobs WHERE first_seen::timestamptz >= NOW() - INTERVAL '7 days'")
         else:
             last_24h = _scalar("SELECT COUNT(*) FROM jobs WHERE first_seen >= datetime('now', '-1 day')")
             last_7d = _scalar("SELECT COUNT(*) FROM jobs WHERE first_seen >= datetime('now', '-7 days')")
@@ -322,6 +355,6 @@ def get_scraper_runs(limit: int = 20) -> list[dict]:
             """,
             (limit,),
         )
-        return [dict(r) for r in cursor.fetchall()]
+        return [_row_to_dict(r) for r in cursor.fetchall()]
     finally:
         conn.close()
