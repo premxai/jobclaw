@@ -139,6 +139,7 @@ For Railway deployment, follow the explicit web/API wiring guide:
 [docs/railway-web-api-setup.md](docs/railway-web-api-setup.md)
 
 If Railway shows only `worker` and `web`, use `worker` as the API/backend service.
+For the custom domain setup, use `norinote.xyz` for web and `api.norinote.xyz` for the worker/API.
 
 To diagnose a deployed web/API setup:
 

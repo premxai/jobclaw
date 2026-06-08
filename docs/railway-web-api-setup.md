@@ -65,6 +65,52 @@ requests to `JOBCLAW_API_INTERNAL_URL`. This avoids most CORS confusion.
 
 `NEXT_PUBLIC_ENABLE_MOCK_JOBS=0` prevents the board from silently showing placeholder jobs.
 
+## Custom Domain: norinote.xyz
+
+Use the domain like this:
+
+```text
+norinote.xyz      -> Railway web service
+www.norinote.xyz  -> Railway web service
+api.norinote.xyz  -> Railway worker/API service
+```
+
+In Railway:
+
+1. Open **web** service.
+2. Add custom domain `www.norinote.xyz`.
+3. Add custom domain `norinote.xyz` if Railway gives you an apex/root record.
+4. Open **worker** service.
+5. Add custom domain `api.norinote.xyz`.
+
+In Spaceship DNS, add the records Railway gives you. Usually this is:
+
+```text
+www  CNAME  <railway web target>
+api  CNAME  <railway worker/api target>
+```
+
+For the root domain `norinote.xyz`, use the exact apex/root record Railway
+shows. If Spaceship does not support Railway's required root record cleanly,
+use `www.norinote.xyz` as the primary website domain and forward
+`norinote.xyz` to `www.norinote.xyz`.
+
+After the custom domains are active, set Railway variables to:
+
+On **worker**:
+
+```env
+DATABASE_URL=<same Neon/Postgres URL used by GitHub Actions secrets.DATABASE_URL>
+CORS_ORIGINS=https://norinote.xyz,https://www.norinote.xyz,http://localhost:3000,http://localhost:3001
+```
+
+On **web**:
+
+```env
+JOBCLAW_API_INTERNAL_URL=https://api.norinote.xyz
+NEXT_PUBLIC_ENABLE_MOCK_JOBS=0
+```
+
 ## Validation Order
 
 You can run the full wiring check locally with:
