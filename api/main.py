@@ -119,9 +119,7 @@ _default_cors_origins = ",".join(
     ]
 )
 _allowed_origins = [
-    origin.strip()
-    for origin in os.getenv("CORS_ORIGINS", _default_cors_origins).split(",")
-    if origin.strip()
+    origin.strip() for origin in os.getenv("CORS_ORIGINS", _default_cors_origins).split(",") if origin.strip()
 ]
 app.add_middleware(
     CORSMiddleware,
