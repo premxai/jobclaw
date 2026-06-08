@@ -8,7 +8,7 @@ import JobRow from "./JobRow";
 import { BOARD_REFRESH_INTERVAL_MS, fetchBoardJobs } from "@/lib/job-board";
 import type { BoardCategory, BoardDataStatus, BoardJob } from "@/lib/job-board";
 
-const JOBS_PER_PAGE = 10;
+const JOBS_PER_PAGE = 9;
 
 export default function JobBoard() {
   const [jobs, setJobs] = useState<BoardJob[]>([]);
@@ -64,7 +64,7 @@ export default function JobBoard() {
 
   return (
     <section className="mx-auto flex h-full w-full max-w-[880px] flex-col px-4 pb-3 pt-[clamp(2.25rem,7dvh,4.75rem)] sm:px-6">
-      <div className="mx-auto mb-3 max-w-xl rounded-[20px] border border-[#E8CFA8]/75 bg-[#FFFEFB]/88 px-5 py-3 text-center shadow-[0_14px_34px_rgba(120,80,40,0.11)] backdrop-blur-sm">
+      <div className="mx-auto mb-3 max-w-xl px-5 py-3 text-center">
         <h1 className="text-[clamp(1.55rem,3.6vw,2.45rem)] font-bold leading-none tracking-tight text-[#171717]">
           Hey, I am Nori
         </h1>
