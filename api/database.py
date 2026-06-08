@@ -13,14 +13,35 @@ from pathlib import Path
 
 DB_PATH = Path(__file__).parent.parent / "data" / "jobclaw.db"
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
+DATABASE_URL_PLACEHOLDER_HINTS = (
+    "user:password@",
+    "ep-xxx.",
+    "your-postgres",
+    "localhost:5432/jobclaw",
+)
 
 
 def _is_pg() -> bool:
     return DATABASE_URL.startswith("postgres")
 
 
+def validate_database_url() -> None:
+    """Fail fast when production is configured with an example database URL."""
+    if not DATABASE_URL:
+        return
+
+    if any(hint in DATABASE_URL for hint in DATABASE_URL_PLACEHOLDER_HINTS):
+        raise RuntimeError(
+            "DATABASE_URL is still using a placeholder value. "
+            "Set it to the real Railway Postgres or Neon connection string, "
+            "for example the Railway Postgres DATABASE_URL reference."
+        )
+
+
 def get_db():
     """Get a database connection (SQLite or PostgreSQL)."""
+    validate_database_url()
+
     if _is_pg():
         import psycopg2
         import psycopg2.extras

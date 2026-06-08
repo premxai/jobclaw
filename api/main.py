@@ -32,6 +32,7 @@ from api.database import (
     get_jobs,
     get_scraper_runs,
     get_stats,
+    validate_database_url,
 )
 from api.models import (
     CompanyResponse,
@@ -52,6 +53,8 @@ async def lifespan(app: FastAPI):
     """Startup/shutdown hooks."""
     # Validate DB exists
     from api.database import DB_PATH
+
+    validate_database_url()
 
     try:
         from scripts.database.db_utils import get_connection
