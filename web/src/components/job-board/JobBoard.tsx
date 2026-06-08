@@ -63,13 +63,13 @@ export default function JobBoard() {
   const rangeEnd = Math.min(filteredJobs.length, page * JOBS_PER_PAGE);
 
   return (
-    <section className="mx-auto flex h-full w-full max-w-[880px] flex-col px-4 pb-3 pt-[clamp(3.25rem,10dvh,6rem)] sm:px-6">
+    <section className="mx-auto flex h-full w-full max-w-[880px] flex-col px-4 pb-3 pt-[clamp(2.25rem,7dvh,4.75rem)] sm:px-6">
       <div className="mx-auto mb-3 max-w-xl rounded-[20px] border border-[#E8CFA8]/75 bg-[#FFFEFB]/88 px-5 py-3 text-center shadow-[0_14px_34px_rgba(120,80,40,0.11)] backdrop-blur-sm">
         <h1 className="text-[clamp(1.55rem,3.6vw,2.45rem)] font-bold leading-none tracking-tight text-[#171717]">
           Hey, I am Nori
         </h1>
         <p className="mt-2 text-xs font-semibold leading-5 text-[#4f4a42] sm:text-sm">
-          Check out the notes below for job postings from the last 48 hours.
+          Check my notes below for job postings from the last 48 hours.
         </p>
       </div>
 
