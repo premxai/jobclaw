@@ -131,5 +131,9 @@ uvicorn api.main:app --reload --port 8000
 ```
 Then spin up the Web Application:
 ```bash
-cd web && npm install && npm run build
+cd web && npm install && npm run dev
 ```
+
+For Railway deployment, follow the explicit web/API wiring guide:
+
+[docs/railway-web-api-setup.md](docs/railway-web-api-setup.md)
