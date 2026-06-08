@@ -14,7 +14,9 @@ If Railway only shows **worker** and **web**, that is okay:
 
 - Treat **worker** as the API/backend service. The name is old; the current
   `railway.toml` starts FastAPI with `uvicorn api.main:app`.
-- Treat **web** as the Next.js frontend service.
+- Treat **web** as the Next.js frontend service. Its Railway root directory
+  must be `web`, so it uses `web/railway.toml` and starts Next.js instead of
+  the root API command.
 - GitHub Actions own scheduled scraping. You do not need a separate Railway
   scraper service for the current setup.
 
@@ -64,6 +66,16 @@ The browser calls the web service at same-origin `/api`; Next.js proxies those
 requests to `JOBCLAW_API_INTERNAL_URL`. This avoids most CORS confusion.
 
 `NEXT_PUBLIC_ENABLE_MOCK_JOBS=0` prevents the board from silently showing placeholder jobs.
+
+The **web** service settings must use:
+
+```text
+Root Directory: web
+Start Command: from web/railway.toml
+```
+
+If web logs show `uvicorn`, the web service is still reading the root API
+Railway config. Set root directory to `web` and redeploy.
 
 ## Custom Domain: norinote.xyz
 
