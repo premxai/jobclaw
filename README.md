@@ -137,3 +137,11 @@ cd web && npm install && npm run dev
 For Railway deployment, follow the explicit web/API wiring guide:
 
 [docs/railway-web-api-setup.md](docs/railway-web-api-setup.md)
+
+To diagnose a deployed web/API setup:
+
+```bash
+python scripts/ops/check_web_wiring.py \
+  --api-url https://YOUR-API-DOMAIN.up.railway.app \
+  --web-url https://YOUR-WEB-DOMAIN.up.railway.app
+```

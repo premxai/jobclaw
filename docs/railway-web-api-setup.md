@@ -53,6 +53,14 @@ NEXT_PUBLIC_ENABLE_MOCK_JOBS=0
 
 ## Validation Order
 
+You can run the full wiring check locally with:
+
+```bash
+python scripts/ops/check_web_wiring.py \
+  --api-url https://YOUR-API-DOMAIN.up.railway.app \
+  --web-url https://YOUR-WEB-DOMAIN.up.railway.app
+```
+
 Validate the API first:
 
 ```text
