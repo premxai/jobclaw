@@ -9,7 +9,7 @@ interface JobRowProps {
 
 export default function JobRow({ job }: JobRowProps) {
   return (
-    <article className="group grid min-h-[48px] gap-2 border-b border-zinc-200/80 px-4 py-2 transition-colors duration-200 last:border-b-0 hover:bg-amber-50/45 sm:px-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-5">
+    <article className="group grid min-h-[48px] gap-2 border-b border-black/10 px-4 py-2 transition-colors duration-200 last:border-b-0 hover:bg-white/36 sm:px-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:gap-5">
       <div className="min-w-0">
         <div className="flex min-w-0 items-center gap-2">
           <h2 className="truncate text-sm font-semibold tracking-tight text-zinc-900 sm:text-[15px]">{job.title}</h2>

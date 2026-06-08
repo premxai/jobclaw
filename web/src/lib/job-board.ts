@@ -1,4 +1,15 @@
-export type BoardCategory = "All Roles" | "Engineering" | "Design" | "Product" | "Growth" | "AI/ML" | "Internships";
+export type DiscordJobCategory =
+  | "AI/ML"
+  | "Data Science"
+  | "Data Engineering"
+  | "Data Analyst"
+  | "SWE"
+  | "New Grad"
+  | "Product"
+  | "Research"
+  | "Uncategorized";
+
+export type BoardCategory = "All Roles" | DiscordJobCategory;
 
 export type LocationType = "Remote" | "Hybrid" | "On-site";
 export type JobType = "Full-time" | "Internship" | "Contract";
@@ -6,7 +17,7 @@ export type JobType = "Full-time" | "Internship" | "Contract";
 export interface BoardJob {
   id: string;
   title: string;
-  category: Exclude<BoardCategory, "All Roles">;
+  category: DiscordJobCategory;
   description: string;
   location: string;
   locationType: LocationType;
@@ -37,6 +48,7 @@ interface ApiJob {
 interface JobsResponse {
   jobs?: ApiJob[];
   total?: number;
+  has_more?: boolean;
 }
 
 interface RunsResponseItem {
@@ -46,13 +58,18 @@ interface RunsResponseItem {
 
 export const BOARD_CATEGORIES: BoardCategory[] = [
   "All Roles",
-  "Engineering",
-  "Design",
-  "Product",
-  "Growth",
   "AI/ML",
-  "Internships",
+  "SWE",
+  "Data Science",
+  "Data Engineering",
+  "Data Analyst",
+  "New Grad",
+  "Product",
+  "Research",
+  "Uncategorized",
 ];
+
+const DISCORD_JOB_CATEGORIES = new Set<DiscordJobCategory>(BOARD_CATEGORIES.filter((category) => category !== "All Roles"));
 
 export const MOCK_BOARD_JOBS: BoardJob[] = [
   {
@@ -72,7 +89,7 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
   {
     id: "mock-ai-intern",
     title: "AI Engineer Intern",
-    category: "Internships",
+    category: "New Grad",
     description: "Early-career AI role focused on evaluation, tooling, and applied product use cases.",
     location: "Remote",
     locationType: "Remote",
@@ -86,7 +103,7 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
   {
     id: "mock-data-scientist",
     title: "Data Scientist",
-    category: "AI/ML",
+    category: "Data Science",
     description: "Use product and marketplace data to ship sharper insights for real teams.",
     location: "Remote",
     locationType: "Remote",
@@ -100,7 +117,7 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
   {
     id: "mock-founding-ai-engineer",
     title: "Founding AI Engineer",
-    category: "Engineering",
+    category: "SWE",
     description: "Own core AI infrastructure from prototype through reliable production systems.",
     location: "San Francisco, CA",
     locationType: "Hybrid",
@@ -114,7 +131,7 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
   {
     id: "mock-product-designer",
     title: "Product Designer",
-    category: "Design",
+    category: "Product",
     description: "Shape product flows from user research through polished, shippable UI.",
     location: "Remote",
     locationType: "Remote",
@@ -142,7 +159,7 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
   {
     id: "mock-growth-marketer",
     title: "Growth Marketer",
-    category: "Growth",
+    category: "Uncategorized",
     description: "Run acquisition, lifecycle, and retention experiments with measurable impact.",
     location: "Remote",
     locationType: "Remote",
@@ -161,21 +178,52 @@ const BOARD_REFRESH_INTERVAL_MS = 15 * 60 * 1000;
 const ENABLE_MOCK_JOBS = process.env.NEXT_PUBLIC_ENABLE_MOCK_JOBS === "1";
 
 function keywordText(job: ApiJob): string {
-  const keywords = job.keywords_matched;
-  if (Array.isArray(keywords)) return keywords.join(" ");
-  return keywords || "";
+  return parseKeywordCategories(job.keywords_matched).join(" ");
+}
+
+function parseKeywordCategories(keywords: ApiJob["keywords_matched"]): string[] {
+  if (!keywords) return [];
+  if (Array.isArray(keywords)) return keywords.map(String).filter(Boolean);
+
+  try {
+    const parsed = JSON.parse(keywords);
+    if (Array.isArray(parsed)) return parsed.map(String).filter(Boolean);
+  } catch {
+    // Fall through to delimiter parsing for older string payloads.
+  }
+
+  return keywords
+    .split(/[,\n|]+/)
+    .map((value) => value.replace(/[[\]"']/g, "").trim())
+    .filter(Boolean);
 }
 
 function classifyCategory(job: ApiJob): BoardJob["category"] {
+  const primaryDiscordCategory = parseKeywordCategories(job.keywords_matched).find((category): category is DiscordJobCategory =>
+    DISCORD_JOB_CATEGORIES.has(category as DiscordJobCategory),
+  );
+  if (primaryDiscordCategory) return primaryDiscordCategory;
+
   const text = `${job.title || ""} ${job.description || ""} ${keywordText(job)}`.toLowerCase();
 
-  if (/\b(intern|internship|new grad|graduate)\b/.test(text)) return "Internships";
-  if (/\b(ai|ml|machine learning|llm|research scientist|deep learning|data scientist)\b/.test(text)) return "AI/ML";
-  if (/\b(design|designer|ux|ui|product design)\b/.test(text)) return "Design";
+  if (/\b(intern|internship|new grad|graduate|campus hire|early career)\b/.test(text)) return "New Grad";
+  if (/\b(data scientist|decision scientist|analytics scientist|predictive modeler|statistical analyst)\b/.test(text)) {
+    return "Data Science";
+  }
+  if (/\b(data engineer|analytics engineer|etl|data pipeline|data platform|data warehouse|lakehouse)\b/.test(text)) {
+    return "Data Engineering";
+  }
+  if (/\b(data analyst|business intelligence analyst|bi analyst|reporting analyst|business analyst)\b/.test(text)) {
+    return "Data Analyst";
+  }
+  if (/\b(ai|ml|machine learning|llm|research scientist|deep learning)\b/.test(text)) return "AI/ML";
+  if (/\b(software engineer|software developer|frontend|backend|full stack|fullstack|devops|sre|infrastructure|platform engineer|mobile engineer|ios engineer|android engineer|security engineer)\b/.test(text)) {
+    return "SWE";
+  }
   if (/\b(product manager|product management|\bpm\b)\b/.test(text)) return "Product";
-  if (/\b(growth|marketing|marketer|lifecycle|acquisition|retention)\b/.test(text)) return "Growth";
+  if (/\b(research associate|research engineer|computational biologist)\b/.test(text)) return "Research";
 
-  return "Engineering";
+  return "Uncategorized";
 }
 
 function classifyLocation(location?: string): LocationType {
@@ -220,7 +268,7 @@ function sourceLabel(source?: string): string {
 function roleDescription(job: ApiJob, category: BoardJob["category"]): string {
   const company = job.company?.trim() || "the hiring team";
 
-  if (category === "Internships") {
+  if (category === "New Grad") {
     return `Early-career role at ${company} focused on learning, shipping, and real product work.`;
   }
 
@@ -228,19 +276,31 @@ function roleDescription(job: ApiJob, category: BoardJob["category"]): string {
     return `Work on AI, data, and model-driven systems with ${company}.`;
   }
 
-  if (category === "Design") {
-    return `Shape user-facing product experiences at ${company} from research to polished UI.`;
+  if (category === "Data Science") {
+    return `Turn data into models, analysis, and product insight with ${company}.`;
+  }
+
+  if (category === "Data Engineering") {
+    return `Build data pipelines, platforms, and reliable analytics systems with ${company}.`;
+  }
+
+  if (category === "Data Analyst") {
+    return `Analyze business and product data to help ${company} make better decisions.`;
+  }
+
+  if (category === "SWE") {
+    return `Build production software and reliable systems with ${company}.`;
   }
 
   if (category === "Product") {
     return `Guide roadmap, customer insight, and execution for ${company}.`;
   }
 
-  if (category === "Growth") {
-    return `Grow ${company} through acquisition, lifecycle, and retention experiments.`;
+  if (category === "Research") {
+    return `Explore technical research problems and ship rigorous work with ${company}.`;
   }
 
-  return `Build production software and reliable systems with ${company}.`;
+  return `Review a fresh direct role from ${company}.`;
 }
 
 function looksLikeNoisyDescription(raw: string): boolean {
@@ -293,10 +353,41 @@ export function mapApiJobToBoardJob(job: ApiJob, index: number): BoardJob {
 }
 
 async function fetchJobsWithParams(params: URLSearchParams): Promise<BoardJob[]> {
-  const response = await fetch(`${API_BASE}/jobs?${params.toString()}`, { cache: "no-store" });
-  if (!response.ok) throw new Error(`Jobs API ${response.status}`);
-  const data = (await response.json()) as JobsResponse;
-  return (data.jobs || []).map(mapApiJobToBoardJob).filter((job) => job.applicationUrl !== "#");
+  const jobs: BoardJob[] = [];
+
+  for (let page = 1; page <= 3; page += 1) {
+    const pageParams = new URLSearchParams(params);
+    pageParams.set("page", String(page));
+
+    const response = await fetch(`${API_BASE}/jobs?${pageParams.toString()}`, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Jobs API ${response.status}`);
+
+    const data = (await response.json()) as JobsResponse;
+    jobs.push(...(data.jobs || []).map(mapApiJobToBoardJob).filter((job) => job.applicationUrl !== "#"));
+
+    if (!data.has_more) break;
+  }
+
+  return jobs;
+}
+
+const NON_US_LOCATION_RE =
+  /\b(canada|india|united kingdom|uk|england|scotland|wales|ireland|germany|france|spain|italy|netherlands|sweden|poland|portugal|australia|new zealand|singapore|japan|china|brazil|mexico|argentina|colombia|europe|emea|apac|latam)\b/i;
+const US_LOCATION_RE =
+  /\b(united states|usa|u\.s\.a\.|u\.s\.|us only|remote us|remote - us|remote \(us\)|america|north america|alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|florida|georgia|hawaii|idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|washington|west virginia|wisconsin|wyoming|washington dc|district of columbia|nyc|san francisco|los angeles|seattle|austin|boston|chicago|atlanta|denver|miami|dallas|houston|phoenix|portland|philadelphia|nashville|raleigh|charlotte|san diego|san jose)\b/i;
+const US_STATE_CODE_RE =
+  /(^|[\s,(/-])(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC)(?=$|[\s,)/-])/;
+
+function isUsLocation(location: string): boolean {
+  const normalized = location.replace(/\s+/g, " ").trim();
+  if (!normalized || /^location tbd$/i.test(normalized)) return false;
+  if (NON_US_LOCATION_RE.test(normalized)) return false;
+
+  return US_LOCATION_RE.test(normalized) || US_STATE_CODE_RE.test(normalized);
+}
+
+function filterUsJobs(jobs: BoardJob[]): BoardJob[] {
+  return jobs.filter((job) => isUsLocation(job.location));
 }
 
 export async function fetchBoardJobs(): Promise<{ jobs: BoardJob[]; status: BoardDataStatus }> {
@@ -310,11 +401,11 @@ export async function fetchBoardJobs(): Promise<{ jobs: BoardJob[]; status: Boar
       ...baseParams,
       quality: "accepted",
     });
-    const acceptedJobs = await fetchJobsWithParams(acceptedParams);
+    const acceptedJobs = filterUsJobs(await fetchJobsWithParams(acceptedParams));
     if (acceptedJobs.length) return { jobs: acceptedJobs, status: "real" };
 
     // Real fresh jobs are better than fake jobs while quality labels catch up.
-    const freshJobs = await fetchJobsWithParams(new URLSearchParams(baseParams));
+    const freshJobs = filterUsJobs(await fetchJobsWithParams(new URLSearchParams(baseParams)));
     if (freshJobs.length) return { jobs: freshJobs, status: "real" };
 
     if (ENABLE_MOCK_JOBS) return { jobs: MOCK_BOARD_JOBS, status: "mock" };

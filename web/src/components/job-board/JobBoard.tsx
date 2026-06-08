@@ -59,19 +59,19 @@ export default function JobBoard() {
         <CategoryTabs jobs={jobs} activeCategory={activeCategory} onChange={setActiveCategory} />
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-black/10 bg-white/90 shadow-[0_18px_70px_rgba(41,29,12,0.18)] backdrop-blur-md">
+      <div className="overflow-hidden rounded-2xl border border-white/45 bg-white/68 shadow-[0_18px_70px_rgba(41,29,12,0.16)] backdrop-blur-2xl">
         {loading ? (
-          <div className="divide-y divide-zinc-200/80">
+          <div className="divide-y divide-black/10">
             {Array.from({ length: JOBS_PER_PAGE }).map((_, index) => (
               <div key={index} className="grid h-[48px] gap-3 px-4 py-2 sm:px-5 lg:grid-cols-[1fr_auto] lg:items-center">
                 <div className="space-y-2">
-                  <div className="h-4 w-52 max-w-full animate-pulse rounded-full bg-zinc-100" />
-                  <div className="h-3 w-[min(420px,100%)] animate-pulse rounded-full bg-zinc-100" />
+                  <div className="h-4 w-52 max-w-full animate-pulse rounded-full bg-white/60" />
+                  <div className="h-3 w-[min(420px,100%)] animate-pulse rounded-full bg-white/50" />
                 </div>
                 <div className="flex gap-2">
-                  <div className="h-6 w-16 animate-pulse rounded-full bg-zinc-100" />
-                  <div className="h-6 w-20 animate-pulse rounded-full bg-zinc-100" />
-                  <div className="h-8 w-8 animate-pulse rounded-full bg-zinc-100" />
+                  <div className="h-6 w-16 animate-pulse rounded-full bg-white/55" />
+                  <div className="h-6 w-20 animate-pulse rounded-full bg-white/55" />
+                  <div className="h-8 w-8 animate-pulse rounded-full bg-white/55" />
                 </div>
               </div>
             ))}
@@ -88,13 +88,13 @@ export default function JobBoard() {
               {dataStatus === "unavailable"
                 ? "JobClaw is waiting for the backend API. Check the API URL or Railway deployment."
                 : activeCategory === "All Roles"
-                  ? "No jobs were posted in the last 48 hours."
+                  ? "No US roles were posted in the last 48 hours."
                   : "No roles found in this category."}
             </p>
           </div>
         )}
 
-        <div className="flex h-10 items-center justify-between border-t border-zinc-200/80 px-4 sm:px-5">
+        <div className="flex h-10 items-center justify-between border-t border-black/10 bg-white/18 px-4 sm:px-5">
           <p className="text-xs font-medium text-zinc-500">
             Page {filteredJobs.length ? page : 0} of {filteredJobs.length ? totalPages : 0}
           </p>

@@ -28,10 +28,10 @@ export default function CategoryTabs({ jobs, activeCategory, onChange }: Categor
             type="button"
             onClick={() => onChange(category)}
             className={cn(
-              "group inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-sm font-semibold transition-all duration-200 sm:h-10 sm:px-4",
+              "group inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-sm font-semibold transition-all duration-200 backdrop-blur-xl sm:h-10 sm:px-4",
               isActive
-                ? "bg-black text-white shadow-[0_8px_20px_rgba(0,0,0,0.14)]"
-                : "bg-white/70 text-zinc-600 shadow-sm ring-1 ring-black/5 backdrop-blur hover:bg-white hover:text-zinc-900",
+                ? "bg-black/90 text-white shadow-[0_8px_20px_rgba(0,0,0,0.14)]"
+                : "bg-white/45 text-zinc-700 shadow-sm ring-1 ring-white/55 hover:bg-white/65 hover:text-zinc-950",
             )}
             aria-pressed={isActive}
           >
@@ -39,7 +39,7 @@ export default function CategoryTabs({ jobs, activeCategory, onChange }: Categor
             <span
               className={cn(
                 "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-bold",
-                isActive ? "bg-white/15 text-white" : "bg-zinc-200/80 text-zinc-500 group-hover:bg-zinc-300",
+                isActive ? "bg-white/15 text-white" : "bg-white/55 text-zinc-500 group-hover:bg-white/75",
               )}
             >
               {count}
