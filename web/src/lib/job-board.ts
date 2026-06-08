@@ -8,6 +8,7 @@ export interface BoardJob {
   title: string;
   category: Exclude<BoardCategory, "All Roles">;
   description: string;
+  location: string;
   locationType: LocationType;
   jobType: JobType;
   isHot: boolean;
@@ -58,10 +59,11 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
     id: "mock-ml-engineer",
     title: "Machine Learning Engineer",
     category: "AI/ML",
-    description: "Build models that power intelligent product workflows.",
+    description: "Work on AI systems and product-grade model workflows at JobClaw Demo.",
+    location: "Remote",
     locationType: "Remote",
     jobType: "Full-time",
-    isHot: true,
+    isHot: false,
     applicationUrl: "https://example.com/apply/machine-learning-engineer",
     postedAt: "2026-06-06",
     source: "Company Careers",
@@ -71,10 +73,11 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
     id: "mock-ai-intern",
     title: "AI Engineer Intern",
     category: "Internships",
-    description: "Evaluate AI systems for real-world product use cases.",
+    description: "Early-career AI role focused on evaluation, tooling, and applied product use cases.",
+    location: "Remote",
     locationType: "Remote",
     jobType: "Internship",
-    isHot: true,
+    isHot: false,
     applicationUrl: "https://example.com/apply/ai-engineer-intern",
     postedAt: "2026-06-06",
     source: "Company Careers",
@@ -84,7 +87,8 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
     id: "mock-data-scientist",
     title: "Data Scientist",
     category: "AI/ML",
-    description: "Surface actionable insights from product and marketplace data.",
+    description: "Use product and marketplace data to ship sharper insights for real teams.",
+    location: "Remote",
     locationType: "Remote",
     jobType: "Full-time",
     isHot: false,
@@ -97,10 +101,11 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
     id: "mock-founding-ai-engineer",
     title: "Founding AI Engineer",
     category: "Engineering",
-    description: "Own core AI infrastructure from prototype to production.",
+    description: "Own core AI infrastructure from prototype through reliable production systems.",
+    location: "San Francisco, CA",
     locationType: "Hybrid",
     jobType: "Full-time",
-    isHot: true,
+    isHot: false,
     applicationUrl: "https://example.com/apply/founding-ai-engineer",
     postedAt: "2026-06-05",
     source: "Company Careers",
@@ -110,10 +115,11 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
     id: "mock-product-designer",
     title: "Product Designer",
     category: "Design",
-    description: "Design polished product flows from research to final UI.",
+    description: "Shape product flows from user research through polished, shippable UI.",
+    location: "Remote",
     locationType: "Remote",
     jobType: "Full-time",
-    isHot: true,
+    isHot: false,
     applicationUrl: "https://example.com/apply/product-designer",
     postedAt: "2026-06-04",
     source: "Company Careers",
@@ -123,7 +129,8 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
     id: "mock-product-manager",
     title: "Product Manager",
     category: "Product",
-    description: "Shape roadmap strategy and ship products people rely on.",
+    description: "Guide roadmap, customer insight, and execution for a focused product team.",
+    location: "New York, NY",
     locationType: "Hybrid",
     jobType: "Full-time",
     isHot: false,
@@ -136,7 +143,8 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
     id: "mock-growth-marketer",
     title: "Growth Marketer",
     category: "Growth",
-    description: "Run lifecycle experiments across acquisition and retention.",
+    description: "Run acquisition, lifecycle, and retention experiments with measurable impact.",
+    location: "Remote",
     locationType: "Remote",
     jobType: "Contract",
     isHot: false,
@@ -184,6 +192,13 @@ function classifyJobType(job: ApiJob): JobType {
   return "Full-time";
 }
 
+function cleanLocation(location?: string): string {
+  const raw = location?.replace(/\s+/g, " ").trim();
+  if (!raw) return "Location TBD";
+
+  return raw.length > 42 ? `${raw.slice(0, 39).trim()}...` : raw;
+}
+
 function sourceLabel(source?: string): string {
   if (!source) return "Company Careers";
   const labels: Record<string, string> = {
@@ -202,11 +217,51 @@ function sourceLabel(source?: string): string {
   return labels[source] || source.replace(/[-_]/g, " ");
 }
 
-function cleanDescription(job: ApiJob): string {
+function roleDescription(job: ApiJob, category: BoardJob["category"]): string {
+  const company = job.company?.trim() || "the hiring team";
+
+  if (category === "Internships") {
+    return `Early-career role at ${company} focused on learning, shipping, and real product work.`;
+  }
+
+  if (category === "AI/ML") {
+    return `Work on AI, data, and model-driven systems with ${company}.`;
+  }
+
+  if (category === "Design") {
+    return `Shape user-facing product experiences at ${company} from research to polished UI.`;
+  }
+
+  if (category === "Product") {
+    return `Guide roadmap, customer insight, and execution for ${company}.`;
+  }
+
+  if (category === "Growth") {
+    return `Grow ${company} through acquisition, lifecycle, and retention experiments.`;
+  }
+
+  return `Build production software and reliable systems with ${company}.`;
+}
+
+function looksLikeNoisyDescription(raw: string): boolean {
+  const text = raw.toLowerCase();
+  return (
+    text.startsWith("http") ||
+    text.includes("click here") ||
+    text.includes("apply now") ||
+    text.includes("job search") ||
+    text.includes("jobs hiring") ||
+    text.includes("salary estimate")
+  );
+}
+
+function cleanDescription(job: ApiJob, category: BoardJob["category"]): string {
   const raw = job.description?.replace(/\s+/g, " ").trim();
-  if (raw && raw.length > 12) return raw.length > 112 ? `${raw.slice(0, 109).trim()}...` : raw;
-  if (job.company) return `Join ${job.company} to build thoughtful products and systems.`;
-  return "Build and ship meaningful work with a high-quality team.";
+  if (raw && raw.length > 24 && !looksLikeNoisyDescription(raw)) {
+    return raw.length > 118 ? `${raw.slice(0, 115).trim()}...` : raw;
+  }
+
+  return roleDescription(job, category);
 }
 
 function isHotJob(job: ApiJob): boolean {
@@ -219,11 +274,14 @@ function isHotJob(job: ApiJob): boolean {
 }
 
 export function mapApiJobToBoardJob(job: ApiJob, index: number): BoardJob {
+  const category = classifyCategory(job);
+
   return {
     id: job.internal_hash || job.job_id || `api-job-${index}`,
     title: job.title || "Untitled Role",
-    category: classifyCategory(job),
-    description: cleanDescription(job),
+    category,
+    description: cleanDescription(job, category),
+    location: cleanLocation(job.location),
     locationType: classifyLocation(job.location),
     jobType: classifyJobType(job),
     isHot: isHotJob(job),

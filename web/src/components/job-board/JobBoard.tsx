@@ -57,33 +57,33 @@ export default function JobBoard() {
   const rangeEnd = Math.min(filteredJobs.length, page * JOBS_PER_PAGE);
 
   return (
-    <section className="mx-auto flex h-full w-full max-w-[920px] flex-col justify-center px-4 py-4 sm:px-6">
-      <div className="mb-4 text-center sm:mb-5">
-        <h1 className="mx-auto max-w-[760px] text-4xl font-bold leading-[0.95] tracking-[-0.04em] text-black drop-shadow-[0_2px_18px_rgba(255,255,255,0.75)] sm:text-5xl lg:text-6xl">
-          Curated tech roles for{" "}
+    <section className="mx-auto flex h-full w-full max-w-[880px] flex-col justify-center px-4 py-3 sm:px-6">
+      <div className="mb-3 text-center sm:mb-4">
+        <h1 className="mx-auto max-w-[720px] text-3xl font-bold leading-[0.96] text-black drop-shadow-[0_2px_18px_rgba(255,255,255,0.75)] sm:text-4xl lg:text-5xl">
+          Fresh tech roles,{" "}
           <span className="relative inline-block">
-            builders
-            <span className="absolute -bottom-1 left-0 -z-10 h-2.5 w-full rounded-full bg-lime-200/80" aria-hidden="true" />
+            every 48 hours
+            <span className="absolute -bottom-1 left-0 -z-10 h-2 w-full rounded-full bg-lime-200/80" aria-hidden="true" />
           </span>
         </h1>
-        <p className="mx-auto mt-3 max-w-[620px] text-sm leading-6 text-zinc-600 drop-shadow-[0_1px_10px_rgba(255,255,255,0.85)] sm:text-base">
-          JobClaw shows accepted jobs first discovered in the last {BOARD_FRESHNESS_HOURS} hours, refreshed with the
-          same cadence as our Discord alerts.
+        <p className="mx-auto mt-2 max-w-[580px] text-xs leading-5 text-zinc-600 drop-shadow-[0_1px_10px_rgba(255,255,255,0.85)] sm:text-sm">
+          JobClaw surfaces direct company and ATS roles discovered in the last {BOARD_FRESHNESS_HOURS} hours, cleaned
+          for real applications and refreshed with our Discord alerts.
         </p>
-        <div className="mt-2">
+        <div className="mt-1.5">
           <RefreshInfo lastRefreshed={lastRefreshed} status={dataStatus} />
         </div>
       </div>
 
-      <div className="mb-3">
+      <div className="mb-2">
         <CategoryTabs jobs={jobs} activeCategory={activeCategory} onChange={setActiveCategory} />
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-black/10 bg-white/88 shadow-[0_18px_70px_rgba(41,29,12,0.18)] backdrop-blur-md">
+      <div className="overflow-hidden rounded-2xl border border-black/10 bg-white/90 shadow-[0_18px_70px_rgba(41,29,12,0.18)] backdrop-blur-md">
         {loading ? (
           <div className="divide-y divide-zinc-200/80">
             {Array.from({ length: JOBS_PER_PAGE }).map((_, index) => (
-              <div key={index} className="grid h-[54px] gap-3 px-4 py-3 sm:px-5 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div key={index} className="grid h-[48px] gap-3 px-4 py-2 sm:px-5 lg:grid-cols-[1fr_auto] lg:items-center">
                 <div className="space-y-2">
                   <div className="h-4 w-52 max-w-full animate-pulse rounded-full bg-zinc-100" />
                   <div className="h-3 w-[min(420px,100%)] animate-pulse rounded-full bg-zinc-100" />
@@ -103,7 +103,7 @@ export default function JobBoard() {
             ))}
           </div>
         ) : (
-          <div className="flex h-[540px] items-center justify-center px-6 text-center">
+          <div className="flex h-[480px] items-center justify-center px-6 text-center">
             <p className="max-w-sm text-sm font-semibold leading-6 text-zinc-800 sm:text-base">
               {dataStatus === "unavailable"
                 ? "JobClaw is waiting for the backend API. Check the API URL or Railway deployment."
@@ -114,7 +114,7 @@ export default function JobBoard() {
           </div>
         )}
 
-        <div className="flex h-12 items-center justify-between border-t border-zinc-200/80 px-4 sm:px-5">
+        <div className="flex h-10 items-center justify-between border-t border-zinc-200/80 px-4 sm:px-5">
           <p className="text-xs font-medium text-zinc-500">
             Page {filteredJobs.length ? page : 0} of {filteredJobs.length ? totalPages : 0}
           </p>
