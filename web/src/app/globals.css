@@ -58,6 +58,18 @@
 }
 
 @layer components {
+  .jobclaw-home-bg {
+    background-position: center top;
+    background-size: cover;
+  }
+
+  @media (min-width: 768px) {
+    .jobclaw-home-bg {
+      background-position: center center;
+      background-size: auto 100%;
+    }
+  }
+
   .job-board-shell {
     --job-board-row-height: clamp(36px, calc((100svh - 224px) / 9), 50px);
     --job-board-footer-height: clamp(30px, 4.5svh, 38px);
