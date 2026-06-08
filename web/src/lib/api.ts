@@ -1,11 +1,12 @@
 /**
- * API layer — fetches from the FastAPI backend (port 8000)
- * Falls back to mock data if the API isn't running.
+ * API layer — fetches from the FastAPI backend.
+ * Mock data is opt-in only via NEXT_PUBLIC_ENABLE_MOCK_JOBS=1.
  */
 
 import type { Job } from "@/components/JobCard";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
+const ENABLE_MOCK_JOBS = process.env.NEXT_PUBLIC_ENABLE_MOCK_JOBS === "1";
 
 // ─── Job types ──────────────────────────────────────────────────────
 export interface ApiJob {
@@ -80,6 +81,8 @@ export async function fetchJobs(params?: {
             total: data.total,
         };
     } catch {
+        if (!ENABLE_MOCK_JOBS) return { jobs: [], total: 0 };
+
         return { jobs: getMockJobs(), total: getMockJobs().length };
     }
 }
@@ -107,6 +110,8 @@ export async function fetchJobById(id: string): Promise<Job | null> {
         }
         return null;
     } catch {
+        if (!ENABLE_MOCK_JOBS) return null;
+
         const jobs = getMockJobs();
         return jobs.find((j) => String(j.id) === id) || null;
     }

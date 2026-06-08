@@ -7,7 +7,7 @@ import CategoryTabs from "./CategoryTabs";
 import JobRow from "./JobRow";
 import RefreshInfo from "./RefreshInfo";
 import { BOARD_FRESHNESS_HOURS, BOARD_REFRESH_INTERVAL_MS, fetchBoardJobs, fetchLastRefresh } from "@/lib/job-board";
-import type { BoardCategory, BoardJob } from "@/lib/job-board";
+import type { BoardCategory, BoardDataStatus, BoardJob } from "@/lib/job-board";
 
 const JOBS_PER_PAGE = 10;
 
@@ -16,7 +16,7 @@ export default function JobBoard() {
   const [activeCategory, setActiveCategory] = useState<BoardCategory>("All Roles");
   const [page, setPage] = useState(1);
   const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
-  const [usingFallback, setUsingFallback] = useState(false);
+  const [dataStatus, setDataStatus] = useState<BoardDataStatus>("unavailable");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export default function JobBoard() {
 
       if (!mounted) return;
       setJobs(jobResult.jobs);
-      setUsingFallback(jobResult.usingFallback);
+      setDataStatus(jobResult.status);
       setLastRefreshed(refreshResult);
       setLoading(false);
     }
@@ -71,7 +71,7 @@ export default function JobBoard() {
           same cadence as our Discord alerts.
         </p>
         <div className="mt-2">
-          <RefreshInfo lastRefreshed={lastRefreshed} usingFallback={usingFallback} />
+          <RefreshInfo lastRefreshed={lastRefreshed} status={dataStatus} />
         </div>
       </div>
 
@@ -104,7 +104,13 @@ export default function JobBoard() {
           </div>
         ) : (
           <div className="flex h-[540px] items-center justify-center px-6 text-center">
-            <p className="text-lg font-semibold text-zinc-900">No roles found in this category.</p>
+            <p className="max-w-sm text-sm font-semibold leading-6 text-zinc-800 sm:text-base">
+              {dataStatus === "unavailable"
+                ? "JobClaw is waiting for the backend API. Check the API URL or Railway deployment."
+                : activeCategory === "All Roles"
+                  ? "No jobs were posted in the last 48 hours."
+                  : "No roles found in this category."}
+            </p>
           </div>
         )}
 

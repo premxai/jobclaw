@@ -17,6 +17,8 @@ export interface BoardJob {
   company?: string;
 }
 
+export type BoardDataStatus = "real" | "empty" | "unavailable" | "mock";
+
 interface ApiJob {
   internal_hash?: string;
   job_id?: string;
@@ -148,6 +150,7 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
 const BOARD_FRESHNESS_HOURS = 48;
 const BOARD_REFRESH_INTERVAL_MS = 15 * 60 * 1000;
+const ENABLE_MOCK_JOBS = process.env.NEXT_PUBLIC_ENABLE_MOCK_JOBS === "1";
 
 function keywordText(job: ApiJob): string {
   const keywords = job.keywords_matched;
@@ -231,21 +234,38 @@ export function mapApiJobToBoardJob(job: ApiJob, index: number): BoardJob {
   };
 }
 
-export async function fetchBoardJobs(): Promise<{ jobs: BoardJob[]; usingFallback: boolean }> {
+async function fetchJobsWithParams(params: URLSearchParams): Promise<BoardJob[]> {
+  const response = await fetch(`${API_BASE}/jobs?${params.toString()}`, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Jobs API ${response.status}`);
+  const data = (await response.json()) as JobsResponse;
+  return (data.jobs || []).map(mapApiJobToBoardJob).filter((job) => job.applicationUrl !== "#");
+}
+
+export async function fetchBoardJobs(): Promise<{ jobs: BoardJob[]; status: BoardDataStatus }> {
+  const baseParams = {
+    per_page: "200",
+    recent_hours: String(BOARD_FRESHNESS_HOURS),
+  };
+
   try {
-    const params = new URLSearchParams({
-      per_page: "200",
-      recent_hours: String(BOARD_FRESHNESS_HOURS),
+    const acceptedParams = new URLSearchParams({
+      ...baseParams,
       quality: "accepted",
     });
-    const response = await fetch(`${API_BASE}/jobs?${params.toString()}`, { cache: "no-store" });
-    if (!response.ok) throw new Error(`Jobs API ${response.status}`);
-    const data = (await response.json()) as JobsResponse;
-    const jobs = (data.jobs || []).map(mapApiJobToBoardJob).filter((job) => job.applicationUrl !== "#");
-    if (!jobs.length) throw new Error("Jobs API returned no jobs");
-    return { jobs, usingFallback: false };
+    const acceptedJobs = await fetchJobsWithParams(acceptedParams);
+    if (acceptedJobs.length) return { jobs: acceptedJobs, status: "real" };
+
+    // Real fresh jobs are better than fake jobs while quality labels catch up.
+    const freshJobs = await fetchJobsWithParams(new URLSearchParams(baseParams));
+    if (freshJobs.length) return { jobs: freshJobs, status: "real" };
+
+    if (ENABLE_MOCK_JOBS) return { jobs: MOCK_BOARD_JOBS, status: "mock" };
+
+    return { jobs: [], status: "empty" };
   } catch {
-    return { jobs: MOCK_BOARD_JOBS, usingFallback: true };
+    if (ENABLE_MOCK_JOBS) return { jobs: MOCK_BOARD_JOBS, status: "mock" };
+
+    return { jobs: [], status: "unavailable" };
   }
 }
 
