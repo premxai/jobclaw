@@ -102,6 +102,7 @@ On **worker**:
 ```env
 DATABASE_URL=<same Neon/Postgres URL used by GitHub Actions secrets.DATABASE_URL>
 CORS_ORIGINS=https://norinote.xyz,https://www.norinote.xyz,http://localhost:3000,http://localhost:3001
+PORT=8000
 ```
 
 On **web**:
@@ -109,6 +110,14 @@ On **web**:
 ```env
 JOBCLAW_API_INTERNAL_URL=https://api.norinote.xyz
 NEXT_PUBLIC_ENABLE_MOCK_JOBS=0
+PORT=3000
+```
+
+When Railway asks for target ports, use the same values:
+
+```text
+api.norinote.xyz  -> worker target port 8000
+www.norinote.xyz  -> web target port 3000
 ```
 
 ## Validation Order
