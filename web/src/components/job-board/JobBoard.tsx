@@ -63,7 +63,7 @@ export default function JobBoard() {
   const rangeEnd = Math.min(filteredJobs.length, page * JOBS_PER_PAGE);
 
   return (
-    <section className="mx-auto flex h-full w-full max-w-[980px] flex-col justify-center px-4 py-[clamp(0.375rem,1dvh,0.75rem)] sm:px-6">
+    <section className="mx-auto flex h-full w-full max-w-[900px] flex-col justify-center px-4 py-4 sm:px-6">
       <div className="mb-3">
         <CategoryTabs jobs={jobs} activeCategory={activeCategory} onChange={setActiveCategory} />
       </div>
@@ -74,7 +74,7 @@ export default function JobBoard() {
             {Array.from({ length: JOBS_PER_PAGE }).map((_, index) => (
               <div
                 key={index}
-                className="grid h-[clamp(56px,calc((100dvh-132px)/8),76px)] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 sm:px-7"
+                className="grid h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 sm:h-[66px] sm:px-7"
               >
                 <div className="space-y-2">
                   <div className="h-4 w-56 max-w-full animate-pulse rounded-full bg-[#EFE5D6]" />

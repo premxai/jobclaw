@@ -16,7 +16,7 @@ function locationTone(location: string): "neutral" | "remote" | "hybrid" {
 
 export default function JobRow({ job }: JobRowProps) {
   return (
-    <article className="group grid h-[clamp(56px,calc((100dvh-132px)/8),76px)] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-[rgba(139,94,52,0.15)] px-5 transition-colors duration-200 last:border-b-0 hover:bg-[#FFF8EC] sm:px-7">
+    <article className="group grid h-16 grid-cols-[minmax(0,1fr)_auto] items-center gap-4 border-b border-[rgba(139,94,52,0.15)] px-5 transition-colors duration-200 last:border-b-0 hover:bg-[#FFF8EC] sm:h-[66px] sm:px-7">
       <div className="min-w-0">
         <div className="flex min-w-0 items-center gap-2">
           <h2 className="truncate text-[15px] font-bold leading-tight tracking-tight text-black sm:text-base">{job.title}</h2>
