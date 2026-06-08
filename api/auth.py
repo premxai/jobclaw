@@ -19,8 +19,13 @@ import os
 from fastapi import HTTPException, Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
-# Public routes that don't require auth
-PUBLIC_ROUTES = {"/", "/health", "/docs", "/redoc", "/openapi.json"}
+# Public routes that don't require auth.
+#
+# The website reads jobs and stats through the Next.js /api proxy without an
+# API key. Mutating/admin endpoints still require auth when JOBCLAW_API_KEY is
+# configured.
+PUBLIC_ROUTES = {"/", "/health", "/health/deep", "/docs", "/redoc", "/openapi.json"}
+PUBLIC_GET_PREFIXES = ("/jobs", "/stats", "/companies")
 
 
 class APIKeyMiddleware(BaseHTTPMiddleware):
@@ -36,6 +41,9 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         # Skip auth for public routes
         path = request.url.path
         if path in PUBLIC_ROUTES or path.startswith("/docs") or path.startswith("/redoc") or path.startswith("/web"):
+            return await call_next(request)
+
+        if request.method == "GET" and path.startswith(PUBLIC_GET_PREFIXES):
             return await call_next(request)
 
         # Skip auth for WebSocket (handled separately)
