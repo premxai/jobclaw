@@ -16,7 +16,7 @@ export default function Badge({ children, tone = "neutral", icon, className }: B
     <span
       className={cn(
         "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold leading-none",
-        tone === "neutral" && "border-[#E8CFA8] bg-[#FFFDF7] text-[#333333]",
+        tone === "neutral" && "border-[#E8CFA8] bg-[#FFFEFB] text-[#333333]",
         tone === "remote" && "border-[#c8e5bc] bg-[#f0f8e9]/88 text-[#2f7d4a]",
         tone === "hybrid" && "border-[#bfd6ff] bg-[#eef5ff]/88 text-[#3168d8]",
         className,

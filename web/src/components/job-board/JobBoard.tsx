@@ -8,7 +8,7 @@ import JobRow from "./JobRow";
 import { BOARD_REFRESH_INTERVAL_MS, fetchBoardJobs } from "@/lib/job-board";
 import type { BoardCategory, BoardDataStatus, BoardJob } from "@/lib/job-board";
 
-const JOBS_PER_PAGE = 12;
+const JOBS_PER_PAGE = 8;
 
 export default function JobBoard() {
   const [jobs, setJobs] = useState<BoardJob[]>([]);
@@ -68,13 +68,13 @@ export default function JobBoard() {
         <CategoryTabs jobs={jobs} activeCategory={activeCategory} onChange={setActiveCategory} />
       </div>
 
-      <div className="overflow-hidden rounded-[22px] border border-[#E8CFA8] bg-[#FFFDF7]/95 shadow-[0_20px_60px_rgba(120,80,40,0.12)] backdrop-blur-sm">
+      <div className="overflow-hidden rounded-[22px] border border-[#E8CFA8] bg-[#FFFEFB] shadow-[0_20px_60px_rgba(120,80,40,0.12)]">
         {loading ? (
           <div className="divide-y divide-[rgba(139,94,52,0.15)]">
             {Array.from({ length: JOBS_PER_PAGE }).map((_, index) => (
               <div
                 key={index}
-                className="grid h-[clamp(52px,calc((100dvh-132px)/12),72px)] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 sm:px-7"
+                className="grid h-[clamp(56px,calc((100dvh-132px)/8),76px)] grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-5 sm:px-7"
               >
                 <div className="space-y-2">
                   <div className="h-4 w-56 max-w-full animate-pulse rounded-full bg-[#EFE5D6]" />
@@ -105,7 +105,7 @@ export default function JobBoard() {
           </div>
         )}
 
-        <div className="flex h-11 items-center justify-between border-t border-[rgba(139,94,52,0.15)] bg-[#FFFDF7] px-5 sm:px-7">
+        <div className="flex h-11 items-center justify-between border-t border-[rgba(139,94,52,0.15)] bg-[#FFFEFB] px-5 sm:px-7">
           <p className="text-sm font-medium text-[#6B6B6B]">
             Page {filteredJobs.length ? page : 0} of {filteredJobs.length ? totalPages : 0}
           </p>
@@ -114,7 +114,7 @@ export default function JobBoard() {
               type="button"
               onClick={() => setPage((current) => Math.max(1, current - 1))}
               disabled={page <= 1 || loading || !filteredJobs.length}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#E8CFA8] bg-[#FFFDF7] text-[#333333] transition hover:-translate-y-0.5 hover:bg-[#171717] hover:text-white disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0 disabled:hover:bg-[#FFFDF7] disabled:hover:text-[#333333]"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#E8CFA8] bg-[#FFFEFB] text-[#333333] transition hover:-translate-y-0.5 hover:bg-[#171717] hover:text-white disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0 disabled:hover:bg-[#FFFEFB] disabled:hover:text-[#333333]"
               aria-label="Previous page"
             >
               <ChevronLeft className="h-4 w-4" aria-hidden="true" />
@@ -126,7 +126,7 @@ export default function JobBoard() {
               type="button"
               onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
               disabled={page >= totalPages || loading || !filteredJobs.length}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#E8CFA8] bg-[#FFFDF7] text-[#333333] transition hover:-translate-y-0.5 hover:bg-[#171717] hover:text-white disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0 disabled:hover:bg-[#FFFDF7] disabled:hover:text-[#333333]"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#E8CFA8] bg-[#FFFEFB] text-[#333333] transition hover:-translate-y-0.5 hover:bg-[#171717] hover:text-white disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:translate-y-0 disabled:hover:bg-[#FFFEFB] disabled:hover:text-[#333333]"
               aria-label="Next page"
             >
               <ChevronRight className="h-4 w-4" aria-hidden="true" />
