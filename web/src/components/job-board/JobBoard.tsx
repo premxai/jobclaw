@@ -5,8 +5,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import CategoryTabs from "./CategoryTabs";
 import JobRow from "./JobRow";
-import RefreshInfo from "./RefreshInfo";
-import { BOARD_FRESHNESS_HOURS, BOARD_REFRESH_INTERVAL_MS, fetchBoardJobs, fetchLastRefresh } from "@/lib/job-board";
+import { BOARD_REFRESH_INTERVAL_MS, fetchBoardJobs } from "@/lib/job-board";
 import type { BoardCategory, BoardDataStatus, BoardJob } from "@/lib/job-board";
 
 const JOBS_PER_PAGE = 10;
@@ -15,7 +14,6 @@ export default function JobBoard() {
   const [jobs, setJobs] = useState<BoardJob[]>([]);
   const [activeCategory, setActiveCategory] = useState<BoardCategory>("All Roles");
   const [page, setPage] = useState(1);
-  const [lastRefreshed, setLastRefreshed] = useState<string | null>(null);
   const [dataStatus, setDataStatus] = useState<BoardDataStatus>("unavailable");
   const [loading, setLoading] = useState(true);
 
@@ -24,12 +22,11 @@ export default function JobBoard() {
 
     async function loadBoard(options: { silent?: boolean } = {}) {
       if (!options.silent) setLoading(true);
-      const [jobResult, refreshResult] = await Promise.all([fetchBoardJobs(), fetchLastRefresh()]);
+      const jobResult = await fetchBoardJobs();
 
       if (!mounted) return;
       setJobs(jobResult.jobs);
       setDataStatus(jobResult.status);
-      setLastRefreshed(refreshResult);
       setLoading(false);
     }
 
@@ -58,23 +55,6 @@ export default function JobBoard() {
 
   return (
     <section className="mx-auto flex h-full w-full max-w-[880px] flex-col justify-center px-4 py-3 sm:px-6">
-      <div className="mb-3 text-center sm:mb-4">
-        <h1 className="mx-auto max-w-[720px] text-3xl font-bold leading-[0.96] text-black drop-shadow-[0_2px_18px_rgba(255,255,255,0.75)] sm:text-4xl lg:text-5xl">
-          Fresh tech roles,{" "}
-          <span className="relative inline-block">
-            every 48 hours
-            <span className="absolute -bottom-1 left-0 -z-10 h-2 w-full rounded-full bg-lime-200/80" aria-hidden="true" />
-          </span>
-        </h1>
-        <p className="mx-auto mt-2 max-w-[580px] text-xs leading-5 text-zinc-600 drop-shadow-[0_1px_10px_rgba(255,255,255,0.85)] sm:text-sm">
-          JobClaw surfaces direct company and ATS roles discovered in the last {BOARD_FRESHNESS_HOURS} hours, cleaned
-          for real applications and refreshed with our Discord alerts.
-        </p>
-        <div className="mt-1.5">
-          <RefreshInfo lastRefreshed={lastRefreshed} status={dataStatus} />
-        </div>
-      </div>
-
       <div className="mb-2">
         <CategoryTabs jobs={jobs} activeCategory={activeCategory} onChange={setActiveCategory} />
       </div>
