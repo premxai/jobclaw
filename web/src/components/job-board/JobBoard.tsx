@@ -6,7 +6,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import CategoryTabs from "./CategoryTabs";
 import JobRow from "./JobRow";
 import RefreshInfo from "./RefreshInfo";
-import { fetchBoardJobs, fetchLastRefresh } from "@/lib/job-board";
+import { BOARD_FRESHNESS_HOURS, BOARD_REFRESH_INTERVAL_MS, fetchBoardJobs, fetchLastRefresh } from "@/lib/job-board";
 import type { BoardCategory, BoardJob } from "@/lib/job-board";
 
 const JOBS_PER_PAGE = 10;
@@ -22,8 +22,8 @@ export default function JobBoard() {
   useEffect(() => {
     let mounted = true;
 
-    async function loadBoard() {
-      setLoading(true);
+    async function loadBoard(options: { silent?: boolean } = {}) {
+      if (!options.silent) setLoading(true);
       const [jobResult, refreshResult] = await Promise.all([fetchBoardJobs(), fetchLastRefresh()]);
 
       if (!mounted) return;
@@ -34,9 +34,11 @@ export default function JobBoard() {
     }
 
     loadBoard();
+    const interval = window.setInterval(() => loadBoard({ silent: true }), BOARD_REFRESH_INTERVAL_MS);
 
     return () => {
       mounted = false;
+      window.clearInterval(interval);
     };
   }, []);
 
@@ -65,8 +67,8 @@ export default function JobBoard() {
           </span>
         </h1>
         <p className="mx-auto mt-3 max-w-[620px] text-sm leading-6 text-zinc-600 drop-shadow-[0_1px_10px_rgba(255,255,255,0.85)] sm:text-base">
-          JobClaw scans company career pages and keeps a calm, focused feed of fresh engineering, AI, product, design,
-          and growth jobs.
+          JobClaw shows accepted jobs first discovered in the last {BOARD_FRESHNESS_HOURS} hours, refreshed with the
+          same cadence as our Discord alerts.
         </p>
         <div className="mt-2">
           <RefreshInfo lastRefreshed={lastRefreshed} usingFallback={usingFallback} />

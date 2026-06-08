@@ -59,6 +59,8 @@ def get_jobs(
     keyword: str = None,
     active_only: bool = True,
     search: str = None,
+    recent_hours: int | None = None,
+    quality: str | None = None,
 ) -> tuple[list[dict], int]:
     """Query jobs with pagination and filters."""
     conn = get_db()
@@ -85,6 +87,16 @@ def get_jobs(
             else:
                 conditions.append(f"(title LIKE {p} OR company LIKE {p} OR description LIKE {p})")
                 params.extend([f"%{search}%"] * 3)
+        if recent_hours:
+            if _is_pg():
+                conditions.append(f"first_seen::timestamptz >= NOW() - ({p} * INTERVAL '1 hour')")
+                params.append(recent_hours)
+            else:
+                conditions.append(f"datetime(first_seen) >= datetime('now', {p})")
+                params.append(f"-{recent_hours} hours")
+        if quality:
+            conditions.append(f"COALESCE(quality_state, 'needs_review') = {p}")
+            params.append(quality)
 
         where = f"WHERE {' AND '.join(conditions)}" if conditions else ""
 

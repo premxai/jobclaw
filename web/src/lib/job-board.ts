@@ -146,6 +146,8 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
 ];
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api";
+const BOARD_FRESHNESS_HOURS = 48;
+const BOARD_REFRESH_INTERVAL_MS = 15 * 60 * 1000;
 
 function keywordText(job: ApiJob): string {
   const keywords = job.keywords_matched;
@@ -231,7 +233,12 @@ export function mapApiJobToBoardJob(job: ApiJob, index: number): BoardJob {
 
 export async function fetchBoardJobs(): Promise<{ jobs: BoardJob[]; usingFallback: boolean }> {
   try {
-    const response = await fetch(`${API_BASE}/jobs?per_page=100`, { cache: "no-store" });
+    const params = new URLSearchParams({
+      per_page: "200",
+      recent_hours: String(BOARD_FRESHNESS_HOURS),
+      quality: "accepted",
+    });
+    const response = await fetch(`${API_BASE}/jobs?${params.toString()}`, { cache: "no-store" });
     if (!response.ok) throw new Error(`Jobs API ${response.status}`);
     const data = (await response.json()) as JobsResponse;
     const jobs = (data.jobs || []).map(mapApiJobToBoardJob).filter((job) => job.applicationUrl !== "#");
@@ -241,6 +248,8 @@ export async function fetchBoardJobs(): Promise<{ jobs: BoardJob[]; usingFallbac
     return { jobs: MOCK_BOARD_JOBS, usingFallback: true };
   }
 }
+
+export { BOARD_FRESHNESS_HOURS, BOARD_REFRESH_INTERVAL_MS };
 
 export async function fetchLastRefresh(): Promise<string> {
   try {

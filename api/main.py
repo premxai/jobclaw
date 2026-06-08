@@ -282,6 +282,8 @@ async def list_jobs(
     keyword: str | None = Query(None, description="Filter by keyword category"),
     search: str | None = Query(None, description="Full-text search in title/company/description"),
     active: bool = Query(True, description="Only active (non-filled) jobs"),
+    recent_hours: int | None = Query(None, ge=1, le=168, description="Only jobs first seen within this many hours"),
+    quality: str | None = Query(None, description="Filter by job quality state, e.g. accepted"),
 ):
     """
     List jobs with pagination and filtering.
@@ -297,6 +299,8 @@ async def list_jobs(
         keyword=keyword,
         active_only=active,
         search=search,
+        recent_hours=recent_hours,
+        quality=quality,
     )
     return JobListResponse(
         jobs=[JobResponse(**j) for j in jobs],
