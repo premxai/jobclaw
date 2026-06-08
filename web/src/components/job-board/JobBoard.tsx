@@ -8,7 +8,7 @@ import JobRow from "./JobRow";
 import { BOARD_REFRESH_INTERVAL_MS, fetchBoardJobs } from "@/lib/job-board";
 import type { BoardCategory, BoardDataStatus, BoardJob } from "@/lib/job-board";
 
-const JOBS_PER_PAGE = 8;
+const JOBS_PER_PAGE = 10;
 
 export default function JobBoard() {
   const [jobs, setJobs] = useState<BoardJob[]>([]);
@@ -63,12 +63,12 @@ export default function JobBoard() {
   const rangeEnd = Math.min(filteredJobs.length, page * JOBS_PER_PAGE);
 
   return (
-    <section className="mx-auto flex h-full w-full max-w-[880px] flex-col justify-center px-4 py-[clamp(0.5rem,1.2dvh,0.75rem)] sm:px-6">
-      <div className="mx-auto mb-3 max-w-xl text-center">
-        <h1 className="text-[clamp(1.8rem,4.4vw,3rem)] font-bold leading-none tracking-tight text-[#171717]">
+    <section className="mx-auto flex h-full w-full max-w-[880px] flex-col px-4 pb-3 pt-[clamp(3.25rem,10dvh,6rem)] sm:px-6">
+      <div className="mx-auto mb-3 max-w-xl rounded-[20px] border border-[#E8CFA8]/75 bg-[#FFFEFB]/88 px-5 py-3 text-center shadow-[0_14px_34px_rgba(120,80,40,0.11)] backdrop-blur-sm">
+        <h1 className="text-[clamp(1.55rem,3.6vw,2.45rem)] font-bold leading-none tracking-tight text-[#171717]">
           Hey, I am Nori
         </h1>
-        <p className="mt-2 text-sm font-medium leading-5 text-[#5f5a52] sm:text-base">
+        <p className="mt-2 text-xs font-semibold leading-5 text-[#4f4a42] sm:text-sm">
           Check out the notes below for job postings from the last 48 hours.
         </p>
       </div>
