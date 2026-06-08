@@ -10,6 +10,14 @@ JobClaw has three separate moving parts:
 2. **Database**: Postgres holding scraped companies, jobs, and run history.
 3. **Web service**: Next.js app that reads jobs from the API and renders the board.
 
+If Railway only shows **worker** and **web**, that is okay:
+
+- Treat **worker** as the API/backend service. The name is old; the current
+  `railway.toml` starts FastAPI with `uvicorn api.main:app`.
+- Treat **web** as the Next.js frontend service.
+- GitHub Actions own scheduled scraping. You do not need a separate Railway
+  scraper service for the current setup.
+
 If the API cannot connect to Postgres, the website cannot show real jobs.
 If the website service does not know the API URL, it cannot proxy `/api` to real jobs.
 Mock jobs are disabled by default in production.
@@ -21,7 +29,8 @@ but the website will still look empty.
 
 ## API Service Variables
 
-Set these on the Railway API/backend service:
+Set these on the Railway API/backend service. If your Railway service is named
+**worker**, put these variables on **worker**:
 
 ```env
 DATABASE_URL=${{Postgres.DATABASE_URL}}
@@ -44,7 +53,7 @@ If Postgres is misconfigured, the API starts in degraded mode so `/health`,
 
 ## Web Service Variables
 
-Set these on the Railway web/frontend service:
+Set these on the Railway web/frontend service. Put these variables on **web**:
 
 ```env
 JOBCLAW_API_INTERNAL_URL=https://YOUR-API-DOMAIN.up.railway.app

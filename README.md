@@ -138,6 +138,8 @@ For Railway deployment, follow the explicit web/API wiring guide:
 
 [docs/railway-web-api-setup.md](docs/railway-web-api-setup.md)
 
+If Railway shows only `worker` and `web`, use `worker` as the API/backend service.
+
 To diagnose a deployed web/API setup:
 
 ```bash
