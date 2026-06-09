@@ -59,6 +59,9 @@ jobs:
           # Keep "0": a post WITH a URL costs X $0.20 vs $0.015 plain (~13x). Put the
           # job-board link in the X profile bio instead. Set "1" only to accept the cost.
           JOBCLAW_TWITTER_INCLUDE_URL: "0"
+          # Set "1" only for X Premium accounts (long posts). When "0" the digest
+          # auto-trims to fit X's 280-char limit.
+          JOBCLAW_TWITTER_LONG: "0"
           JOBCLAW_WEB_URL: ${{ vars.JOBCLAW_WEB_URL || 'https://norinote.xyz' }}
           X_API_KEY: ${{ secrets.X_API_KEY }}
           X_API_SECRET: ${{ secrets.X_API_SECRET }}

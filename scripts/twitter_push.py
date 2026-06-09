@@ -135,17 +135,39 @@ def _truncate(text: str, limit: int) -> str:
 
 
 def build_digest(
-    jobs: list[dict], web_url: str, window_hours: int = 3, max_top: int = 2, include_url: bool = False
+    jobs: list[dict],
+    web_url: str,
+    window_hours: int = 3,
+    max_top: int = 2,
+    include_url: bool = False,
+    max_chars: int = TWEET_MAX_CHARS,
 ) -> str:
-    """Build a single ≤280-char digest tweet from the given jobs.
+    """Build a digest tweet from the given jobs, trimmed to fit max_chars.
 
-    include_url=False (default) omits the link, because X charges $0.20 for a post
-    containing a URL vs $0.015 for a plain post (~13x). Put the job-board link in the
-    X profile bio instead. Set include_url=True only if you accept the higher cost.
+    Format (auto-trimmed when over the limit — categories are kept first, then picks,
+    then the tagline are dropped):
+
+        Fresh US tech roles from the last 3 hours ✨
+
+        1,719 new roles added:
+        💻 SWE: 1,268
+        🤖 AI/ML: 119
+        ...
+
+        A few fresh picks:
+        • Senior Systems Engineer @ Accelint Holdings LLC
+
+        Clean list, direct links, less noise.
+        Full list in bio.
+
+    include_url=False (default) omits the link — X charges $0.20 for a post with a URL
+    vs $0.015 plain (~13x); keep the link in the profile bio. max_chars defaults to 280;
+    raise it (JOBCLAW_TWITTER_LONG) only for X Premium accounts that allow long posts.
     """
     link = f"{web_url.rstrip('/')}/jobs"
     n = len(jobs)
-    header = f"🆕 {n} new US tech role{'s' if n != 1 else ''} (last {window_hours}h)"
+    header = f"Fresh US tech roles from the last {window_hours} hours ✨"
+    count_line = f"{n:,} new role{'s' if n != 1 else ''} added:"
 
     counts: dict[str, int] = {}
     for j in jobs:
@@ -153,27 +175,35 @@ def build_digest(
         if cat and cat != "Uncategorized":
             counts[cat] = counts.get(cat, 0) + 1
     ranked = sorted(counts.items(), key=lambda kv: kv[1], reverse=True)
-    parts = [f"{CATEGORY_EMOJIS.get(cat, '•')} {cnt} {cat}" for cat, cnt in ranked[:5]]
-    cat_line = " · ".join(parts)
+    cat_lines = [f"{CATEGORY_EMOJIS.get(cat, '•')} {cat}: {cnt:,}" for cat, cnt in ranked]
 
     top = [j for j in jobs if (j.get("title") and j.get("company"))][:max_top]
-    top_line = "Top: " + "; ".join(f"{_truncate(j['title'], 38)} @ {_truncate(j['company'], 24)}" for j in top)
-    # No bare domain in the no-URL tail — X auto-links domains and would charge the
-    # $0.20 "post with URL" rate. Point people to the bio link instead.
-    tail = f"{link} #techjobs #hiring" if include_url else "🔗 Full list in bio · #techjobs #hiring"
+    pick_lines = [f"• {_truncate(j['title'], 45)} @ {_truncate(j['company'], 35)}" for j in top]
+
+    cta = link if include_url else "Full list in bio."
     measure_url = link if include_url else ""
 
-    # Assemble, dropping optional lines until it fits.
-    for candidate in (
-        [header, cat_line, top_line, tail],
-        [header, cat_line, tail],
-        [header, tail],
-    ):
-        text = "\n".join(line for line in candidate if line.strip())
-        if _tweet_length(text, measure_url) <= TWEET_MAX_CHARS:
-            return text
-    # Last resort: trim the category line hard.
-    return "\n".join([header, _truncate(cat_line, 80), tail])
+    def assemble(n_cats: int, n_picks: int, tagline: bool) -> str:
+        parts = [header, "", count_line, *cat_lines[:n_cats]]
+        if n_picks and pick_lines:
+            parts += ["", "A few fresh picks:", *pick_lines[:n_picks]]
+        parts.append("")
+        if tagline:
+            parts.append("Clean list, direct links, less noise.")
+        parts.append(cta)
+        return "\n".join(parts)
+
+    # Try richest first; for each category count drop picks then the tagline before
+    # reducing categories (the breakdown is the core content).
+    all_cats = len(cat_lines)
+    for n_cats in range(max(all_cats, 1), 0, -1):
+        for n_picks in (max_top, 1, 0):
+            for tagline in (True, False):
+                text = assemble(n_cats, n_picks, tagline)
+                if _tweet_length(text, measure_url) <= max_chars:
+                    return text
+    # Minimal fallback (header + count + top categories + CTA).
+    return assemble(min(3, all_cats), 0, False)
 
 
 def _post_tweet(text: str, creds: dict) -> bool:
@@ -205,6 +235,8 @@ def push_digest_to_twitter() -> int:
     dry_run = _env_flag("JOBCLAW_TWITTER_DRY_RUN", True)
     # Off by default: a post with a URL costs $0.20 vs $0.015 plain. Keep the link in bio.
     include_url = _env_flag("JOBCLAW_TWITTER_INCLUDE_URL", False)
+    # Long posts (>280 chars) require an X Premium account; default to the 280 cap.
+    max_chars = 4000 if _env_flag("JOBCLAW_TWITTER_LONG", False) else TWEET_MAX_CHARS
     creds = _x_credentials()
     if creds is None and not dry_run:
         log("X API credentials missing — forcing dry-run.", "WARN")
@@ -216,7 +248,7 @@ def push_digest_to_twitter() -> int:
         log(f"No new accepted jobs in the last {window_hours}h — nothing to tweet.")
         return 0
 
-    text = build_digest(jobs, _web_url(), window_hours=window_hours, include_url=include_url)
+    text = build_digest(jobs, _web_url(), window_hours=window_hours, include_url=include_url, max_chars=max_chars)
     measure_url = (_web_url() + "/jobs") if include_url else ""
     cost = "$0.20 (has URL)" if include_url else "$0.015 (plain)"
     log(f"Digest ({len(jobs)} jobs, {_tweet_length(text, measure_url)} chars, est {cost}):\n{text}")
