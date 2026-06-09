@@ -195,9 +195,7 @@ class ScraperControlPlaneTests(unittest.TestCase):
 
     def test_fingerprint_survives_old_inactive_accepted_job_cleanup(self):
         old_env = {
-            "JOBCLAW_RETENTION_INACTIVE_ACCEPTED_DAYS": os.environ.get(
-                "JOBCLAW_RETENTION_INACTIVE_ACCEPTED_DAYS"
-            ),
+            "JOBCLAW_RETENTION_INACTIVE_ACCEPTED_DAYS": os.environ.get("JOBCLAW_RETENTION_INACTIVE_ACCEPTED_DAYS"),
             "JOBCLAW_RETENTION_FINGERPRINT_DAYS": os.environ.get("JOBCLAW_RETENTION_FINGERPRINT_DAYS"),
         }
         os.environ["JOBCLAW_RETENTION_INACTIVE_ACCEPTED_DAYS"] = "30"

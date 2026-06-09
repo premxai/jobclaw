@@ -57,7 +57,7 @@ class BuildDigestTests(unittest.TestCase):
         jobs = [_job("X", "Y", "SWE", 1), {"title": "Z", "company": "W", "keywords_matched": [], "quality_score": 1}]
         text = build_digest(jobs, WEB)
         self.assertIn("2 new US tech roles", text)  # both counted in total
-        self.assertIn("1 SWE", text)                # only categorized one in breakdown
+        self.assertIn("1 SWE", text)  # only categorized one in breakdown
 
 
 if __name__ == "__main__":
