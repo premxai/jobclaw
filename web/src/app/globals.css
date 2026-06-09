@@ -58,70 +58,37 @@
 }
 
 @layer components {
+  /* Landscape / wide screens: the 16:9 room scene, scaled to cover. */
   .jobclaw-home-bg {
     background-color: #fff4e2;
+    background-image: url("/images/jobclaw-room-bg.png");
     background-position: center center;
-    background-size: max(100vw, 177.79vh) auto;
+    background-size: cover;
   }
 
-  @supports (height: 100svh) {
+  /* Portrait screens (phones & tablets held upright): swap to a tall
+     composition so Nori and the room decorations stay in frame instead of
+     being cropped off the sides. Falls back to the cream background colour
+     until the portrait asset is added. */
+  @media (orientation: portrait) {
     .jobclaw-home-bg {
-      background-size: max(100vw, 177.79svh) auto;
-    }
-  }
-
-  @supports (height: 100dvh) {
-    .jobclaw-home-bg {
-      background-size: max(100vw, 177.79dvh) auto;
-    }
-  }
-
-  @media (max-width: 1024px) {
-    .jobclaw-home-bg {
+      background-image: url("/images/jobclaw-room-bg-portrait.png");
       background-position: center center;
-      background-size: max(1400px, 100vw, 177.79vh) auto;
+      background-size: cover;
     }
   }
 
-  @supports (height: 100svh) {
-    @media (max-width: 1024px) {
-      .jobclaw-home-bg {
-        background-size: max(1400px, 100vw, 177.79svh) auto;
-      }
-    }
-  }
-
-  @supports (height: 100dvh) {
-    @media (max-width: 1024px) {
-      .jobclaw-home-bg {
-        background-size: max(1400px, 100vw, 177.79dvh) auto;
-      }
-    }
-  }
-
+  /* Rows stay readable. They gently grow on tall screens and hold a
+     comfortable floor on short ones — when 9 rows can't fit, the board
+     scrolls (see the scroll layer in page.tsx) instead of cramming. */
   .job-board-shell {
-    --job-board-row-height: clamp(36px, calc((100svh - 224px) / 9), 50px);
-    --job-board-footer-height: clamp(30px, 4.5svh, 38px);
+    --job-board-row-height: clamp(46px, calc((100svh - 252px) / 9), 56px);
+    --job-board-footer-height: 42px;
   }
 
   @supports (height: 100dvh) {
     .job-board-shell {
-      --job-board-row-height: clamp(36px, calc((100dvh - 224px) / 9), 50px);
-      --job-board-footer-height: clamp(30px, 4.5dvh, 38px);
-    }
-  }
-
-  @media (max-height: 700px) {
-    .job-board-shell {
-      --job-board-row-height: clamp(34px, calc((100dvh - 198px) / 9), 44px);
-      --job-board-footer-height: 32px;
-    }
-  }
-
-  @media (max-height: 600px) {
-    .job-board-shell {
-      --job-board-row-height: clamp(32px, calc((100dvh - 176px) / 9), 38px);
-      --job-board-footer-height: 30px;
+      --job-board-row-height: clamp(46px, calc((100dvh - 252px) / 9), 56px);
     }
   }
 

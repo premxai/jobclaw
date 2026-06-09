@@ -63,7 +63,7 @@ export default function JobBoard() {
   const rangeEnd = Math.min(filteredJobs.length, page * JOBS_PER_PAGE);
 
   return (
-    <section className="job-board-shell mx-auto flex h-full min-h-0 w-full max-w-[880px] flex-col justify-center px-3 py-[clamp(0.4rem,1.6dvh,2rem)] sm:px-5">
+    <section className="job-board-shell mx-auto flex min-h-full w-full max-w-[880px] flex-col justify-center px-3 py-[clamp(0.75rem,1.6dvh,2rem)] sm:px-5">
       <div className="mx-auto mb-[clamp(0.2rem,0.8dvh,0.75rem)] max-w-xl px-4 py-[clamp(0.15rem,0.6dvh,0.65rem)] text-center">
         <h1 className="text-[clamp(1.2rem,3vw,2.25rem)] font-bold leading-[0.96] tracking-tight text-[#171717]">
           Hey, I am Nori
