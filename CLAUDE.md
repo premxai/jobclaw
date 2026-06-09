@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**JobClaw** is an autonomous job scraping and alerting system. It aggregates tech job postings from 27,922 companies across 8 ATS platforms (Greenhouse, Lever, Ashby, Workday, etc.), job boards, and enterprise sites, then filters and broadcasts to Discord channels by role category.
+**JobClaw** is an autonomous job scraping and alerting system. It aggregates tech job postings from ~33,000 company targets across 9 ATS platforms (by volume: Workday, Workable, Greenhouse, Lever, Ashby, Rippling, Gem, SmartRecruiters, BambooHR), job boards, and enterprise sites, then filters and broadcasts to Discord channels by role category.
 
 ## Commands
 
@@ -17,10 +17,12 @@ python scripts/ingestion/validate_targets.py --limit 500  # Smoke-check slugs an
 ```
 
 ### Linting (Ruff — 120 char lines, Python 3.10 target)
+CI lints the **whole repo**, not just `scripts/`. Config is duplicated in both `ruff.toml` and `pyproject.toml` `[tool.ruff]` — keep them in sync if you change ignore rules.
 ```bash
-ruff check scripts/
-ruff format scripts/
+ruff check .          # lint everything (matches CI)
+ruff format --check .  # format check (matches CI); drop --check to apply
 ```
+Note the Python version split: ruff targets `py310` (3.9 aliases kept), the scraper workflows run on Python 3.10, but the CI lint/test job (`deploy.yml`) runs on Python 3.12. README says 3.12+ for local dev.
 
 ### Run Scrapers
 ```bash
@@ -54,14 +56,31 @@ docker compose up -d   # services: api (8000), postgres, redis, prometheus, graf
 ```bash
 cp .env.example .env   # then fill in secrets
 ```
-Key env vars: `DATABASE_URL` (Neon PostgreSQL URL; defaults to SQLite if unset), `DISCORD_WEBHOOK_AI/SWE/DATA/NEWGRAD/PRODUCT/RESEARCH` (per-category webhook URLs; at least one required for live posting), `JOBCLAW_DISCORD_DRY_RUN=1` (default safety mode), `BRAVE_SEARCH_API_KEY`, `JOBCLAW_API_KEY` (leave blank for dev).
+Key env vars:
+- `DATABASE_URL` — Neon/Postgres URL; defaults to SQLite (`data/jobclaw.db`, WAL) if unset
+- `DISCORD_WEBHOOK_AI/SWE/DATA/NEWGRAD/PRODUCT/RESEARCH` — per-category webhooks; at least one required for live posting
+- `JOBCLAW_DISCORD_DRY_RUN=1` — default safety mode (workflows set `0` for live posting)
+- `JOBCLAW_DISCORD_STRICT_QUALITY=1` + `JOBCLAW_DIRECT_SOURCE_ONLY=1` — reject generic aggregator/search/salary pages before any card is sent
+- `BRAVE_SEARCH_API_KEY`, `JOBCLAW_BRAVE_ENRICHMENT_ONLY=1`, `JOBCLAW_API_KEY` (leave blank for dev)
+- Queue/throttle (active mode): `JOBCLAW_QUEUE_MODE`, `JOBCLAW_QUEUE_LEASE_SECONDS`, `JOBCLAW_ATS_TARGET_LIMIT`, `JOBCLAW_MEDIUM_TARGET_LIMIT`, `JOBCLAW_WORKDAY_SHARDS`, `JOBCLAW_PLATFORM_CLAIM_MULTIPLIER`
+- Railway worker fallback (all default off): `JOBCLAW_RAILWAY_ENABLE_{HOT,FAST,MEDIUM,DEEP,DISCORD,VALIDATION}`, `JOBCLAW_RAILWAY_BULK_FALLBACK`, `JOBCLAW_SCHEDULER_TIMEZONE` (default `America/New_York`)
 
-### CI Validation (mirrors deploy.yml checks)
+### Tests
+`tests/` holds the real (pytest) suite — `test_scraper_control_plane.py` and `test_scraper_quality.py`. CI runs them with `|| true`, so they are non-blocking today.
 ```bash
-ruff check scripts/ api/ && ruff format --check scripts/ api/
-python -c "from api.main import app; from scripts.database.db_utils import get_connection"
+pytest tests/ -v                          # full suite
+pytest tests/test_scraper_quality.py -v   # single file
+pytest tests/test_scraper_quality.py::test_name -v   # single test
 ```
-No formal test suite — `tests/` directory doesn't exist. The 12 `test_*.py` files in repo root are ad-hoc exploration scripts, not a test suite.
+The ~12 `test_*.py` files in the **repo root** (and `scripts/test_*.py`) are ad-hoc exploration scripts (e.g. probing Meta/Google endpoints), NOT part of the pytest suite — ruff relaxes lint rules for them via `per-file-ignores`.
+
+### CI Validation (mirrors deploy.yml)
+```bash
+ruff check . && ruff format --check .                              # lint + format (Python 3.12 in CI)
+pytest tests/ -v --tb=short                                        # non-blocking tests
+python -c "from api.main import app; print('Routes:', len(app.routes))"   # API import smoke
+python -c "from scripts.database.db_utils import get_connection; print('DB OK')"  # DB import smoke
+```
 
 ## Architecture
 
@@ -78,19 +97,31 @@ company_registry.json → seed_companies.py → companies DB table → ATS/RSS/E
 ```
 
 ### Scraping Tiers & Scheduling
-Production scheduling is owned by `scripts/worker/standalone_worker.py` on Railway/Postgres. GitHub Actions scraper workflows are manual recovery tools only.
+**Production scheduling is owned by GitHub Actions cron workflows** (`.github/workflows/scrape_*.yml`) — each run gets a fresh hosted runner and centralized logs. The Railway worker (`scripts/worker/standalone_worker.py`, an APScheduler in-process scheduler) is a **fallback that is disabled by default**: all its `JOBCLAW_RAILWAY_ENABLE_*` flags default to `0` (except `discord_push`, which enables itself when Discord is configured). Set `JOBCLAW_RAILWAY_BULK_FALLBACK=1` to turn on the fast/medium/deep tiers there if Actions is down. Postgres queue leases prevent duplicate target claims if both environments overlap.
 
-| Task | Trigger | Sources |
+> Note: `requirements.txt` comments call APScheduler "replaces GitHub Actions crons" — that comment is stale; Actions is the current owner.
+
+GitHub Actions workflows (cron is UTC):
+
+| Workflow file | Schedule (UTC) | Sources |
 |---|---|---|
-| `execute_hot` | Every 15 min | `hot_companies.json` only |
-| `execute_fast` | Hourly | RSS feeds + GitHub boards + due fast ATS targets |
-| `execute_medium` | Hourly +2 min | Enterprise + due slower ATS targets |
-| `execute_validate_targets` | Every 6 hours | Live slug smoke validation |
-| `execute_deep` | Daily 23:00 UTC | Everything + Brave + AI pipeline |
-| `execute_discord_push` | Every 15 min | Dry-run/live posts unposted jobs |
+| `scrape_hot.yml` | Every 15 min (`:07,:22,:37,:52`) | `hot_companies.json` only |
+| `scrape_fast.yml` | Hourly (`:03`) | RSS + GitHub boards + due Greenhouse/Lever/Ashby targets |
+| `scrape_medium.yml` | Hourly (`:33`) | Enterprise + due slower ATS targets |
+| `discord_push.yml` | Every 15 min (`:14,:29,:44,:59`) | Posts unposted jobs (dry-run/live) |
+| `validate_targets.yml` | Every 6 hours (`:41`) | Live slug smoke validation + quarantine |
+| `expand_registry.yml` | Daily (`07:17`) | Registry expansion/discovery |
+| `scrape_deep.yml` | Daily (`08:17`) | Everything + Brave + AI pipeline |
+| `check_web_wiring.yml` | Manual | Diagnose deployed web↔API wiring |
+| `deploy.yml` | push/PR to `main` | CI: ruff lint/format + pytest + import smoke |
 
-### Due-Target Scheduling
-The raw registry is seeded into the canonical `companies` table and deduped by `(ats_type, slug)`. Runtime scrapers read non-quarantined DB targets ordered by `priority_score` where `next_scrape_at` is due. Shard arguments are retained for manual compatibility, but the Railway path is due-target scheduling.
+### Due-Target Scheduling (active queue mode)
+The raw registry is seeded into the canonical `companies` table and deduped by `(ats_type, slug)`. With `JOBCLAW_QUEUE_MODE=active` (the production default in the workflows), runtime scrapers **claim** non-quarantined DB targets with short DB leases (`JOBCLAW_QUEUE_LEASE_SECONDS`), ordered by `priority_score` where `next_scrape_at` is due, then checkpoint target health after each scrape. Key throttles:
+- `JOBCLAW_ATS_TARGET_LIMIT` — caps targets claimed per run before per-platform budgets defer the rest
+- `JOBCLAW_MEDIUM_TARGET_LIMIT` (default 800) and `JOBCLAW_WORKDAY_SHARDS` (default 16) keep Workday-heavy medium runs small
+- `JOBCLAW_PLATFORM_CLAIM_MULTIPLIER` (default 4) — claims per-platform first so one high-score ATS can't crowd out the batch
+
+Shard arguments (`--shard`) are retained for manual compatibility but the production path is due-target claiming.
 
 ### Anti-Bot Stack
 - **curl_cffi**: TLS fingerprint impersonation (Chrome/Safari/Edge) — bypasses Cloudflare/WAF
@@ -138,15 +169,20 @@ Dual-mode structured logging via `scripts/utils/logger.py`:
 | `config/company_registry.json` | Raw registry input with ATS platform + slug |
 | `scripts/database/seed_companies.py` | Canonicalizes registry entries into `companies` |
 | `scripts/ingestion/validate_targets.py` | Live slug smoke validation + quarantine |
-| `config/hot_companies.json` | Fast-track companies (scraped every 5 min) |
-| `api/main.py` | FastAPI server — REST endpoints + WebSocket |
+| `config/hot_companies.json` | Fast-track companies (hot tier, every 15 min) |
+| `api/main.py` | FastAPI server — REST endpoints + WebSocket `/ws/jobs` + application-tracker CRUD |
+| `api/database.py` / `api/auth.py` / `api/models.py` | API DB access layer, API-key auth, Pydantic models |
+| `scripts/worker/standalone_worker.py` | APScheduler in-process scheduler (Railway fallback, default off) |
+| `scripts/ops/check_web_wiring.py` | Diagnose deployed web↔API wiring; `scraper_control_report.py` health report |
 
 ## Adding a New ATS Scraper
 1. Add adapter to `scripts/ingestion/ats_adapters.py` returning list of `NormalizedJob`
 2. Register companies in `config/company_registry.json` with `"ats": "<platform>"`
 3. The orchestrator will pick them up automatically when their `next_scrape_at` is due
 
-## Ruff Ignore Rules (pyproject.toml)
+## Ruff Ignore Rules (defined in BOTH `ruff.toml` and `pyproject.toml` — keep in sync)
 - `E402`: Module-level imports after `sys.path.insert()` — intentional project root setup pattern
-- `SIM105`: `try/except/pass` — accepted pattern
-- `UP045/UP006/UP007/UP035`: Python 3.9 compatibility aliases kept for 3.10 target
+- `SIM105`: `try/except/pass` — accepted pattern in scraper error handling
+- `SIM117` / `SIM102`: nested `with` / nested `if` — kept when logically clearer than combining
+- `UP045/UP006/UP007/UP035`: `Optional[X]`, `List[X]` etc. — Python 3.9 compatibility aliases kept for 3.10 target
+- `per-file-ignores`: root `test_*.py` and `scripts/test_*.py` relax `E402/F401/I001` (ad-hoc scripts)
