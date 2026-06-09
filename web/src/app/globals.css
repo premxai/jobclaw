@@ -60,7 +60,7 @@
 @layer components {
   .jobclaw-home-bg {
     background-color: #fff4e2;
-    background-position: top center;
+    background-position: center center;
     background-size: max(100vw, 177.79vh) auto;
   }
 
@@ -78,7 +78,7 @@
 
   @media (max-width: 1024px) {
     .jobclaw-home-bg {
-      background-position: top center;
+      background-position: center center;
       background-size: max(1400px, 100vw, 177.79vh) auto;
     }
   }
