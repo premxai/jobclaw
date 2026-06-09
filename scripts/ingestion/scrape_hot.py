@@ -50,7 +50,9 @@ _CATEGORY_WEBHOOKS = {
 }
 
 # Fallback webhook definition
-DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK_URL", "") or next((v for v in _CATEGORY_WEBHOOKS.values() if v), "")
+_SINGLE_WEBHOOK = os.getenv("DISCORD_WEBHOOK_URL", "")
+_GENERAL_WEBHOOK = os.getenv("DISCORD_WEBHOOK_GENERAL", "")
+DISCORD_WEBHOOK = _GENERAL_WEBHOOK or _SINGLE_WEBHOOK or next((v for v in _CATEGORY_WEBHOOKS.values() if v), "")
 DISCORD_DRY_RUN = os.getenv("JOBCLAW_DISCORD_DRY_RUN", os.getenv("DISCORD_DRY_RUN", "0")).strip().lower() not in {
     "0",
     "false",
@@ -95,6 +97,31 @@ def _format_freshness(minutes: float) -> str:
         return f"⏰ {int(minutes / 60)}h ago"
 
 
+def _unique_webhooks(urls: list[str]) -> list[str]:
+    """Return non-empty webhook URLs in order, removing duplicates."""
+    seen = set()
+    result = []
+    for url in urls:
+        if not url or url in seen:
+            continue
+        seen.add(url)
+        result.append(url)
+    return result
+
+
+def _webhook_candidates(category: str) -> list[str]:
+    """Candidate webhooks for hot alerts, from category match to fallback."""
+    return _unique_webhooks(
+        [
+            _CATEGORY_WEBHOOKS.get(category, ""),
+            _GENERAL_WEBHOOK,
+            _SINGLE_WEBHOOK,
+            DISCORD_WEBHOOK,
+            *_CATEGORY_WEBHOOKS.values(),
+        ]
+    )
+
+
 async def _send_hot_discord_alert(job: dict, minutes_old: float):
     """Fire an instant Discord alert for a freshly discovered hot-company job."""
     cats = []
@@ -109,8 +136,8 @@ async def _send_hot_discord_alert(job: dict, minutes_old: float):
             pass
 
     prim_cat = cats[0] if cats else ""
-    webhook_url = _CATEGORY_WEBHOOKS.get(prim_cat, "") or DISCORD_WEBHOOK
-    if not webhook_url:
+    webhook_urls = _webhook_candidates(prim_cat)
+    if not webhook_urls:
         return
 
     freshness = _format_freshness(minutes_old)
@@ -138,18 +165,31 @@ async def _send_hot_discord_alert(job: dict, minutes_old: float):
         return
 
     try:
+        import urllib.error
         import urllib.request
 
         data = json.dumps(payload).encode("utf-8")
-        req = urllib.request.Request(
-            webhook_url,
-            data=data,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            if resp.status not in (200, 204):
-                _log_hot(f"Discord alert failed: HTTP {resp.status}", "WARN")
+        for index, webhook_url in enumerate(webhook_urls):
+            req = urllib.request.Request(
+                webhook_url,
+                data=data,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    if resp.status in (200, 204):
+                        if index > 0:
+                            _log_hot(f"Discord hot alert used fallback webhook #{index + 1}.", "WARN")
+                        return
+                    _log_hot(f"Discord alert failed: HTTP {resp.status}", "WARN")
+            except urllib.error.HTTPError as e:
+                _log_hot(f"Discord alert webhook #{index + 1} failed: HTTP {e.code}", "WARN")
+            except Exception as e:
+                _log_hot(f"Discord alert webhook #{index + 1} error: {e}", "WARN")
+
+            if index < len(webhook_urls) - 1:
+                _log_hot(f"Trying Discord hot-alert fallback #{index + 2}.", "WARN")
     except Exception as e:
         _log_hot(f"Discord alert error: {e}", "WARN")
 

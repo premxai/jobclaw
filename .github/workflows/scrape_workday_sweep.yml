@@ -1,11 +1,12 @@
 name: "🌙 Workday Sweep — Long-tail Coverage"
 
 # ┌────────────────────────────────────────────────────────────────────┐
-# │  DEDICATED WORKDAY SWEEP — drains the long tail of ~21k Workday     │
-# │  targets that the hourly medium tier can't keep up with.            │
+# │  MANUAL WORKDAY SWEEP — drains the long tail of ~21k Workday        │
+# │  targets when DB capacity is available.                             │
 # │                                                                     │
 # │  Runs UNSHARDED + Workday-only with a long timeout and a large      │
-# │  per-platform time budget, several times/day at off-peak hours.     │
+# │  per-platform time budget. Keep manual until Postgres quota/cost     │
+# │  can handle long-tail DB churn without starving the API/website.    │
 # │  The aging-fairness ordering (JOBCLAW_AGING_DAYS) means each sweep   │
 # │  claims the *oldest-overdue* Workday targets first, so coverage      │
 # │  rotates predictably instead of starving low-priority slugs.        │
@@ -15,9 +16,6 @@ name: "🌙 Workday Sweep — Long-tail Coverage"
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
-  schedule:
-    # Off-peak, offset from fast(:03)/medium(:33)/discord(:14,:44)/deep(12:17).
-    - cron: "15 1,5,17,21 * * *"
   workflow_dispatch: {}
 
 permissions:
@@ -61,6 +59,8 @@ jobs:
           JOBCLAW_BRAVE_ENRICHMENT_ONLY: "1"
           JOBCLAW_DISCORD_DRY_RUN: "0"
           JOBCLAW_DISCORD_STRICT_QUALITY: "1"
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_GENERAL: ${{ secrets.DISCORD_WEBHOOK_GENERAL }}
           DISCORD_WEBHOOK_AI: ${{ secrets.DISCORD_WEBHOOK_AI }}
           DISCORD_WEBHOOK_SWE: ${{ secrets.DISCORD_WEBHOOK_SWE }}
           DISCORD_WEBHOOK_DATA: ${{ secrets.DISCORD_WEBHOOK_DATA }}

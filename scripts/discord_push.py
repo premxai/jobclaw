@@ -58,8 +58,9 @@ _CATEGORY_WEBHOOKS = {
     "Uncategorized": os.getenv("DISCORD_WEBHOOK_GENERAL", ""),
 }
 
-# General fallback webhook or first configured webhook
-_GENERAL_FALLBACK = os.getenv("DISCORD_WEBHOOK_GENERAL", "")
+# General/single-channel fallback webhook or first configured category webhook.
+_SINGLE_WEBHOOK = os.getenv("DISCORD_WEBHOOK_URL", "")
+_GENERAL_FALLBACK = os.getenv("DISCORD_WEBHOOK_GENERAL", "") or _SINGLE_WEBHOOK
 _FALLBACK_WEBHOOK = _GENERAL_FALLBACK or next((v for v in _CATEGORY_WEBHOOKS.values() if v), "")
 
 _missing_webhooks = [k for k, v in _CATEGORY_WEBHOOKS.items() if not v]
@@ -256,6 +257,31 @@ def _get_category(job: dict) -> str:
 def _get_webhook_url(category: str) -> str:
     """Resolve a category to its Discord webhook URL. Falls back to first configured webhook."""
     return _CATEGORY_WEBHOOKS.get(category, "") or _FALLBACK_WEBHOOK
+
+
+def _unique_webhooks(urls: list[str]) -> list[str]:
+    """Return non-empty webhook URLs in order, removing duplicates."""
+    seen = set()
+    result = []
+    for url in urls:
+        if not url or url in seen:
+            continue
+        seen.add(url)
+        result.append(url)
+    return result
+
+
+def _webhook_candidates(category: str) -> list[str]:
+    """Candidate webhooks for a job, from best category match to fallback."""
+    return _unique_webhooks(
+        [
+            _CATEGORY_WEBHOOKS.get(category, ""),
+            _GENERAL_FALLBACK,
+            _SINGLE_WEBHOOK,
+            _FALLBACK_WEBHOOK,
+            *_CATEGORY_WEBHOOKS.values(),
+        ]
+    )
 
 
 def _format_date(date_str: str | None) -> str:
@@ -483,6 +509,21 @@ async def _post_to_webhook(session, webhook_url: str, embed: dict) -> bool:
     return False
 
 
+async def _post_to_first_working_webhook(session, webhook_urls: list[str], embed: dict, category: str) -> bool:
+    """Try category webhook first, then fallbacks if a webhook is invalid/forbidden."""
+    for index, webhook_url in enumerate(webhook_urls):
+        ok = await _post_to_webhook(session, webhook_url, embed)
+        if ok:
+            if index > 0:
+                log(f"Posted '{category}' job through fallback webhook #{index + 1}.", "WARN")
+            return True
+
+        if index < len(webhook_urls) - 1:
+            log(f"Webhook #{index + 1} failed for '{category}' — trying fallback #{index + 2}.", "WARN")
+
+    return False
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # MAIN PUSH FUNCTION
 # ═══════════════════════════════════════════════════════════════════════
@@ -606,16 +647,16 @@ async def push_new_jobs_to_discord():
         async with aiohttp.ClientSession(timeout=timeout) as session:
             for job in fresh_jobs:
                 category = _get_category(job)
-                webhook_url = _get_webhook_url(category)
+                webhook_urls = _webhook_candidates(category)
 
-                if not webhook_url:
+                if not webhook_urls:
                     log(f"No webhook for category '{category}' — skipping job.", "WARN")
                     failed_count += 1
                     continue
 
                 embed = _build_job_embed(job)
                 try:
-                    ok = await _post_to_webhook(session, webhook_url, embed)
+                    ok = await _post_to_first_working_webhook(session, webhook_urls, embed, category)
                     if ok:
                         sent_count += 1
                         mark_as_posted(posted_hashes, job["internal_hash"])
