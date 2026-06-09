@@ -42,7 +42,20 @@ jobs:
           pip install -r requirements.txt
           playwright install chromium
 
+      - name: Check production DB availability
+        id: db-preflight
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python scripts/ops/github_db_preflight.py
+
+      - name: Skip while production DB is unavailable
+        if: steps.db-preflight.outputs.db_ok != 'true'
+        run: |
+          echo "Skipping medium scraper because production DB is unavailable."
+          echo "Reason: ${{ steps.db-preflight.outputs.reason }}"
+
       - name: Run medium-tier scrapers (Workday/Rippling/SmartRecruiters/BambooHR, 16-shard)
+        if: steps.db-preflight.outputs.db_ok == 'true'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JOBCLAW_QUEUE_MODE: "active"
@@ -70,7 +83,7 @@ jobs:
             --total-shards 16
 
       - name: Commit dedup file
-        if: always()
+        if: ${{ always() && steps.db-preflight.outputs.db_ok == 'true' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

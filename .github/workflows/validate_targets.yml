@@ -34,7 +34,20 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Check production DB availability
+        id: db-preflight
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python scripts/ops/github_db_preflight.py
+
+      - name: Skip while production DB is unavailable
+        if: steps.db-preflight.outputs.db_ok != 'true'
+        run: |
+          echo "Skipping target validation because production DB is unavailable."
+          echo "Reason: ${{ steps.db-preflight.outputs.reason }}"
+
       - name: Validate ATS targets
+        if: steps.db-preflight.outputs.db_ok == 'true'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JOBCLAW_PG_CONNECT_TIMEOUT: "15"
