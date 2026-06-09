@@ -18,6 +18,7 @@ import xml.etree.ElementTree as ET
 import aiohttp
 
 from scripts.ingestion.ats_adapters import NormalizedJob
+from scripts.utils.logger import _log
 
 # ═══════════════════════════════════════════════════════════════════════
 # REMOTEOK
@@ -70,7 +71,8 @@ class RemoteOKAdapter:
                     )
                 )
             return jobs
-        except Exception:
+        except Exception as e:
+            _log(f"[remoteok] fetch failed: {e}", "WARN")
             return []
 
 
@@ -110,7 +112,8 @@ class RemotiveAdapter:
                     )
                 )
             return jobs
-        except Exception:
+        except Exception as e:
+            _log(f"[remotive] fetch failed: {e}", "WARN")
             return []
 
 
@@ -167,7 +170,8 @@ class WeWorkRemotelyAdapter:
                             job_id=link_el.text if link_el is not None else title,
                         )
                     )
-            except Exception:
+            except Exception as e:
+                _log(f"[weworkremotely] feed {feed_url} failed: {e}", "WARN")
                 continue
         return all_jobs
 
@@ -216,7 +220,8 @@ class DiceAdapter:
                     )
                 )
             return jobs
-        except Exception:
+        except Exception as e:
+            _log(f"[dice] fetch failed: {e}", "WARN")
             return []
 
 
@@ -302,7 +307,8 @@ class HNWhoIsHiringAdapter:
                     )
                 )
             return jobs
-        except Exception:
+        except Exception as e:
+            _log(f"[hackernews] fetch failed: {e}", "WARN")
             return []
 
 

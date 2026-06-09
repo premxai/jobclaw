@@ -121,10 +121,13 @@ _default_cors_origins = ",".join(
 _allowed_origins = [
     origin.strip() for origin in os.getenv("CORS_ORIGINS", _default_cors_origins).split(",") if origin.strip()
 ]
+# Opt-in only. Previously defaulted to r"https://.*\.up\.railway\.app", which trusts
+# every app on the shared Railway domain. Set CORS_ORIGIN_REGEX explicitly if needed.
+_cors_origin_regex = os.getenv("CORS_ORIGIN_REGEX", "").strip() or None
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
-    allow_origin_regex=os.getenv("CORS_ORIGIN_REGEX", r"https://.*\.up\.railway\.app"),
+    allow_origin_regex=_cors_origin_regex,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allow_headers=["Content-Type", "X-API-Key", "Authorization"],
@@ -151,6 +154,16 @@ def _scalar(conn, sql: str, params: tuple = ()):
         return row[0]
     except Exception:
         return None
+
+
+def _effective_user_id() -> str:
+    """Server-side tenant identity for the application tracker.
+
+    The tracker is single-tenant: the owner authenticates with JOBCLAW_API_KEY.
+    We derive the user_id from server config instead of trusting a client-supplied
+    `user_id` query param, so a key-holder cannot read/modify rows under another id.
+    """
+    return os.getenv("JOBCLAW_USER_ID", "default")
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -547,6 +560,8 @@ async def trigger_scraper(
 
 # Connected WebSocket clients
 _ws_clients: set[WebSocket] = set()
+# Cap concurrent connections to prevent connection-exhaustion DoS.
+_WS_MAX_CLIENTS = int(os.getenv("JOBCLAW_WS_MAX_CLIENTS", "200"))
 
 
 @app.websocket("/ws/jobs")
@@ -559,13 +574,20 @@ async def websocket_job_stream(websocket: WebSocket):
     Auth: If JOBCLAW_API_KEY is set, clients must supply it as a query param:
         ws://host/ws/jobs?token=<your-api-key>
     """
-    # Optional token auth — mirrors the X-API-Key middleware logic
+    import hmac
+
+    # Optional token auth — mirrors the X-API-Key middleware logic (constant-time).
     required_key = os.getenv("JOBCLAW_API_KEY")
     if required_key:
         provided = websocket.query_params.get("token", "")
-        if provided != required_key:
+        if not provided or not hmac.compare_digest(provided, required_key):
             await websocket.close(code=4401, reason="Unauthorized: invalid or missing token")
             return
+
+    # Reject when at capacity (before accept, so the client sees the close code).
+    if len(_ws_clients) >= _WS_MAX_CLIENTS:
+        await websocket.close(code=1013, reason="Server at capacity; try again later")
+        return
 
     await websocket.accept()
     _ws_clients.add(websocket)
@@ -725,8 +747,9 @@ def _ensure_applications_table():
 
 
 @app.get("/applications")
-async def list_applications(stage: str = None, user_id: str = "default"):
+async def list_applications(stage: str = None):
     """Get all tracked applications, optionally filtered by stage."""
+    user_id = _effective_user_id()
     conn = get_db()
     p = _ph()
     try:
@@ -761,11 +784,12 @@ async def list_applications(stage: str = None, user_id: str = "default"):
 
 
 @app.post("/applications")
-async def create_application(job_hash: str, stage: str = "saved", notes: str = "", user_id: str = "default"):
+async def create_application(job_hash: str, stage: str = "saved", notes: str = ""):
     """Save a job to the application tracker."""
     if stage not in VALID_STAGES:
         raise HTTPException(status_code=400, detail=f"Invalid stage. Must be one of: {VALID_STAGES}")
 
+    user_id = _effective_user_id()
     from datetime import datetime
 
     now = datetime.now(UTC).isoformat()
@@ -794,6 +818,7 @@ async def update_application_stage(app_id: int, stage: str):
     if stage not in VALID_STAGES:
         raise HTTPException(status_code=400, detail=f"Invalid stage. Must be one of: {VALID_STAGES}")
 
+    user_id = _effective_user_id()
     from datetime import datetime
 
     now = datetime.now(UTC).isoformat()
@@ -806,9 +831,9 @@ async def update_application_stage(app_id: int, stage: str):
             f"""
             UPDATE applications SET stage = {p}, updated_at = {p},
                 applied_at = CASE WHEN {p} = 'applied' AND applied_at IS NULL THEN {p} ELSE applied_at END
-            WHERE id = {p}
+            WHERE id = {p} AND user_id = {p}
         """,
-            (stage, now, stage, now, app_id),
+            (stage, now, stage, now, app_id, user_id),
         )
         conn.commit()
         if cursor.rowcount == 0:
@@ -823,6 +848,7 @@ async def update_application(
     app_id: int, notes: str = None, interview_date: str = None, contact_name: str = None, contact_email: str = None
 ):
     """Update application details (notes, interview date, contacts)."""
+    user_id = _effective_user_id()
     from datetime import datetime
 
     now = datetime.now(UTC).isoformat()
@@ -846,8 +872,9 @@ async def update_application(
             params.append(contact_email)
 
         params.append(app_id)
+        params.append(user_id)
         cursor = conn.cursor()
-        cursor.execute(f"UPDATE applications SET {', '.join(updates)} WHERE id = {p}", params)
+        cursor.execute(f"UPDATE applications SET {', '.join(updates)} WHERE id = {p} AND user_id = {p}", params)
         conn.commit()
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Application not found")
@@ -859,11 +886,12 @@ async def update_application(
 @app.delete("/applications/{app_id}")
 async def delete_application(app_id: int):
     """Remove an application from the tracker."""
+    user_id = _effective_user_id()
     conn = get_db()
     p = _ph()
     try:
         cursor = conn.cursor()
-        cursor.execute(f"DELETE FROM applications WHERE id = {p}", (app_id,))
+        cursor.execute(f"DELETE FROM applications WHERE id = {p} AND user_id = {p}", (app_id, user_id))
         conn.commit()
         if cursor.rowcount == 0:
             raise HTTPException(status_code=404, detail="Application not found")
@@ -873,8 +901,9 @@ async def delete_application(app_id: int):
 
 
 @app.get("/applications/stats")
-async def application_stats(user_id: str = "default"):
+async def application_stats():
     """Get application funnel stats."""
+    user_id = _effective_user_id()
     conn = get_db()
     p = _ph()
     try:

@@ -827,8 +827,8 @@ class MetaJobsAPI:
                             try:
                                 json_data = await response.json()
                                 graphql_data.append(json_data)
-                            except Exception:
-                                pass
+                            except Exception as e:
+                                _log(f"[meta] GraphQL response parse skipped ({response.url[:80]}): {e}", "DEBUG")
 
                     page.on("response", handle_response)
                     await page.goto(self.URL, wait_until="domcontentloaded", timeout=60000)

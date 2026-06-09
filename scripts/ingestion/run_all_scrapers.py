@@ -344,6 +344,17 @@ Legacy flags still work:
     parser.add_argument("--window", type=int, default=None, help="Time window in hours (overrides tier default)")
     parser.add_argument("--shard", type=str, default=None, help="ATS shard: 0-3 or 'auto' for time-based rotation")
     parser.add_argument("--total-shards", type=int, default=4, help="Number of registry shards (default: 4)")
+    parser.add_argument(
+        "--platforms",
+        type=str,
+        default=None,
+        help="Comma-separated ATS platform override (e.g. 'workday'); overrides the tier's platform set",
+    )
+    parser.add_argument(
+        "--no-shard",
+        action="store_true",
+        help="Disable sharding for this run (process the full due queue, oldest-overdue first)",
+    )
     args = parser.parse_args()
 
     # ── Tier-based presets (ZERO-MISS: every tier includes ATS) ────────
@@ -386,7 +397,9 @@ Legacy flags still work:
         skip_github = False
         window = args.window or 8
         skip_platforms = _GEM_SKIP
-        platforms = {"workday", "rippling", "smartrecruiters", "bamboohr"}
+        # Workable joins the medium rotation so its ~3.6k targets refresh more than
+        # once-daily (it was previously only reached by the deep tier).
+        platforms = {"workday", "workable", "rippling", "smartrecruiters", "bamboohr"}
         shard_val = get_next_shard("medium_ats_workday", _MEDIUM_SHARDS)
         total_shards = _MEDIUM_SHARDS  # must match shard key — do not use args.total_shards here
         db_tier = None
@@ -426,6 +439,14 @@ Legacy flags still work:
         skip_ats = True
     if args.no_github:
         skip_github = True
+
+    # Platform/shard overrides — used by the Workday sweep workflow to run an
+    # unsharded, single-platform pass that drains the oldest-overdue targets first.
+    if args.platforms:
+        platforms = {p.strip().lower() for p in args.platforms.split(",") if p.strip()}
+    if args.no_shard:
+        shard_val = None
+        total_shards = 1
 
     _log(
         f"[orchestrator] Tier={tier or 'default'}, Window={window}hr, "

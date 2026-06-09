@@ -125,8 +125,8 @@ PLATFORM_RATE_LIMITS: dict[str, float] = {
     "api.ashbyhq.com": 1.0,  # Smaller platform
     "api.smartrecruiters.com": 1.0,  # Enterprise platform
     # Workday / Workable — aggressive WAFs, go very slow
-    "myworkdayjobs.com": 0.5,  # 1 req / 2s — Workday WAF is harsh
-    "apply.workable.com": 0.15,  # ~1 req / 6.6s — Workable 429s very hard, go slow
+    "myworkdayjobs.com": 0.25,  # 1 req / 4s — Workday WAF is harsh; start cautious
+    "apply.workable.com": 0.1,  # 1 req / 10s — Workable 429s very hard, go very slow
     # Others — conservative
     "ats.rippling.com": 0.5,  # Stability issues at higher rates
     "bamboohr.com": 0.5,  # Small platform, be nice
@@ -163,8 +163,10 @@ class _HostBucket:
         self._consecutive_429s += 1
         # Halve RPS down to floor of 0.05 (1 req / 20s)
         self.rps = max(0.05, self.rps * 0.5)
-        # Global cooldown: all workers for this host must wait
-        cooldown_secs = min(10.0 * self._consecutive_429s, 60.0)
+        # Global cooldown: all workers for this host must wait. Grows exponentially
+        # with consecutive 429s (10s, 20s, 40s, ...) capped at 10 min, so a host that
+        # keeps rejecting us is backed off hard instead of hammered every ~60s.
+        cooldown_secs = min(10.0 * (2 ** (self._consecutive_429s - 1)), 600.0)
         self._cooldown_until = time.monotonic() + cooldown_secs
 
     def record_success(self):
@@ -257,6 +259,9 @@ RETRYABLE_STATUS_CODES = {429, 500, 502, 503, 504}
 PERMANENT_ERROR_CODES = {404, 410, 422}  # company gone / endpoint removed — skip immediately
 MAX_RETRIES = 3
 BASE_BACKOFF = 1.5  # seconds
+# 403 is often a transient WAF/anti-bot challenge; a fresh TLS fingerprint + UA on
+# retry frequently clears it. Retry a small, bounded number of times before giving up.
+ANTIBOT_MAX_RETRIES = int(os.getenv("JOBCLAW_ANTIBOT_RETRIES", "2"))
 
 # ── Proxy rotation pool ──────────────────────────────────────────────────────
 # Set PROXY_URLS (comma-separated) or PROXY_URL (single) in the environment.
@@ -396,10 +401,21 @@ async def fetch_with_retry(
                 if attempt >= max_retries:
                     tag = f"[{log_tag}] " if log_tag else ""
                     _log(f"{tag}HTTP {status} on {url} — retries exhausted", "WARN")
+                    # Capture Retry-After so the retry queue can schedule against the
+                    # server's guidance instead of a coarse fixed bucket.
+                    ra_secs = None
+                    if status == 429:
+                        ra = (resp.headers or {}).get("Retry-After")
+                        if ra:
+                            try:
+                                ra_secs = float(ra)
+                            except ValueError:
+                                ra_secs = None
                     if not is_cffi:
                         await resp.release()
                     record_request_failure(
-                        **classify_failure(status_code=status, error=f"HTTP {status} retries exhausted", url=url)
+                        **classify_failure(status_code=status, error=f"HTTP {status} retries exhausted", url=url),
+                        retry_after=ra_secs,
                     )
                     return None
 
@@ -431,7 +447,24 @@ async def fetch_with_retry(
                 record_request_failure(**classify_failure(status_code=status, error=f"HTTP {status}", url=url))
                 return None
 
-            # Non-retryable error (403, etc.)
+            # Anti-bot / WAF challenge (403) — often transient. Retry a bounded number
+            # of times; each retry rotates TLS fingerprint + UA, which often clears it.
+            if status == 403 and attempt < ANTIBOT_MAX_RETRIES:
+                tag = f"[{log_tag}] " if log_tag else ""
+                hdrs = resp.headers or {}
+                is_cf = bool(hdrs.get("CF-RAY")) or "cloudflare" in str(hdrs.get("Server", "")).lower()
+                cf = " (cloudflare)" if is_cf else ""
+                wait = random.uniform(1.0, 3.0) * (2**attempt)
+                _log(
+                    f"{tag}HTTP 403{cf} on {url} — anti-bot retry {attempt + 1}/{ANTIBOT_MAX_RETRIES} in {wait:.1f}s",
+                    "WARN",
+                )
+                if not is_cffi:
+                    await resp.release()
+                await asyncio.sleep(wait)
+                continue
+
+            # Non-retryable error (403 after retries, etc.)
             tag = f"[{log_tag}] " if log_tag else ""
             _log(f"{tag}HTTP {status} on {url} — not retrying", "WARN")
             if not is_cffi:

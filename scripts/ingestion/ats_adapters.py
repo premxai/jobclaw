@@ -27,6 +27,7 @@ Supported platforms:
 
 import hashlib
 import html
+import os
 import re
 from contextvars import ContextVar
 from dataclasses import asdict, dataclass, field
@@ -62,10 +63,28 @@ def consume_target_metadata() -> dict[str, object] | None:
     return metadata
 
 
+# Cap the response body we will parse to avoid memory exhaustion from a hostile or
+# misbehaving endpoint returning an enormous payload. Generous default (25 MB) — real
+# ATS boards are well under this even for very large employers.
+MAX_RESPONSE_BYTES = int(os.getenv("JOBCLAW_MAX_RESPONSE_BYTES", str(25 * 1024 * 1024)))
+
+
+def _declared_too_large(resp) -> bool:
+    """True if the response's declared Content-Length exceeds the parse cap."""
+    headers = getattr(resp, "headers", None) or {}
+    try:
+        raw = headers.get("Content-Length") or headers.get("content-length")
+        return raw is not None and int(raw) > MAX_RESPONSE_BYTES
+    except (ValueError, TypeError):
+        return False
+
+
 async def _parse_json(resp) -> Any:
     """Parse JSON from either a curl_cffi or aiohttp response."""
     if resp is NOT_MODIFIED:
         return {}  # 304 Not Modified — no new data
+    if _declared_too_large(resp):
+        raise ValueError(f"response exceeds max size ({MAX_RESPONSE_BYTES} bytes)")
     if HAS_CURL_CFFI and hasattr(resp, "status_code"):
         # curl_cffi responses have .json() as a sync method
         return resp.json()
@@ -549,8 +568,9 @@ class SmartRecruitersAdapter:
         all_jobs = []
         offset = 0
         limit = 100
+        max_pages = 50  # safety cap (≤5,000 jobs/company); guards against a server that ignores offset
 
-        while True:
+        for _page in range(max_pages):
             resp = await fetch_with_retry(
                 session,
                 "GET",
@@ -613,6 +633,8 @@ class SmartRecruitersAdapter:
             if len(content) < limit:
                 break
             offset += limit
+        else:
+            _log(f"[smartrecruiters/{slug}] Hit pagination cap ({max_pages} pages); stopping early.", "WARN")
 
         return all_jobs
 

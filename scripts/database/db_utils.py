@@ -32,12 +32,32 @@ HOT_COMPANIES_PATH = Path(__file__).parent.parent.parent / "config" / "hot_compa
 
 _hot_slugs_cache = None
 
+def _tier_interval(tier: str, default: timedelta) -> timedelta:
+    """Per-tier freshness SLO (re-scrape interval). Override via env, e.g.
+    JOBCLAW_TIER_INTERVAL_P2_HOURS=336 for a 14-day long-tail cadence."""
+    raw = os.getenv(f"JOBCLAW_TIER_INTERVAL_{tier}_HOURS")
+    if raw:
+        try:
+            return timedelta(hours=float(raw))
+        except ValueError:
+            pass
+    return default
+
+
+# Freshness SLO per tier: how often a target should be revisited. P0/P1 keep the
+# active set fresh; P2/P3 are the long tail and are throughput-bound (see the aging
+# fairness term in claim_adaptive_companies_for_scrape, which guarantees the
+# oldest-overdue targets are pulled forward instead of being starved indefinitely).
 TIER_INTERVALS = {
-    "P0": timedelta(minutes=15),
-    "P1": timedelta(hours=1),
-    "P2": timedelta(hours=24),
-    "P3": timedelta(days=7),
+    "P0": _tier_interval("P0", timedelta(minutes=15)),
+    "P1": _tier_interval("P1", timedelta(hours=1)),
+    "P2": _tier_interval("P2", timedelta(hours=24)),
+    "P3": _tier_interval("P3", timedelta(days=7)),
 }
+
+# A target overdue by more than this many days is "aged" and gets claimed ahead of
+# fresher work so nothing in the long tail is deferred forever.
+COVERAGE_AGING_DAYS = float(os.getenv("JOBCLAW_AGING_DAYS", "14"))
 
 DEFAULT_TIER = "P2"
 PG_CONNECT_TIMEOUT = int(os.getenv("JOBCLAW_PG_CONNECT_TIMEOUT", "15"))
@@ -354,6 +374,12 @@ def _ensure_postgres_schema(conn):
     )
     """)
     cursor.execute("""
+    CREATE TABLE IF NOT EXISTS scraper_state (
+        scraper TEXT PRIMARY KEY,
+        shard_cursor BIGINT DEFAULT 0
+    )
+    """)
+    cursor.execute("""
     CREATE TABLE IF NOT EXISTS companies (
         id SERIAL PRIMARY KEY,
         slug TEXT NOT NULL,
@@ -533,6 +559,13 @@ def _ensure_sqlite_schema(conn):
         shard_index INTEGER DEFAULT 0,
         status TEXT DEFAULT 'success',
         summary_json TEXT DEFAULT ''
+    )
+    """)
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS scraper_state (
+        scraper TEXT PRIMARY KEY,
+        shard_cursor INTEGER DEFAULT 0
     )
     """)
 
@@ -1171,16 +1204,53 @@ def mark_jobs_posted(conn, internal_hashes: list[str]):
 
 
 def get_next_shard_from_db(conn, scraper_name: str, total_shards: int = 4) -> int:
-    """Read shard from DB to ensure rotation persists even in ephemeral runners."""
-    cursor = conn.cursor()
-    try:
-        placeholder = "%s" if is_postgres() else "?"
-        cursor.execute(f"SELECT COUNT(*) FROM scraper_runs WHERE scraper = {placeholder}", (scraper_name,))
-        row = cursor.fetchone()
-        run_count = row[0] if row else 0
-        return run_count % total_shards
-    except Exception:
+    """Durable round-robin shard cursor.
+
+    Atomically increments an explicit per-scraper counter in ``scraper_state`` so
+    rotation survives clearing ``scraper_runs`` and advances by exactly one per call
+    (even if a run later fails before writing its scraper_runs row). Falls back to the
+    legacy count-of-scraper_runs behaviour if the state table is unavailable.
+
+    Callers use a throwaway connection (see get_next_shard), so committing here is safe.
+    """
+    if total_shards <= 1:
         return 0
+    cursor = conn.cursor()
+    placeholder = "%s" if is_postgres() else "?"
+    try:
+        if is_postgres():
+            cursor.execute(
+                f"""
+                INSERT INTO scraper_state (scraper, shard_cursor) VALUES ({placeholder}, 1)
+                ON CONFLICT (scraper) DO UPDATE SET shard_cursor = scraper_state.shard_cursor + 1
+                RETURNING shard_cursor
+                """,
+                (scraper_name,),
+            )
+            row = cursor.fetchone()
+        else:
+            cursor.execute(
+                f"INSERT INTO scraper_state (scraper, shard_cursor) VALUES ({placeholder}, 1) "
+                "ON CONFLICT(scraper) DO UPDATE SET shard_cursor = shard_cursor + 1",
+                (scraper_name,),
+            )
+            cursor.execute(
+                f"SELECT shard_cursor FROM scraper_state WHERE scraper = {placeholder}", (scraper_name,)
+            )
+            row = cursor.fetchone()
+        conn.commit()
+        # The counter now reflects the count *including* this claim; subtract 1 so the
+        # first call returns shard 0.
+        cursor_val = (row[0] if row else 1) - 1
+        return int(cursor_val) % total_shards
+    except Exception:
+        # Legacy fallback: rotate on the number of recorded runs.
+        try:
+            cursor.execute(f"SELECT COUNT(*) FROM scraper_runs WHERE scraper = {placeholder}", (scraper_name,))
+            row = cursor.fetchone()
+            return (row[0] if row else 0) % total_shards
+        except Exception:
+            return 0
 
 
 def get_companies_by_tier(conn, tier: str, shard: int = None, total_shards: int = 4) -> list[dict]:
@@ -1362,7 +1432,12 @@ def get_due_companies_for_scrape(
         query += f" AND (next_scrape_at IS NULL OR next_scrape_at <= {placeholder})"
         params.append(now)
 
-    query += f" ORDER BY priority_score DESC, COALESCE(next_scrape_at, '') ASC, tier ASC, slug ASC LIMIT {placeholder}"
+    aging_cutoff = (datetime.now(timezone.utc) - timedelta(days=COVERAGE_AGING_DAYS)).isoformat()
+    query += (
+        f" ORDER BY CASE WHEN next_scrape_at IS NOT NULL AND next_scrape_at <= {placeholder} THEN 0 ELSE 1 END,"
+        f" priority_score DESC, COALESCE(next_scrape_at, '') ASC, tier ASC, slug ASC LIMIT {placeholder}"
+    )
+    params.append(aging_cutoff)
     params.append(limit)
     cursor.execute(query, params)
 
@@ -1381,6 +1456,38 @@ def get_due_companies_for_scrape(
         if "name" in c and "company" not in c:
             c["company"] = c["name"]
     return rows
+
+
+def get_coverage_age_by_platform(conn) -> list[dict]:
+    """Per-platform coverage freshness, used to verify the tiered-cadence SLO.
+
+    For each active platform reports the total universe, how many have never been
+    scraped, and how many have gone un-scraped longer than COVERAGE_AGING_DAYS (the
+    "aged" backlog the sweep is meant to drain). ISO timestamps sort lexically, so a
+    string comparison against the cutoff is correct on both SQLite and Postgres.
+    """
+    cursor = conn.cursor()
+    placeholder = "%s" if is_postgres() else "?"
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=COVERAGE_AGING_DAYS)).isoformat()
+    cursor.execute(
+        f"""
+        SELECT LOWER(ats_type) AS platform,
+               COUNT(*) AS total,
+               SUM(CASE WHEN last_success_at IS NULL THEN 1 ELSE 0 END) AS never_scraped,
+               SUM(CASE WHEN last_success_at IS NOT NULL AND last_success_at < {placeholder}
+                        THEN 1 ELSE 0 END) AS aged,
+               MIN(last_success_at) AS oldest_success
+        FROM companies
+        WHERE COALESCE(is_dead, 0) = 0
+        GROUP BY LOWER(ats_type)
+        ORDER BY COUNT(*) DESC
+        """,
+        (cutoff,),
+    )
+    return [
+        dict(row) if hasattr(row, "keys") else dict(zip([d[0] for d in cursor.description], row))
+        for row in cursor.fetchall()
+    ]
 
 
 def _normalize_company_rows(rows: list[dict]) -> list[dict]:
@@ -1407,6 +1514,8 @@ def claim_adaptive_companies_for_scrape(
     now = datetime.now(timezone.utc).isoformat()
     lease_until = (datetime.now(timezone.utc) + timedelta(seconds=lease_seconds)).isoformat()
     owner = lease_owner or f"jobclaw:{os.getpid()}"
+    # Targets overdue past this cutoff are claimed ahead of fresher work (fairness).
+    aging_cutoff = (datetime.now(timezone.utc) - timedelta(days=COVERAGE_AGING_DAYS)).isoformat()
 
     platform_sql = ""
     params: list = []
@@ -1434,6 +1543,9 @@ def claim_adaptive_companies_for_scrape(
                   {platform_sql}
                   {due_sql}
                 ORDER BY
+                  CASE WHEN COALESCE(next_due_at, next_scrape_at) IS NOT NULL
+                            AND COALESCE(next_due_at, next_scrape_at) <= {placeholder}
+                       THEN 0 ELSE 1 END,
                   CASE COALESCE(tier, 'P2') WHEN 'P0' THEN 0 WHEN 'P1' THEN 1 WHEN 'P2' THEN 2 ELSE 3 END,
                   COALESCE(scrape_score, 0) DESC,
                   COALESCE(priority_score, 0) DESC,
@@ -1451,7 +1563,7 @@ def claim_adaptive_companies_for_scrape(
             WHERE c.id = picked.id
             RETURNING c.*
             """,
-            (now, owner, *params, limit, lease_until, owner, now),
+            (now, owner, *params, aging_cutoff, limit, lease_until, owner, now),
         )
         cols = [desc[0] for desc in cursor.description]
         rows = [dict(zip(cols, row)) for row in cursor.fetchall()]
@@ -1466,6 +1578,9 @@ def claim_adaptive_companies_for_scrape(
               {platform_sql}
               {due_sql}
             ORDER BY
+              CASE WHEN COALESCE(next_due_at, next_scrape_at) IS NOT NULL
+                        AND COALESCE(next_due_at, next_scrape_at) <= {placeholder}
+                   THEN 0 ELSE 1 END,
               CASE COALESCE(tier, 'P2') WHEN 'P0' THEN 0 WHEN 'P1' THEN 1 WHEN 'P2' THEN 2 ELSE 3 END,
               COALESCE(scrape_score, 0) DESC,
               COALESCE(priority_score, 0) DESC,
@@ -1474,7 +1589,7 @@ def claim_adaptive_companies_for_scrape(
               slug ASC
             LIMIT {placeholder}
             """,
-            (now, owner, *params, limit),
+            (now, owner, *params, aging_cutoff, limit),
         )
         rows = [
             dict(r) if hasattr(r, "keys") else dict(zip([d[0] for d in cursor.description], r))

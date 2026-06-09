@@ -178,22 +178,67 @@ class CircuitBreaker:
     next 50 companies (half-open cooldown) before retrying.
     """
 
-    def __init__(self, threshold: int = 15):
+    # Persisted state so a platform banned on one (ephemeral) runner stays tripped on
+    # the next run instead of wasting `threshold` requests re-discovering the ban.
+    STATE_PATH = Path(__file__).resolve().parent.parent.parent / "state" / "circuit_breaker.json"
+    RECOVERY_SECONDS = int(os.getenv("JOBCLAW_CIRCUIT_RECOVERY_SECONDS", "3600"))
+
+    def __init__(self, threshold: int = 15, state_path: Path | None = None):
         self.threshold = threshold
+        self.state_path = state_path or self.STATE_PATH
         self._failures: dict[str, int] = defaultdict(int)
         self._total_skipped: dict[str, int] = defaultdict(int)
         self._skip_remaining: dict[str, int] = {}
+        self._opened_at: dict[str, float] = {}  # platform -> epoch when circuit opened
+        self._load()
+
+    def _load(self) -> None:
+        """Restore platforms still inside their recovery window as open (skip them)."""
+        try:
+            if not self.state_path.exists():
+                return
+            with open(self.state_path, encoding="utf-8") as f:
+                data = json.load(f)
+            now = time.time()
+            for platform, st in (data.get("open") or {}).items():
+                opened_at = float(st.get("opened_at") or 0)
+                if now - opened_at < self.RECOVERY_SECONDS:
+                    self._failures[platform] = int(st.get("failures") or self.threshold)
+                    self._opened_at[platform] = opened_at
+                    # Skip this platform for the remainder of the run; recovery is
+                    # time-based and re-evaluated on the next run's _load().
+                    self._skip_remaining[platform] = 10**9
+        except Exception:
+            pass  # never let breaker state corruption break a scrape run
+
+    def save(self) -> None:
+        """Persist currently-open platforms (failures >= threshold)."""
+        try:
+            now = time.time()
+            open_state = {
+                p: {"failures": f, "opened_at": self._opened_at.get(p, now)}
+                for p, f in self._failures.items()
+                if f >= self.threshold
+            }
+            self.state_path.parent.mkdir(parents=True, exist_ok=True)
+            payload = {"_comment": "Open ATS circuit breakers (persisted across runs)", "open": open_state}
+            with open(self.state_path, "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2)
+        except Exception:
+            pass
 
     def record_failure(self, platform: str) -> None:
         """Record a failure for a platform."""
         self._failures[platform] += 1
         if self._failures[platform] >= self.threshold and platform not in self._skip_remaining:
             self._skip_remaining[platform] = 50
+            self._opened_at[platform] = time.time()
 
     def record_success(self, platform: str) -> None:
         """Reset failure count on success (half-open → closed)."""
         self._failures[platform] = 0
         self._skip_remaining.pop(platform, None)
+        self._opened_at.pop(platform, None)
 
     def should_skip(self, platform: str) -> bool:
         """Check if the platform circuit is open (too many failures).
@@ -321,6 +366,7 @@ async def _worker(
                     str(e),
                     failure_type=failure["category"],
                     status_code=failure.get("status_code"),
+                    retry_after=failure.get("retry_after"),
                 )
 
         queue.task_done()
@@ -688,8 +734,9 @@ async def run_ats_scraper(
             raw_counts_by_target[target_key] += 1
             company_job_ids[(ats, name)].add(job.job_id)
 
-    # Log circuit breaker health
+    # Log circuit breaker health and persist open platforms for the next run.
     _log(f"Circuit breaker: {breaker.summary()}")
+    breaker.save()
 
     cache.log_stats()
     _log(f"Fetched {len(all_jobs)} total raw jobs from ATS APIs.")

@@ -57,4 +57,32 @@ jobs:
         run: |
           python -c "from scripts.database.db_utils import get_connection; print('DB OK')"
 
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0          # full history for the secret scan
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      # Dependency CVE audit. Non-blocking for now (report-only) so a transitive
+      # advisory doesn't block deploys; drop the `|| true` to make it gating.
+      - name: pip-audit (dependency CVEs)
+        run: |
+          pip install pip-audit
+          pip-audit -r requirements.txt --desc || true
+
+      # Secret scan over the whole git history. Non-blocking until a baseline exists;
+      # remove `continue-on-error` to make committed secrets fail the build.
+      - name: Secret scan (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

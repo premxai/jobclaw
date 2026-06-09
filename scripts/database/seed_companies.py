@@ -165,6 +165,20 @@ def seed_companies():
             f"from {len(registry)} registry entries ({hot_tagged} tagged as P0/Hot)."
         )
 
+        # Gem's job-board DNS is permanently dead. Quarantine those targets in the
+        # registry (is_dead=1) so they never occupy a scrape/claim slot, instead of
+        # being claimed and then skipped at runtime via _GEM_SKIP.
+        placeholder = "%s" if is_postgres() else "?"
+        try:
+            cursor.execute(
+                f"UPDATE companies SET is_dead = 1 WHERE LOWER(ats_type) = {placeholder}",
+                ("gem",),
+            )
+            conn.commit()
+            print(f"Quarantined {cursor.rowcount} Gem targets (DNS permanently dead).")
+        except Exception as e:
+            print(f"Gem quarantine skipped: {e}")
+
     finally:
         conn.close()
 

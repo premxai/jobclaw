@@ -15,6 +15,7 @@ Supported:
 import aiohttp
 
 from scripts.ingestion.ats_adapters import NormalizedJob
+from scripts.utils.logger import _log
 
 # ═══════════════════════════════════════════════════════════════════════
 # HIRING CAFE
@@ -87,7 +88,8 @@ class HiringCafeAdapter:
                             job_id=str(j.get("id", j.get("job_id", f"{j.get('title', '')}-{j.get('company', '')}"))),
                         )
                     )
-            except Exception:
+            except Exception as e:
+                _log(f"[hiringcafe] page fetch/parse failed: {e}", "WARN")
                 continue
 
         return all_jobs
@@ -156,7 +158,8 @@ class JobrightAdapter:
                             job_id=str(j.get("id", j.get("job_id", ""))),
                         )
                     )
-            except Exception:
+            except Exception as e:
+                _log(f"[jobright] page fetch/parse failed: {e}", "WARN")
                 continue
 
         return all_jobs
@@ -219,7 +222,8 @@ class YCWorkAtStartupAdapter:
                     )
                 )
             return jobs
-        except Exception:
+        except Exception as e:
+            _log(f"[yc-startup] fetch failed: {e}", "WARN")
             return []
 
 

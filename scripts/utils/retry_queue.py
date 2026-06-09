@@ -83,6 +83,7 @@ class RetryQueue:
         error: str,
         failure_type: str = "transient",
         status_code: int | None = None,
+        retry_after: float | None = None,
     ) -> None:
         """
         Add a failed company to the retry queue.
@@ -109,10 +110,13 @@ class RetryQueue:
             if is_review or retry_count >= MAX_RETRIES:
                 delay = REVIEW_DELAY
                 retry_count = 0
-                next_retry = (now + timedelta(seconds=delay)).isoformat().replace("+00:00", "Z")
             else:
                 delay = RETRY_DELAYS[retry_count]
-                next_retry = (now + timedelta(seconds=delay)).isoformat().replace("+00:00", "Z")
+            # Honor a server-supplied Retry-After (e.g. from a 429) instead of the
+            # coarse bucket — capped so it never exceeds the review delay.
+            if retry_after and retry_after > 0:
+                delay = min(float(retry_after), REVIEW_DELAY)
+            next_retry = (now + timedelta(seconds=delay)).isoformat().replace("+00:00", "Z")
 
             self._queue[idx] = {
                 "company": company,
@@ -124,11 +128,14 @@ class RetryQueue:
                 "failed_at": now_str,
                 "retry_count": retry_count,
                 "next_retry": next_retry,
+                "retry_after": retry_after,
             }
         else:
             # New failure — add to queue
             is_review = failure_type in {"bad_target", "anti_bot"} or status_code in {403, 404, 410, 422, 429}
             delay = REVIEW_DELAY if is_review else RETRY_DELAYS[0]
+            if retry_after and retry_after > 0:
+                delay = min(float(retry_after), REVIEW_DELAY)
             next_retry = (now + timedelta(seconds=delay)).isoformat().replace("+00:00", "Z")
 
             self._queue.append(
@@ -142,6 +149,7 @@ class RetryQueue:
                     "failed_at": now_str,
                     "retry_count": 0,
                     "next_retry": next_retry,
+                    "retry_after": retry_after,
                 }
             )
             self._stats["added"] += 1

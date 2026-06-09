@@ -8,7 +8,12 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from scripts.database.db_utils import get_connection, get_scraper_control_snapshot, is_postgres
+from scripts.database.db_utils import (
+    get_connection,
+    get_coverage_age_by_platform,
+    get_scraper_control_snapshot,
+    is_postgres,
+)
 
 
 def _rows(conn, sql: str, params: tuple = ()) -> list[dict]:
@@ -51,6 +56,17 @@ def main() -> int:
                 )
         else:
             print("- none")
+
+        print("\nCoverage age by platform (aged = un-scraped past the SLO)")
+        for cov in get_coverage_age_by_platform(conn):
+            total = int(cov.get("total") or 0)
+            aged = int(cov.get("aged") or 0)
+            never = int(cov.get("never_scraped") or 0)
+            pct = (100.0 * aged / total) if total else 0.0
+            print(
+                f"- {cov.get('platform')}: total={total} aged={aged} ({pct:.0f}%) "
+                f"never={never} oldest_success={cov.get('oldest_success') or 'n/a'}"
+            )
 
         active_expr = "TRUE" if is_postgres() else "1"
         recent = _rows(

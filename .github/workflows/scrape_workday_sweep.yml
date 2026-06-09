@@ -1,0 +1,84 @@
+name: "🌙 Workday Sweep — Long-tail Coverage"
+
+# ┌────────────────────────────────────────────────────────────────────┐
+# │  DEDICATED WORKDAY SWEEP — drains the long tail of ~21k Workday     │
+# │  targets that the hourly medium tier can't keep up with.            │
+# │                                                                     │
+# │  Runs UNSHARDED + Workday-only with a long timeout and a large      │
+# │  per-platform time budget, several times/day at off-peak hours.     │
+# │  The aging-fairness ordering (JOBCLAW_AGING_DAYS) means each sweep   │
+# │  claims the *oldest-overdue* Workday targets first, so coverage      │
+# │  rotates predictably instead of starving low-priority slugs.        │
+# │                                                                     │
+# │  Politeness is unchanged: per-host RPS + circuit breaker still cap  │
+# │  request rate, so a long budget = more time scraping, not faster.   │
+# └────────────────────────────────────────────────────────────────────┘
+
+on:
+  schedule:
+    # Off-peak, offset from fast(:03)/medium(:33)/discord(:14,:44)/deep(12:17).
+    - cron: "15 1,5,17,21 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write              # Needed to push dedup file back to repo
+
+concurrency:
+  group: workday-sweep
+  cancel-in-progress: false    # let an in-flight sweep finish; don't thrash leases
+
+jobs:
+  workday-sweep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+
+      - name: Sweep Workday (unsharded, oldest-overdue first)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JOBCLAW_QUEUE_MODE: "active"
+          # Lease must outlast the long run so claimed targets aren't re-grabbed mid-sweep.
+          JOBCLAW_QUEUE_LEASE_SECONDS: "3300"
+          # Spend ~50 min of the 55-min budget purely on Workday.
+          JOBCLAW_PLATFORM_BUDGET_SECONDS_WORKDAY: "3000"
+          JOBCLAW_MEDIUM_TARGET_LIMIT: "5000"
+          JOBCLAW_DEGRADED_FAILS_WORKFLOW: "0"
+          JOBCLAW_DIRECT_SOURCE_ONLY: "1"
+          JOBCLAW_BRAVE_ENRICHMENT_ONLY: "1"
+          JOBCLAW_DISCORD_DRY_RUN: "0"
+          JOBCLAW_DISCORD_STRICT_QUALITY: "1"
+          DISCORD_WEBHOOK_AI: ${{ secrets.DISCORD_WEBHOOK_AI }}
+          DISCORD_WEBHOOK_SWE: ${{ secrets.DISCORD_WEBHOOK_SWE }}
+          DISCORD_WEBHOOK_DATA: ${{ secrets.DISCORD_WEBHOOK_DATA }}
+          DISCORD_WEBHOOK_NEWGRAD: ${{ secrets.DISCORD_WEBHOOK_NEWGRAD }}
+          DISCORD_WEBHOOK_PRODUCT: ${{ secrets.DISCORD_WEBHOOK_PRODUCT }}
+          DISCORD_WEBHOOK_RESEARCH: ${{ secrets.DISCORD_WEBHOOK_RESEARCH }}
+        run: |
+          python scripts/ingestion/run_all_scrapers.py \
+            --tier medium \
+            --platforms workday \
+            --no-shard \
+            --window 24
+
+      - name: Commit dedup file
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/posted_hashes.json || true
+          git diff --staged --quiet || git commit -m "chore: update posted_hashes.json [skip ci]"
+          git push || true

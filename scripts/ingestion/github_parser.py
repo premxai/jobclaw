@@ -19,6 +19,7 @@ from datetime import datetime, timezone
 import aiohttp
 
 from scripts.ingestion.ats_adapters import NormalizedJob
+from scripts.utils.logger import _log
 
 # ═══════════════════════════════════════════════════════════════════════
 # SIMPLIFY JOBS (JSON backend)
@@ -110,7 +111,8 @@ class SimplifyJobsParser:
                         )
                     )
 
-            except Exception:
+            except Exception as e:
+                _log(f"[github-{repo_info['label']}] listings fetch/parse failed: {e}", "WARN")
                 continue
 
         return all_jobs
@@ -166,7 +168,8 @@ class MarkdownTableParser:
                 jobs = _parse_markdown_table(text, repo_info["label"])
                 all_jobs.extend(jobs)
 
-            except Exception:
+            except Exception as e:
+                _log(f"[github-{repo_info['label']}] listings fetch/parse failed: {e}", "WARN")
                 continue
 
         return all_jobs
