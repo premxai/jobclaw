@@ -1,0 +1,57 @@
+name: "DB Maintenance - Retention & Compaction"
+
+# Keeps Railway/Postgres usage lean so JobClaw does not repeat the Neon quota
+# failure mode. GitHub cron is UTC; every 6 hours is enough for retention.
+
+on:
+  schedule:
+    - cron: "8 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-maintenance
+  cancel-in-progress: true
+
+jobs:
+  db-maintenance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check production DB availability
+        id: db-preflight
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python scripts/ops/github_db_preflight.py
+
+      - name: Skip while production DB is unavailable
+        if: steps.db-preflight.outputs.db_ok != 'true'
+        run: |
+          echo "Skipping DB maintenance because production DB is unavailable."
+          echo "Reason: ${{ steps.db-preflight.outputs.reason }}"
+
+      - name: Run DB maintenance
+        if: steps.db-preflight.outputs.db_ok == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JOBCLAW_DESCRIPTION_MAX_CHARS: "4000"
+          JOBCLAW_DESCRIPTION_CLEAR_AFTER_DAYS: "3"
+          JOBCLAW_RETENTION_REJECTED_DAYS: "3"
+          JOBCLAW_RETENTION_NEEDS_REVIEW_DAYS: "3"
+          JOBCLAW_RETENTION_ARCHIVED_DAYS: "7"
+          JOBCLAW_RETENTION_INACTIVE_DAYS: "7"
+          JOBCLAW_RETENTION_SCRAPER_RUNS: "500"
+        run: python scripts/ops/db_maintenance.py

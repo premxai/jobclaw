@@ -367,6 +367,7 @@ async def list_jobs(
     active: bool = Query(True, description="Only active (non-filled) jobs"),
     recent_hours: int | None = Query(None, ge=1, le=168, description="Only jobs first seen within this many hours"),
     quality: str | None = Query(None, description="Filter by job quality state, e.g. accepted"),
+    include_description: bool = Query(False, description="Include full job descriptions in list responses"),
     response: Response = None,
 ):
     """
@@ -377,7 +378,10 @@ async def list_jobs(
     """
     if response is not None:
         _set_cache_headers(response)
-    cache_key = f"jobs:{page}:{per_page}:{company}:{ats}:{keyword}:{search}:{active}:{recent_hours}:{quality}"
+    cache_key = (
+        f"jobs:{page}:{per_page}:{company}:{ats}:{keyword}:{search}:{active}:"
+        f"{recent_hours}:{quality}:{include_description}"
+    )
     cached = _cached_read(cache_key)
     if cached is not None:
         return cached
@@ -392,6 +396,7 @@ async def list_jobs(
         search=search,
         recent_hours=recent_hours,
         quality=quality,
+        include_description=include_description,
     )
     return _store_read(
         cache_key,

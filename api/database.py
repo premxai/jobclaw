@@ -117,6 +117,7 @@ def get_jobs(
     search: str = None,
     recent_hours: int | None = None,
     quality: str | None = None,
+    include_description: bool = False,
 ) -> tuple[list[dict], int]:
     """Query jobs with pagination and filters."""
     conn = get_db()
@@ -172,8 +173,20 @@ def get_jobs(
             order_clause = "first_seen DESC"
             extra_params = []
 
+        # Job descriptions are the heaviest column in this table. Public list
+        # views do not need them, so keep /jobs lean by default and reserve full
+        # descriptions for /jobs/{internal_hash} or explicit callers.
+        description_column = "description" if include_description else "NULL AS description"
+        select_columns = f"""
+            internal_hash, job_id, title, company, location, url, date_posted,
+            source_ats, first_seen, status, keywords_matched, {description_column},
+            salary_min, salary_max, salary_currency, experience_years, is_active,
+            last_seen_at, quality_state, quality_reasons, canonical_company,
+            canonical_title, source_confidence
+        """
+
         query = f"""
-            SELECT * FROM jobs {where}
+            SELECT {select_columns} FROM jobs {where}
             ORDER BY {order_clause}
             LIMIT {p} OFFSET {p}
         """

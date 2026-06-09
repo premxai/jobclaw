@@ -90,6 +90,26 @@ _GENERIC_JOB_TITLE_RE = re.compile(
 )
 
 
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
+def _normalize_description(value) -> str | None:
+    """Store bounded descriptions so public reads and DB storage stay cheap."""
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    max_chars = _env_int("JOBCLAW_DESCRIPTION_MAX_CHARS", 4000)
+    if max_chars > 0 and len(text) > max_chars:
+        return text[:max_chars].rstrip()
+    return text
+
+
 def get_hot_slugs() -> set[str]:
     """Load and cache the list of hot company slugs."""
     global _hot_slugs_cache
@@ -823,6 +843,7 @@ def insert_job(conn, job_dict: dict) -> bool:
     Returns True if genuinely new (inserted), False if dedup hit.
     """
     internal_hash = _make_hash(job_dict)
+    job_dict["description"] = _normalize_description(job_dict.get("description"))
 
     # Auto-populate keywords_matched if empty or missing
     keywords_list = job_dict.get("keywords_matched")
@@ -1191,6 +1212,181 @@ def prune_scraper_runs(conn, keep_last_n: int = 500) -> int:
 
         _log(f"prune_scraper_runs failed: {e}", "WARNING")
         return 0
+
+
+def run_database_maintenance(conn) -> dict:
+    """Keep production Postgres small enough for low-cost/free tiers.
+
+    Retention defaults protect the public 48h website window and 72h Discord
+    window while aggressively removing low-value rows that caused Neon-style
+    transfer/storage pressure.
+    """
+    summary: dict[str, int] = {}
+    cursor = conn.cursor()
+
+    description_max = max(0, _env_int("JOBCLAW_DESCRIPTION_MAX_CHARS", 4000))
+    description_clear_days = max(1, _env_int("JOBCLAW_DESCRIPTION_CLEAR_AFTER_DAYS", 3))
+    rejected_days = max(1, _env_int("JOBCLAW_RETENTION_REJECTED_DAYS", 3))
+    needs_review_days = max(1, _env_int("JOBCLAW_RETENTION_NEEDS_REVIEW_DAYS", 3))
+    archived_days = max(1, _env_int("JOBCLAW_RETENTION_ARCHIVED_DAYS", 7))
+    inactive_days = max(1, _env_int("JOBCLAW_RETENTION_INACTIVE_DAYS", 7))
+    keep_runs = max(50, _env_int("JOBCLAW_RETENTION_SCRAPER_RUNS", 500))
+
+    try:
+        summary["stale_unposted_archived"] = purge_stale_unposted(conn)
+
+        if description_max > 0:
+            if is_postgres():
+                cursor.execute(
+                    """
+                    UPDATE jobs
+                    SET description = LEFT(description, %s)
+                    WHERE description IS NOT NULL
+                      AND LENGTH(description) > %s
+                    """,
+                    (description_max, description_max),
+                )
+            else:
+                cursor.execute(
+                    """
+                    UPDATE jobs
+                    SET description = substr(description, 1, ?)
+                    WHERE description IS NOT NULL
+                      AND length(description) > ?
+                    """,
+                    (description_max, description_max),
+                )
+            summary["descriptions_truncated"] = max(cursor.rowcount, 0)
+
+        if is_postgres():
+            cursor.execute(
+                """
+                UPDATE jobs
+                SET description = ''
+                WHERE COALESCE(description, '') <> ''
+                  AND first_seen::timestamptz < NOW() - (%s * INTERVAL '1 day')
+                  AND (
+                    status IN ('posted', 'archived')
+                    OR COALESCE(quality_state, 'needs_review') IN ('rejected', 'needs_review')
+                  )
+                """,
+                (description_clear_days,),
+            )
+            summary["descriptions_cleared"] = max(cursor.rowcount, 0)
+
+            cursor.execute(
+                """
+                DELETE FROM jobs
+                WHERE COALESCE(quality_state, 'needs_review') = 'rejected'
+                  AND first_seen::timestamptz < NOW() - (%s * INTERVAL '1 day')
+                """,
+                (rejected_days,),
+            )
+            summary["rejected_deleted"] = max(cursor.rowcount, 0)
+
+            cursor.execute(
+                """
+                DELETE FROM jobs
+                WHERE COALESCE(quality_state, 'needs_review') = 'needs_review'
+                  AND first_seen::timestamptz < NOW() - (%s * INTERVAL '1 day')
+                """,
+                (needs_review_days,),
+            )
+            summary["needs_review_deleted"] = max(cursor.rowcount, 0)
+
+            cursor.execute(
+                """
+                DELETE FROM jobs
+                WHERE status = 'archived'
+                  AND first_seen::timestamptz < NOW() - (%s * INTERVAL '1 day')
+                """,
+                (archived_days,),
+            )
+            summary["archived_deleted"] = max(cursor.rowcount, 0)
+
+            cursor.execute(
+                """
+                DELETE FROM jobs
+                WHERE is_active = FALSE
+                  AND COALESCE(NULLIF(last_seen_at, ''), first_seen)::timestamptz
+                      < NOW() - (%s * INTERVAL '1 day')
+                """,
+                (inactive_days,),
+            )
+            summary["inactive_deleted"] = max(cursor.rowcount, 0)
+        else:
+            cursor.execute(
+                """
+                UPDATE jobs
+                SET description = ''
+                WHERE COALESCE(description, '') <> ''
+                  AND datetime(first_seen) < datetime('now', ?)
+                  AND (
+                    status IN ('posted', 'archived')
+                    OR COALESCE(quality_state, 'needs_review') IN ('rejected', 'needs_review')
+                  )
+                """,
+                (f"-{description_clear_days} days",),
+            )
+            summary["descriptions_cleared"] = max(cursor.rowcount, 0)
+
+            cursor.execute(
+                """
+                DELETE FROM jobs
+                WHERE COALESCE(quality_state, 'needs_review') = 'rejected'
+                  AND datetime(first_seen) < datetime('now', ?)
+                """,
+                (f"-{rejected_days} days",),
+            )
+            summary["rejected_deleted"] = max(cursor.rowcount, 0)
+
+            cursor.execute(
+                """
+                DELETE FROM jobs
+                WHERE COALESCE(quality_state, 'needs_review') = 'needs_review'
+                  AND datetime(first_seen) < datetime('now', ?)
+                """,
+                (f"-{needs_review_days} days",),
+            )
+            summary["needs_review_deleted"] = max(cursor.rowcount, 0)
+
+            cursor.execute(
+                """
+                DELETE FROM jobs
+                WHERE status = 'archived'
+                  AND datetime(first_seen) < datetime('now', ?)
+                """,
+                (f"-{archived_days} days",),
+            )
+            summary["archived_deleted"] = max(cursor.rowcount, 0)
+
+            cursor.execute(
+                """
+                DELETE FROM jobs
+                WHERE is_active = 0
+                  AND datetime(COALESCE(NULLIF(last_seen_at, ''), first_seen)) < datetime('now', ?)
+                """,
+                (f"-{inactive_days} days",),
+            )
+            summary["inactive_deleted"] = max(cursor.rowcount, 0)
+
+        conn.commit()
+
+        summary["scraper_runs_deleted"] = prune_scraper_runs(conn, keep_last_n=keep_runs)
+
+        try:
+            cursor = conn.cursor()
+            cursor.execute("ANALYZE jobs")
+            conn.commit()
+            summary["analyze_ok"] = 1
+        except Exception:
+            conn.rollback()
+            summary["analyze_ok"] = 0
+
+        return summary
+    except Exception:
+        conn.rollback()
+        raise
 
 
 def mark_jobs_posted(conn, internal_hashes: list[str]):
@@ -2143,6 +2339,7 @@ def log_scraper_run(
 async def async_insert_job(pool, job_dict: dict) -> bool:
     """Async PostgreSQL job insert with upsert."""
     internal_hash = _make_hash(job_dict)
+    job_dict["description"] = _normalize_description(job_dict.get("description"))
     keywords = json.dumps(job_dict.get("keywords_matched", []))
     first_seen = datetime.now(timezone.utc).isoformat()
 

@@ -331,6 +331,7 @@ export async function fetchBoardJobs(): Promise<{ jobs: BoardJob[]; status: Boar
   const baseParams = {
     per_page: "200",
     recent_hours: String(BOARD_FRESHNESS_HOURS),
+    include_description: "0",
   };
 
   try {

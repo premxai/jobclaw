@@ -4,7 +4,8 @@ import unittest
 from datetime import datetime, timedelta, timezone
 
 import scripts.database.db_utils as db_utils
-from scripts.database.db_utils import _ensure_sqlite_schema, claim_adaptive_companies_for_scrape
+from scripts.database.db_utils import _ensure_sqlite_schema, claim_adaptive_companies_for_scrape, insert_job
+from scripts.database.db_utils import run_database_maintenance
 from scripts.utils.platform_budgets import apply_platform_budgets, platform_target_cap
 
 
@@ -86,6 +87,108 @@ class ScraperControlPlaneTests(unittest.TestCase):
                 os.environ.pop("JOBCLAW_PLATFORM_BUDGET_SECONDS_WORKDAY", None)
             else:
                 os.environ["JOBCLAW_PLATFORM_BUDGET_SECONDS_WORKDAY"] = old
+
+    def test_insert_job_caps_description_storage(self):
+        old = os.environ.get("JOBCLAW_DESCRIPTION_MAX_CHARS")
+        os.environ["JOBCLAW_DESCRIPTION_MAX_CHARS"] = "24"
+        try:
+            inserted = insert_job(
+                self.conn,
+                {
+                    "job_id": "abc",
+                    "title": "Software Engineer",
+                    "company": "Acme",
+                    "location": "Remote - USA",
+                    "url": "https://boards.greenhouse.io/acme/jobs/abc",
+                    "source_ats": "greenhouse",
+                    "description": "x" * 100,
+                },
+            )
+        finally:
+            if old is None:
+                os.environ.pop("JOBCLAW_DESCRIPTION_MAX_CHARS", None)
+            else:
+                os.environ["JOBCLAW_DESCRIPTION_MAX_CHARS"] = old
+
+        self.assertTrue(inserted)
+        row = self.conn.execute("SELECT description FROM jobs WHERE company = 'Acme'").fetchone()
+        self.assertEqual(len(row["description"]), 24)
+
+    def test_database_maintenance_prunes_low_value_rows_only(self):
+        old_env = {
+            key: os.environ.get(key)
+            for key in [
+                "JOBCLAW_RETENTION_REJECTED_DAYS",
+                "JOBCLAW_RETENTION_NEEDS_REVIEW_DAYS",
+                "JOBCLAW_RETENTION_ARCHIVED_DAYS",
+                "JOBCLAW_RETENTION_INACTIVE_DAYS",
+                "JOBCLAW_DESCRIPTION_CLEAR_AFTER_DAYS",
+            ]
+        }
+        for key in old_env:
+            os.environ[key] = "3"
+
+        old_seen = (self.now - timedelta(days=5)).isoformat()
+        self.conn.executemany(
+            """
+            INSERT INTO jobs (
+                internal_hash, job_id, title, company, location, url, date_posted,
+                source_ats, first_seen, status, keywords_matched, description,
+                is_active, last_seen_at, quality_state
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    "greenhouse::bad::1",
+                    "1",
+                    "Software Engineer Salary in Austin",
+                    "Bad",
+                    "Austin, TX",
+                    "https://example.com/salary",
+                    old_seen,
+                    "greenhouse",
+                    old_seen,
+                    "unposted",
+                    "[]",
+                    "junk",
+                    1,
+                    old_seen,
+                    "rejected",
+                ),
+                (
+                    "greenhouse::good::1",
+                    "1",
+                    "Software Engineer",
+                    "Good",
+                    "Austin, TX",
+                    "https://boards.greenhouse.io/good/jobs/1",
+                    old_seen,
+                    "greenhouse",
+                    old_seen,
+                    "posted",
+                    "[]",
+                    "valuable",
+                    1,
+                    old_seen,
+                    "accepted",
+                ),
+            ],
+        )
+        self.conn.commit()
+
+        try:
+            summary = run_database_maintenance(self.conn)
+        finally:
+            for key, value in old_env.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
+        self.assertGreaterEqual(summary["rejected_deleted"], 1)
+        rows = self.conn.execute("SELECT company, description FROM jobs ORDER BY company").fetchall()
+        self.assertEqual([row["company"] for row in rows], ["Good"])
+        self.assertEqual(rows[0]["description"], "")
 
 
 if __name__ == "__main__":
