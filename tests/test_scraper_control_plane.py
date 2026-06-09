@@ -4,8 +4,11 @@ import unittest
 from datetime import datetime, timedelta, timezone
 
 import scripts.database.db_utils as db_utils
-from scripts.database.db_utils import _ensure_sqlite_schema, claim_adaptive_companies_for_scrape, insert_job
+from api.board_snapshot import build_snapshot_from_rows
+from scripts.database.db_utils import _ensure_sqlite_schema, claim_adaptive_companies_for_scrape
+from scripts.database.db_utils import insert_job, mark_jobs_posted
 from scripts.database.db_utils import run_database_maintenance
+from scripts.ops.workday_sweep_guard import evaluate_workday_guard
 from scripts.utils.platform_budgets import apply_platform_budgets, platform_target_cap
 
 
@@ -189,6 +192,143 @@ class ScraperControlPlaneTests(unittest.TestCase):
         rows = self.conn.execute("SELECT company, description FROM jobs ORDER BY company").fetchall()
         self.assertEqual([row["company"] for row in rows], ["Good"])
         self.assertEqual(rows[0]["description"], "")
+
+    def test_fingerprint_survives_old_inactive_accepted_job_cleanup(self):
+        old_env = {
+            "JOBCLAW_RETENTION_INACTIVE_ACCEPTED_DAYS": os.environ.get(
+                "JOBCLAW_RETENTION_INACTIVE_ACCEPTED_DAYS"
+            ),
+            "JOBCLAW_RETENTION_FINGERPRINT_DAYS": os.environ.get("JOBCLAW_RETENTION_FINGERPRINT_DAYS"),
+        }
+        os.environ["JOBCLAW_RETENTION_INACTIVE_ACCEPTED_DAYS"] = "30"
+        os.environ["JOBCLAW_RETENTION_FINGERPRINT_DAYS"] = "180"
+        old_seen = (self.now - timedelta(days=45)).isoformat()
+        try:
+            insert_job(
+                self.conn,
+                {
+                    "job_id": "posted",
+                    "title": "Software Engineer",
+                    "company": "Keep Fingerprint",
+                    "location": "Remote - USA",
+                    "url": "https://boards.greenhouse.io/keep/jobs/posted",
+                    "source_ats": "greenhouse",
+                    "description": "Useful role",
+                },
+            )
+            internal_hash = "greenhouse::keep fingerprint::posted"
+            mark_jobs_posted(self.conn, [internal_hash])
+            self.conn.execute(
+                """
+                UPDATE jobs
+                SET is_active = 0, first_seen = ?, last_seen_at = ?, quality_state = 'accepted'
+                WHERE internal_hash = ?
+                """,
+                (old_seen, old_seen, internal_hash),
+            )
+            self.conn.execute(
+                "UPDATE job_fingerprints SET last_seen = ? WHERE internal_hash = ?",
+                (old_seen, internal_hash),
+            )
+            self.conn.commit()
+
+            summary = run_database_maintenance(self.conn)
+        finally:
+            for key, value in old_env.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
+        self.assertGreaterEqual(summary["inactive_accepted_deleted"], 1)
+        job_count = self.conn.execute(
+            "SELECT COUNT(*) FROM jobs WHERE internal_hash = ?",
+            (internal_hash,),
+        ).fetchone()[0]
+        fingerprint_count = self.conn.execute(
+            "SELECT COUNT(*) FROM job_fingerprints WHERE internal_hash = ?",
+            (internal_hash,),
+        ).fetchone()[0]
+        self.assertEqual(job_count, 0)
+        self.assertEqual(fingerprint_count, 1)
+
+    def test_board_snapshot_filters_us_jobs_and_counts_categories(self):
+        snapshot = build_snapshot_from_rows(
+            [
+                {
+                    "internal_hash": "greenhouse::acme::1",
+                    "job_id": "1",
+                    "title": "Machine Learning Engineer",
+                    "company": "Acme",
+                    "location": "San Francisco, CA",
+                    "url": "https://boards.greenhouse.io/acme/jobs/1",
+                    "source_ats": "greenhouse",
+                    "first_seen": self.now.isoformat(),
+                    "keywords_matched": '["AI/ML"]',
+                },
+                {
+                    "internal_hash": "lever::beta::2",
+                    "job_id": "2",
+                    "title": "Senior Software Engineer",
+                    "company": "Beta",
+                    "location": "Remote - USA",
+                    "url": "https://jobs.lever.co/beta/2",
+                    "source_ats": "lever",
+                    "first_seen": self.now.isoformat(),
+                    "keywords_matched": '["SWE"]',
+                },
+                {
+                    "internal_hash": "lever::foreign::3",
+                    "job_id": "3",
+                    "title": "Data Scientist",
+                    "company": "Foreign",
+                    "location": "London, United Kingdom",
+                    "url": "https://jobs.lever.co/foreign/3",
+                    "source_ats": "lever",
+                    "first_seen": self.now.isoformat(),
+                    "keywords_matched": '["Data Science"]',
+                },
+            ],
+            freshness_hours=48,
+            max_jobs=10,
+        )
+
+        self.assertEqual(snapshot["total"], 2)
+        self.assertEqual(snapshot["counts"]["All Roles"], 2)
+        self.assertEqual(snapshot["counts"]["AI/ML"], 1)
+        self.assertEqual(snapshot["counts"]["SWE"], 1)
+        self.assertNotIn("description", snapshot["jobs"][0])
+
+    def test_workday_guard_blocks_large_backlog_and_allows_force(self):
+        thresholds = {
+            "max_total_jobs": 50000,
+            "max_accepted_unposted": 1000,
+            "max_recent_bad_runs": 2,
+        }
+        should_run, reasons = evaluate_workday_guard(
+            {
+                "total_jobs": 10000,
+                "accepted_unposted": 1200,
+                "active_workday_leases": 0,
+                "recent_workday_statuses": ["success"],
+            },
+            thresholds,
+        )
+        forced, forced_reasons = evaluate_workday_guard(
+            {
+                "total_jobs": 999999,
+                "accepted_unposted": 999999,
+                "active_workday_leases": 9,
+                "recent_workday_statuses": ["failed", "degraded"],
+            },
+            thresholds,
+            force=True,
+        )
+
+        self.assertFalse(should_run)
+        self.assertIn("accepted_unposted_backlog_high", reasons)
+        self.assertTrue(forced)
+        self.assertEqual(forced_reasons, ["forced"])
 
 
 if __name__ == "__main__":

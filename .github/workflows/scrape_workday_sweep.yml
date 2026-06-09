@@ -1,12 +1,11 @@
 name: "🌙 Workday Sweep — Long-tail Coverage"
 
 # ┌────────────────────────────────────────────────────────────────────┐
-# │  MANUAL WORKDAY SWEEP — drains the long tail of ~21k Workday        │
-# │  targets when DB capacity is available.                             │
+# │  GATED WORKDAY SWEEP — weekly long-tail recovery for Workday        │
+# │  targets when DB capacity and scraper health are safe.              │
 # │                                                                     │
-# │  Runs UNSHARDED + Workday-only with a long timeout and a large      │
-# │  per-platform time budget. Keep manual until Postgres quota/cost     │
-# │  can handle long-tail DB churn without starving the API/website.    │
+# │  Scheduled runs use conservative limits. Manual force can bypass    │
+# │  guardrails for recovery, with larger target and budget inputs.     │
 # │  The aging-fairness ordering (JOBCLAW_AGING_DAYS) means each sweep   │
 # │  claims the *oldest-overdue* Workday targets first, so coverage      │
 # │  rotates predictably instead of starving low-priority slugs.        │
@@ -16,7 +15,23 @@ name: "🌙 Workday Sweep — Long-tail Coverage"
 # └────────────────────────────────────────────────────────────────────┘
 
 on:
-  workflow_dispatch: {}
+  schedule:
+    - cron: "23 9 * * 0"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Bypass guardrails for manual recovery"
+        required: false
+        default: false
+        type: boolean
+      target_limit:
+        description: "Manual target limit override"
+        required: false
+        default: "5000"
+      budget_seconds:
+        description: "Manual Workday budget override"
+        required: false
+        default: "3000"
 
 permissions:
   contents: write              # Needed to push dedup file back to repo
@@ -57,16 +72,33 @@ jobs:
           echo "Skipping Workday sweep because production DB is unavailable."
           echo "Reason: ${{ steps.db-preflight.outputs.reason }}"
 
-      - name: Sweep Workday (unsharded, oldest-overdue first)
+      - name: Check Workday sweep guardrails
+        id: workday_guard
         if: steps.db-preflight.outputs.db_ok == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JOBCLAW_WORKDAY_SWEEP_FORCE: ${{ github.event.inputs.force || 'false' }}
+          JOBCLAW_WORKDAY_SWEEP_MAX_ACCEPTED_UNPOSTED: "1000"
+          JOBCLAW_WORKDAY_SWEEP_MAX_TOTAL_JOBS: "50000"
+          JOBCLAW_WORKDAY_SWEEP_MAX_RECENT_BAD_RUNS: "2"
+        run: python scripts/ops/workday_sweep_guard.py
+
+      - name: Skip while Workday guardrails are not safe
+        if: steps.db-preflight.outputs.db_ok == 'true' && steps.workday_guard.outputs.should_run != 'true'
+        run: |
+          echo "Skipping Workday sweep because guardrails blocked it."
+          echo "Reason: ${{ steps.workday_guard.outputs.reason }}"
+
+      - name: Sweep Workday (unsharded, oldest-overdue first)
+        if: steps.db-preflight.outputs.db_ok == 'true' && steps.workday_guard.outputs.should_run == 'true'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JOBCLAW_QUEUE_MODE: "active"
           # Lease must outlast the long run so claimed targets aren't re-grabbed mid-sweep.
           JOBCLAW_QUEUE_LEASE_SECONDS: "3300"
-          # Spend ~50 min of the 55-min budget purely on Workday.
-          JOBCLAW_PLATFORM_BUDGET_SECONDS_WORKDAY: "3000"
-          JOBCLAW_MEDIUM_TARGET_LIMIT: "5000"
+          # Scheduled weekly uses the safe defaults; manual force can request a larger sweep.
+          JOBCLAW_PLATFORM_BUDGET_SECONDS_WORKDAY: ${{ github.event.inputs.budget_seconds || '1200' }}
+          JOBCLAW_MEDIUM_TARGET_LIMIT: ${{ github.event.inputs.target_limit || '1200' }}
           JOBCLAW_DEGRADED_FAILS_WORKFLOW: "0"
           JOBCLAW_DIRECT_SOURCE_ONLY: "1"
           JOBCLAW_BRAVE_ENRICHMENT_ONLY: "1"

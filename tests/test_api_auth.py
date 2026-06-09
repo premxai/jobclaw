@@ -24,6 +24,10 @@ if HAVE_DEPS:
         def jobs():
             return {"ok": True}
 
+        @app.get("/board/jobs.json")
+        def board_jobs():
+            return {"ok": True}
+
         @app.post("/applications")
         def create_app():
             return {"ok": True}
@@ -51,6 +55,7 @@ class AuthPostureTests(unittest.TestCase):
     # --- No key configured (dev / misconfigured prod) ---
     def test_no_key_public_read_allowed(self):
         self.assertEqual(self.client.get("/jobs").status_code, 200)
+        self.assertEqual(self.client.get("/board/jobs.json").status_code, 200)
 
     def test_no_key_write_fails_closed(self):
         # Writes must be disabled (503), never silently open.
@@ -61,6 +66,7 @@ class AuthPostureTests(unittest.TestCase):
     def test_key_set_public_read_allowed_without_header(self):
         os.environ["JOBCLAW_API_KEY"] = "secret"
         self.assertEqual(self.client.get("/jobs").status_code, 200)
+        self.assertEqual(self.client.get("/board/jobs.json").status_code, 200)
 
     def test_key_set_write_requires_valid_key(self):
         os.environ["JOBCLAW_API_KEY"] = "secret"

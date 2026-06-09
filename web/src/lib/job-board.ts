@@ -47,6 +47,25 @@ interface JobsResponse {
   has_more?: boolean;
 }
 
+interface BoardSnapshotJob {
+  id: string;
+  title: string;
+  category: BoardJobCategory;
+  company: string;
+  location: string;
+  applicationUrl: string;
+  postedAt: string;
+  source: string;
+}
+
+interface BoardSnapshotResponse {
+  generated_at?: string;
+  freshness_hours?: number;
+  total?: number;
+  counts?: Partial<Record<BoardCategory, number>>;
+  jobs?: BoardSnapshotJob[];
+}
+
 interface RunsResponseItem {
   run_at?: string;
   scraper?: string;
@@ -278,6 +297,25 @@ export function mapApiJobToBoardJob(job: ApiJob, index: number): BoardJob {
   };
 }
 
+function mapSnapshotJobToBoardJob(job: BoardSnapshotJob, index: number): BoardJob {
+  const category: BoardJobCategory = ["AI/ML", "SWE", "Data", "Other"].includes(job.category)
+    ? job.category
+    : "Other";
+
+  return {
+    id: job.id || `snapshot-job-${index}`,
+    title: job.title || "Untitled Role",
+    category,
+    description: companyLabel(job.company, job.source || "Company Careers"),
+    location: cleanLocation(job.location),
+    isHot: false,
+    applicationUrl: job.applicationUrl || "#",
+    postedAt: job.postedAt || new Date().toISOString(),
+    source: job.source || "Company Careers",
+    company: job.company,
+  };
+}
+
 async function fetchJson<T>(path: string): Promise<T> {
   try {
     const localResponse = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
@@ -307,6 +345,13 @@ async function fetchJobsWithParams(params: URLSearchParams): Promise<BoardJob[]>
   return jobs;
 }
 
+async function fetchBoardSnapshotJobs(): Promise<BoardJob[]> {
+  const data = await fetchJson<BoardSnapshotResponse>("/board/jobs.json");
+  return (data.jobs || [])
+    .map(mapSnapshotJobToBoardJob)
+    .filter((job) => job.applicationUrl !== "#");
+}
+
 const NON_US_LOCATION_RE =
   /\b(canada|india|united kingdom|uk|england|scotland|wales|ireland|germany|france|spain|italy|netherlands|sweden|poland|portugal|australia|new zealand|singapore|japan|china|brazil|mexico|argentina|colombia|europe|emea|apac|latam)\b/i;
 const US_LOCATION_RE =
@@ -333,6 +378,13 @@ export async function fetchBoardJobs(): Promise<{ jobs: BoardJob[]; status: Boar
     recent_hours: String(BOARD_FRESHNESS_HOURS),
     include_description: "0",
   };
+
+  try {
+    const snapshotJobs = await fetchBoardSnapshotJobs();
+    return { jobs: snapshotJobs, status: snapshotJobs.length ? "real" : "empty" };
+  } catch {
+    // Fall back to the older DB-backed /jobs path below.
+  }
 
   try {
     const acceptedParams = new URLSearchParams({

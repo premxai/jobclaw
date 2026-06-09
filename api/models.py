@@ -43,6 +43,29 @@ class JobListResponse(BaseModel):
     has_more: bool
 
 
+class BoardJobResponse(BaseModel):
+    """Lean public board job row."""
+
+    id: str
+    title: str
+    category: str
+    company: str
+    location: str
+    applicationUrl: str
+    postedAt: str
+    source: str
+
+
+class BoardSnapshotResponse(BaseModel):
+    """Cached public board snapshot."""
+
+    generated_at: str
+    freshness_hours: int
+    total: int
+    counts: dict[str, int]
+    jobs: list[BoardJobResponse]
+
+
 class CompanyResponse(BaseModel):
     """A company with job count."""
 

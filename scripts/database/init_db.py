@@ -64,6 +64,18 @@ def init_db():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_is_active ON jobs(is_active)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_jobs_quality_state ON jobs(quality_state)")
 
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS job_fingerprints (
+        internal_hash TEXT PRIMARY KEY,
+        first_seen TEXT NOT NULL,
+        last_seen TEXT NOT NULL,
+        posted_at TEXT,
+        source_ats TEXT DEFAULT ''
+    )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_job_fingerprints_last_seen ON job_fingerprints(last_seen)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_job_fingerprints_posted_at ON job_fingerprints(posted_at)")
+
     # Run schema migrations for existing databases
     _migrate_schema(conn)
 
@@ -172,6 +184,19 @@ def _migrate_schema(conn):
             except Exception as e:
                 logging.warning(f"Migration skipped for '{col_name}': {e}")
 
+    conn.commit()
+
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS job_fingerprints (
+        internal_hash TEXT PRIMARY KEY,
+        first_seen TEXT NOT NULL,
+        last_seen TEXT NOT NULL,
+        posted_at TEXT,
+        source_ats TEXT DEFAULT ''
+    )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_job_fingerprints_last_seen ON job_fingerprints(last_seen)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_job_fingerprints_posted_at ON job_fingerprints(posted_at)")
     conn.commit()
 
     # Add failure-tracking columns to companies table if missing

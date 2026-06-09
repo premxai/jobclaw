@@ -25,6 +25,7 @@ from fastapi.responses import JSONResponse
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
+from api.board_snapshot import board_snapshot_ttl_seconds, get_board_snapshot
 from api.database import (
     _is_pg,
     _ph,
@@ -37,6 +38,7 @@ from api.database import (
     validate_database_url,
 )
 from api.models import (
+    BoardSnapshotResponse,
     CompanyResponse,
     HealthResponse,
     JobListResponse,
@@ -201,6 +203,12 @@ def _set_cache_headers(response: Response) -> None:
         response.headers["Cache-Control"] = f"public, max-age={_READ_CACHE_TTL}"
 
 
+def _set_board_snapshot_headers(response: Response) -> None:
+    ttl = board_snapshot_ttl_seconds()
+    if ttl > 0:
+        response.headers["Cache-Control"] = f"public, max-age={ttl}, stale-while-revalidate={ttl * 2}"
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # STATIC DASHBOARD ROUTE
 # ═══════════════════════════════════════════════════════════════════════
@@ -354,6 +362,13 @@ async def deep_health_check():
 # ═══════════════════════════════════════════════════════════════════════
 # JOBS
 # ═══════════════════════════════════════════════════════════════════════
+
+
+@app.get("/board/jobs.json", response_model=BoardSnapshotResponse, tags=["Board"])
+async def board_jobs_snapshot(response: Response):
+    """Small cached public payload for the website home board."""
+    _set_board_snapshot_headers(response)
+    return BoardSnapshotResponse(**get_board_snapshot())
 
 
 @app.get("/jobs", response_model=JobListResponse, tags=["Jobs"])

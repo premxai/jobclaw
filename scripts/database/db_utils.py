@@ -349,6 +349,17 @@ def _ensure_postgres_schema(conn):
         cursor.execute(col_def)
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_jobs_quality_state ON jobs(quality_state)")
     cursor.execute("""
+    CREATE TABLE IF NOT EXISTS job_fingerprints (
+        internal_hash TEXT PRIMARY KEY,
+        first_seen TEXT NOT NULL,
+        last_seen TEXT NOT NULL,
+        posted_at TEXT,
+        source_ats TEXT DEFAULT ''
+    )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_job_fingerprints_last_seen ON job_fingerprints(last_seen)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_job_fingerprints_posted_at ON job_fingerprints(posted_at)")
+    cursor.execute("""
     DO $$
     BEGIN
         IF EXISTS (
@@ -555,6 +566,17 @@ def _ensure_sqlite_schema(conn):
 
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_quality ON jobs(quality_score)")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_jobs_quality_state ON jobs(quality_state)")
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS job_fingerprints (
+        internal_hash TEXT PRIMARY KEY,
+        first_seen TEXT NOT NULL,
+        last_seen TEXT NOT NULL,
+        posted_at TEXT,
+        source_ats TEXT DEFAULT ''
+    )
+    """)
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_job_fingerprints_last_seen ON job_fingerprints(last_seen)")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_job_fingerprints_posted_at ON job_fingerprints(posted_at)")
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS runs (
@@ -837,6 +859,34 @@ def _make_hash(job_dict: dict) -> str:
     return f"{source_ats}::{company_norm}::{job_id_norm}"
 
 
+def _upsert_job_fingerprint(cursor, internal_hash: str, source_ats: str, seen_at: str, posted_at: str | None = None):
+    """Track long-lived dedup state without keeping full job rows forever."""
+    if is_postgres():
+        cursor.execute(
+            """
+            INSERT INTO job_fingerprints (internal_hash, first_seen, last_seen, posted_at, source_ats)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (internal_hash) DO UPDATE SET
+                last_seen = EXCLUDED.last_seen,
+                posted_at = COALESCE(EXCLUDED.posted_at, job_fingerprints.posted_at),
+                source_ats = COALESCE(NULLIF(EXCLUDED.source_ats, ''), job_fingerprints.source_ats)
+            """,
+            (internal_hash, seen_at, seen_at, posted_at, source_ats or ""),
+        )
+    else:
+        cursor.execute(
+            """
+            INSERT INTO job_fingerprints (internal_hash, first_seen, last_seen, posted_at, source_ats)
+            VALUES (?, ?, ?, ?, ?)
+            ON CONFLICT(internal_hash) DO UPDATE SET
+                last_seen = excluded.last_seen,
+                posted_at = COALESCE(excluded.posted_at, job_fingerprints.posted_at),
+                source_ats = COALESCE(NULLIF(excluded.source_ats, ''), job_fingerprints.source_ats)
+            """,
+            (internal_hash, seen_at, seen_at, posted_at, source_ats or ""),
+        )
+
+
 def insert_job(conn, job_dict: dict) -> bool:
     """
     Insert a job — works with both SQLite and PostgreSQL.
@@ -916,6 +966,7 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
                 job_dict["source_confidence"],
             ),
         )
+        _upsert_job_fingerprint(cursor, internal_hash, job_dict.get("source_ats", ""), first_seen)
         conn.commit()
         return True
     except sqlite3.IntegrityError:
@@ -969,6 +1020,7 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
                         internal_hash,
                     ),
                 )
+            _upsert_job_fingerprint(cursor, internal_hash, job_dict.get("source_ats", ""), first_seen)
             conn.commit()
         except Exception:
             pass
@@ -1044,6 +1096,7 @@ def _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
             ),
         )
         result = cursor.fetchone()
+        _upsert_job_fingerprint(cursor, internal_hash, job_dict.get("source_ats", ""), first_seen)
         conn.commit()
         return result[0] if result else False
     except Exception as e:
@@ -1230,6 +1283,8 @@ def run_database_maintenance(conn) -> dict:
     needs_review_days = max(1, _env_int("JOBCLAW_RETENTION_NEEDS_REVIEW_DAYS", 3))
     archived_days = max(1, _env_int("JOBCLAW_RETENTION_ARCHIVED_DAYS", 7))
     inactive_days = max(1, _env_int("JOBCLAW_RETENTION_INACTIVE_DAYS", 7))
+    inactive_accepted_days = max(1, _env_int("JOBCLAW_RETENTION_INACTIVE_ACCEPTED_DAYS", 30))
+    fingerprint_days = max(1, _env_int("JOBCLAW_RETENTION_FINGERPRINT_DAYS", 180))
     keep_runs = max(50, _env_int("JOBCLAW_RETENTION_SCRAPER_RUNS", 500))
 
     try:
@@ -1308,12 +1363,34 @@ def run_database_maintenance(conn) -> dict:
                 """
                 DELETE FROM jobs
                 WHERE is_active = FALSE
+                  AND COALESCE(quality_state, 'needs_review') = 'accepted'
+                  AND COALESCE(NULLIF(last_seen_at, ''), first_seen)::timestamptz
+                      < NOW() - (%s * INTERVAL '1 day')
+                """,
+                (inactive_accepted_days,),
+            )
+            summary["inactive_accepted_deleted"] = max(cursor.rowcount, 0)
+
+            cursor.execute(
+                """
+                DELETE FROM jobs
+                WHERE is_active = FALSE
+                  AND COALESCE(quality_state, 'needs_review') <> 'accepted'
                   AND COALESCE(NULLIF(last_seen_at, ''), first_seen)::timestamptz
                       < NOW() - (%s * INTERVAL '1 day')
                 """,
                 (inactive_days,),
             )
             summary["inactive_deleted"] = max(cursor.rowcount, 0)
+
+            cursor.execute(
+                """
+                DELETE FROM job_fingerprints
+                WHERE last_seen::timestamptz < NOW() - (%s * INTERVAL '1 day')
+                """,
+                (fingerprint_days,),
+            )
+            summary["fingerprints_deleted"] = max(cursor.rowcount, 0)
         else:
             cursor.execute(
                 """
@@ -1364,11 +1441,32 @@ def run_database_maintenance(conn) -> dict:
                 """
                 DELETE FROM jobs
                 WHERE is_active = 0
+                  AND COALESCE(quality_state, 'needs_review') = 'accepted'
+                  AND datetime(COALESCE(NULLIF(last_seen_at, ''), first_seen)) < datetime('now', ?)
+                """,
+                (f"-{inactive_accepted_days} days",),
+            )
+            summary["inactive_accepted_deleted"] = max(cursor.rowcount, 0)
+
+            cursor.execute(
+                """
+                DELETE FROM jobs
+                WHERE is_active = 0
+                  AND COALESCE(quality_state, 'needs_review') <> 'accepted'
                   AND datetime(COALESCE(NULLIF(last_seen_at, ''), first_seen)) < datetime('now', ?)
                 """,
                 (f"-{inactive_days} days",),
             )
             summary["inactive_deleted"] = max(cursor.rowcount, 0)
+
+            cursor.execute(
+                """
+                DELETE FROM job_fingerprints
+                WHERE datetime(last_seen) < datetime('now', ?)
+                """,
+                (f"-{fingerprint_days} days",),
+            )
+            summary["fingerprints_deleted"] = max(cursor.rowcount, 0)
 
         conn.commit()
 
@@ -1397,6 +1495,9 @@ def mark_jobs_posted(conn, internal_hashes: list[str]):
     placeholder = "%s" if is_postgres() else "?"
     qs = ",".join(placeholder for _ in internal_hashes)
     cursor.execute(f"UPDATE jobs SET status = 'posted' WHERE internal_hash IN ({qs})", internal_hashes)
+    posted_at = datetime.now(timezone.utc).isoformat()
+    for internal_hash in internal_hashes:
+        _upsert_job_fingerprint(cursor, internal_hash, "", posted_at, posted_at=posted_at)
     conn.commit()
 
 
@@ -2391,6 +2492,19 @@ async def async_insert_job(pool, job_dict: dict) -> bool:
             tech_stack_json,
             first_seen,
             compute_quality_score(job_dict),
+        )
+        await conn.execute(
+            """
+            INSERT INTO job_fingerprints (internal_hash, first_seen, last_seen, posted_at, source_ats)
+            VALUES ($1, $2, $3, NULL, $4)
+            ON CONFLICT (internal_hash) DO UPDATE SET
+                last_seen = EXCLUDED.last_seen,
+                source_ats = COALESCE(NULLIF(EXCLUDED.source_ats, ''), job_fingerprints.source_ats)
+            """,
+            internal_hash,
+            first_seen,
+            first_seen,
+            job_dict.get("source_ats", "") or "",
         )
         return result["is_new"] if result else False
 

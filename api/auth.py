@@ -5,7 +5,7 @@ Header-based auth: clients send `X-API-Key: <key>` header. The key is stored in
 the JOBCLAW_API_KEY environment variable.
 
 Posture (see plan: "public reads, locked writes"):
-  - GET on public read prefixes (/jobs, /stats, /companies) is always allowed so the
+  - GET on public read prefixes (/jobs, /board, /stats, /companies) is always allowed so the
     website works without a key.
   - Mutating / admin routes (/scraper, /admin, /applications, /resume) and any other
     non-GET request ALWAYS require a valid key. If no key is configured, these routes
@@ -30,7 +30,7 @@ from starlette.responses import JSONResponse
 PUBLIC_ROUTES = {"/", "/health", "/health/deep", "/docs", "/redoc", "/openapi.json"}
 PUBLIC_PREFIXES = ("/docs", "/redoc", "/web")
 # GETs under these prefixes are public so the website can read without a key.
-PUBLIC_GET_PREFIXES = ("/jobs", "/stats", "/companies")
+PUBLIC_GET_PREFIXES = ("/jobs", "/board", "/stats", "/companies")
 # Anything under these prefixes is a mutation/admin action and always needs a key.
 PROTECTED_PREFIXES = ("/scraper", "/admin", "/applications", "/resume")
 # Read-only HTTP methods.
