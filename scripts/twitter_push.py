@@ -40,11 +40,12 @@ from scripts.utils.logger import _log
 TWEETED_FILE = PROJECT_ROOT / "data" / "tweeted_hashes.json"
 TWEET_MAX_CHARS = 280
 URL_WEIGHT = 23  # X counts any link as 23 chars (t.co wrapping)
+DEFAULT_HASHTAGS = "#hiring #techjobs"
 
 CATEGORY_EMOJIS = {
     "AI/ML": "🤖",
     "SWE": "💻",
-    "Data": "📊",
+    "Data": "🛠",
     "New Grad": "🎓",
     "Product": "📦",
     "Research": "🔬",
@@ -122,11 +123,21 @@ def get_recent_accepted_jobs(window_hours: int) -> list[dict]:
 
 
 # ─── digest formatting (pure, unit-tested) ─────────────────────────────
+# X's weighted character count: most characters = 1, but emoji/CJK = 2. Ranges that
+# count as 1 (from twitter-text's default config); everything else counts as 2.
+_SINGLE_WEIGHT_RANGES = ((0x0, 0x10FF), (0x2000, 0x200D), (0x2010, 0x201F), (0x2032, 0x2037))
+
+
+def _weighted_len(text: str) -> int:
+    return sum(1 if any(lo <= ord(c) <= hi for lo, hi in _SINGLE_WEIGHT_RANGES) else 2 for c in text)
+
+
 def _tweet_length(text: str, url: str = "") -> int:
-    """Approximate X's character count (links always count as 23)."""
+    """X-weighted character count: emoji count as 2, and any URL counts as 23 (t.co)."""
+    n = _weighted_len(text)
     if url and url in text:
-        return len(text) - len(url) + URL_WEIGHT
-    return len(text)
+        n = n - _weighted_len(url) + URL_WEIGHT
+    return n
 
 
 def _truncate(text: str, limit: int) -> str:
@@ -138,36 +149,34 @@ def build_digest(
     jobs: list[dict],
     web_url: str,
     window_hours: int = 3,
-    max_top: int = 2,
+    max_top: int = 0,
     include_url: bool = False,
     max_chars: int = TWEET_MAX_CHARS,
+    hashtags: str = DEFAULT_HASHTAGS,
 ) -> str:
     """Build a digest tweet from the given jobs, trimmed to fit max_chars.
 
-    Format (auto-trimmed when over the limit — categories are kept first, then picks,
-    then the tagline are dropped):
+    Format (categories are dropped from the bottom if it would overflow):
 
-        Fresh US tech roles from the last 3 hours ✨
+        Fresh US tech roles · last 3h ✨
 
-        1,719 new roles added:
-        💻 SWE: 1,268
-        🤖 AI/ML: 119
+        1,719 new roles
+        💻 SWE 1,268
+        🤖 AI/ML 119
         ...
 
-        A few fresh picks:
-        • Senior Systems Engineer @ Accelint Holdings LLC
+        🔗 Full list + direct links in bio
+        #hiring #techjobs
 
-        Clean list, direct links, less noise.
-        Full list in bio.
-
+    max_top>0 inserts an "⭐ title @ company" pick line per role (off by default).
     include_url=False (default) omits the link — X charges $0.20 for a post with a URL
     vs $0.015 plain (~13x); keep the link in the profile bio. max_chars defaults to 280;
     raise it (JOBCLAW_TWITTER_LONG) only for X Premium accounts that allow long posts.
     """
     link = f"{web_url.rstrip('/')}/jobs"
     n = len(jobs)
-    header = f"Fresh US tech roles from the last {window_hours} hours ✨"
-    count_line = f"{n:,} new role{'s' if n != 1 else ''} added:"
+    header = f"Fresh US tech roles · last {window_hours}h ✨"
+    count_line = f"{n:,} new role{'s' if n != 1 else ''}"
 
     counts: dict[str, int] = {}
     for j in jobs:
@@ -175,35 +184,30 @@ def build_digest(
         if cat and cat != "Uncategorized":
             counts[cat] = counts.get(cat, 0) + 1
     ranked = sorted(counts.items(), key=lambda kv: kv[1], reverse=True)
-    cat_lines = [f"{CATEGORY_EMOJIS.get(cat, '•')} {cat}: {cnt:,}" for cat, cnt in ranked]
+    cat_lines = [f"{CATEGORY_EMOJIS.get(cat, '•')} {cat} {cnt:,}" for cat, cnt in ranked]
 
     top = [j for j in jobs if (j.get("title") and j.get("company"))][:max_top]
-    pick_lines = [f"• {_truncate(j['title'], 45)} @ {_truncate(j['company'], 35)}" for j in top]
+    pick_lines = [f"⭐ {_truncate(j['title'], 40)} @ {_truncate(j['company'], 30)}" for j in top]
 
-    cta = link if include_url else "Full list in bio."
+    cta = link if include_url else "🔗 Full list + direct links in bio"
     measure_url = link if include_url else ""
 
-    def assemble(n_cats: int, n_picks: int, tagline: bool) -> str:
+    def assemble(n_cats: int, n_picks: int) -> str:
         parts = [header, "", count_line, *cat_lines[:n_cats]]
         if n_picks and pick_lines:
-            parts += ["", "A few fresh picks:", *pick_lines[:n_picks]]
-        parts.append("")
-        if tagline:
-            parts.append("Clean list, direct links, less noise.")
-        parts.append(cta)
+            parts += ["", *pick_lines[:n_picks]]
+        parts += ["", cta, hashtags]
         return "\n".join(parts)
 
-    # Try richest first; for each category count drop picks then the tagline before
-    # reducing categories (the breakdown is the core content).
+    # Try richest first; drop picks before reducing categories (the breakdown is core).
     all_cats = len(cat_lines)
     for n_cats in range(max(all_cats, 1), 0, -1):
-        for n_picks in (max_top, 1, 0):
-            for tagline in (True, False):
-                text = assemble(n_cats, n_picks, tagline)
-                if _tweet_length(text, measure_url) <= max_chars:
-                    return text
-    # Minimal fallback (header + count + top categories + CTA).
-    return assemble(min(3, all_cats), 0, False)
+        for n_picks in (max_top, 0):
+            text = assemble(n_cats, n_picks)
+            if _tweet_length(text, measure_url) <= max_chars:
+                return text
+    # Minimal fallback (header + count + top categories + CTA + tags).
+    return assemble(min(3, all_cats), 0)
 
 
 def _post_tweet(text: str, creds: dict) -> bool:
