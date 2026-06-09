@@ -15,14 +15,25 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "JobClaw — Track Every Tech Job. Automatically.",
+  metadataBase: new URL("https://norinote.xyz"),
+  title: {
+    default: "norinote — Fresh tech jobs, less noise",
+    template: "%s · norinote",
+  },
   description:
-    "11,800+ companies monitored 24/7. Find AI/ML, SWE, Data, and New Grad jobs from Greenhouse, Lever, Workday, LinkedIn, and more.",
-  keywords: ["jobs", "tech jobs", "AI jobs", "software engineer", "new grad", "job board"],
+    "Fresh US tech roles from thousands of companies, updated every few hours. AI/ML, SWE, Data, Product, and New Grad — direct links, less noise.",
+  keywords: ["norinote", "jobs", "tech jobs", "AI jobs", "software engineer", "new grad", "job board"],
   openGraph: {
-    title: "JobClaw — Track Every Tech Job",
-    description: "11,800+ companies monitored. Updated every hour.",
+    title: "norinote — Fresh tech jobs, less noise",
+    description: "Thousands of companies monitored. Fresh roles every few hours — direct links, less noise.",
     type: "website",
+    url: "https://norinote.xyz",
+    siteName: "norinote",
+  },
+  twitter: {
+    card: "summary",
+    title: "norinote — Fresh tech jobs, less noise",
+    description: "Fresh US tech roles every few hours. Direct links, less noise.",
   },
 };
 
