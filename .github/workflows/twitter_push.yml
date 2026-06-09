@@ -10,9 +10,11 @@ name: "🐦 Twitter Digest — New Roles Every 3h"
 # └──────────────────────────────────────────────────────────────────────┘
 
 on:
-  schedule:
-    - cron: "20 */3 * * *"     # every 3 hours at :20, offset from other jobs
-  workflow_dispatch:           # Manual trigger for testing
+  # Automation PAUSED — schedule disabled. Re-enable by uncommenting the cron below
+  # and setting JOBCLAW_TWITTER_DRY_RUN back to "0".
+  # schedule:
+  #   - cron: "20 */3 * * *"     # every 3 hours at :20, offset from other jobs
+  workflow_dispatch:           # Manual trigger only
 
 permissions:
   contents: write              # to commit the tweeted-hash dedup file
@@ -53,8 +55,8 @@ jobs:
         if: steps.db-preflight.outputs.db_ok == 'true'
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          # LIVE: posts a real digest tweet every 3h. Set back to "1" to pause.
-          JOBCLAW_TWITTER_DRY_RUN: "0"
+          # PAUSED: dry-run so even a manual run won't post. Set "0" to go live again.
+          JOBCLAW_TWITTER_DRY_RUN: "1"
           JOBCLAW_TWITTER_WINDOW_HOURS: "3"
           # Keep "0": a post WITH a URL costs X $0.20 vs $0.015 plain (~13x). Put the
           # job-board link in the X profile bio instead. Set "1" only to accept the cost.
