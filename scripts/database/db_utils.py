@@ -1234,9 +1234,7 @@ def get_next_shard_from_db(conn, scraper_name: str, total_shards: int = 4) -> in
                 "ON CONFLICT(scraper) DO UPDATE SET shard_cursor = shard_cursor + 1",
                 (scraper_name,),
             )
-            cursor.execute(
-                f"SELECT shard_cursor FROM scraper_state WHERE scraper = {placeholder}", (scraper_name,)
-            )
+            cursor.execute(f"SELECT shard_cursor FROM scraper_state WHERE scraper = {placeholder}", (scraper_name,))
             row = cursor.fetchone()
         conn.commit()
         # The counter now reflects the count *including* this claim; subtract 1 so the
