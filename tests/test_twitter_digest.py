@@ -23,18 +23,25 @@ class TweetLengthTests(unittest.TestCase):
 
 
 class BuildDigestTests(unittest.TestCase):
-    def test_basic_digest_fits_and_includes_counts(self):
+    def test_basic_digest_default_has_no_url(self):
         jobs = (
             [_job(f"SWE {i}", f"Co{i}", "SWE", 90 - i) for i in range(7)]
             + [_job(f"ML {i}", f"AiCo{i}", "AI/ML", 80 - i) for i in range(5)]
             + [_job(f"Data {i}", f"DCo{i}", "Data", 50) for i in range(3)]
         )
         text = build_digest(jobs, WEB, window_hours=3)
-        self.assertLessEqual(_tweet_length(text, LINK), TWEET_MAX_CHARS)
+        self.assertLessEqual(_tweet_length(text), TWEET_MAX_CHARS)
         self.assertIn("15 new US tech roles (last 3h)", text)
         self.assertIn("7 SWE", text)
         self.assertIn("5 AI/ML", text)
+        # Default omits the URL to avoid X's $0.20 link surcharge.
+        self.assertNotIn("http", text)
+        self.assertIn("bio", text)
+
+    def test_includes_url_when_enabled(self):
+        text = build_digest([_job("Staff Eng", "Stripe", "SWE", 99)], WEB, include_url=True)
         self.assertIn(LINK, text)
+        self.assertLessEqual(_tweet_length(text, LINK), TWEET_MAX_CHARS)
 
     def test_singular_role(self):
         text = build_digest([_job("Staff Eng", "Stripe", "SWE", 99)], WEB)
@@ -49,9 +56,10 @@ class BuildDigestTests(unittest.TestCase):
         long_title = "Principal Distributed Systems Engineer " * 3
         long_co = "A Very Long Company Name Inc " * 2
         jobs = [_job(long_title, long_co, "SWE", 50) for _ in range(40)]
-        text = build_digest(jobs, WEB)
-        self.assertLessEqual(_tweet_length(text, LINK), TWEET_MAX_CHARS)
-        self.assertIn(LINK, text)
+        self.assertLessEqual(_tweet_length(build_digest(jobs, WEB)), TWEET_MAX_CHARS)
+        with_url = build_digest(jobs, WEB, include_url=True)
+        self.assertLessEqual(_tweet_length(with_url, LINK), TWEET_MAX_CHARS)
+        self.assertIn(LINK, with_url)
 
     def test_uncategorized_excluded_from_counts(self):
         jobs = [_job("X", "Y", "SWE", 1), {"title": "Z", "company": "W", "keywords_matched": [], "quality_score": 1}]

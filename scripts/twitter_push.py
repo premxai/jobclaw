@@ -134,8 +134,15 @@ def _truncate(text: str, limit: int) -> str:
     return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
 
 
-def build_digest(jobs: list[dict], web_url: str, window_hours: int = 3, max_top: int = 2) -> str:
-    """Build a single ≤280-char digest tweet from the given jobs."""
+def build_digest(
+    jobs: list[dict], web_url: str, window_hours: int = 3, max_top: int = 2, include_url: bool = False
+) -> str:
+    """Build a single ≤280-char digest tweet from the given jobs.
+
+    include_url=False (default) omits the link, because X charges $0.20 for a post
+    containing a URL vs $0.015 for a plain post (~13x). Put the job-board link in the
+    X profile bio instead. Set include_url=True only if you accept the higher cost.
+    """
     link = f"{web_url.rstrip('/')}/jobs"
     n = len(jobs)
     header = f"🆕 {n} new US tech role{'s' if n != 1 else ''} (last {window_hours}h)"
@@ -151,7 +158,10 @@ def build_digest(jobs: list[dict], web_url: str, window_hours: int = 3, max_top:
 
     top = [j for j in jobs if (j.get("title") and j.get("company"))][:max_top]
     top_line = "Top: " + "; ".join(f"{_truncate(j['title'], 38)} @ {_truncate(j['company'], 24)}" for j in top)
-    tail = f"{link} #techjobs #hiring"
+    # No bare domain in the no-URL tail — X auto-links domains and would charge the
+    # $0.20 "post with URL" rate. Point people to the bio link instead.
+    tail = f"{link} #techjobs #hiring" if include_url else "🔗 Full list in bio · #techjobs #hiring"
+    measure_url = link if include_url else ""
 
     # Assemble, dropping optional lines until it fits.
     for candidate in (
@@ -160,7 +170,7 @@ def build_digest(jobs: list[dict], web_url: str, window_hours: int = 3, max_top:
         [header, tail],
     ):
         text = "\n".join(line for line in candidate if line.strip())
-        if _tweet_length(text, link) <= TWEET_MAX_CHARS:
+        if _tweet_length(text, measure_url) <= TWEET_MAX_CHARS:
             return text
     # Last resort: trim the category line hard.
     return "\n".join([header, _truncate(cat_line, 80), tail])
@@ -193,6 +203,8 @@ def push_digest_to_twitter() -> int:
     """Build and post (or dry-run) one digest tweet. Returns jobs included."""
     window_hours = int(os.getenv("JOBCLAW_TWITTER_WINDOW_HOURS", "3"))
     dry_run = _env_flag("JOBCLAW_TWITTER_DRY_RUN", True)
+    # Off by default: a post with a URL costs $0.20 vs $0.015 plain. Keep the link in bio.
+    include_url = _env_flag("JOBCLAW_TWITTER_INCLUDE_URL", False)
     creds = _x_credentials()
     if creds is None and not dry_run:
         log("X API credentials missing — forcing dry-run.", "WARN")
@@ -204,8 +216,10 @@ def push_digest_to_twitter() -> int:
         log(f"No new accepted jobs in the last {window_hours}h — nothing to tweet.")
         return 0
 
-    text = build_digest(jobs, _web_url(), window_hours=window_hours)
-    log(f"Digest ({len(jobs)} jobs, {_tweet_length(text, _web_url() + '/jobs')} chars):\n{text}")
+    text = build_digest(jobs, _web_url(), window_hours=window_hours, include_url=include_url)
+    measure_url = (_web_url() + "/jobs") if include_url else ""
+    cost = "$0.20 (has URL)" if include_url else "$0.015 (plain)"
+    log(f"Digest ({len(jobs)} jobs, {_tweet_length(text, measure_url)} chars, est {cost}):\n{text}")
 
     if dry_run:
         log("DRY_RUN: not posting. Set JOBCLAW_TWITTER_DRY_RUN=0 and add X_* keys to go live.")
