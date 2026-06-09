@@ -11,12 +11,13 @@ Docs: http://localhost:8000/docs
 import json
 import os
 import sys
+import time
 import datetime as _dt
 from collections.abc import Mapping, Sequence
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException, Query, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -164,6 +165,40 @@ def _effective_user_id() -> str:
     `user_id` query param, so a key-holder cannot read/modify rows under another id.
     """
     return os.getenv("JOBCLAW_USER_ID", "default")
+
+
+# ─── Read-through TTL cache for hot public endpoints ───────────────────
+# The website polls /jobs (and /stats) frequently, but the data only changes when
+# scrapers run (~every 15 min). Caching collapses many identical DB queries into one
+# per TTL window — the single biggest lever for Postgres egress/compute cost. Set
+# JOBCLAW_READ_CACHE_TTL=0 to disable.
+_READ_CACHE_TTL = int(os.getenv("JOBCLAW_READ_CACHE_TTL", "300"))
+_READ_CACHE_MAX = 512
+_read_cache: dict[str, tuple[float, object]] = {}
+
+
+def _cached_read(key: str):
+    """Return a cached value for `key` if still within TTL, else None."""
+    if _READ_CACHE_TTL <= 0:
+        return None
+    hit = _read_cache.get(key)
+    if hit and (time.monotonic() - hit[0]) < _READ_CACHE_TTL:
+        return hit[1]
+    return None
+
+
+def _store_read(key: str, value: object) -> object:
+    """Cache `value` under `key` and return it (for inline `return _store_read(...)`)."""
+    if _READ_CACHE_TTL > 0:
+        if len(_read_cache) >= _READ_CACHE_MAX:
+            _read_cache.clear()
+        _read_cache[key] = (time.monotonic(), value)
+    return value
+
+
+def _set_cache_headers(response: Response) -> None:
+    if _READ_CACHE_TTL > 0:
+        response.headers["Cache-Control"] = f"public, max-age={_READ_CACHE_TTL}"
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -332,6 +367,7 @@ async def list_jobs(
     active: bool = Query(True, description="Only active (non-filled) jobs"),
     recent_hours: int | None = Query(None, ge=1, le=168, description="Only jobs first seen within this many hours"),
     quality: str | None = Query(None, description="Filter by job quality state, e.g. accepted"),
+    response: Response = None,
 ):
     """
     List jobs with pagination and filtering.
@@ -339,6 +375,13 @@ async def list_jobs(
     Supports filtering by company, ATS platform, keyword category, and full-text search.
     Results are ordered by most recently discovered first.
     """
+    if response is not None:
+        _set_cache_headers(response)
+    cache_key = f"jobs:{page}:{per_page}:{company}:{ats}:{keyword}:{search}:{active}:{recent_hours}:{quality}"
+    cached = _cached_read(cache_key)
+    if cached is not None:
+        return cached
+
     jobs, total = get_jobs(
         page=page,
         per_page=per_page,
@@ -350,12 +393,15 @@ async def list_jobs(
         recent_hours=recent_hours,
         quality=quality,
     )
-    return JobListResponse(
-        jobs=[JobResponse(**j) for j in jobs],
-        total=total,
-        page=page,
-        per_page=per_page,
-        has_more=(page * per_page < total),
+    return _store_read(
+        cache_key,
+        JobListResponse(
+            jobs=[JobResponse(**j) for j in jobs],
+            total=total,
+            page=page,
+            per_page=per_page,
+            has_more=(page * per_page < total),
+        ),
     )
 
 
@@ -472,13 +518,20 @@ async def match_jobs(
 @app.get("/companies", response_model=list[CompanyResponse], tags=["Companies"])
 async def list_companies(
     ats: str | None = Query(None, description="Filter by ATS platform"),
+    response: Response = None,
 ):
     """
     List all companies with their active job counts.
     Grouped by company + ATS platform.
     """
+    if response is not None:
+        _set_cache_headers(response)
+    cache_key = f"companies:{ats}"
+    cached = _cached_read(cache_key)
+    if cached is not None:
+        return cached
     companies = get_companies(ats=ats)
-    return [CompanyResponse(**c) for c in companies]
+    return _store_read(cache_key, [CompanyResponse(**c) for c in companies])
 
 
 @app.get("/companies/{company_name}/jobs", response_model=JobListResponse, tags=["Companies"])
@@ -504,18 +557,30 @@ async def company_jobs(
 
 
 @app.get("/stats", response_model=StatsOverview, tags=["Stats"])
-async def stats_overview():
+async def stats_overview(response: Response = None):
     """System-wide statistics: job counts, platform breakdown, recent trends."""
-    return StatsOverview(**get_stats())
+    if response is not None:
+        _set_cache_headers(response)
+    cached = _cached_read("stats")
+    if cached is not None:
+        return cached
+    return _store_read("stats", StatsOverview(**get_stats()))
 
 
 @app.get("/stats/runs", response_model=list[ScraperRunResponse], tags=["Stats"])
 async def scraper_runs(
     limit: int = Query(20, ge=1, le=100, description="Number of recent runs to show"),
+    response: Response = None,
 ):
     """Recent scraper run history with performance metrics."""
+    if response is not None:
+        _set_cache_headers(response)
+    cache_key = f"stats_runs:{limit}"
+    cached = _cached_read(cache_key)
+    if cached is not None:
+        return cached
     runs = get_scraper_runs(limit=limit)
-    return [ScraperRunResponse(**r) for r in runs]
+    return _store_read(cache_key, [ScraperRunResponse(**r) for r in runs])
 
 
 # ═══════════════════════════════════════════════════════════════════════

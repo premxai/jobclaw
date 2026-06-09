@@ -162,7 +162,10 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
 const API_BASE = "/api";
 const API_FALLBACK_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://api.norinote.xyz").replace(/\/$/, "");
 const BOARD_FRESHNESS_HOURS = 48;
-const BOARD_REFRESH_INTERVAL_MS = 60 * 1000;
+// Jobs only change when scrapers run (~every 15 min), and the API caches reads, so
+// a 5-min poll keeps the board fresh while cutting backend/DB load ~5x. The board
+// also refreshes on tab focus/visibility for immediacy.
+const BOARD_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
 const ENABLE_MOCK_JOBS = process.env.NEXT_PUBLIC_ENABLE_MOCK_JOBS === "1";
 
 function keywordText(job: ApiJob): string {
