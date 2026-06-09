@@ -32,6 +32,7 @@ HOT_COMPANIES_PATH = Path(__file__).parent.parent.parent / "config" / "hot_compa
 
 _hot_slugs_cache = None
 
+
 def _tier_interval(tier: str, default: timedelta) -> timedelta:
     """Per-tier freshness SLO (re-scrape interval). Override via env, e.g.
     JOBCLAW_TIER_INTERVAL_P2_HOURS=336 for a 14-day long-tail cadence."""
