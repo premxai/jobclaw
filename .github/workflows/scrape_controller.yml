@@ -1,0 +1,168 @@
+name: "🧭 Scraper Controller — DB-Gated Catch-Up"
+
+# ┌────────────────────────────────────────────────────────────────────┐
+# │  CANONICAL SCHEDULE SAFETY NET                                    │
+# │  GitHub cron can delay/drop individual scheduled workflows. This   │
+# │  controller wakes frequently, reads Postgres, and runs only the    │
+# │  overdue jobs in order: hot -> fast -> medium -> Discord.          │
+# │                                                                    │
+# │  Existing tier workflows remain as manual/backup paths, but this   │
+# │  DB-gated pass prevents fresh jobs from sitting when a cron tick    │
+# │  is missed. GitHub cron is UTC; logic uses DB timestamps.           │
+# └────────────────────────────────────────────────────────────────────┘
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scraper-controller
+  cancel-in-progress: false
+
+jobs:
+  controller:
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+
+      - name: Check production DB availability
+        id: db-preflight
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python scripts/ops/github_db_preflight.py
+
+      - name: Decide overdue jobs
+        id: schedule
+        if: steps.db-preflight.outputs.db_ok == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JOBCLAW_CONTROLLER_HOT_INTERVAL_MINUTES: "20"
+          JOBCLAW_CONTROLLER_FAST_INTERVAL_MINUTES: "75"
+          JOBCLAW_CONTROLLER_MEDIUM_INTERVAL_MINUTES: "90"
+          JOBCLAW_CONTROLLER_DISCORD_INTERVAL_MINUTES: "15"
+          JOBCLAW_DISCORD_LOOKBACK_HOURS: "24"
+        run: python scripts/ops/scrape_schedule_decider.py
+
+      - name: Skip while production DB is unavailable
+        if: steps.db-preflight.outputs.db_ok != 'true'
+        run: |
+          echo "Skipping scraper controller because production DB is unavailable."
+          echo "Reason: ${{ steps.db-preflight.outputs.reason }}"
+
+      - name: Run overdue hot scraper
+        if: steps.schedule.outputs.run_hot == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_GENERAL: ${{ secrets.DISCORD_WEBHOOK_GENERAL }}
+          DISCORD_WEBHOOK_AI: ${{ secrets.DISCORD_WEBHOOK_AI }}
+          DISCORD_WEBHOOK_SWE: ${{ secrets.DISCORD_WEBHOOK_SWE }}
+          DISCORD_WEBHOOK_DATA: ${{ secrets.DISCORD_WEBHOOK_DATA }}
+          DISCORD_WEBHOOK_NEWGRAD: ${{ secrets.DISCORD_WEBHOOK_NEWGRAD }}
+          DISCORD_WEBHOOK_PRODUCT: ${{ secrets.DISCORD_WEBHOOK_PRODUCT }}
+          DISCORD_WEBHOOK_RESEARCH: ${{ secrets.DISCORD_WEBHOOK_RESEARCH }}
+          JOBCLAW_DISCORD_DRY_RUN: "0"
+          JOBCLAW_DISCORD_STRICT_QUALITY: "1"
+          JOBCLAW_DISCORD_US_ONLY: "1"
+        run: python scripts/ingestion/scrape_hot.py
+
+      - name: Run overdue fast tier
+        if: steps.schedule.outputs.run_fast == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JOBCLAW_QUEUE_MODE: "active"
+          JOBCLAW_QUEUE_LEASE_SECONDS: "300"
+          JOBCLAW_DEGRADED_FAILS_WORKFLOW: "0"
+          JOBCLAW_DIRECT_SOURCE_ONLY: "1"
+          JOBCLAW_BRAVE_ENRICHMENT_ONLY: "1"
+          JOBCLAW_DISCORD_DRY_RUN: "0"
+          JOBCLAW_DISCORD_STRICT_QUALITY: "1"
+          JOBCLAW_DISCORD_US_ONLY: "1"
+          JOBCLAW_DISCORD_LOOKBACK_HOURS: "24"
+          JOBCLAW_DISCORD_CANDIDATE_LIMIT: "1000"
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_GENERAL: ${{ secrets.DISCORD_WEBHOOK_GENERAL }}
+          DISCORD_WEBHOOK_AI: ${{ secrets.DISCORD_WEBHOOK_AI }}
+          DISCORD_WEBHOOK_SWE: ${{ secrets.DISCORD_WEBHOOK_SWE }}
+          DISCORD_WEBHOOK_DATA: ${{ secrets.DISCORD_WEBHOOK_DATA }}
+          DISCORD_WEBHOOK_NEWGRAD: ${{ secrets.DISCORD_WEBHOOK_NEWGRAD }}
+          DISCORD_WEBHOOK_PRODUCT: ${{ secrets.DISCORD_WEBHOOK_PRODUCT }}
+          DISCORD_WEBHOOK_RESEARCH: ${{ secrets.DISCORD_WEBHOOK_RESEARCH }}
+        run: python scripts/ingestion/run_all_scrapers.py --tier fast
+
+      - name: Run overdue medium tier
+        if: steps.schedule.outputs.run_medium == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JOBCLAW_QUEUE_MODE: "active"
+          JOBCLAW_QUEUE_LEASE_SECONDS: "300"
+          JOBCLAW_MEDIUM_TARGET_LIMIT: "800"
+          JOBCLAW_WORKDAY_SHARDS: "16"
+          JOBCLAW_DEGRADED_FAILS_WORKFLOW: "0"
+          JOBCLAW_DIRECT_SOURCE_ONLY: "1"
+          JOBCLAW_BRAVE_ENRICHMENT_ONLY: "1"
+          JOBCLAW_DISCORD_DRY_RUN: "0"
+          JOBCLAW_DISCORD_STRICT_QUALITY: "1"
+          JOBCLAW_DISCORD_US_ONLY: "1"
+          JOBCLAW_DISCORD_LOOKBACK_HOURS: "24"
+          JOBCLAW_DISCORD_CANDIDATE_LIMIT: "1000"
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_GENERAL: ${{ secrets.DISCORD_WEBHOOK_GENERAL }}
+          DISCORD_WEBHOOK_AI: ${{ secrets.DISCORD_WEBHOOK_AI }}
+          DISCORD_WEBHOOK_SWE: ${{ secrets.DISCORD_WEBHOOK_SWE }}
+          DISCORD_WEBHOOK_DATA: ${{ secrets.DISCORD_WEBHOOK_DATA }}
+          DISCORD_WEBHOOK_NEWGRAD: ${{ secrets.DISCORD_WEBHOOK_NEWGRAD }}
+          DISCORD_WEBHOOK_PRODUCT: ${{ secrets.DISCORD_WEBHOOK_PRODUCT }}
+          DISCORD_WEBHOOK_RESEARCH: ${{ secrets.DISCORD_WEBHOOK_RESEARCH }}
+        run: |
+          python scripts/ingestion/run_all_scrapers.py \
+            --tier medium \
+            --window 8 \
+            --total-shards 16
+
+      - name: Run overdue Discord push
+        if: steps.schedule.outputs.run_discord == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JOBCLAW_DISCORD_DRY_RUN: "0"
+          JOBCLAW_DISCORD_STRICT_QUALITY: "1"
+          JOBCLAW_DISCORD_US_ONLY: "1"
+          JOBCLAW_DIRECT_SOURCE_ONLY: "1"
+          JOBCLAW_DISCORD_LOOKBACK_HOURS: "24"
+          JOBCLAW_DISCORD_CANDIDATE_LIMIT: "1000"
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_GENERAL: ${{ secrets.DISCORD_WEBHOOK_GENERAL }}
+          DISCORD_WEBHOOK_AI: ${{ secrets.DISCORD_WEBHOOK_AI }}
+          DISCORD_WEBHOOK_SWE: ${{ secrets.DISCORD_WEBHOOK_SWE }}
+          DISCORD_WEBHOOK_DATA: ${{ secrets.DISCORD_WEBHOOK_DATA }}
+          DISCORD_WEBHOOK_NEWGRAD: ${{ secrets.DISCORD_WEBHOOK_NEWGRAD }}
+          DISCORD_WEBHOOK_PRODUCT: ${{ secrets.DISCORD_WEBHOOK_PRODUCT }}
+          DISCORD_WEBHOOK_RESEARCH: ${{ secrets.DISCORD_WEBHOOK_RESEARCH }}
+        run: python scripts/discord_push.py
+
+      - name: Commit updated dedup files
+        if: ${{ always() && steps.db-preflight.outputs.db_ok == 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/posted_hashes.json || true
+          git diff --staged --quiet || git commit -m "chore: update posted_hashes.json [skip ci]"
+          git push || true

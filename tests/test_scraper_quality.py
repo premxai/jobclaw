@@ -84,6 +84,7 @@ class DiscordStrictQualityTests(unittest.TestCase):
             {
                 "title": "Machine Learning Engineer",
                 "company": "Acme AI",
+                "location": "Remote - USA",
                 "url": "https://boards.greenhouse.io/acme/jobs/123",
                 "source_ats": "greenhouse",
             }
@@ -116,10 +117,40 @@ class DiscordStrictQualityTests(unittest.TestCase):
                 {
                     "title": "Backend Engineer",
                     "company": "Unknown",
+                    "location": "Remote - USA",
                     "url": "https://example.com/jobs/backend-engineer",
                     "source_ats": "unknown",
                 },
                 "unknown_company",
+            ),
+        ]
+        for job, expected_reason in cases:
+            with self.subTest(expected_reason=expected_reason):
+                ok, reason = _passes_strict_job_quality(job)
+                self.assertFalse(ok)
+                self.assertEqual(reason, expected_reason)
+
+    def test_rejects_non_us_and_polluted_company_records(self):
+        cases = [
+            (
+                {
+                    "title": "Senior Software Engineer",
+                    "company": "Affirm",
+                    "location": "Remote Poland",
+                    "url": "https://boards.greenhouse.io/affirm/jobs/123",
+                    "source_ats": "greenhouse",
+                },
+                "non_us_location",
+            ),
+            (
+                {
+                    "title": "IT Infrastructure Engineer",
+                    "company": "Eurofins is looking for a IT Software Engineer in Bengaluru, Karnataka, India",
+                    "location": "Cork, CO, ie",
+                    "url": "https://jobs.smartrecruiters.com/eurofins/123",
+                    "source_ats": "smartrecruiters",
+                },
+                "bad_company",
             ),
         ]
         for job, expected_reason in cases:

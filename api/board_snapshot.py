@@ -26,9 +26,12 @@ DISCORD_CATEGORY_MAP = {
 NON_US_LOCATION_RE = re.compile(
     r"\b(canada|india|united kingdom|uk|england|scotland|wales|ireland|germany|france|spain|italy|"
     r"netherlands|sweden|poland|portugal|australia|new zealand|singapore|japan|china|brazil|mexico|"
-    r"argentina|colombia|europe|emea|apac|latam)\b",
+    r"argentina|colombia|europe|emea|apac|latam|asia|bengaluru|budapest|london|dublin|cork|"
+    r"remote poland|remote spain|hybrid - madrid)\b",
     re.I,
 )
+NON_US_COUNTRY_CODE_RE = re.compile(r"(^|[\s,(/-])(IE|GB|UK|IN|DE|FR|ES|PL|NL|BR|MX|AU|NZ|SG|JP|CN)(?=$|[\s,)/-])")
+BAD_COMPANY_RE = re.compile(r"\bis looking for\b.*\bin\b", re.I)
 US_LOCATION_RE = re.compile(
     r"\b(united states|usa|u\.s\.a\.|u\.s\.|us only|remote us|remote - us|remote \(us\)|america|"
     r"north america|alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|"
@@ -111,7 +114,7 @@ def _is_us_location(location: str) -> bool:
         return False
     if normalized.lower() == "remote":
         return True
-    if NON_US_LOCATION_RE.search(normalized):
+    if NON_US_LOCATION_RE.search(normalized) or NON_US_COUNTRY_CODE_RE.search(normalized):
         return False
     return bool(US_LOCATION_RE.search(normalized) or US_STATE_CODE_RE.search(normalized))
 
@@ -147,6 +150,9 @@ def build_snapshot_from_rows(rows: list[dict], *, freshness_hours: int, max_jobs
     counts = {category: 0 for category in BOARD_CATEGORIES}
 
     for index, row in enumerate(rows):
+        if BAD_COMPANY_RE.search(str(row.get("company") or "")):
+            continue
+
         location = _clean_location(row.get("location"))
         if not _is_us_location(location):
             continue

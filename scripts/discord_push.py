@@ -159,6 +159,27 @@ _GENERIC_TITLE_RE = re.compile(
     r"\b(\d[\d,]*\+?\s+.+jobs\s+hiring|salary in|jobs hiring now|job search|career salary)\b",
     re.I,
 )
+_BAD_COMPANY_RE = re.compile(r"\bis looking for\b.*\bin\b", re.I)
+_NON_US_LOCATION_RE = re.compile(
+    r"\b(canada|india|united kingdom|uk|england|scotland|wales|ireland|germany|france|spain|italy|"
+    r"netherlands|sweden|poland|portugal|australia|new zealand|singapore|japan|china|brazil|mexico|"
+    r"argentina|colombia|europe|emea|apac|latam|asia|remote poland|remote spain|hybrid - madrid|"
+    r"bengaluru|budapest|london|dublin|cork)\b",
+    re.I,
+)
+_NON_US_COUNTRY_CODE_RE = re.compile(r"(^|[\s,(/-])(IE|GB|UK|IN|DE|FR|ES|PL|NL|BR|MX|AU|NZ|SG|JP|CN)(?=$|[\s,)/-])")
+_US_LOCATION_RE = re.compile(
+    r"\b(united states|usa|u\.s\.a\.|u\.s\.|us only|remote us|remote - us|remote \(us\)|america|"
+    r"north america|california|new york|texas|florida|washington|massachusetts|illinois|georgia|"
+    r"colorado|maryland|virginia|north carolina|san francisco|los angeles|seattle|austin|boston|"
+    r"chicago|atlanta|denver|miami|dallas|houston|new york city|nyc)\b",
+    re.I,
+)
+_US_STATE_CODE_RE = re.compile(
+    r"(^|[\s,(/-])(AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|"
+    r"MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|"
+    r"WA|WV|WI|WY|DC)(?=$|[\s,)/-])"
+)
 
 
 def _passes_strict_job_quality(job: dict) -> tuple[bool, str]:
@@ -168,6 +189,7 @@ def _passes_strict_job_quality(job: dict) -> tuple[bool, str]:
     url = str(job.get("url") or "")
     title = str(job.get("title") or "").strip()
     company = str(job.get("company") or "").strip()
+    location = str(job.get("location") or "").strip()
     source = str(job.get("source_ats") or "").strip().lower()
     parsed = urlparse(url)
     host = (parsed.hostname or "").lower()
@@ -179,8 +201,12 @@ def _passes_strict_job_quality(job: dict) -> tuple[bool, str]:
         return False, "missing_title"
     if not company or company.lower() in {"unknown", "n/a", "none"}:
         return False, "unknown_company"
+    if _BAD_COMPANY_RE.search(company):
+        return False, "bad_company"
     if _GENERIC_TITLE_RE.search(title):
         return False, "generic_title"
+    if _discord_us_only_enabled() and not _is_us_or_remote_location(location):
+        return False, "non_us_location"
     if any(token in haystack_url for token in _BLOCKED_URL_TOKENS):
         return False, "non_job_url"
     if source in {"indeed", "careerbuilder", "ziprecruiter"}:
@@ -190,6 +216,22 @@ def _passes_strict_job_quality(job: dict) -> tuple[bool, str]:
     if source not in _TRUSTED_JOB_SOURCES and company.lower() == "unknown":
         return False, "untrusted_unknown_company"
     return True, ""
+
+
+def _discord_us_only_enabled() -> bool:
+    raw = os.getenv("JOBCLAW_DISCORD_US_ONLY", "1").strip().lower()
+    return raw not in {"0", "false", "no", "off"}
+
+
+def _is_us_or_remote_location(location: str) -> bool:
+    normalized = re.sub(r"\s+", " ", location or "").strip()
+    if not normalized:
+        return False
+    if normalized.lower() == "remote":
+        return True
+    if _NON_US_LOCATION_RE.search(normalized) or _NON_US_COUNTRY_CODE_RE.search(normalized):
+        return False
+    return bool(_US_LOCATION_RE.search(normalized) or _US_STATE_CODE_RE.search(normalized))
 
 
 def _is_fresh(job: dict, cutoff: datetime) -> bool:

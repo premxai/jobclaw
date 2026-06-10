@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 import scripts.database.db_utils as db_utils
 from api.board_snapshot import build_snapshot_from_rows
 from scripts.database.db_utils import _ensure_sqlite_schema, claim_adaptive_companies_for_scrape
-from scripts.database.db_utils import insert_job, mark_jobs_posted
+from scripts.database.db_utils import get_unposted_jobs, insert_job, mark_jobs_posted
 from scripts.database.db_utils import run_database_maintenance
 from scripts.ops.workday_sweep_guard import evaluate_workday_guard
 from scripts.utils.platform_budgets import apply_platform_budgets, platform_target_cap
@@ -250,6 +250,48 @@ class ScraperControlPlaneTests(unittest.TestCase):
         self.assertEqual(job_count, 0)
         self.assertEqual(fingerprint_count, 1)
 
+    def test_discord_unposted_jobs_select_newest_inside_window(self):
+        old_env = {
+            "JOBCLAW_DISCORD_LOOKBACK_HOURS": os.environ.get("JOBCLAW_DISCORD_LOOKBACK_HOURS"),
+            "JOBCLAW_DISCORD_CANDIDATE_LIMIT": os.environ.get("JOBCLAW_DISCORD_CANDIDATE_LIMIT"),
+        }
+        os.environ["JOBCLAW_DISCORD_LOOKBACK_HOURS"] = "24"
+        os.environ["JOBCLAW_DISCORD_CANDIDATE_LIMIT"] = "200"
+        try:
+            for job_id, hours_old in [("old", 25), ("middle", 2), ("new", 1)]:
+                insert_job(
+                    self.conn,
+                    {
+                        "job_id": job_id,
+                        "title": f"Software Engineer {job_id}",
+                        "company": "FreshCo",
+                        "location": "Remote - USA",
+                        "url": f"https://boards.greenhouse.io/freshco/jobs/{job_id}",
+                        "source_ats": "greenhouse",
+                        "description": "Build software.",
+                    },
+                )
+                seen = (self.now - timedelta(hours=hours_old)).isoformat()
+                self.conn.execute(
+                    """
+                    UPDATE jobs
+                    SET first_seen = ?, date_posted = '', last_seen_at = ?, quality_state = 'accepted'
+                    WHERE job_id = ?
+                    """,
+                    (seen, seen, job_id),
+                )
+            self.conn.commit()
+
+            jobs = get_unposted_jobs(self.conn)
+        finally:
+            for key, value in old_env.items():
+                if value is None:
+                    os.environ.pop(key, None)
+                else:
+                    os.environ[key] = value
+
+        self.assertEqual([job["job_id"] for job in jobs], ["new", "middle"])
+
     def test_board_snapshot_filters_us_jobs_and_counts_categories(self):
         snapshot = build_snapshot_from_rows(
             [
@@ -285,6 +327,17 @@ class ScraperControlPlaneTests(unittest.TestCase):
                     "source_ats": "lever",
                     "first_seen": self.now.isoformat(),
                     "keywords_matched": '["Data Science"]',
+                },
+                {
+                    "internal_hash": "smartrecruiters::bad::4",
+                    "job_id": "4",
+                    "title": "IT Infrastructure Engineer",
+                    "company": "Eurofins is looking for a IT Software Engineer in Bengaluru, Karnataka, India",
+                    "location": "Cork, CO, ie",
+                    "url": "https://jobs.smartrecruiters.com/eurofins/4",
+                    "source_ats": "smartrecruiters",
+                    "first_seen": self.now.isoformat(),
+                    "keywords_matched": '["SWE"]',
                 },
             ],
             freshness_hours=48,

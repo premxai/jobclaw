@@ -1147,20 +1147,28 @@ def mark_stale_jobs(conn, source_ats: str, company: str, active_job_ids: set[str
 
 
 def get_unposted_jobs(conn):
-    """Fetch jobs ready to be sent to Discord (last 72 hours)."""
+    """Fetch newest jobs ready to be sent to Discord.
+
+    The backlog can grow into thousands of rows. Always selecting the oldest
+    500 first starves fresh jobs, so Discord reads from the newest side of the
+    posting window and lets stale cleanup/archive handle the tail.
+    """
     direct_only = os.getenv("JOBCLAW_DIRECT_SOURCE_ONLY", "1").strip().lower() in {"1", "true", "yes", "on"}
     quality_clause_pg = "AND COALESCE(quality_state, 'needs_review') = 'accepted'" if direct_only else ""
     quality_clause_sqlite = "AND COALESCE(quality_state, 'needs_review') = 'accepted'" if direct_only else ""
+    lookback_hours = max(1, _env_int("JOBCLAW_DISCORD_LOOKBACK_HOURS", 24))
+    candidate_limit = max(200, _env_int("JOBCLAW_DISCORD_CANDIDATE_LIMIT", 1000))
     if is_postgres():
         cursor = conn.cursor()
         cursor.execute(
             f"""SELECT * FROM jobs
                WHERE status = 'unposted'
                  AND is_active = TRUE
-                 AND first_seen::timestamptz >= NOW() - INTERVAL '72 hours'
+                 AND first_seen::timestamptz >= NOW() - (%s * INTERVAL '1 hour')
                  {quality_clause_pg}
-               ORDER BY first_seen ASC
-               LIMIT 500"""
+               ORDER BY first_seen DESC
+               LIMIT %s""",
+            (lookback_hours, candidate_limit),
         )
         cols = [desc[0] for desc in cursor.description]
         rows = cursor.fetchall()
@@ -1182,12 +1190,13 @@ def get_unposted_jobs(conn):
                WHERE status = 'unposted'
                    AND is_active = 1
                  AND (
-                   (date_posted != '' AND date_posted >= datetime('now', '-72 hours'))
-                   OR (date_posted = '' AND first_seen >= datetime('now', '-72 hours'))
+                   (COALESCE(date_posted, '') != '' AND datetime(date_posted) >= datetime('now', ?))
+                   OR (COALESCE(date_posted, '') = '' AND datetime(first_seen) >= datetime('now', ?))
                  )
                  {quality_clause_sqlite}
-               ORDER BY first_seen ASC
-               LIMIT 500"""
+               ORDER BY first_seen DESC
+               LIMIT ?""",
+            (f"-{lookback_hours} hours", f"-{lookback_hours} hours", candidate_limit),
         )
         rows = cursor.fetchall()
         jobs = []

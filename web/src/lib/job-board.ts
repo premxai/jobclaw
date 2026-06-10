@@ -353,7 +353,10 @@ async function fetchBoardSnapshotJobs(): Promise<BoardJob[]> {
 }
 
 const NON_US_LOCATION_RE =
-  /\b(canada|india|united kingdom|uk|england|scotland|wales|ireland|germany|france|spain|italy|netherlands|sweden|poland|portugal|australia|new zealand|singapore|japan|china|brazil|mexico|argentina|colombia|europe|emea|apac|latam)\b/i;
+  /\b(canada|india|united kingdom|uk|england|scotland|wales|ireland|germany|france|spain|italy|netherlands|sweden|poland|portugal|australia|new zealand|singapore|japan|china|brazil|mexico|argentina|colombia|europe|emea|apac|latam|asia|bengaluru|budapest|london|dublin|cork|remote poland|remote spain|hybrid - madrid)\b/i;
+const NON_US_COUNTRY_CODE_RE =
+  /(^|[\s,(/-])(IE|GB|UK|IN|DE|FR|ES|PL|NL|BR|MX|AU|NZ|SG|JP|CN)(?=$|[\s,)/-])/;
+const BAD_COMPANY_RE = /\bis looking for\b.*\bin\b/i;
 const US_LOCATION_RE =
   /\b(united states|usa|u\.s\.a\.|u\.s\.|us only|remote us|remote - us|remote \(us\)|america|north america|alabama|alaska|arizona|arkansas|california|colorado|connecticut|delaware|florida|georgia|hawaii|idaho|illinois|indiana|iowa|kansas|kentucky|louisiana|maine|maryland|massachusetts|michigan|minnesota|mississippi|missouri|montana|nebraska|nevada|new hampshire|new jersey|new mexico|new york|north carolina|north dakota|ohio|oklahoma|oregon|pennsylvania|rhode island|south carolina|south dakota|tennessee|texas|utah|vermont|virginia|washington|west virginia|wisconsin|wyoming|washington dc|district of columbia|nyc|san francisco|los angeles|seattle|austin|boston|chicago|atlanta|denver|miami|dallas|houston|phoenix|portland|philadelphia|nashville|raleigh|charlotte|san diego|san jose)\b/i;
 const US_STATE_CODE_RE =
@@ -363,13 +366,13 @@ function isUsLocation(location: string): boolean {
   const normalized = location.replace(/\s+/g, " ").trim();
   if (!normalized) return false;
   if (/^remote$/i.test(normalized)) return true;
-  if (NON_US_LOCATION_RE.test(normalized)) return false;
+  if (NON_US_LOCATION_RE.test(normalized) || NON_US_COUNTRY_CODE_RE.test(normalized)) return false;
 
   return US_LOCATION_RE.test(normalized) || US_STATE_CODE_RE.test(normalized);
 }
 
 function filterUsJobs(jobs: BoardJob[]): BoardJob[] {
-  return jobs.filter((job) => isUsLocation(job.location));
+  return jobs.filter((job) => isUsLocation(job.location) && !BAD_COMPANY_RE.test(job.company || ""));
 }
 
 export async function fetchBoardJobs(): Promise<{ jobs: BoardJob[]; status: BoardDataStatus }> {
