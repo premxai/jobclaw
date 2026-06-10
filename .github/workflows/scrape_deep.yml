@@ -16,12 +16,12 @@ permissions:
 
 concurrency:
   group: deep-scraper
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deep-scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 70
 
     steps:
       - uses: actions/checkout@v4
@@ -56,11 +56,16 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JOBCLAW_QUEUE_MODE: "active"
           JOBCLAW_QUEUE_LEASE_SECONDS: "300"
+          JOBCLAW_DEEP_TARGET_LIMIT: "1200"
+          JOBCLAW_ORCHESTRATOR_TIMEOUT_SECONDS: "1500"
+          JOBCLAW_SKIP_AI_PIPELINE: "1"
           JOBCLAW_DEGRADED_FAILS_WORKFLOW: "0"
           JOBCLAW_DIRECT_SOURCE_ONLY: "1"
           JOBCLAW_BRAVE_ENRICHMENT_ONLY: "1"
           JOBCLAW_DISCORD_DRY_RUN: "0"
           JOBCLAW_DISCORD_STRICT_QUALITY: "1"
+          JOBCLAW_DISCORD_US_ONLY: "1"
+          JOBCLAW_DISCORD_MAX_POSTS: "50"
           BRAVE_SEARCH_API_KEY: ${{ secrets.BRAVE_SEARCH_API_KEY }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_WEBHOOK_GENERAL: ${{ secrets.DISCORD_WEBHOOK_GENERAL }}

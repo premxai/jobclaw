@@ -16,12 +16,12 @@ permissions:
 
 concurrency:
   group: discord-push
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   discord-push:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
@@ -52,6 +52,8 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JOBCLAW_DISCORD_DRY_RUN: "0"
           JOBCLAW_DISCORD_STRICT_QUALITY: "1"
+          JOBCLAW_DISCORD_US_ONLY: "1"
+          JOBCLAW_DISCORD_MAX_POSTS: "75"
           JOBCLAW_DIRECT_SOURCE_ONLY: "1"
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_WEBHOOK_GENERAL: ${{ secrets.DISCORD_WEBHOOK_GENERAL }}

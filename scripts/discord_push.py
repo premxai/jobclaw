@@ -40,6 +40,13 @@ def log(msg: str, level: str = "INFO"):
     _log(msg, level, "discord_push")
 
 
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
 # ═══════════════════════════════════════════════════════════════════════
 # CHANNEL ROUTING
 # ═══════════════════════════════════════════════════════════════════════
@@ -660,14 +667,15 @@ async def push_new_jobs_to_discord():
         # Sort by quality score DESC — best jobs post first regardless of backlog size
         fresh_jobs.sort(key=lambda x: x.get("quality_score") or 0, reverse=True)
 
-        # Cap batch per run — 200 keeps Discord rate limits comfortable
-        if len(fresh_jobs) > 200:
-            log(f"Capping batch to 200 (of {len(fresh_jobs)}) — remainder posted next run.")
-            fresh_jobs = fresh_jobs[:200]
+        # Cap batch per run so webhook posting cannot consume the whole workflow.
+        max_posts = max(1, _env_int("JOBCLAW_DISCORD_MAX_POSTS", 75))
+        if len(fresh_jobs) > max_posts:
+            log(f"Capping batch to {max_posts} (of {len(fresh_jobs)}) — remainder posted next run.")
+            fresh_jobs = fresh_jobs[:max_posts]
 
         if dry_run:
             preview = []
-            for job in fresh_jobs[:200]:
+            for job in fresh_jobs[:max_posts]:
                 embed = _build_job_embed(job)
                 preview.append(
                     {

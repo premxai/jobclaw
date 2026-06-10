@@ -16,13 +16,13 @@ permissions:
 
 concurrency:
   group: hot-scraper
-  cancel-in-progress: true  # Cancel older run if next 5-min trigger fires
+  cancel-in-progress: false  # Let in-flight runs finish; DB dedup/leases prevent duplicate work
 
 jobs:
   hot-scrape:
     name: Hot Scraper Run
     runs-on: ubuntu-latest
-    timeout-minutes: 15      # Setup + 192-target hot sweep
+    timeout-minutes: 20      # Setup + 192-target hot sweep + Discord alert buffer
 
     steps:
       - uses: actions/checkout@v4
@@ -59,6 +59,7 @@ jobs:
           DISCORD_WEBHOOK_NEWGRAD: ${{ secrets.DISCORD_WEBHOOK_NEWGRAD }}
           DISCORD_WEBHOOK_PRODUCT: ${{ secrets.DISCORD_WEBHOOK_PRODUCT }}
           DISCORD_WEBHOOK_RESEARCH: ${{ secrets.DISCORD_WEBHOOK_RESEARCH }}
+          JOBCLAW_DISCORD_US_ONLY: "1"
         run: python scripts/ingestion/scrape_hot.py
 
       - name: Commit updated posted_hashes (if changed)

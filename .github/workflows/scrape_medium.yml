@@ -20,12 +20,12 @@ permissions:
 
 concurrency:
   group: medium-scraper
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   medium-scrape:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4
@@ -67,6 +67,8 @@ jobs:
           JOBCLAW_BRAVE_ENRICHMENT_ONLY: "1"
           JOBCLAW_DISCORD_DRY_RUN: "0"
           JOBCLAW_DISCORD_STRICT_QUALITY: "1"
+          JOBCLAW_DISCORD_US_ONLY: "1"
+          JOBCLAW_DISCORD_MAX_POSTS: "75"
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_WEBHOOK_GENERAL: ${{ secrets.DISCORD_WEBHOOK_GENERAL }}
           DISCORD_WEBHOOK_AI: ${{ secrets.DISCORD_WEBHOOK_AI }}

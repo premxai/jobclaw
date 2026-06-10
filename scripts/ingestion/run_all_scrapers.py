@@ -1,13 +1,14 @@
 """
-ZERO-MISS Scraper Orchestrator — guaranteed full coverage.
+Adaptive Scraper Orchestrator — bounded queue coverage.
 
-Strategy: EVERY tier scrapes ATS companies. Shard rotation guarantees
-all companies are covered within 4 consecutive runs.
+Strategy: every tier can scrape ATS companies, but runtime coverage is controlled
+by Postgres leases, due dates, platform budgets, and per-run target caps. This
+keeps scheduled jobs reliable while the queue rotates through the long tail.
 
 Tiers:
   fast:   RSS + GitHub + ATS (1 rotating shard)                ~2 min
   medium: RSS + GitHub + Enterprise + ATS (1 shard)            ~4 min
-  deep:   Everything + Brave Search (ALL shards, no rotation)  ~15 min
+  deep:   Broad queue catch-up + enrichment sources            ~25 min
 
 Usage:
     python scripts/ingestion/run_all_scrapers.py --tier fast
@@ -45,6 +46,20 @@ def get_next_shard(scraper_name: str, total_shards: int = 4) -> int:
         return shard
     finally:
         conn.close()
+
+
+def _env_bool(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
 
 
 async def _run_with_timing(name: str, coro):
@@ -91,10 +106,10 @@ async def run_all(
     target_limit: int = None,
 ):
     """
-    Launch all scrapers in parallel — ZERO-MISS coverage.
+    Launch all enabled scrapers in parallel under a bounded uptime budget.
 
-    Every tier includes ATS. Shard rotation guarantees full
-    company coverage every 4 runs.
+    The adaptive queue persists leases and next-due times in Postgres, so a run
+    should finish cleanly even when there are tens of thousands of targets due.
 
     Priority order (by speed):
       1. RSS/Aggregators  (~30s)   -- cheapest, fastest signal
@@ -114,9 +129,9 @@ async def run_all(
         if tier == "medium":
             target_limit = int(os.getenv("JOBCLAW_MEDIUM_TARGET_LIMIT", "800"))
         elif tier == "fast":
-            target_limit = int(os.getenv("JOBCLAW_FAST_TARGET_LIMIT", "3000"))
+            target_limit = int(os.getenv("JOBCLAW_FAST_TARGET_LIMIT", "900"))
         elif tier == "deep":
-            target_limit = int(os.getenv("JOBCLAW_DEEP_TARGET_LIMIT", "3000"))
+            target_limit = int(os.getenv("JOBCLAW_DEEP_TARGET_LIMIT", "1200"))
         else:
             target_limit = int(os.getenv("JOBCLAW_ATS_TARGET_LIMIT", "3000"))
 
@@ -238,16 +253,21 @@ async def run_all(
     # The batch push_new_jobs_to_discord() at the end handles all Discord notifications.
     # StreamingJobPusher can be re-enabled when scrapers are wired to call push() per job.
 
-    # Fire all scrapers at once — each has its own session + rate limiter
-    # Global 25-minute timeout so nothing can hang forever
+    # Fire all scrapers at once — each has its own session + rate limiter.
+    # Keep the wrapper timeout env-driven so GitHub/Railway can set a hard
+    # uptime budget without changing scraper code.
     global_timed_out = False
+    global_timeout = max(300, _env_int("JOBCLAW_ORCHESTRATOR_TIMEOUT_SECONDS", 25 * 60))
     try:
         results = await asyncio.wait_for(
             asyncio.gather(*tasks, return_exceptions=True),
-            timeout=25 * 60,  # Increased from 20min to 25min to accommodate reduced ATS timeout
+            timeout=global_timeout,
         )
     except TimeoutError:
-        _log("[orchestrator] GLOBAL TIMEOUT after 25 minutes -- aborting remaining scrapers", "ERROR")
+        _log(
+            f"[orchestrator] GLOBAL TIMEOUT after {global_timeout}s -- aborting remaining scrapers",
+            "ERROR",
+        )
         global_timed_out = True
         results = []
 
@@ -280,13 +300,15 @@ async def run_all(
     )
 
     # ── AI Pipeline — dedup + salary backfill (deep tier only) ─────
-    if run_brave:  # run_brave=True is the deep-tier flag
+    if run_brave and not _env_bool("JOBCLAW_SKIP_AI_PIPELINE", False):  # run_brave=True is the deep-tier flag
         try:
             from scripts.ai.run_ai_pipeline import run_ai_pipeline
 
             await run_ai_pipeline()
         except Exception as e:
             _log(f"[orchestrator] AI pipeline failed (non-fatal): {e}", "WARN")
+    elif run_brave:
+        _log("[orchestrator] AI pipeline skipped by JOBCLAW_SKIP_AI_PIPELINE=1")
 
     # ── INSTANT Discord Push — post the moment scraping finishes ────
     jobs_pushed = 0
@@ -317,9 +339,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Tier presets (recommended):
-  --tier fast     RSS + GitHub + ATS (1 shard)       (~2 min,  every hour)
-  --tier medium   + Enterprise APIs + ATS (1 shard)  (~4 min,  every hour)
-  --tier deep     Everything + Brave Search           (~15 min, daily)
+  --tier fast     RSS + GitHub + fast ATS queue        (hourly)
+  --tier medium   Workday-heavy ATS queue              (hourly)
+  --tier deep     Broad bounded queue + enrichment     (daily)
 
 Legacy flags still work:
   --fast          Same as --tier fast
@@ -357,7 +379,7 @@ Legacy flags still work:
     )
     args = parser.parse_args()
 
-    # ── Tier-based presets (ZERO-MISS: every tier includes ATS) ────────
+    # ── Tier-based presets (bounded queue coverage) ────────────────────
     tier = args.tier
     total_shards = args.total_shards  # may be overridden per-tier below
 
@@ -375,8 +397,8 @@ Legacy flags still work:
 
     if tier == "fast":
         # Group A: Fast REST APIs only (Greenhouse, Lever, Ashby)
-        # 10,801 companies / 4 shards = ~2,700/run → finishes in ~8 min
-        # DB-persisted rotation guarantees full coverage every 4 hourly runs
+        # Active queue leases + platform budgets choose the highest-value due
+        # targets first; repeated hourly runs rotate through the remaining tail.
         _FAST_SHARDS = 4
         skip_ats = False
         run_brave = False
@@ -387,7 +409,7 @@ Legacy flags still work:
         shard_val = get_next_shard("fast_ats_ghla", _FAST_SHARDS)
         total_shards = _FAST_SHARDS
         db_tier = None
-        target_limit = int(os.getenv("JOBCLAW_FAST_TARGET_LIMIT", "3000"))
+        target_limit = int(os.getenv("JOBCLAW_FAST_TARGET_LIMIT", "900"))
     elif tier == "medium":
         # Group B: Workday-heavy platforms across a 16-shard rotation by default.
         # Workday-heavy platforms are slow; keep each run small and reliable.
@@ -405,16 +427,17 @@ Legacy flags still work:
         db_tier = None
         target_limit = int(os.getenv("JOBCLAW_MEDIUM_TARGET_LIMIT", "800"))
     elif tier == "deep":
-        # Everything: ALL platforms + Workable + Brave Search — daily full sweep
+        # Daily broad recovery pass. Still bounded by queue target caps and platform
+        # budgets so GitHub does not kill the workflow mid-run.
         skip_ats = False
         run_brave = True
         skip_github = False
         window = args.window or 24
         skip_platforms = _GEM_SKIP  # Gem still dead in deep
         platforms = None  # All platforms including workable
-        shard_val = None  # No sharding — full sweep of all companies
+        shard_val = None  # No shard filter; adaptive queue target caps still apply
         db_tier = None
-        target_limit = int(os.getenv("JOBCLAW_DEEP_TARGET_LIMIT", "3000"))
+        target_limit = int(os.getenv("JOBCLAW_DEEP_TARGET_LIMIT", "1200"))
     else:
         # No tier specified — default to medium behavior
         skip_ats = False
