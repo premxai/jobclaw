@@ -112,13 +112,14 @@ fresh hosted runner, visible logs, and one central timing surface:
 | Registry expander | Daily at `07:17` UTC |
 | Deep tier | Daily at `08:17` UTC |
 
-Railway worker scheduling is disabled by default with
-`JOBCLAW_RAILWAY_ENABLE_HOT=0`, `JOBCLAW_RAILWAY_ENABLE_DISCORD=0`,
-`JOBCLAW_RAILWAY_ENABLE_VALIDATION=0`, `JOBCLAW_RAILWAY_ENABLE_FAST=0`,
-`JOBCLAW_RAILWAY_ENABLE_MEDIUM=0`, and `JOBCLAW_RAILWAY_ENABLE_DEEP=0`. If
-GitHub Actions is unavailable, set `JOBCLAW_RAILWAY_BULK_FALLBACK=1` or enable
-specific Railway fallback tasks temporarily. Postgres queue leases still prevent
-duplicate target claims if both environments overlap during an incident.
+Railway worker scheduling acts as a stale fallback by default:
+`JOBCLAW_RAILWAY_STALE_FALLBACK=1` and `JOBCLAW_RAILWAY_DUE_GATE=1`. GitHub
+Actions remains primary, but the Railway worker wakes frequently, reads the same
+Postgres run history as the GitHub controller, and only runs hot/fast/medium or
+Discord when the DB says that job is overdue. Set a specific
+`JOBCLAW_RAILWAY_ENABLE_*` flag to `0` to hard-disable that fallback, or use
+`JOBCLAW_RAILWAY_BULK_FALLBACK=1` during an incident. Postgres queue leases still
+prevent duplicate target claims if both environments overlap.
 
 Discord posting is live when `JOBCLAW_DISCORD_DRY_RUN=0`, with
 `JOBCLAW_DISCORD_STRICT_QUALITY=1` and `JOBCLAW_DIRECT_SOURCE_ONLY=1` rejecting
