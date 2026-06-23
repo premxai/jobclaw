@@ -8,9 +8,9 @@ import json
 import os
 import re
 import time
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
-from api.database import _is_pg, _ph, get_db
+from api.database import get_jobs
 
 BOARD_CATEGORIES = ("All Roles", "AI/ML", "SWE", "Data", "Other")
 DISCORD_DATA_CATEGORIES = {"Data Science", "Data Engineering", "Data Analyst"}
@@ -188,50 +188,36 @@ def build_snapshot_from_rows(rows: list[dict], *, freshness_hours: int, max_jobs
 
 
 def _fetch_snapshot_rows(freshness_hours: int, max_jobs: int) -> list[dict]:
-    conn = get_db()
-    p = _ph()
-    candidate_limit = max(max_jobs * 5, max_jobs)
-    active = "TRUE" if _is_pg() else "1"
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=freshness_hours)
-    try:
-        cursor = conn.cursor()
-        if _is_pg():
-            cursor.execute(
-                f"""
-                SELECT internal_hash, job_id, title, company, location, url, date_posted,
-                       source_ats, first_seen, keywords_matched, quality_state
-                FROM jobs
-                WHERE is_active = {active}
-                  AND first_seen >= {p}
-                  AND COALESCE(quality_state, 'needs_review') <> 'rejected'
-                ORDER BY
-                  CASE WHEN COALESCE(quality_state, 'needs_review') = 'accepted' THEN 0 ELSE 1 END,
-                  first_seen DESC
-                LIMIT {p}
-                """,
-                (cutoff.isoformat(), candidate_limit),
-            )
-        else:
-            cursor.execute(
-                f"""
-                SELECT internal_hash, job_id, title, company, location, url, date_posted,
-                       source_ats, first_seen, keywords_matched, quality_state
-                FROM jobs
-                WHERE is_active = {active}
-                  AND datetime(first_seen) >= datetime('now', {p})
-                  AND COALESCE(quality_state, 'needs_review') <> 'rejected'
-                ORDER BY
-                  CASE WHEN COALESCE(quality_state, 'needs_review') = 'accepted' THEN 0 ELSE 1 END,
-                  first_seen DESC
-                LIMIT {p}
-                """,
-                (f"-{freshness_hours} hours", candidate_limit),
-            )
-        rows = cursor.fetchall()
-        columns = [d[0] for d in cursor.description]
-        return [dict(row) if hasattr(row, "keys") else dict(zip(columns, row)) for row in rows]
-    finally:
-        conn.close()
+    candidate_limit = min(max(max_jobs * 5, max_jobs), _env_int("JOBCLAW_BOARD_SNAPSHOT_CANDIDATE_LIMIT", 2500))
+    accepted_rows, _ = get_jobs(
+        page=1,
+        per_page=candidate_limit,
+        recent_hours=freshness_hours,
+        quality="accepted",
+        active_only=True,
+        include_description=False,
+    )
+    if len(accepted_rows) >= candidate_limit:
+        return accepted_rows
+
+    fallback_rows, _ = get_jobs(
+        page=1,
+        per_page=candidate_limit,
+        recent_hours=freshness_hours,
+        active_only=True,
+        include_description=False,
+    )
+    seen = {row.get("internal_hash") for row in accepted_rows}
+    rows = list(accepted_rows)
+    for row in fallback_rows:
+        key = row.get("internal_hash")
+        if key in seen or row.get("quality_state") == "rejected":
+            continue
+        rows.append(row)
+        seen.add(key)
+        if len(rows) >= candidate_limit:
+            break
+    return rows
 
 
 def clear_board_snapshot_cache() -> None:
