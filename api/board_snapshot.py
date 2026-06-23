@@ -8,7 +8,7 @@ import json
 import os
 import re
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from api.database import _is_pg, _ph, get_db
 
@@ -192,6 +192,7 @@ def _fetch_snapshot_rows(freshness_hours: int, max_jobs: int) -> list[dict]:
     p = _ph()
     candidate_limit = max(max_jobs * 5, max_jobs)
     active = "TRUE" if _is_pg() else "1"
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=freshness_hours)
     try:
         cursor = conn.cursor()
         if _is_pg():
@@ -201,14 +202,14 @@ def _fetch_snapshot_rows(freshness_hours: int, max_jobs: int) -> list[dict]:
                        source_ats, first_seen, keywords_matched, quality_state
                 FROM jobs
                 WHERE is_active = {active}
-                  AND first_seen::timestamptz >= NOW() - ({p} * INTERVAL '1 hour')
+                  AND first_seen >= {p}
                   AND COALESCE(quality_state, 'needs_review') <> 'rejected'
                 ORDER BY
                   CASE WHEN COALESCE(quality_state, 'needs_review') = 'accepted' THEN 0 ELSE 1 END,
                   first_seen DESC
                 LIMIT {p}
                 """,
-                (freshness_hours, candidate_limit),
+                (cutoff.isoformat(), candidate_limit),
             )
         else:
             cursor.execute(

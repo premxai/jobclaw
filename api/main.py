@@ -67,7 +67,7 @@ async def lifespan(app: FastAPI):
         try:
             validate_database_url()
             conn = get_db()
-            total = _scalar(conn, "SELECT COUNT(*) FROM jobs")
+            total = _jobs_count_for_health(conn)
             conn.close()
             print(f"✅ Database connected: {total} jobs in JobClaw")
         except Exception as exc:
@@ -154,6 +154,21 @@ def _scalar(conn, sql: str, params: tuple = ()):
         return None
 
 
+def _jobs_count_for_health(conn):
+    """Return a cheap jobs count for startup and /health."""
+    if _is_pg():
+        return _scalar(
+            conn,
+            """
+            SELECT GREATEST(
+                COALESCE((SELECT reltuples::bigint FROM pg_class WHERE oid = 'jobs'::regclass), 0),
+                0
+            )
+            """,
+        )
+    return _scalar(conn, "SELECT COUNT(*) FROM jobs")
+
+
 def _effective_user_id() -> str:
     """Server-side tenant identity for the application tracker.
 
@@ -235,7 +250,7 @@ def health_check():
     """API health check with database status."""
     try:
         conn = get_db()
-        total = _scalar(conn, "SELECT COUNT(*) FROM jobs")
+        total = _jobs_count_for_health(conn)
         conn.close()
         return HealthResponse(status="ok", database="connected", total_jobs=total)
     except Exception as e:

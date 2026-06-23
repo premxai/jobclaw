@@ -159,8 +159,9 @@ def get_jobs(
                 params.extend([f"%{search}%"] * 3)
         if recent_hours:
             if _is_pg():
-                conditions.append(f"first_seen::timestamptz >= NOW() - ({p} * INTERVAL '1 hour')")
-                params.append(recent_hours)
+                cutoff = datetime.now(timezone.utc) - timedelta(hours=recent_hours)
+                conditions.append(f"first_seen >= {p}")
+                params.append(cutoff.isoformat())
             else:
                 conditions.append(f"datetime(first_seen) >= datetime('now', {p})")
                 params.append(f"-{recent_hours} hours")
