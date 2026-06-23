@@ -179,7 +179,14 @@ export const MOCK_BOARD_JOBS: BoardJob[] = [
 ];
 
 const API_BASE = "/api";
-const API_FALLBACK_BASE = (process.env.NEXT_PUBLIC_API_URL || "https://api.norinote.xyz").replace(/\/$/, "");
+const DEFAULT_API_FALLBACK_BASE = "https://api.norinote.xyz";
+const configuredApiFallbackBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+const API_FALLBACK_BASE =
+  configuredApiFallbackBase &&
+  configuredApiFallbackBase.startsWith("https://") &&
+  !configuredApiFallbackBase.includes("web-production")
+    ? configuredApiFallbackBase
+    : DEFAULT_API_FALLBACK_BASE;
 const BOARD_FRESHNESS_HOURS = 48;
 // Jobs only change when scrapers run (~every 15 min), and the API caches reads, so
 // a 5-min poll keeps the board fresh while cutting backend/DB load ~5x. The board
