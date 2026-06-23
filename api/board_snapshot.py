@@ -247,7 +247,13 @@ def get_board_snapshot() -> dict:
 
     freshness_hours = max(1, _env_int("JOBCLAW_BOARD_FRESHNESS_HOURS", 48))
     max_jobs = max(1, _env_int("JOBCLAW_BOARD_SNAPSHOT_MAX_JOBS", 1000))
-    rows = _fetch_snapshot_rows(freshness_hours, max_jobs)
+    try:
+        rows = _fetch_snapshot_rows(freshness_hours, max_jobs)
+    except Exception:
+        if _snapshot_cache:
+            return _snapshot_cache[1]
+        raise
+
     snapshot = build_snapshot_from_rows(rows, freshness_hours=freshness_hours, max_jobs=max_jobs)
     _snapshot_cache = (now, snapshot)
     return snapshot

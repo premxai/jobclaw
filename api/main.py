@@ -236,7 +236,7 @@ async def root():
 
 
 @app.get("/health", response_model=HealthResponse, tags=["System"])
-async def health_check():
+def health_check():
     """API health check with database status."""
     try:
         conn = get_db()
@@ -248,7 +248,7 @@ async def health_check():
 
 
 @app.get("/health/deep", tags=["System"])
-async def deep_health_check():
+def deep_health_check():
     """Deep health check — database, scraper freshness, Discord, and disk."""
     checks: dict = {"status": "ok", "checks": {}}
 
@@ -365,14 +365,14 @@ async def deep_health_check():
 
 
 @app.get("/board/jobs.json", response_model=BoardSnapshotResponse, tags=["Board"])
-async def board_jobs_snapshot(response: Response):
+def board_jobs_snapshot(response: Response):
     """Small cached public payload for the website home board."""
     _set_board_snapshot_headers(response)
     return BoardSnapshotResponse(**get_board_snapshot())
 
 
 @app.get("/jobs", response_model=JobListResponse, tags=["Jobs"])
-async def list_jobs(
+def list_jobs(
     page: int = Query(1, ge=1, description="Page number"),
     per_page: int = Query(50, ge=1, le=200, description="Results per page"),
     company: str | None = Query(None, description="Filter by company name"),
@@ -426,7 +426,7 @@ async def list_jobs(
 
 
 @app.get("/jobs/{internal_hash}", response_model=JobResponse, tags=["Jobs"])
-async def get_job(internal_hash: str):
+def get_job(internal_hash: str):
     """Get a single job by its internal hash ID."""
     job = get_job_by_hash(internal_hash)
     if not job:
@@ -536,7 +536,7 @@ async def match_jobs(
 
 
 @app.get("/companies", response_model=list[CompanyResponse], tags=["Companies"])
-async def list_companies(
+def list_companies(
     ats: str | None = Query(None, description="Filter by ATS platform"),
     response: Response = None,
 ):
@@ -555,7 +555,7 @@ async def list_companies(
 
 
 @app.get("/companies/{company_name}/jobs", response_model=JobListResponse, tags=["Companies"])
-async def company_jobs(
+def company_jobs(
     company_name: str,
     page: int = Query(1, ge=1),
     per_page: int = Query(50, ge=1, le=200),
@@ -577,7 +577,7 @@ async def company_jobs(
 
 
 @app.get("/stats", response_model=StatsOverview, tags=["Stats"])
-async def stats_overview(response: Response = None):
+def stats_overview(response: Response = None):
     """System-wide statistics: job counts, platform breakdown, recent trends."""
     if response is not None:
         _set_cache_headers(response)
@@ -588,7 +588,7 @@ async def stats_overview(response: Response = None):
 
 
 @app.get("/stats/runs", response_model=list[ScraperRunResponse], tags=["Stats"])
-async def scraper_runs(
+def scraper_runs(
     limit: int = Query(20, ge=1, le=100, description="Number of recent runs to show"),
     response: Response = None,
 ):

@@ -23,6 +23,13 @@ DATABASE_URL_PLACEHOLDER_HINTS = (
 )
 
 
+def _env_int(name: str, default: int) -> int:
+    try:
+        return int(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
 def _is_pg() -> bool:
     return DATABASE_URL.startswith("postgres")
 
@@ -48,7 +55,13 @@ def get_db():
         import psycopg2
         import psycopg2.extras
 
-        return psycopg2.connect(DATABASE_URL, cursor_factory=psycopg2.extras.RealDictCursor)
+        statement_timeout_ms = max(1000, _env_int("JOBCLAW_PG_STATEMENT_TIMEOUT_MS", 15000))
+        return psycopg2.connect(
+            DATABASE_URL,
+            cursor_factory=psycopg2.extras.RealDictCursor,
+            connect_timeout=max(1, _env_int("JOBCLAW_PG_CONNECT_TIMEOUT", 10)),
+            options=f"-c statement_timeout={statement_timeout_ms}",
+        )
 
     conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.row_factory = sqlite3.Row
