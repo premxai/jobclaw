@@ -55,16 +55,10 @@ from api.models import (
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup/shutdown hooks."""
-    # Validate DB exists
+    # Keep API startup lightweight. Schema initialization/migration belongs to
+    # scraper and maintenance jobs; doing it here can block Uvicorn from binding
+    # on Railway while Postgres is busy.
     from api.database import DB_PATH
-
-    try:
-        from scripts.database.db_utils import get_connection
-
-        schema_conn = get_connection()
-        schema_conn.close()
-    except Exception:
-        pass
 
     if not _is_pg() and not DB_PATH.exists():
         print(f"⚠️  Database not found at {DB_PATH}")
@@ -80,11 +74,12 @@ async def lifespan(app: FastAPI):
             print(f"⚠️  Database unavailable at startup: {exc}")
             print("   API will start in degraded mode; check /health and /health/deep.")
 
-    # Create applications table on startup (not import time)
-    try:
-        _ensure_applications_table()
-    except Exception:
-        pass  # Will be created when DB is available
+    # Local SQLite convenience only. Avoid DDL on production API boot.
+    if not _is_pg() or os.getenv("JOBCLAW_API_INIT_TRACKER_TABLE", "0").lower() in {"1", "true", "yes"}:
+        try:
+            _ensure_applications_table()
+        except Exception:
+            pass  # Tracker endpoints will report DB errors if the table is unavailable.
 
     # Validate Discord configuration
     webhook_url = os.getenv("DISCORD_WEBHOOK_URL")
