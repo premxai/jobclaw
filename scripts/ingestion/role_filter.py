@@ -205,6 +205,58 @@ _COMPILED_PATTERNS: list[tuple[re.Pattern, str]] = [
     (re.compile(re.escape(kw), re.IGNORECASE), cat) for kw, cat in ROLE_KEYWORDS
 ]
 
+# ═══════════════════════════════════════════════════════════════════════
+# EARLY-CAREER DETECTION — word-boundary regexes, not substrings
+# ═══════════════════════════════════════════════════════════════════════
+# Standalone signals: strong enough to mark a title early-career on their own.
+_EARLY_CAREER_STANDALONE = re.compile(
+    r"\bnew[\s-]?grads?\b"
+    r"|\bnew[\s-]?graduates?\b"
+    r"|\bnew college grad"
+    r"|\bearly[\s-]career\b"
+    r"|\bearly in career\b"
+    r"|\bcampus hire\b"
+    r"|\buniversity grad(uate)?\b"
+    r"|\brecent grad(uate)?\b"
+    r"|\brotational program\b"
+    r"|\bdevelopment program\b"
+    r"|\bapprentice(ship)?\b",
+    re.IGNORECASE,
+)
+# Modifier signals: mark early-career only when the title already matches a
+# target role, so generic posts ("Marketing Intern") don't pass the role filter.
+_EARLY_CAREER_MODIFIER = re.compile(
+    r"\bjunior\b"
+    r"|\bjr\b"
+    r"|\bintern(ship)?s?\b"
+    r"|\bentry[\s-]level\b"
+    r"|\bgraduate\b"
+    r"|\bassociate\b"
+    r"|\bcampus\b"
+    r"|\b(engineer|developer|analyst|scientist)\s+(i|1)\b"
+    r"|\b20(2[5-9]|3[0-9])\b",  # class-year titles, e.g. "Software Engineer (2026 Start)"
+    re.IGNORECASE,
+)
+# Senior signals veto the New Grad tag so "Senior Engineer (2+ years on team X)"
+# style titles never land in the early-career channel.
+_SENIORITY_VETO = re.compile(
+    r"\b(senior|sr\.?|staff|principal|lead|manager|director|head of|vp|vice president|chief)\b",
+    re.IGNORECASE,
+)
+
+# Deterministic primary-category order — New Grad first so early-career roles
+# route to the New Grad Discord channel instead of a random matched category.
+CATEGORY_PRIORITY = [
+    "New Grad",
+    "AI/ML",
+    "SWE",
+    "Data Engineering",
+    "Data Science",
+    "Data Analyst",
+    "Research",
+    "Product",
+]
+
 
 ROLE_WEIGHTS: dict[str, float] = {
     "AI/ML": 1.0,
@@ -212,7 +264,7 @@ ROLE_WEIGHTS: dict[str, float] = {
     "Data Engineering": 0.8,
     "Data Science": 0.8,
     "Data Analyst": 0.7,
-    "New Grad": 0.7,
+    "New Grad": 1.0,
     "Product": 0.6,
     "Research": 0.8,
 }
@@ -223,14 +275,30 @@ def get_role_weight(category: str) -> float:
     return ROLE_WEIGHTS.get(category, 0.5)
 
 
-def matches_target_role(title: str) -> list[str]:
+def is_early_career(title: str, experience_years: int | None = None) -> bool:
+    """True when a title (or extracted experience requirement) signals ≤2 years."""
+    if not title:
+        return False
+    if _SENIORITY_VETO.search(title):
+        return False
+    if _EARLY_CAREER_STANDALONE.search(title):
+        return True
+    if _EARLY_CAREER_MODIFIER.search(title):
+        return True
+    return experience_years is not None and experience_years <= 2
+
+
+def matches_target_role(title: str, experience_years: int | None = None) -> list[str]:
     """Check if a job title matches any target role keywords.
 
     Args:
         title: Job title to check.
+        experience_years: Optional extracted years-of-experience requirement;
+            ≤2 tags an already-matched role as New Grad.
 
     Returns:
-        List of matched keyword categories (e.g., ["AI/ML", "SWE"]).
+        Matched categories in CATEGORY_PRIORITY order (New Grad first when
+        present, so it wins primary-category channel routing).
         Empty list if no match.
     """
     if not title:
@@ -239,7 +307,17 @@ def matches_target_role(title: str) -> list[str]:
     for pattern, category in _COMPILED_PATTERNS:
         if pattern.search(title):
             matched_categories.add(category)
-    return list(matched_categories)
+    if not _SENIORITY_VETO.search(title):
+        if _EARLY_CAREER_STANDALONE.search(title):
+            matched_categories.add("New Grad")
+        elif matched_categories and (
+            _EARLY_CAREER_MODIFIER.search(title) or (experience_years is not None and experience_years <= 2)
+        ):
+            matched_categories.add("New Grad")
+    return sorted(
+        matched_categories,
+        key=lambda cat: CATEGORY_PRIORITY.index(cat) if cat in CATEGORY_PRIORITY else len(CATEGORY_PRIORITY),
+    )
 
 
 def is_target_role(title: str) -> bool:

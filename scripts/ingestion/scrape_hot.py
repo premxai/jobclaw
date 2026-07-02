@@ -284,7 +284,7 @@ async def run_hot_scraper():
 
                 for job in result:
                     # Role filter
-                    if not matches_target_role(job.title):
+                    if not matches_target_role(job.title, experience_years=getattr(job, "experience_years", None)):
                         continue
                     # Location filter
                     if not is_us_location(job.location):

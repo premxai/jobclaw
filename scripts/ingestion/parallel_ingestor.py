@@ -374,7 +374,7 @@ async def run_cycle(window_hours: int = 24) -> dict[str, Any]:
     # 3. Filter by role keywords
     filtered = []
     for job in all_jobs:
-        matched = matches_target_role(job.title)
+        matched = matches_target_role(job.title, experience_years=getattr(job, "experience_years", None))
         if matched:
             job.keywords_matched = matched
             filtered.append(job)

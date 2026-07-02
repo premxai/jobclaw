@@ -900,7 +900,11 @@ def insert_job(conn, job_dict: dict) -> bool:
     if not keywords_list:
         from scripts.ingestion.role_filter import matches_target_role
 
-        keywords_list = matches_target_role(job_dict.get("title", ""))
+        try:
+            exp_years = int(job_dict["experience_years"]) if job_dict.get("experience_years") is not None else None
+        except (TypeError, ValueError):
+            exp_years = None
+        keywords_list = matches_target_role(job_dict.get("title", ""), experience_years=exp_years)
         job_dict["keywords_matched"] = keywords_list
 
     keywords = json.dumps(keywords_list)

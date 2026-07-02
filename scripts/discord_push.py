@@ -293,14 +293,20 @@ def _quality_score(job: dict) -> float:
 
 
 def _get_category(job: dict) -> str:
-    """Get the primary category for a job."""
+    """Get the primary category for a job. New Grad wins so early-career roles
+    always route to the New Grad channel, even for rows inserted before
+    categories were stored in priority order."""
     cats = job.get("keywords_matched", [])
     if isinstance(cats, str):
         try:
             cats = json.loads(cats)
         except (json.JSONDecodeError, TypeError):
             cats = []
-    return cats[0] if cats else "Uncategorized"
+    if not cats:
+        return "Uncategorized"
+    if "New Grad" in cats:
+        return "New Grad"
+    return cats[0]
 
 
 def _get_webhook_url(category: str) -> str:
