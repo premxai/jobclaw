@@ -22,7 +22,7 @@ CI lints the **whole repo**, not just `scripts/`. Config is duplicated in both `
 ruff check .          # lint everything (matches CI)
 ruff format --check .  # format check (matches CI); drop --check to apply
 ```
-Note the Python version split: ruff targets `py310` (3.9 aliases kept), the scraper workflows run on Python 3.10, but the CI lint/test job (`deploy.yml`) runs on Python 3.12. README says 3.12+ for local dev.
+Note the Python version split: ruff targets `py310` (3.9 aliases kept); workflows are mixed — fast/medium/deep/workday-sweep run 3.10, hot/controller/discord/validate/expand/db-maintenance run 3.11 — and the CI lint/test job (`deploy.yml`) runs 3.12. README says 3.12+ for local dev. Code must stay 3.10-compatible.
 
 ### Run Scrapers
 ```bash
@@ -66,7 +66,7 @@ Key env vars:
 - Railway worker fallback (all default off): `JOBCLAW_RAILWAY_ENABLE_{HOT,FAST,MEDIUM,DEEP,DISCORD,VALIDATION}`, `JOBCLAW_RAILWAY_BULK_FALLBACK`, `JOBCLAW_SCHEDULER_TIMEZONE` (default `America/New_York`)
 
 ### Tests
-`tests/` holds the real (pytest) suite — `test_scraper_control_plane.py` and `test_scraper_quality.py`. CI runs them with `|| true`, so they are non-blocking today.
+`tests/` holds the real (pytest) suite — scraper control plane, scraper quality, scheduling, API auth, and Twitter digest tests. CI runs them with `|| true`, so they are non-blocking today.
 ```bash
 pytest tests/ -v                          # full suite
 pytest tests/test_scraper_quality.py -v   # single file
@@ -105,15 +105,21 @@ GitHub Actions workflows (cron is UTC):
 
 | Workflow file | Schedule (UTC) | Sources |
 |---|---|---|
+| `scrape_controller.yml` | Every 15 min | **DB-gated catch-up safety net** — runs only overdue tiers (hot→fast→medium→Discord) |
 | `scrape_hot.yml` | Every 15 min (`:07,:22,:37,:52`) | `hot_companies.json` only |
 | `scrape_fast.yml` | Hourly (`:03`) | RSS + GitHub boards + due Greenhouse/Lever/Ashby targets |
 | `scrape_medium.yml` | Hourly (`:33`) | Enterprise + due slower ATS targets |
 | `discord_push.yml` | Every 15 min (`:14,:29,:44,:59`) | Posts unposted jobs (dry-run/live) |
 | `validate_targets.yml` | Every 6 hours (`:41`) | Live slug smoke validation + quarantine |
-| `expand_registry.yml` | Daily (`07:17`) | Registry expansion/discovery |
-| `scrape_deep.yml` | Daily (`08:17`) | Everything + Brave + AI pipeline |
+| `db_maintenance.yml` | Every 6 hours (`:08`) | Retention/compaction via `scripts/ops/db_maintenance.py` (avoids Neon quota blowups) |
+| `expand_registry.yml` | Daily (`11:17`) | Registry expansion/discovery |
+| `scrape_deep.yml` | Daily (`12:17`) | Everything + Brave + AI pipeline |
+| `scrape_workday_sweep.yml` | Weekly (Sun `09:23`) | Long-tail Workday sweep, gated by `workday_sweep_guard.py`; manual `force` input bypasses guardrails |
+| `twitter_push.yml` | **Paused** (manual only) | Twitter/X digest of new roles; dry-run unless `JOBCLAW_TWITTER_DRY_RUN=0` + `X_*` secrets |
 | `check_web_wiring.yml` | Manual | Diagnose deployed web↔API wiring |
 | `deploy.yml` | push/PR to `main` | CI: ruff lint/format + pytest + import smoke |
+
+The **controller** is the canonical schedule safety net: GitHub cron can delay or drop individual scheduled workflows, so `scrape_controller.yml` wakes every 15 min, checks DB reachability (`scripts/ops/github_db_preflight.py`), then runs `scripts/ops/scrape_schedule_decider.py` to execute only the tiers whose last successful run is older than its SLO interval (hot 20 min, fast 75 min, medium 90 min, Discord 15 min). The individual tier workflows remain as manual/backup paths. All DB-backed scheduled workflows use the same preflight to skip cleanly (instead of failing noisily) when the production DB is down.
 
 ### Due-Target Scheduling (active queue mode)
 The raw registry is seeded into the canonical `companies` table and deduped by `(ats_type, slug)`. With `JOBCLAW_QUEUE_MODE=active` (the production default in the workflows), runtime scrapers **claim** non-quarantined DB targets with short DB leases (`JOBCLAW_QUEUE_LEASE_SECONDS`), ordered by `priority_score` where `next_scrape_at` is due, then checkpoint target health after each scrape. Key throttles:
@@ -173,7 +179,12 @@ Dual-mode structured logging via `scripts/utils/logger.py`:
 | `api/main.py` | FastAPI server — REST endpoints + WebSocket `/ws/jobs` + application-tracker CRUD |
 | `api/database.py` / `api/auth.py` / `api/models.py` | API DB access layer, API-key auth, Pydantic models |
 | `scripts/worker/standalone_worker.py` | APScheduler in-process scheduler (Railway fallback, default off) |
+| `scripts/ops/scrape_schedule_decider.py` | Controller brain — reads DB, decides which tiers are overdue |
+| `scripts/ops/github_db_preflight.py` | Writes `db_ok` to `GITHUB_OUTPUT` so workflows skip cleanly when DB is down |
+| `scripts/ops/db_maintenance.py` | Retention/compaction — trims descriptions, prunes stale rows and run records |
+| `scripts/ops/workday_sweep_guard.py` | Gates the weekly Workday sweep on DB capacity + scraper health |
 | `scripts/ops/check_web_wiring.py` | Diagnose deployed web↔API wiring; `scraper_control_report.py` health report |
+| `scripts/twitter_push.py` | Twitter/X digest poster (paused; dry-run by default, own tweeted-hash dedup file) |
 
 ## Adding a New ATS Scraper
 1. Add adapter to `scripts/ingestion/ats_adapters.py` returning list of `NormalizedJob`
