@@ -65,8 +65,9 @@ class ScraperControlPlaneTests(unittest.TestCase):
         self.assertEqual(second_claim, [])
 
     def test_platform_budgets_cap_slow_platforms(self):
+        # Workday: 8 workers, 8s estimate -> cap = budget * 8 / 8 = budget seconds.
         old = os.environ.get("JOBCLAW_PLATFORM_BUDGET_SECONDS_WORKDAY")
-        os.environ["JOBCLAW_PLATFORM_BUDGET_SECONDS_WORKDAY"] = "45"
+        os.environ["JOBCLAW_PLATFORM_BUDGET_SECONDS_WORKDAY"] = "2"
         try:
             registry = [{"ats": "workday", "slug": f"target-{i}", "company": f"Target {i}"} for i in range(5)]
             selected, dropped, metrics = apply_platform_budgets(registry)
@@ -76,15 +77,15 @@ class ScraperControlPlaneTests(unittest.TestCase):
             else:
                 os.environ["JOBCLAW_PLATFORM_BUDGET_SECONDS_WORKDAY"] = old
 
-        self.assertEqual(len(selected), 1)
-        self.assertEqual(len(dropped), 4)
-        self.assertEqual(metrics["workday"]["cap"], 1)
+        self.assertEqual(len(selected), 2)
+        self.assertEqual(len(dropped), 3)
+        self.assertEqual(metrics["workday"]["cap"], 2)
 
     def test_platform_target_cap_uses_budget_workers_and_estimate(self):
         old = os.environ.get("JOBCLAW_PLATFORM_BUDGET_SECONDS_WORKDAY")
-        os.environ["JOBCLAW_PLATFORM_BUDGET_SECONDS_WORKDAY"] = "90"
+        os.environ["JOBCLAW_PLATFORM_BUDGET_SECONDS_WORKDAY"] = "16"
         try:
-            self.assertEqual(platform_target_cap("workday"), 2)
+            self.assertEqual(platform_target_cap("workday"), 16)
         finally:
             if old is None:
                 os.environ.pop("JOBCLAW_PLATFORM_BUDGET_SECONDS_WORKDAY", None)

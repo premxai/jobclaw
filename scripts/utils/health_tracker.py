@@ -80,8 +80,13 @@ class HealthTracker:
         retry_queue_size: int,
         failure_breakdown: dict | None = None,
         top_failures: list | None = None,
+        funnel: dict | None = None,
     ) -> None:
-        """Record metrics at the end of a run."""
+        """Record metrics at the end of a run.
+
+        `funnel` holds per-stage counts (fetched → role → US → window → inserted)
+        so pipeline leaks show up in monitoring instead of requiring a code audit.
+        """
         now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         duration = time.time() - self._start_time if self._start_time else 0
 
@@ -96,6 +101,7 @@ class HealthTracker:
             "failure_breakdown": failure_breakdown or {},
             "top_failures": top_failures or [],
             "retry_queue_size": retry_queue_size,
+            "funnel": funnel or {},
         }
         self.save()
 

@@ -417,7 +417,11 @@ Legacy flags still work:
         skip_ats = False
         run_brave = False
         skip_github = False
-        window = args.window or 8
+        # Window must cover the platform's full-registry cycle time or slow-cycling
+        # targets drop everything they find (an 8h window on a multi-day Workday
+        # rotation discarded nearly all fetched jobs). 72h covers a daily-to-3-day
+        # cycle; internal_hash dedup makes re-seen jobs harmless.
+        window = args.window or int(os.getenv("JOBCLAW_MEDIUM_WINDOW_HOURS", "72"))
         skip_platforms = _GEM_SKIP
         # Workable joins the medium rotation so its ~3.6k targets refresh more than
         # once-daily (it was previously only reached by the deep tier).

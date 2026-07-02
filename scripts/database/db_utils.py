@@ -73,6 +73,25 @@ DIRECT_ATS_SOURCES = {
     "smartrecruiters",
     "bamboohr",
     "icims",
+    # Enterprise career APIs — first-party company endpoints, as direct as ATS boards.
+    "apple",
+    "amazon",
+    "google",
+    "meta",
+    "microsoft",
+    "nvidia",
+    "tesla",
+    "tiktok",
+    "uber",
+    "cursor",
+    # Curated GitHub boards — human-maintained lists linking to direct apply URLs.
+    "github-swe-newgrad",
+    "github-ai-newgrad",
+    "github-internship",
+    "github-new-grad",
+    # Curated startup boards with per-company pages.
+    "ycombinator",
+    "wellfound",
 }
 _BLOCKED_JOB_URL_TOKENS = (
     "/salary",

@@ -59,8 +59,12 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JOBCLAW_QUEUE_MODE: "active"
-          JOBCLAW_QUEUE_LEASE_SECONDS: "300"
-          JOBCLAW_MEDIUM_TARGET_LIMIT: "800"
+          # Lease must outlive the whole run so overlapping controller/medium
+          # runs don't re-claim targets still being scraped.
+          JOBCLAW_QUEUE_LEASE_SECONDS: "1200"
+          # Per-tenant Workday rate limiting supports ~780 Workday targets/run;
+          # 1500 leaves room for Workable/Rippling/SmartRecruiters claims too.
+          JOBCLAW_MEDIUM_TARGET_LIMIT: "1500"
           JOBCLAW_WORKDAY_SHARDS: "16"
           JOBCLAW_DEGRADED_FAILS_WORKFLOW: "0"
           JOBCLAW_DIRECT_SOURCE_ONLY: "1"
@@ -68,7 +72,7 @@ jobs:
           JOBCLAW_DISCORD_DRY_RUN: "0"
           JOBCLAW_DISCORD_STRICT_QUALITY: "1"
           JOBCLAW_DISCORD_US_ONLY: "1"
-          JOBCLAW_DISCORD_MAX_POSTS: "75"
+          JOBCLAW_DISCORD_MAX_POSTS: "150"
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           DISCORD_WEBHOOK_GENERAL: ${{ secrets.DISCORD_WEBHOOK_GENERAL }}
           DISCORD_WEBHOOK_AI: ${{ secrets.DISCORD_WEBHOOK_AI }}
@@ -79,9 +83,10 @@ jobs:
           DISCORD_WEBHOOK_RESEARCH: ${{ secrets.DISCORD_WEBHOOK_RESEARCH }}
         run: |
           # Shard rotation handled by orchestrator via DB (medium_ats_workday key, 16 shards)
+          # Window comes from the medium-tier default (72h) so slow-cycling
+          # targets keep the jobs they find; internal_hash dedup handles repeats.
           python scripts/ingestion/run_all_scrapers.py \
             --tier medium \
-            --window 8 \
             --total-shards 16
 
       - name: Commit dedup file

@@ -144,10 +144,15 @@ _DEFAULT_RPS = 1.5
 
 @dataclass
 class _HostBucket:
-    """Token bucket for a single host with adaptive 429 backoff."""
+    """Token bucket for a single host with adaptive 429 backoff.
+
+    Starts with one token so the first request to a fresh host is instant —
+    essential for per-tenant Workday buckets where most tenants get exactly
+    one request per run. Subsequent requests to the same host pace at `rps`.
+    """
 
     rps: float
-    tokens: float = 0.0
+    tokens: float = 1.0
     last_refill: float = field(default_factory=time.monotonic)
     lock: asyncio.Lock = field(default_factory=asyncio.Lock)
     _base_rps: float = 0.0  # original RPS before any 429 reductions
@@ -217,22 +222,35 @@ class RateLimiter:
             self._rates.update(overrides)
 
     def _host_key(self, url: str) -> str:
-        """Extract the rate-limit key from a URL. Groups subdomains for Workday."""
+        """Extract the rate-limit key from a URL.
+
+        Workday tenants (company.wd5.myworkdayjobs.com) each get their OWN
+        bucket — every tenant is a separate host/WAF, so politeness is
+        per-company. One shared platform bucket previously throttled all
+        ~22k tenants to a combined 0.25 rps, making full coverage impossible.
+        BambooHR subdomains stay grouped (small platform, one backend).
+        """
         from urllib.parse import urlparse
 
         parsed = urlparse(url)
         host = parsed.hostname or ""
-        if "myworkdayjobs.com" in host:
-            return "myworkdayjobs.com"
         if "bamboohr.com" in host:
             return "bamboohr.com"
         return host
 
+    def _rate_for_key(self, key: str) -> float:
+        """Resolve RPS for a bucket key: exact match, then domain-suffix match."""
+        if key in self._rates:
+            return self._rates[key]
+        for domain, rps in self._rates.items():
+            if key.endswith("." + domain) or key == domain:
+                return rps
+        return _DEFAULT_RPS
+
     def _get_bucket(self, url: str) -> _HostBucket:
         key = self._host_key(url)
         if key not in self._shared_buckets:
-            rps = self._rates.get(key, _DEFAULT_RPS)
-            self._shared_buckets[key] = _HostBucket(rps=rps)
+            self._shared_buckets[key] = _HostBucket(rps=self._rate_for_key(key))
         return self._shared_buckets[key]
 
     async def acquire(self, url: str):

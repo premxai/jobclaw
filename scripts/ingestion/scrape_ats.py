@@ -742,7 +742,11 @@ async def run_ats_scraper(
     _log(f"Fetched {len(all_jobs)} total raw jobs from ATS APIs.")
 
     # ── Filtering Pipeline ────────────────────────────────────────────
-    role_filtered_pairs = [(j, target) for j, target in all_job_targets if matches_target_role(j.title)]
+    role_filtered_pairs = [
+        (j, target)
+        for j, target in all_job_targets
+        if matches_target_role(j.title, experience_years=getattr(j, "experience_years", None))
+    ]
     role_filtered = [j for j, _target in role_filtered_pairs]
     _log(f"Role filter: {len(role_filtered)}/{len(all_jobs)} matched target tech roles.")
 
@@ -895,6 +899,14 @@ async def run_ats_scraper(
         retry_queue_size=retry_stats["queue_size"],
         failure_breakdown=failure_breakdown,
         top_failures=[{"target": target, "count": count} for target, count in failing_targets.most_common(10)],
+        funnel={
+            "fetched": len(all_jobs),
+            "role_matched": len(role_filtered),
+            "us_matched": len(us_filtered),
+            "within_window": len(time_filtered),
+            "window_hours": window_hours,
+            "inserted_new": new_jobs_inserted,
+        },
     )
 
     # Check for alerts

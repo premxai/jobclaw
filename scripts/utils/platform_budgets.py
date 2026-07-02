@@ -8,7 +8,10 @@ PLATFORM_WORKERS = {
     "lever": 4,
     "ashby": 4,
     "smartrecruiters": 2,
-    "workday": 1,
+    # Workday rate-limits per tenant (each company is its own host/WAF), so 8
+    # workers touching 8 *different* tenants keeps per-company politeness
+    # unchanged while multiplying platform throughput.
+    "workday": 8,
     "workable": 1,
     "rippling": 1,
     "bamboohr": 1,
@@ -25,7 +28,9 @@ PLATFORM_ESTIMATED_SECONDS = {
     "bamboohr": 8,
     "rippling": 15,
     "workable": 20,
-    "workday": 45,
+    # Most tenants need one CXS request; 8s covers pagination on bigger boards.
+    # (Was 45s from the shared-bucket era, which capped claims at 13/run.)
+    "workday": 8,
 }
 PLATFORM_DEFAULT_BUDGET_SECONDS = {
     "greenhouse": 240,
@@ -36,7 +41,8 @@ PLATFORM_DEFAULT_BUDGET_SECONDS = {
     "bamboohr": 180,
     "rippling": 240,
     "workable": 240,
-    "workday": 600,
+    # 780s x 8 workers / 8s = ~780 targets/run, under the 900s ATS task timeout.
+    "workday": 780,
 }
 
 

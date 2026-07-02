@@ -109,11 +109,8 @@ def parse_url_for_ats(link: str) -> tuple:
                 return None, None, None
             return "bamboohr", slug, slug.replace("-", " ").title()
 
-        elif "gem.com/" in link and "/jobs" in link:
-            slug = link.split("gem.com/")[1].split("/")[0].split("?")[0]
-            if not slug:
-                return None, None, None
-            return "gem", slug, slug.replace("-", " ").title()
+        # Gem intentionally not parsed: its jobs DNS is permanently dead, so
+        # adding gem targets only bloats the registry (purged 2026-07).
 
     except Exception:
         pass

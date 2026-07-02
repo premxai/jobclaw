@@ -98,7 +98,7 @@ jobs:
           JOBCLAW_DISCORD_DRY_RUN: "0"
           JOBCLAW_DISCORD_STRICT_QUALITY: "1"
           JOBCLAW_DISCORD_US_ONLY: "1"
-          JOBCLAW_DISCORD_MAX_POSTS: "75"
+          JOBCLAW_DISCORD_MAX_POSTS: "150"
           JOBCLAW_DISCORD_LOOKBACK_HOURS: "24"
           JOBCLAW_DISCORD_CANDIDATE_LIMIT: "1000"
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -116,8 +116,8 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JOBCLAW_QUEUE_MODE: "active"
-          JOBCLAW_QUEUE_LEASE_SECONDS: "300"
-          JOBCLAW_MEDIUM_TARGET_LIMIT: "800"
+          JOBCLAW_QUEUE_LEASE_SECONDS: "1200"
+          JOBCLAW_MEDIUM_TARGET_LIMIT: "1500"
           JOBCLAW_WORKDAY_SHARDS: "16"
           JOBCLAW_DEGRADED_FAILS_WORKFLOW: "0"
           JOBCLAW_DIRECT_SOURCE_ONLY: "1"
@@ -125,7 +125,7 @@ jobs:
           JOBCLAW_DISCORD_DRY_RUN: "0"
           JOBCLAW_DISCORD_STRICT_QUALITY: "1"
           JOBCLAW_DISCORD_US_ONLY: "1"
-          JOBCLAW_DISCORD_MAX_POSTS: "75"
+          JOBCLAW_DISCORD_MAX_POSTS: "150"
           JOBCLAW_DISCORD_LOOKBACK_HOURS: "24"
           JOBCLAW_DISCORD_CANDIDATE_LIMIT: "1000"
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -139,7 +139,6 @@ jobs:
         run: |
           python scripts/ingestion/run_all_scrapers.py \
             --tier medium \
-            --window 8 \
             --total-shards 16
 
       - name: Run overdue Discord push
@@ -150,7 +149,7 @@ jobs:
           JOBCLAW_DISCORD_STRICT_QUALITY: "1"
           JOBCLAW_DISCORD_US_ONLY: "1"
           JOBCLAW_DIRECT_SOURCE_ONLY: "1"
-          JOBCLAW_DISCORD_MAX_POSTS: "75"
+          JOBCLAW_DISCORD_MAX_POSTS: "150"
           JOBCLAW_DISCORD_LOOKBACK_HOURS: "24"
           JOBCLAW_DISCORD_CANDIDATE_LIMIT: "1000"
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
