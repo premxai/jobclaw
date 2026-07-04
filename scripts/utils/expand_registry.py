@@ -369,6 +369,86 @@ def _fetch_local_urls() -> set:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# SOURCE 6: Common Crawl URL index — free, web-scale ATS discovery
+# ─────────────────────────────────────────────────────────────────────────────
+# Query the Common Crawl CDX index for known ATS URL shapes, then let
+# parse_url_for_ats() be the gatekeeper (only well-formed targets are kept).
+# This surfaces thousands of validated slugs per platform per pass, especially
+# the Oracle enterprise segment whose pod hosts are otherwise unguessable.
+
+CC_COLLINFO_URL = "https://index.commoncrawl.org/collinfo.json"
+CC_FALLBACK_INDEX = "CC-MAIN-2025-38"  # used only if collinfo.json is unreachable
+CC_QUERY_PATTERNS = [
+    "*.oraclecloud.com/hcmUI/CandidateExperience/*",
+    "boards.greenhouse.io/*",
+    "job-boards.greenhouse.io/*",
+    "jobs.lever.co/*",
+    "jobs.ashbyhq.com/*",
+    "apply.workable.com/*",
+    "ats.rippling.com/*",
+    "careers.smartrecruiters.com/*",
+]
+CC_PER_PATTERN_LIMIT = int(os.getenv("JOBCLAW_COMMONCRAWL_LIMIT", "2000"))
+
+
+def cc_index_query_url(index_id: str, pattern: str, limit: int) -> str:
+    """Build a Common Crawl CDX index query URL for a URL pattern."""
+    query = urllib.parse.urlencode({"url": pattern, "output": "json", "limit": limit})
+    return f"https://index.commoncrawl.org/{index_id}-index?{query}"
+
+
+def parse_cc_index_lines(text: str) -> set:
+    """Parse a CDX JSONL response into the set of captured URLs. Pure/robust:
+    non-JSON lines (e.g. an error page) are skipped, so a bad response yields
+    an empty set rather than raising."""
+    urls: set = set()
+    if not text:
+        return urls
+    for line in text.splitlines():
+        line = line.strip()
+        if not line.startswith("{"):
+            continue
+        try:
+            obj = json.loads(line)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        url = obj.get("url")
+        if url:
+            urls.add(url)
+    return urls
+
+
+def _commoncrawl_index_id() -> str:
+    """Latest Common Crawl index id, or a hardcoded fallback."""
+    text = _http_get(CC_COLLINFO_URL, timeout=15)
+    if text:
+        try:
+            data = json.loads(text)
+            if isinstance(data, list) and data and data[0].get("id"):
+                return data[0]["id"]
+        except (json.JSONDecodeError, ValueError):
+            pass
+    return CC_FALLBACK_INDEX
+
+
+def _fetch_commoncrawl_urls() -> set:
+    if os.getenv("JOBCLAW_ENABLE_COMMONCRAWL", "1").strip().lower() in {"0", "false", "no", "off"}:
+        print("[CommonCrawl] disabled via JOBCLAW_ENABLE_COMMONCRAWL")
+        return set()
+    index_id = _commoncrawl_index_id()
+    print(f"[CommonCrawl] index={index_id}, {len(CC_QUERY_PATTERNS)} patterns, limit={CC_PER_PATTERN_LIMIT}")
+    urls: set = set()
+    for pattern in CC_QUERY_PATTERNS:
+        text = _http_get(cc_index_query_url(index_id, pattern, CC_PER_PATTERN_LIMIT), timeout=30)
+        found = parse_cc_index_lines(text or "")
+        urls |= found
+        print(f"  [{pattern}] → {len(found)} urls")
+        time.sleep(1.0)  # be polite to the shared index
+    print(f"  → {len(urls)} total urls from Common Crawl")
+    return urls
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # MAIN
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -389,6 +469,7 @@ def fetch_and_merge():
         ("yc", _fetch_yc_urls),
         ("github", _fetch_github_urls),
         ("brave", _fetch_brave_ats_urls),
+        ("commoncrawl", _fetch_commoncrawl_urls),
     ]
 
     for source_name, fetcher in sources:
