@@ -9,7 +9,9 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.ingestion.jsonld_parser import (
     extract_jsonld_blocks,
+    extract_sitemap_urls,
     find_job_postings,
+    is_sitemap_content,
     normalize_job_posting,
     parse_job_postings_from_html,
 )
@@ -140,6 +142,125 @@ class JsonLdAdapterTests(unittest.TestCase):
 
         jobs = asyncio.run(JsonLdAdapter.fetch(None, "not-a-url", "Co"))
         self.assertEqual(jobs, [])
+
+    def test_adapter_follows_sitemap_and_extracts_each_page(self):
+        import asyncio
+
+        from scripts.ingestion import ats_adapters
+        from scripts.ingestion.ats_adapters import JsonLdAdapter
+
+        sitemap_body = (
+            "<urlset><url><loc>https://co.example.com/job/1</loc></url>"
+            "<url><loc>https://co.example.com/job/2</loc></url></urlset>"
+        )
+        page_one = '<script type="application/ld+json">{"@type":"JobPosting","title":"Role One"}</script>'
+        page_two = '<script type="application/ld+json">{"@type":"JobPosting","title":"Role Two"}</script>'
+        bodies = {
+            "https://co.example.com/sitemap.xml": sitemap_body,
+            "https://co.example.com/job/1": page_one,
+            "https://co.example.com/job/2": page_two,
+        }
+
+        class _Resp:
+            status_code = 200
+            headers = {}
+
+            def __init__(self, text):
+                self.text = text
+
+        async def fake_fetch(session, method, url, **kwargs):
+            return _Resp(bodies[url])
+
+        orig = ats_adapters.fetch_with_retry
+        ats_adapters.fetch_with_retry = fake_fetch
+        try:
+            jobs = asyncio.run(JsonLdAdapter.fetch(None, "https://co.example.com/sitemap.xml", "Co"))
+        finally:
+            ats_adapters.fetch_with_retry = orig
+
+        titles = sorted(j.title for j in jobs)
+        self.assertEqual(titles, ["Role One", "Role Two"])
+        self.assertTrue(all(j.company == "Co" for j in jobs))
+
+    def test_adapter_sitemap_cap_limits_pages_fetched(self):
+        import asyncio
+
+        from scripts.ingestion import ats_adapters
+        from scripts.ingestion.ats_adapters import JsonLdAdapter
+
+        urls = [f"https://co.example.com/job/{i}" for i in range(5)]
+        sitemap_body = "<urlset>" + "".join(f"<url><loc>{u}</loc></url>" for u in urls) + "</urlset>"
+        calls: list[str] = []
+
+        class _Resp:
+            status_code = 200
+            headers = {}
+
+            def __init__(self, text):
+                self.text = text
+
+        async def fake_fetch(session, method, url, **kwargs):
+            calls.append(url)
+            if url == "https://co.example.com/sitemap.xml":
+                return _Resp(sitemap_body)
+            return _Resp('<script type="application/ld+json">{"@type":"JobPosting","title":"R"}</script>')
+
+        orig = ats_adapters.fetch_with_retry
+        orig_cap = JsonLdAdapter.SITEMAP_PAGE_CAP
+        ats_adapters.fetch_with_retry = fake_fetch
+        JsonLdAdapter.SITEMAP_PAGE_CAP = 2
+        try:
+            jobs = asyncio.run(JsonLdAdapter.fetch(None, "https://co.example.com/sitemap.xml", "Co"))
+        finally:
+            ats_adapters.fetch_with_retry = orig
+            JsonLdAdapter.SITEMAP_PAGE_CAP = orig_cap
+
+        # 1 sitemap fetch + 2 job-page fetches (capped), not all 5
+        self.assertEqual(len(calls), 3)
+        self.assertEqual(len(jobs), 2)
+
+
+SITEMAP_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://careers.example.com/job/1001</loc></url>
+  <url><loc>https://careers.example.com/job/1002</loc></url>
+</urlset>
+"""
+
+SITEMAP_INDEX_XML = """<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap><loc>https://careers.example.com/sitemap-jobs-1.xml</loc></sitemap>
+  <sitemap><loc>https://careers.example.com/sitemap-jobs-2.xml</loc></sitemap>
+</sitemapindex>
+"""
+
+
+class SitemapParsingTests(unittest.TestCase):
+    def test_detects_urlset_sitemap(self):
+        self.assertTrue(is_sitemap_content(SITEMAP_XML))
+
+    def test_detects_sitemapindex(self):
+        self.assertTrue(is_sitemap_content(SITEMAP_INDEX_XML))
+
+    def test_html_is_not_a_sitemap(self):
+        self.assertFalse(is_sitemap_content(SINGLE))
+
+    def test_empty_is_not_a_sitemap(self):
+        self.assertFalse(is_sitemap_content(""))
+        self.assertFalse(is_sitemap_content(None))
+
+    def test_extracts_loc_urls(self):
+        urls = extract_sitemap_urls(SITEMAP_XML)
+        self.assertEqual(urls, ["https://careers.example.com/job/1001", "https://careers.example.com/job/1002"])
+
+    def test_extracts_loc_urls_from_index(self):
+        urls = extract_sitemap_urls(SITEMAP_INDEX_XML)
+        self.assertEqual(len(urls), 2)
+        self.assertTrue(all("sitemap-jobs" in u for u in urls))
+
+    def test_no_locs_returns_empty(self):
+        self.assertEqual(extract_sitemap_urls("<urlset></urlset>"), [])
+        self.assertEqual(extract_sitemap_urls(""), [])
 
 
 class JsonLdRegistryTests(unittest.TestCase):

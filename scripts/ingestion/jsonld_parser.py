@@ -1,12 +1,18 @@
-"""schema.org/JobPosting extraction from embedded JSON-LD.
+"""schema.org/JobPosting extraction from embedded JSON-LD, plus sitemap following.
 
 Nearly every career page embeds a `JobPosting` JSON-LD block for Google-for-Jobs
 SEO. Parsing it gives a single universal adapter that works across the 40+ ATS
 platforms we have no dedicated code for — the long-tail coverage technique the
 big boards rely on.
 
+Sitemap support exists because some platforms (notably SAP SuccessFactors,
+which has no public unauthenticated job API — the OData API requires admin
+credentials) publish a public `sitemap.xml` listing every job page instead.
+Following it turns one registry target into every job on that site.
+
 Pure functions here (no network): `extract_jsonld_blocks` → `find_job_postings`
-→ `normalize_job_posting`. The network fetch lives in JsonLdAdapter.
+→ `normalize_job_posting`, and `is_sitemap_content` → `extract_sitemap_urls`.
+The network fetch lives in JsonLdAdapter.
 """
 
 from __future__ import annotations
@@ -18,6 +24,27 @@ _SCRIPT_RE = re.compile(
     r'<script[^>]*type=["\']application/ld\+json["\'][^>]*>(.*?)</script>',
     re.IGNORECASE | re.DOTALL,
 )
+_SITEMAP_TAG_RE = re.compile(r"<\s*(urlset|sitemapindex)\b", re.IGNORECASE)
+_LOC_RE = re.compile(r"<loc>\s*([^<\s]+)\s*</loc>", re.IGNORECASE)
+
+
+def is_sitemap_content(text: str) -> bool:
+    """True if `text` looks like an XML sitemap (urlset or sitemapindex)."""
+    if not text:
+        return False
+    return bool(_SITEMAP_TAG_RE.search(text[:2000]))
+
+
+def extract_sitemap_urls(xml_text: str) -> list[str]:
+    """Extract every <loc> URL from a sitemap (urlset or sitemapindex).
+
+    Uses regex rather than an XML parser to stay robust to the minor
+    malformed markup real sitemaps ship with — consistent with how JSON-LD
+    extraction above tolerates broken blocks instead of raising.
+    """
+    if not xml_text:
+        return []
+    return _LOC_RE.findall(xml_text)
 
 
 def extract_jsonld_blocks(html: str) -> list:

@@ -1256,11 +1256,38 @@ class OracleAdapter:
 class JsonLdAdapter:
     """Universal schema.org/JobPosting scraper for any career page.
 
-    Slug is the page URL (career index or a single job page). Nearly every
-    career page embeds a JobPosting JSON-LD block for Google-for-Jobs SEO, so a
-    single adapter covers the long tail of ATS platforms we have no dedicated
-    code for. Yields one NormalizedJob per JobPosting node found on the page.
+    Slug is a URL — either a single page (career index or one job page) or a
+    sitemap.xml. Nearly every career page embeds a JobPosting JSON-LD block
+    for Google-for-Jobs SEO, so a single adapter covers the long tail of ATS
+    platforms we have no dedicated code for.
+
+    Sitemap mode: some platforms (SAP SuccessFactors in particular — it has
+    no public unauthenticated job API, only an admin-credentialed OData API)
+    publish a public sitemap.xml listing every job page instead. When the
+    fetched body is a sitemap, this adapter follows each <loc> URL (bounded
+    by JOBCLAW_JSONLD_SITEMAP_PAGE_CAP) and extracts JobPosting from each,
+    turning one registry target into every job on that site.
     """
+
+    SITEMAP_PAGE_CAP = int(os.getenv("JOBCLAW_JSONLD_SITEMAP_PAGE_CAP", "60"))
+
+    @staticmethod
+    async def _fetch_body(session, url: str, rate_limiter, log_tag: str) -> str | None:
+        resp = await fetch_with_retry(
+            session,
+            "GET",
+            url,
+            rate_limiter=rate_limiter,
+            log_tag=log_tag,
+            headers={"Accept": "text/html,application/xhtml+xml,application/xml"},
+        )
+        if not resp:
+            return None
+        try:
+            return await _parse_text(resp)
+        except Exception as e:
+            _log(f"[{log_tag}] Body read error: {e}", "WARN")
+            return None
 
     @staticmethod
     async def fetch(
@@ -1269,7 +1296,11 @@ class JsonLdAdapter:
         company: str,
         rate_limiter: RateLimiter | None = None,
     ) -> list[NormalizedJob]:
-        from scripts.ingestion.jsonld_parser import parse_job_postings_from_html
+        from scripts.ingestion.jsonld_parser import (
+            extract_sitemap_urls,
+            is_sitemap_content,
+            parse_job_postings_from_html,
+        )
 
         url = (slug or "").strip()
         if not url.startswith(("http://", "https://")):
@@ -1277,30 +1308,42 @@ class JsonLdAdapter:
             _record_parse_failure("jsonld", slug, "Invalid slug (not a URL)")
             return []
 
-        resp = await fetch_with_retry(
-            session,
-            "GET",
-            url,
-            rate_limiter=rate_limiter,
-            log_tag=f"jsonld/{company or url}",
-            headers={"Accept": "text/html,application/xhtml+xml"},
-        )
-        if not resp:
+        log_tag = f"jsonld/{company or url}"
+        body = await JsonLdAdapter._fetch_body(session, url, rate_limiter, log_tag)
+        if body is None:
+            _record_parse_failure("jsonld", slug, "fetch failed")
             return []
 
-        try:
-            html = await _parse_text(resp)
-        except Exception as e:
-            _log(f"[jsonld/{url}] Body read error: {e}", "WARN")
-            _record_parse_failure("jsonld", slug, f"body read error: {e}")
-            return []
+        if is_sitemap_content(body):
+            job_urls = extract_sitemap_urls(body)
+            if not job_urls:
+                _record_parse_failure("jsonld", slug, "sitemap had no <loc> urls")
+                return []
+            capped = job_urls[: JsonLdAdapter.SITEMAP_PAGE_CAP]
+            if len(job_urls) > len(capped):
+                _log(
+                    f"[{log_tag}] Sitemap has {len(job_urls)} urls; capped to {len(capped)} this run",
+                    "INFO",
+                )
+            jobs: list[NormalizedJob] = []
+            for job_url in capped:
+                page_body = await JsonLdAdapter._fetch_body(session, job_url, rate_limiter, log_tag)
+                if not page_body:
+                    continue
+                for kwargs in parse_job_postings_from_html(page_body, source_url=job_url):
+                    if kwargs.get("company") in (None, "", "Unknown") and company:
+                        kwargs["company"] = company
+                    jobs.append(_enrich_job(NormalizedJob(**kwargs)))
+            if not jobs:
+                _record_parse_failure("jsonld", slug, "sitemap pages had no JobPosting JSON-LD")
+            return jobs
 
-        postings = parse_job_postings_from_html(html, source_url=url)
+        postings = parse_job_postings_from_html(body, source_url=url)
         if not postings:
             _record_parse_failure("jsonld", slug, "no JobPosting JSON-LD found")
             return []
 
-        jobs: list[NormalizedJob] = []
+        jobs = []
         for kwargs in postings:
             # Prefer the page's declared company, fall back to the registry name.
             if kwargs.get("company") in (None, "", "Unknown") and company:
