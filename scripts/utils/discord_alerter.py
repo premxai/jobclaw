@@ -40,6 +40,36 @@ async def send_admin_alert(message: str, level: str = "info") -> bool:
         return False
 
 
+def _health_webhook_url() -> str:
+    """Dedicated ops/health webhook, falling back to the general channel.
+
+    Kept separate from the per-category job webhooks so health noise never
+    lands in the job feeds. Returns "" when nothing is configured (no-op).
+    """
+    return (os.getenv("JOBCLAW_HEALTH_WEBHOOK_URL") or os.getenv("DISCORD_WEBHOOK_GENERAL") or "").strip()
+
+
+async def send_health_alert(message: str) -> bool:
+    """Post a scraper-health alert to the ops webhook. No-op if unconfigured."""
+    url = _health_webhook_url()
+    if not url or not message:
+        return False
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                url,
+                json={"content": message[:2000]},
+                timeout=aiohttp.ClientTimeout(total=10),
+            ) as resp:
+                if resp.status in (200, 204):
+                    return True
+                logger.warning(f"Health alert webhook failed: HTTP {resp.status}")
+                return False
+    except Exception as e:
+        logger.warning(f"Health alert webhook error: {e}")
+        return False
+
+
 async def send_daily_digest(stats: dict) -> bool:
     """Send a formatted daily digest embed to the admin channel."""
     if not ADMIN_CHANNEL_ID or not BOT_TOKEN:

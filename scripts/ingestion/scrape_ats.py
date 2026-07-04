@@ -854,6 +854,7 @@ async def run_ats_scraper(
         "status": run_status,
         "platforms": platform_metrics,
         "failures": dict(sorted(failure_counts.items())),
+        "failure_breakdown": failure_breakdown,
         "bad_targets": bad_target_failures,
         "targets_loaded": len(registry),
         "targets_attempted": len(companies_to_scrape),
@@ -915,6 +916,16 @@ async def run_ats_scraper(
         for alert in alerts:
             level = "ERROR" if alert["level"] == "critical" else "WARN"
             _log(f"HEALTH ALERT: {alert['message']}", level)
+        # Surface to the ops Discord webhook (no-op unless one is configured).
+        try:
+            from scripts.utils.discord_alerter import send_health_alert
+            from scripts.utils.health_tracker import format_discord_alert
+
+            alert_text = format_discord_alert(alerts)
+            if alert_text:
+                await send_health_alert(alert_text)
+        except Exception as e:
+            _log(f"Health alert dispatch failed (non-fatal): {e}", "WARN")
 
     _log(
         f">>> ATS Scraper Complete. "

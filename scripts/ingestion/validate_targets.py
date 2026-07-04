@@ -40,6 +40,7 @@ CORE_PLATFORMS = {
     "rippling",
     "smartrecruiters",
     "bamboohr",
+    "oracle",
 }
 
 
@@ -106,6 +107,25 @@ async def _probe(session, limiter: RateLimiter, company: dict) -> dict:
             url = f"https://ats.rippling.com/api/v1/board/{slug}/jobs"
             resp = await fetch_with_retry(
                 session, "GET", url, rate_limiter=limiter, log_tag=f"validate/rippling/{slug}", max_retries=1
+            )
+        elif ats == "oracle":
+            parts = slug.split(":")
+            host = parts[0].strip().strip("/")
+            site = parts[1].strip() if len(parts) > 1 and parts[1].strip() else "CX_1"
+            if not host:
+                return {"status": "bad_target", "category": "bad_target", "error": "malformed_oracle_slug"}
+            url = (
+                f"https://{host}/hcmRestApi/resources/latest/recruitingCEJobRequisitions"
+                f"?onlyData=true&finder=findReqs;siteNumber={site},limit=1,offset=0"
+            )
+            resp = await fetch_with_retry(
+                session,
+                "GET",
+                url,
+                rate_limiter=limiter,
+                log_tag=f"validate/oracle/{host}",
+                headers={"Accept": "application/json"},
+                max_retries=1,
             )
         elif ats == "workday":
             parts = slug.split(":")

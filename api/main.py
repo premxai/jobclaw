@@ -33,6 +33,7 @@ from api.database import (
     get_db,
     get_job_by_hash,
     get_jobs,
+    get_platform_health,
     get_scraper_runs,
     get_stats,
     validate_database_url,
@@ -595,6 +596,22 @@ def stats_overview(response: Response = None):
     if cached is not None:
         return cached
     return _store_read("stats", StatsOverview(**get_stats()))
+
+
+@app.get("/stats/health", tags=["Stats"])
+def platform_health(
+    runs_limit: int = Query(25, ge=1, le=100, description="Recent ATS runs to aggregate"),
+    response: Response = None,
+):
+    """Per-platform scraper health: success rate and error-rate-by-category over
+    recent runs. Answers 'is Workday (or any platform) actually working?'."""
+    if response is not None:
+        _set_cache_headers(response)
+    cache_key = f"stats_health:{runs_limit}"
+    cached = _cached_read(cache_key)
+    if cached is not None:
+        return cached
+    return _store_read(cache_key, {"platforms": get_platform_health(runs_limit=runs_limit)})
 
 
 @app.get("/stats/runs", response_model=list[ScraperRunResponse], tags=["Stats"])

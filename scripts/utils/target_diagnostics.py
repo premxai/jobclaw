@@ -16,6 +16,7 @@ SUPPORTED_ATS = {
     "rippling",
     "smartrecruiters",
     "bamboohr",
+    "oracle",
     "gem",
 }
 
@@ -33,6 +34,7 @@ _ATS_DOMAIN_HINTS = {
     "rippling": ("ats.rippling.com", "rippling.com"),
     "smartrecruiters": ("api.smartrecruiters.com", "jobs.smartrecruiters.com"),
     "bamboohr": ("bamboohr.com",),
+    "oracle": ("oraclecloud.com",),
     "gem": ("job-boards.gem.com", "gem.com"),
 }
 

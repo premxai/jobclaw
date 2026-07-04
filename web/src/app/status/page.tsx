@@ -31,6 +31,31 @@ interface RunResponse {
   status?: string;
 }
 
+interface PlatformHealthEntry {
+  attempted?: number;
+  jobs_fetched?: number;
+  success_rate?: number | null;
+  infra_error_rate?: number | null;
+  categories?: Record<string, number>;
+}
+
+interface PlatformHealthResponse {
+  platforms?: Record<string, PlatformHealthEntry>;
+}
+
+function pct(value: number | null | undefined): string {
+  return typeof value === "number" ? `${Math.round(value * 100)}%` : "n/a";
+}
+
+function platformState(entry: PlatformHealthEntry): CheckState {
+  const sr = entry.success_rate;
+  const ier = entry.infra_error_rate;
+  if (typeof sr !== "number") return "checking";
+  if ((typeof ier === "number" && ier > 0.15) || sr < 0.6) return "fail";
+  if ((typeof ier === "number" && ier > 0.05) || sr < 0.85) return "warn";
+  return "pass";
+}
+
 function stateStyles(state: CheckState): string {
   if (state === "pass") return "border-emerald-200 bg-emerald-50 text-emerald-800";
   if (state === "warn") return "border-amber-200 bg-amber-50 text-amber-800";
@@ -88,18 +113,23 @@ function checkingRows(): StatusCheck[] {
 
 export default function StatusPage() {
   const [checks, setChecks] = useState<StatusCheck[]>(checkingRows);
+  const [platforms, setPlatforms] = useState<Record<string, PlatformHealthEntry> | null>(null);
   const [lastCheckedAt, setLastCheckedAt] = useState<string | null>(null);
 
   async function runChecks() {
     setChecks(checkingRows());
+    setPlatforms(null);
 
-    const [health, stats, freshJobs, acceptedJobs, runs] = await Promise.all([
+    const [health, stats, freshJobs, acceptedJobs, runs, platformHealth] = await Promise.all([
       getJson<Record<string, unknown>>("/api/health"),
       getJson<StatsResponse>("/api/stats"),
       getJson<JobsResponse>("/api/jobs?per_page=10&recent_hours=48"),
       getJson<JobsResponse>("/api/jobs?per_page=10&recent_hours=48&quality=accepted"),
       getJson<RunResponse[]>("/api/stats/runs?limit=1"),
+      getJson<PlatformHealthResponse>("/api/stats/health?runs_limit=25"),
     ]);
+
+    setPlatforms(platformHealth.data?.platforms || {});
 
     const totalJobs = stats.data?.total_jobs || 0;
     const jobsLast24h = stats.data?.jobs_last_24h || 0;
@@ -202,6 +232,55 @@ export default function StatusPage() {
               <p className="text-sm leading-6 text-zinc-600">{check.detail}</p>
             </div>
           ))}
+        </div>
+
+        <div className="mt-6">
+          <h2 className="mb-1 text-lg font-bold tracking-[-0.02em] text-black">Platform health</h2>
+          <p className="mb-3 text-sm leading-6 text-zinc-600">
+            Per-ATS success and infra-error rate over the last 25 scraper runs — whether each platform is
+            actually working or being rate-limited/blocked.
+          </p>
+          {platforms === null ? (
+            <p className="text-sm text-zinc-500">Checking /api/stats/health...</p>
+          ) : Object.keys(platforms).length === 0 ? (
+            <p className="text-sm text-zinc-500">No run summaries yet.</p>
+          ) : (
+            <div className="divide-y divide-zinc-200 overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+              {Object.entries(platforms)
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([platform, entry]) => {
+                  const state = platformState(entry);
+                  const topCategories = Object.entries(entry.categories || {})
+                    .sort(([, a], [, b]) => b - a)
+                    .slice(0, 4)
+                    .map(([category, count]) => `${category}=${count}`)
+                    .join(", ");
+                  return (
+                    <div
+                      key={platform}
+                      className="grid gap-3 px-4 py-4 sm:grid-cols-[180px_1fr] sm:items-center sm:px-5"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-flex h-7 w-7 items-center justify-center rounded-full border ${stateStyles(
+                            state,
+                          )}`}
+                        >
+                          <StateIcon state={state} />
+                        </span>
+                        <span className="text-sm font-bold capitalize text-zinc-950">{platform}</span>
+                      </div>
+                      <p className="text-sm leading-6 text-zinc-600">
+                        {`${entry.attempted || 0} attempted · ${pct(entry.success_rate)} ok · ${pct(
+                          entry.infra_error_rate,
+                        )} infra errors · ${entry.jobs_fetched || 0} jobs`}
+                        {topCategories ? ` · ${topCategories}` : ""}
+                      </p>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
         </div>
 
         <p className="mt-4 text-xs font-medium text-zinc-500">

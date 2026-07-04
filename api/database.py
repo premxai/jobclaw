@@ -358,6 +358,34 @@ def get_stats() -> dict:
         conn.close()
 
 
+def get_platform_health(runs_limit: int = 25) -> dict:
+    """Aggregate recent ATS run summaries into per-platform success/error rates.
+
+    Powers the /stats/health endpoint and the public status page — the
+    'is Workday actually working, or silently rate-limited?' readout.
+    """
+    from scripts.ops.platform_health import aggregate_platform_health
+
+    conn = get_db()
+    p = _ph()
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            f"""
+            SELECT COALESCE(summary_json, '') AS summary_json
+            FROM scraper_runs
+            WHERE scraper = {p} AND summary_json IS NOT NULL AND summary_json <> ''
+            ORDER BY run_at DESC
+            LIMIT {p}
+            """,
+            ("scrape_ats", runs_limit),
+        )
+        summaries = [_row_to_mapping(r).get("summary_json") for r in cursor.fetchall()]
+    finally:
+        conn.close()
+    return aggregate_platform_health(summaries)
+
+
 def get_scraper_runs(limit: int = 20) -> list[dict]:
     """Get recent scraper run logs from canonical scraper_runs table."""
     conn = get_db()

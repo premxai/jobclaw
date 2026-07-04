@@ -14,6 +14,7 @@ from scripts.database.db_utils import (
     get_scraper_control_snapshot,
     is_postgres,
 )
+from scripts.ops.platform_health import get_platform_health
 
 
 def _rows(conn, sql: str, params: tuple = ()) -> list[dict]:
@@ -56,6 +57,26 @@ def main() -> int:
                 )
         else:
             print("- none")
+
+        print("\nRun health by platform (last 25 ATS runs — is it actually working?)")
+        platform_health = get_platform_health(conn, runs_limit=25)
+        if platform_health:
+            for platform, h in sorted(platform_health.items()):
+                sr = h.get("success_rate")
+                ier = h.get("infra_error_rate")
+                ok_str = f"{100 * sr:.0f}%" if sr is not None else "n/a"
+                infra_str = f"{100 * ier:.0f}%" if ier is not None else "n/a"
+                cats = h.get("categories") or {}
+                top_cats = ", ".join(f"{k}={v}" for k, v in sorted(cats.items(), key=lambda kv: -kv[1])[:4])
+                line = (
+                    f"- {platform}: attempted={h.get('attempted', 0)} ok={ok_str} "
+                    f"jobs={h.get('jobs_fetched', 0)} infra_errors={infra_str}"
+                )
+                if top_cats:
+                    line += f" [{top_cats}]"
+                print(line)
+        else:
+            print("- no run summaries yet")
 
         print("\nCoverage age by platform (aged = un-scraped past the SLO)")
         for cov in get_coverage_age_by_platform(conn):
