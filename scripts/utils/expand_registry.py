@@ -109,6 +109,23 @@ def parse_url_for_ats(link: str) -> tuple:
                 return None, None, None
             return "bamboohr", slug, slug.replace("-", " ").title()
 
+        # Oracle Recruiting Cloud — career sites embed /hcmUI/CandidateExperience/.
+        # Host varies (oraclecloud.com pod or a custom domain); slug is host:site.
+        elif "/hcmui/candidateexperience/" in link:
+            parsed = urllib.parse.urlparse(link if link.startswith("http") else "https://" + link)
+            host = parsed.netloc
+            if not host:
+                return None, None, None
+            site = "CX_1"
+            if "/sites/" in parsed.path:
+                seg = parsed.path.split("/sites/")[1].split("/")[0]
+                if seg:
+                    # Site codes are CX_<n> and case-sensitive; the input link is
+                    # lowercased on entry, so normalize back to canonical casing.
+                    site = seg.upper() if re.match(r"^cx_\d+$", seg) else seg
+            name = host.split(".")[0].replace("-", " ").title()
+            return "oracle", f"{host}:{site}", name
+
         # Gem intentionally not parsed: its jobs DNS is permanently dead, so
         # adding gem targets only bloats the registry (purged 2026-07).
 
@@ -287,6 +304,10 @@ BRAVE_ATS_QUERIES = [
     # SmartRecruiters
     "site:jobs.smartrecruiters.com software engineer",
     "site:jobs.smartrecruiters.com machine learning",
+    # Oracle Recruiting Cloud — enterprise segment (non-Workday Fortune 500)
+    "inurl:hcmUI/CandidateExperience software engineer",
+    "inurl:hcmUI/CandidateExperience data engineer",
+    "inurl:hcmUI/CandidateExperience new grad 2026",
 ]
 
 

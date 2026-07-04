@@ -425,7 +425,7 @@ Legacy flags still work:
         skip_platforms = _GEM_SKIP
         # Workable joins the medium rotation so its ~3.6k targets refresh more than
         # once-daily (it was previously only reached by the deep tier).
-        platforms = {"workday", "workable", "rippling", "smartrecruiters", "bamboohr"}
+        platforms = {"workday", "workable", "rippling", "smartrecruiters", "bamboohr", "oracle"}
         shard_val = get_next_shard("medium_ats_workday", _MEDIUM_SHARDS)
         total_shards = _MEDIUM_SHARDS  # must match shard key — do not use args.total_shards here
         db_tier = None

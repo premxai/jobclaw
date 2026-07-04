@@ -73,6 +73,7 @@ DIRECT_ATS_SOURCES = {
     "smartrecruiters",
     "bamboohr",
     "icims",
+    "oracle",
     # Enterprise career APIs — first-party company endpoints, as direct as ATS boards.
     "apple",
     "amazon",

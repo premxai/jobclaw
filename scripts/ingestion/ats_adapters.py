@@ -1119,6 +1119,125 @@ class GemAdapter:
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# ORACLE RECRUITING CLOUD (ORC / Fusion) ADAPTER
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class OracleAdapter:
+    """Oracle Recruiting Cloud (Fusion) public career-site REST API.
+
+    Endpoint: https://{host}/hcmRestApi/resources/latest/recruitingCEJobRequisitions
+    Slug format: "host:siteNumber"  e.g. "eeho.fa.us2.oraclecloud.com:CX_1"
+    `siteNumber` defaults to CX_1 (Oracle's default career site) when omitted.
+
+    Covers the large non-Workday enterprise segment (Oracle/PeopleSoft shops).
+    Same paginated-JSON shape as Workday: a first page carries TotalJobsCount,
+    then offset paging until drained.
+    """
+
+    PAGE_SIZE = 25
+    MAX_PAGES = 80  # 2,000-req safety cap per tenant
+
+    @staticmethod
+    def _build_url(host: str, site: str, limit: int, offset: int) -> str:
+        # ORC finder uses raw ';' and ',' sub-delims; curl_cffi sends the URL
+        # verbatim (production path) and yarl preserves these in the query.
+        finder = f"findReqs;siteNumber={site},limit={limit},offset={offset},sortBy=POSTING_DATES_DESC"
+        expand = "requisitionList.secondaryLocations,flexFieldsFacet.values"
+        return (
+            f"https://{host}/hcmRestApi/resources/latest/recruitingCEJobRequisitions"
+            f"?onlyData=true&expand={expand}&finder={finder}"
+        )
+
+    @staticmethod
+    async def fetch(
+        session,
+        slug: str,
+        company: str,
+        rate_limiter: RateLimiter | None = None,
+    ) -> list[NormalizedJob]:
+        parts = slug.split(":")
+        host = parts[0].strip().strip("/")
+        site = parts[1].strip() if len(parts) > 1 and parts[1].strip() else "CX_1"
+        if not host:
+            _log(f"[oracle/{slug}] Invalid slug (expected host:siteNumber)", "WARN")
+            _record_parse_failure("oracle", slug, "Invalid slug (missing host)")
+            return []
+
+        record_target_metadata(oracle_site=site)
+
+        all_jobs: list[NormalizedJob] = []
+        offset = 0
+        for _ in range(OracleAdapter.MAX_PAGES):
+            url = OracleAdapter._build_url(host, site, OracleAdapter.PAGE_SIZE, offset)
+            resp = await fetch_with_retry(
+                session,
+                "GET",
+                url,
+                rate_limiter=rate_limiter,
+                log_tag=f"oracle/{host}",
+                headers={"Accept": "application/json"},
+            )
+            if not resp:
+                break
+
+            try:
+                data = await _parse_json(resp)
+            except Exception as e:
+                _log(f"[oracle/{host}] JSON decode error: {e}", "WARN")
+                _record_parse_failure("oracle", slug, f"JSON decode error: {e}")
+                break
+
+            items = data.get("items") or []
+            if not items:
+                break
+            block = items[0] or {}
+            reqs = block.get("requisitionList") or []
+            if not reqs:
+                break
+
+            all_jobs.extend(OracleAdapter._parse_reqs(reqs, company, host, site))
+
+            total = block.get("TotalJobsCount") or 0
+            offset += OracleAdapter.PAGE_SIZE
+            if offset >= total:
+                break
+
+        return all_jobs
+
+    @staticmethod
+    def _parse_reqs(reqs, company, host, site):
+        """Parse a page of ORC requisitions into NormalizedJob objects."""
+        jobs = []
+        for r in reqs:
+            title = (r.get("Title") or "").strip()
+            job_id = str(r.get("Id") or "").strip()
+            if not title or not job_id:
+                continue
+
+            location = (r.get("PrimaryLocation") or "").strip()
+            secondary = r.get("secondaryLocations") or []
+            if secondary:
+                extra = [s.get("Name", "").strip() for s in secondary if isinstance(s, dict) and s.get("Name")]
+                extra = [e for e in extra if e]
+                if extra:
+                    location = ", ".join([location, *extra]) if location else ", ".join(extra)
+            location = location or "Unknown"
+
+            job = NormalizedJob(
+                title=title,
+                company=company,
+                location=location,
+                url=f"https://{host}/hcmUI/CandidateExperience/en/sites/{site}/job/{job_id}",
+                date_posted=(r.get("PostedDate") or "").strip(),
+                source_ats="oracle",
+                job_id=job_id,
+            )
+            jobs.append(_enrich_job(job))
+        return jobs
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # ADAPTER REGISTRY
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -1132,6 +1251,7 @@ ADAPTERS = {
     "workable": WorkableAdapter,
     "rippling": RipplingAdapter,
     "gem": GemAdapter,
+    "oracle": OracleAdapter,
 }
 
 

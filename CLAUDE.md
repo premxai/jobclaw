@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**JobClaw** is an autonomous job scraping and alerting system. It aggregates tech job postings from ~33,000 company targets across 9 ATS platforms (by volume: Workday, Workable, Greenhouse, Lever, Ashby, Rippling, Gem, SmartRecruiters, BambooHR), job boards, and enterprise sites, then filters and broadcasts to Discord channels by role category.
+**JobClaw** is an autonomous job scraping and alerting system. It aggregates tech job postings from ~34,000 company targets across ATS platforms (by volume: Workday, Workable, Greenhouse, Lever, Ashby, Rippling, SmartRecruiters, Oracle Recruiting Cloud, BambooHR — Gem was purged as permanently dead), job boards, and enterprise sites, then filters and broadcasts to Discord channels by role category. Adapters live in `scripts/ingestion/ats_adapters.py` and are keyed in the `ADAPTERS` registry.
 
 ## Commands
 

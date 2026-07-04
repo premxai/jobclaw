@@ -130,6 +130,9 @@ PLATFORM_RATE_LIMITS: dict[str, float] = {
     # Others — conservative
     "ats.rippling.com": 0.5,  # Stability issues at higher rates
     "bamboohr.com": 0.5,  # Small platform, be nice
+    # Oracle Recruiting Cloud — pod hosts (*.oraclecloud.com) matched by suffix;
+    # per-tenant buckets keep politeness while the platform scales in parallel.
+    "oraclecloud.com": 1.0,
     # Enterprise endpoints
     "jobs.apple.com": 1.5,
     "www.amazon.jobs": 1.5,

@@ -16,6 +16,8 @@ PLATFORM_WORKERS = {
     "rippling": 1,
     "bamboohr": 1,
     "gem": 3,
+    # Oracle rate-limits per tenant host; parallelize across different tenants.
+    "oracle": 4,
 }
 DEFAULT_WORKERS = 3
 
@@ -31,6 +33,7 @@ PLATFORM_ESTIMATED_SECONDS = {
     # Most tenants need one CXS request; 8s covers pagination on bigger boards.
     # (Was 45s from the shared-bucket era, which capped claims at 13/run.)
     "workday": 8,
+    "oracle": 8,
 }
 PLATFORM_DEFAULT_BUDGET_SECONDS = {
     "greenhouse": 240,
@@ -43,6 +46,8 @@ PLATFORM_DEFAULT_BUDGET_SECONDS = {
     "workable": 240,
     # 780s x 8 workers / 8s = ~780 targets/run, under the 900s ATS task timeout.
     "workday": 780,
+    # 4 workers / 8s -> ~120 targets per 240s; grows as the registry fills.
+    "oracle": 240,
 }
 
 
