@@ -23,7 +23,7 @@ import os
 import random
 import sys
 import time
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, deque
 from pathlib import Path
 
 # Add project root to sys.path
@@ -172,8 +172,13 @@ def _claim_active_targets_by_platform(
 class CircuitBreaker:
     """Per-platform circuit breaker for ATS scraping.
 
-    Opens (skips) after `threshold` consecutive errors on a platform.
-    Tracks per-platform failure counts and provides skip decisions.
+    Opens (skips) on EITHER signal:
+      1. `threshold` consecutive errors (fast trip on a hard outage), or
+      2. error rate over a sliding window exceeding `MAX_ERROR_RATE` once at
+         least `MIN_SAMPLES` requests are observed. This catches a platform
+         that is failing ~30%+ of the time interleaved with successes — which
+         the consecutive counter alone (reset by every success) never trips.
+
     Instead of skipping ALL remaining companies once open, skips only the
     next 50 companies (half-open cooldown) before retrying.
     """
@@ -182,6 +187,10 @@ class CircuitBreaker:
     # the next run instead of wasting `threshold` requests re-discovering the ban.
     STATE_PATH = Path(__file__).resolve().parent.parent.parent / "state" / "circuit_breaker.json"
     RECOVERY_SECONDS = int(os.getenv("JOBCLAW_CIRCUIT_RECOVERY_SECONDS", "3600"))
+    # Sliding-window error-rate trip.
+    WINDOW = int(os.getenv("JOBCLAW_CIRCUIT_WINDOW", "50"))
+    MIN_SAMPLES = int(os.getenv("JOBCLAW_CIRCUIT_MIN_SAMPLES", "20"))
+    MAX_ERROR_RATE = float(os.getenv("JOBCLAW_CIRCUIT_MAX_ERROR_RATE", "0.30"))
 
     def __init__(self, threshold: int = 15, state_path: Path | None = None):
         self.threshold = threshold
@@ -190,7 +199,15 @@ class CircuitBreaker:
         self._total_skipped: dict[str, int] = defaultdict(int)
         self._skip_remaining: dict[str, int] = {}
         self._opened_at: dict[str, float] = {}  # platform -> epoch when circuit opened
+        self._recent: dict[str, deque] = defaultdict(lambda: deque(maxlen=self.WINDOW))
         self._load()
+
+    def _error_rate(self, platform: str) -> float:
+        """Recent error rate for a platform, or 0.0 until MIN_SAMPLES seen."""
+        window = self._recent.get(platform)
+        if not window or len(window) < self.MIN_SAMPLES:
+            return 0.0
+        return sum(window) / len(window)
 
     def _load(self) -> None:
         """Restore platforms still inside their recovery window as open (skip them)."""
@@ -228,17 +245,25 @@ class CircuitBreaker:
             pass
 
     def record_failure(self, platform: str) -> None:
-        """Record a failure for a platform."""
+        """Record a failure for a platform (consecutive + sliding window)."""
         self._failures[platform] += 1
-        if self._failures[platform] >= self.threshold and platform not in self._skip_remaining:
-            self._skip_remaining[platform] = 50
+        self._recent[platform].append(1)
+        if platform not in self._skip_remaining and (
+            self._failures[platform] >= self.threshold or self._error_rate(platform) >= self.MAX_ERROR_RATE
+        ):
+            # Error-rate trips skip a full window so the bad ratio can age out;
+            # consecutive trips use the shorter 50-company half-open cooldown.
+            self._skip_remaining[platform] = max(50, self.WINDOW)
             self._opened_at[platform] = time.time()
 
     def record_success(self, platform: str) -> None:
-        """Reset failure count on success (half-open → closed)."""
+        """Reset consecutive count on success; only fully close once the recent
+        error rate has recovered, so a lone success can't clear a window trip."""
         self._failures[platform] = 0
-        self._skip_remaining.pop(platform, None)
-        self._opened_at.pop(platform, None)
+        self._recent[platform].append(0)
+        if self._error_rate(platform) < self.MAX_ERROR_RATE:
+            self._skip_remaining.pop(platform, None)
+            self._opened_at.pop(platform, None)
 
     def should_skip(self, platform: str) -> bool:
         """Check if the platform circuit is open (too many failures).

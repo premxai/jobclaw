@@ -142,6 +142,27 @@ PLATFORM_RATE_LIMITS: dict[str, float] = {
     "www.uber.com": 1.0,
 }
 
+# Aggregate per-PLATFORM ceilings (across all tenant hosts of that platform).
+# The per-host bucket keeps each tenant polite; this second layer caps total
+# throughput so 8 parallel workers can't collectively hammer a platform's WAF.
+# Env-tunable so a run can throttle harder if the health report shows trouble.
+PLATFORM_CEILING_RPS: dict[str, float] = {
+    "workday": float(os.getenv("JOBCLAW_WORKDAY_CEILING_RPS", "3.0")),
+    "oracle": float(os.getenv("JOBCLAW_ORACLE_CEILING_RPS", "4.0")),
+}
+# Marks a shared-registry key as a platform ceiling, not a host bucket.
+_PLATFORM_BUCKET_PREFIX = "__platform__:"
+
+
+def _platform_group(host: str) -> str | None:
+    """Map a hostname to its aggregate-ceiling platform group, or None."""
+    if "myworkdayjobs.com" in host:
+        return "workday"
+    if "oraclecloud.com" in host:
+        return "oracle"
+    return None
+
+
 _DEFAULT_RPS = 1.5
 
 
@@ -166,8 +187,12 @@ class _HostBucket:
         if self._base_rps == 0.0:
             self._base_rps = self.rps
 
-    def record_429(self):
-        """Called when the host returns 429. Halves RPS and sets a cooldown."""
+    def record_429(self, retry_after: float | None = None):
+        """Called when the host returns 429. Halves RPS and sets a cooldown.
+
+        If the server sent a Retry-After, honor it as a floor on the cooldown so
+        we never retry sooner than the server explicitly asked.
+        """
         self._consecutive_429s += 1
         # Halve RPS down to floor of 0.05 (1 req / 20s)
         self.rps = max(0.05, self.rps * 0.5)
@@ -175,6 +200,8 @@ class _HostBucket:
         # with consecutive 429s (10s, 20s, 40s, ...) capped at 10 min, so a host that
         # keeps rejecting us is backed off hard instead of hammered every ~60s.
         cooldown_secs = min(10.0 * (2 ** (self._consecutive_429s - 1)), 600.0)
+        if retry_after is not None and retry_after > 0:
+            cooldown_secs = max(cooldown_secs, min(retry_after, 900.0))
         self._cooldown_until = time.monotonic() + cooldown_secs
 
     def record_success(self):
@@ -256,20 +283,47 @@ class RateLimiter:
             self._shared_buckets[key] = _HostBucket(rps=self._rate_for_key(key))
         return self._shared_buckets[key]
 
-    async def acquire(self, url: str):
-        """Wait for permission to hit this URL's host."""
-        bucket = self._get_bucket(url)
-        await bucket.acquire()
+    def _get_platform_bucket(self, url: str) -> _HostBucket | None:
+        """Aggregate-ceiling bucket for the URL's platform group, if any."""
+        from urllib.parse import urlparse
 
-    def record_429(self, url: str):
-        """Signal that the host returned 429. Triggers adaptive slowdown."""
-        bucket = self._get_bucket(url)
-        bucket.record_429()
+        host = (urlparse(url).hostname or "").lower()
+        group = _platform_group(host)
+        if not group:
+            return None
+        ceiling = PLATFORM_CEILING_RPS.get(group)
+        if not ceiling:
+            return None
+        key = f"{_PLATFORM_BUCKET_PREFIX}{group}"
+        if key not in self._shared_buckets:
+            self._shared_buckets[key] = _HostBucket(rps=ceiling)
+        return self._shared_buckets[key]
+
+    async def acquire(self, url: str):
+        """Wait for permission to hit this URL's host.
+
+        Two layers: the per-host (per-tenant) bucket for politeness, then the
+        aggregate platform-ceiling bucket so parallel workers don't collectively
+        exceed the platform's tolerance.
+        """
+        await self._get_bucket(url).acquire()
+        platform_bucket = self._get_platform_bucket(url)
+        if platform_bucket is not None:
+            await platform_bucket.acquire()
+
+    def record_429(self, url: str, retry_after: float | None = None):
+        """Signal a 429. Backs off both the host and its platform-ceiling bucket."""
+        self._get_bucket(url).record_429(retry_after)
+        platform_bucket = self._get_platform_bucket(url)
+        if platform_bucket is not None:
+            platform_bucket.record_429(retry_after)
 
     def record_success(self, url: str):
-        """Signal that a request succeeded. Gradually restores rate."""
-        bucket = self._get_bucket(url)
-        bucket.record_success()
+        """Signal that a request succeeded. Gradually restores both layers."""
+        self._get_bucket(url).record_success()
+        platform_bucket = self._get_platform_bucket(url)
+        if platform_bucket is not None:
+            platform_bucket.record_success()
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -414,9 +468,17 @@ async def fetch_with_retry(
 
             # Retryable error
             if status in RETRYABLE_STATUS_CODES:
-                # Notify rate limiter about 429 for adaptive slowdown
+                # Notify rate limiter about 429 for adaptive slowdown, honoring
+                # a server-provided Retry-After as the cooldown floor.
                 if status == 429 and rate_limiter:
-                    rate_limiter.record_429(url)
+                    ra_hint = (resp.headers or {}).get("Retry-After")
+                    ra_val = None
+                    if ra_hint:
+                        try:
+                            ra_val = float(ra_hint)
+                        except ValueError:
+                            ra_val = None
+                    rate_limiter.record_429(url, retry_after=ra_val)
 
                 # Last attempt — don't waste time sleeping
                 if attempt >= max_retries:
