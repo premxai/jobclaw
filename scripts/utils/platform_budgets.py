@@ -18,6 +18,8 @@ PLATFORM_WORKERS = {
     "gem": 3,
     # Oracle rate-limits per tenant host; parallelize across different tenants.
     "oracle": 4,
+    # JSON-LD scrapes independent career-page hosts; safe to parallelize.
+    "jsonld": 4,
 }
 DEFAULT_WORKERS = 3
 
@@ -34,6 +36,8 @@ PLATFORM_ESTIMATED_SECONDS = {
     # (Was 45s from the shared-bucket era, which capped claims at 13/run.)
     "workday": 8,
     "oracle": 8,
+    # One HTML GET + parse per page.
+    "jsonld": 6,
 }
 PLATFORM_DEFAULT_BUDGET_SECONDS = {
     "greenhouse": 240,
@@ -48,6 +52,7 @@ PLATFORM_DEFAULT_BUDGET_SECONDS = {
     "workday": 780,
     # 4 workers / 8s -> ~120 targets per 240s; grows as the registry fills.
     "oracle": 240,
+    "jsonld": 240,
 }
 
 

@@ -92,6 +92,17 @@ async def _parse_json(resp) -> Any:
     return await resp.json()
 
 
+async def _parse_text(resp) -> str:
+    """Read the response body as text from either a curl_cffi or aiohttp response."""
+    if resp is NOT_MODIFIED:
+        return ""
+    if _declared_too_large(resp):
+        raise ValueError(f"response exceeds max size ({MAX_RESPONSE_BYTES} bytes)")
+    if HAS_CURL_CFFI and hasattr(resp, "status_code"):
+        return resp.text  # curl_cffi: sync property
+    return await resp.text()  # aiohttp: async method
+
+
 def _record_parse_failure(ats: str, slug: str, message: str) -> None:
     record_request_failure(**classify_failure(error=message, ats=ats, slug=slug))
 
@@ -1238,6 +1249,68 @@ class OracleAdapter:
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# JSON-LD UNIVERSAL ADAPTER
+# ═══════════════════════════════════════════════════════════════════════
+
+
+class JsonLdAdapter:
+    """Universal schema.org/JobPosting scraper for any career page.
+
+    Slug is the page URL (career index or a single job page). Nearly every
+    career page embeds a JobPosting JSON-LD block for Google-for-Jobs SEO, so a
+    single adapter covers the long tail of ATS platforms we have no dedicated
+    code for. Yields one NormalizedJob per JobPosting node found on the page.
+    """
+
+    @staticmethod
+    async def fetch(
+        session,
+        slug: str,
+        company: str,
+        rate_limiter: RateLimiter | None = None,
+    ) -> list[NormalizedJob]:
+        from scripts.ingestion.jsonld_parser import parse_job_postings_from_html
+
+        url = (slug or "").strip()
+        if not url.startswith(("http://", "https://")):
+            _log(f"[jsonld/{slug}] Invalid slug (expected a full URL)", "WARN")
+            _record_parse_failure("jsonld", slug, "Invalid slug (not a URL)")
+            return []
+
+        resp = await fetch_with_retry(
+            session,
+            "GET",
+            url,
+            rate_limiter=rate_limiter,
+            log_tag=f"jsonld/{company or url}",
+            headers={"Accept": "text/html,application/xhtml+xml"},
+        )
+        if not resp:
+            return []
+
+        try:
+            html = await _parse_text(resp)
+        except Exception as e:
+            _log(f"[jsonld/{url}] Body read error: {e}", "WARN")
+            _record_parse_failure("jsonld", slug, f"body read error: {e}")
+            return []
+
+        postings = parse_job_postings_from_html(html, source_url=url)
+        if not postings:
+            _record_parse_failure("jsonld", slug, "no JobPosting JSON-LD found")
+            return []
+
+        jobs: list[NormalizedJob] = []
+        for kwargs in postings:
+            # Prefer the page's declared company, fall back to the registry name.
+            if kwargs.get("company") in (None, "", "Unknown") and company:
+                kwargs["company"] = company
+            job = NormalizedJob(**kwargs)
+            jobs.append(_enrich_job(job))
+        return jobs
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # ADAPTER REGISTRY
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -1252,6 +1325,7 @@ ADAPTERS = {
     "rippling": RipplingAdapter,
     "gem": GemAdapter,
     "oracle": OracleAdapter,
+    "jsonld": JsonLdAdapter,
 }
 
 

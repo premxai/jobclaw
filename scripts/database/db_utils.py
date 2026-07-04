@@ -74,6 +74,9 @@ DIRECT_ATS_SOURCES = {
     "bamboohr",
     "icims",
     "oracle",
+    # Universal JSON-LD scraper — reads schema.org/JobPosting off a company's own
+    # career page; other quality checks (aggregator host, URL tokens) still apply.
+    "jsonld",
     # Enterprise career APIs — first-party company endpoints, as direct as ATS boards.
     "apple",
     "amazon",

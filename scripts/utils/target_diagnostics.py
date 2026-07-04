@@ -17,6 +17,7 @@ SUPPORTED_ATS = {
     "smartrecruiters",
     "bamboohr",
     "oracle",
+    "jsonld",
     "gem",
 }
 
@@ -72,6 +73,11 @@ def normalize_registry_target(company: str, ats: str, slug: str) -> tuple[dict[s
             parts = slug.split(":")
             if len(parts) != 3 or not parts[1].isdigit() or not parts[0] or not parts[2]:
                 return None, "malformed_workday_slug"
+    elif ats == "jsonld":
+        # The slug is the full page URL (JobPosting JSON-LD lives on that page),
+        # so it legitimately contains '/' — skip the plain-slug char check.
+        if not slug.startswith(("http://", "https://")) or not (urlparse(slug).hostname or ""):
+            return None, "malformed_jsonld_url"
     else:
         if slug.startswith(("http://", "https://")):
             inferred = _infer_ats_from_url(slug)
