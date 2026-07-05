@@ -71,7 +71,21 @@ def normalize_registry_target(company: str, ats: str, slug: str) -> tuple[dict[s
             slug = f"{match.group(1)}:{match.group(2)}:{match.group(3)}"
         else:
             parts = slug.split(":")
-            if len(parts) != 3 or not parts[1].isdigit() or not parts[0] or not parts[2]:
+            # `site` (parts[2]) must be a plain site name, not a path. Without this,
+            # a pre-split slug like "tenant:1:some_site/job/full-posting-path" passes
+            # the bare shape check even though it is really a job-detail URL fragment
+            # misfiled as the site — every request against it 404s, and because each
+            # distinct job path is a distinct slug string, it also silently multiplies
+            # one real tenant into dozens of duplicate registry/DB rows.
+            if (
+                len(parts) != 3
+                or not parts[1].isdigit()
+                or not parts[0]
+                or not parts[2]
+                or "/" in parts[2]
+                or "?" in parts[2]
+                or "#" in parts[2]
+            ):
                 return None, "malformed_workday_slug"
     elif ats == "jsonld":
         # The slug is the full page URL (JobPosting JSON-LD lives on that page),
