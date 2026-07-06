@@ -27,7 +27,14 @@ concurrency:
 jobs:
   sync-workday-registry:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # seed_companies() re-seeds the ENTIRE registry (~15,900 companies across all
+    # platforms, not just Workday) with one INSERT...ON CONFLICT per row over the
+    # network to production Postgres. Locally against SQLite this takes <2 min
+    # (no network round-trips); against remote Postgres it can take 15-25+ min.
+    # The original 20-min limit was too tight and GitHub Actions reports a
+    # timeout-kill as "Error: The operation was canceled" -- indistinguishable
+    # from a real cancellation in the step log, which is what happened twice.
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4
