@@ -16,8 +16,6 @@ interface Toast {
     company: string;
 }
 
-// Mirrors job-board.ts's DEFAULT_API_FALLBACK_BASE/configuredApiFallbackBase
-// pattern so the WS endpoint stays consistent with the REST fallback base.
 const DEFAULT_WS_URL = "wss://api.norinote.xyz/ws/jobs";
 
 function resolveWsUrl(): string {

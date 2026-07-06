@@ -14,9 +14,15 @@ interface SavedJobRef {
 export default function JobFeedClient({
     initialSearch,
     initialSortMode = "recency",
+    headerExtra,
 }: {
     initialSearch: string;
     initialSortMode?: SortMode;
+    // Optional content rendered between TopNav and the search bar — used by
+    // the home page (app/page.tsx) to add the compact brand strip so the
+    // plain /jobs route can stay exactly as-is (no brand strip) while home
+    // and jobs share the same underlying feed instead of duplicating it.
+    headerExtra?: React.ReactNode;
 }) {
     const [jobs, setJobs] = useState<Job[]>([]);
     const [total, setTotal] = useState(0);
@@ -138,6 +144,7 @@ export default function JobFeedClient({
             <TopNav />
 
             <div className="max-w-7xl mx-auto px-6 py-8">
+                {headerExtra}
                 <div className="mb-8">
                     <SearchFilterBar
                         search={search}
