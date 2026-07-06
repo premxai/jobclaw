@@ -1,0 +1,61 @@
+name: "🧹 Sync Workday Registry — One-Time Production Cleanup"
+
+# ┌────────────────────────────────────────────────────────────────────┐
+# │  MANUAL, ONE-TIME (BUT IDEMPOTENT) PRODUCTION SYNC                 │
+# │  The Workday registry had a bug: most entries stored a full        │
+# │  job-posting URL path in the "site" field instead of a plain site   │
+# │  name, silently multiplying one real tenant into dozens of          │
+# │  duplicate rows (22,063 -> 2,884 after cleanup, see commit          │
+# │  0b36a43 / scripts/ops/cleanup_workday_registry_slugs.py). That      │
+# │  fixed config/company_registry.json; this workflow propagates the   │
+# │  fix to the already-seeded production companies table by deleting   │
+# │  the malformed rows and re-running seed_companies(). Safe to run    │
+# │  more than once — the delete step is a precise, idempotent no-op    │
+# │  once nothing malformed remains.                                    │
+# └────────────────────────────────────────────────────────────────────┘
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-workday-registry
+  cancel-in-progress: false
+
+jobs:
+  sync-workday-registry:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check production DB availability
+        id: db-preflight
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python scripts/ops/github_db_preflight.py
+
+      - name: Skip while production DB is unavailable
+        if: steps.db-preflight.outputs.db_ok != 'true'
+        run: |
+          echo "Skipping Workday registry sync because production DB is unavailable."
+          echo "Reason: ${{ steps.db-preflight.outputs.reason }}"
+
+      - name: Delete malformed rows and re-seed from the cleaned registry
+        if: steps.db-preflight.outputs.db_ok == 'true'
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JOBCLAW_PG_CONNECT_TIMEOUT: "15"
+          JOBCLAW_PG_CONNECT_RETRIES: "3"
+        run: python scripts/ops/sync_workday_registry.py
