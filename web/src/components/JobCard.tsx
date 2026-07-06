@@ -67,7 +67,7 @@ function getCategory(keywords?: string | null): string | null {
     return null;
 }
 
-function sourceLabel(ats: string): string {
+export function sourceLabel(ats: string): string {
     const labels: Record<string, string> = {
         greenhouse: "Greenhouse",
         lever: "Lever",
@@ -133,7 +133,7 @@ export default function JobCard({ job, onSave, saved = false }: JobCardProps) {
             <div className="flex flex-wrap gap-1.5 mb-4 min-h-[2rem]">
                 {/* Freshness badge — highest priority, shown first */}
                 {freshness && (
-                    <span className={`pill ${freshness.color} bg-red-50 border-red-200 border text-xs`}>
+                    <span className={`pill-fresh text-xs ${freshness.color}`}>
                         {freshness.emoji} {job.freshness_minutes! < 60
                             ? `${job.freshness_minutes}m ago`
                             : `${Math.round(job.freshness_minutes! / 60)}h ago`
@@ -141,7 +141,7 @@ export default function JobCard({ job, onSave, saved = false }: JobCardProps) {
                     </span>
                 )}
                 {matchPct !== null && (
-                    <span className="pill bg-accent/10 text-accent border border-accent/30 text-xs font-bold">
+                    <span className="pill-match text-xs">
                         {matchPct}% match
                     </span>
                 )}

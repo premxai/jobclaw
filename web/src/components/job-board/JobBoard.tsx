@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import CategoryTabs from "./CategoryTabs";
@@ -9,6 +10,12 @@ import { BOARD_REFRESH_INTERVAL_MS, fetchBoardJobs } from "@/lib/job-board";
 import type { BoardCategory, BoardDataStatus, BoardJob } from "@/lib/job-board";
 
 const JOBS_PER_PAGE = 9;
+
+// A short, deliberately small set — this is a quick-launch strip, not the full
+// filter taxonomy (see FILTER_CATEGORIES in SearchFilterBar.tsx). Kept to 4 so
+// it fits as one line without disturbing the room-scene's tight vertical
+// budget (job-board-shell's row-height clamp() assumes a fixed header size).
+const QUICK_LAUNCH_CATEGORIES = ["AI/ML", "SWE", "Data Science", "New Grad"];
 
 export default function JobBoard() {
   const [jobs, setJobs] = useState<BoardJob[]>([]);
@@ -71,13 +78,24 @@ export default function JobBoard() {
         <p className="mt-1 text-[clamp(0.68rem,1.2vw,0.875rem)] font-semibold leading-[1.35] text-[#4f4a42]">
           Check my notes below for job postings from the last 48 hours.
         </p>
+        <div className="mt-[clamp(0.2rem,0.6dvh,0.5rem)] flex flex-wrap items-center justify-center gap-1.5">
+          {QUICK_LAUNCH_CATEGORIES.map((category) => (
+            <Link
+              key={category}
+              href={`/jobs?search=${encodeURIComponent(category)}&mode=relevance`}
+              className="rounded-full border border-[#E8CFA8] bg-[#FFFEFB] px-2.5 py-[clamp(0.1rem,0.3dvh,0.25rem)] text-[clamp(0.6rem,1vw,0.7rem)] font-semibold text-[#4f4a42] transition-colors hover:bg-[#171717] hover:text-white"
+            >
+              {category}
+            </Link>
+          ))}
+        </div>
       </div>
 
       <div className="mb-[clamp(0.2rem,0.7dvh,0.5rem)] shrink-0">
         <CategoryTabs jobs={jobs} activeCategory={activeCategory} onChange={setActiveCategory} />
       </div>
 
-      <div className="shrink-0 overflow-hidden rounded-[22px] border border-[#E8CFA8] bg-[#FFFEFB] shadow-[0_20px_60px_rgba(120,80,40,0.12)]">
+      <div className="shrink-0 overflow-hidden rounded-[22px] border border-[#E8CFA8] bg-[#FFFEFB] shadow-popover">
         {loading ? (
           <div className="divide-y divide-[rgba(139,94,52,0.15)]">
             {Array.from({ length: JOBS_PER_PAGE }).map((_, index) => (

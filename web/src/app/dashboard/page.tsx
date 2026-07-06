@@ -2,8 +2,9 @@
 import { useState, useEffect, useMemo } from "react";
 import TopNav from "@/components/TopNav";
 import CompanyLogo from "@/components/CompanyLogo";
-import { Activity, Send, Target, Trophy, Briefcase, Calendar, MapPin, ExternalLink, Flame } from "lucide-react";
+import { Activity, Send, Target, Trophy, Briefcase, Calendar, MapPin, ExternalLink, Flame, BarChart3 } from "lucide-react";
 import Link from "next/link";
+import StageChart from "@/components/dashboard/StageChart";
 
 interface TrackedJob {
     internal_hash: string;
@@ -166,6 +167,15 @@ export default function DashboardPage() {
                                     </Link>
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Pipeline funnel — visualizes where the same stats above are stuck */}
+                        <div className="bg-white rounded-xl border border-border p-6 shadow-sm animate-fade-in mb-8">
+                            <div className="flex items-center gap-2 mb-4">
+                                <BarChart3 className="w-5 h-5 text-accent" />
+                                <h2 className="font-semibold text-text-primary">Pipeline by stage</h2>
+                            </div>
+                            <StageChart saved={stats.saved} applied={stats.applied} interview={stats.interview} offer={stats.offer} />
                         </div>
 
                         {/* Recent Applications Table */}

@@ -100,8 +100,18 @@
 
   .job-card:hover {
     border-color: #E8713A;
-    box-shadow: 0 4px 20px rgba(232, 113, 58, 0.08);
+    @apply shadow-card-hover;
     transform: translateY(-2px);
+  }
+
+  /* Shared hover-lift for whole-card links (JobCard/JobRow) that previously
+     hand-rolled the same translateY + shadow pair inline. */
+  .card-hover-lift {
+    @apply transition-all duration-200;
+  }
+
+  .card-hover-lift:hover {
+    @apply shadow-card-hover -translate-y-0.5;
   }
 
   /* Pill/tag */
@@ -121,6 +131,19 @@
 
   .pill-white {
     @apply bg-surface-2 text-text-secondary;
+  }
+
+  /* Freshness badge (JobCard) — consolidates the inline "pill ${color} bg-red-50
+     border-red-200 border" string that was duplicated wherever a freshness
+     signal is shown. */
+  .pill-fresh {
+    @apply pill bg-red-50 border border-red-200;
+  }
+
+  /* Match-score badge (JobCard, and reused by the relevance-search results
+     and resume-match results, which render the same job cards). */
+  .pill-match {
+    @apply pill bg-accent/10 text-accent border border-accent/30 font-bold;
   }
 
   /* Stat card */

@@ -55,6 +55,16 @@ const config: Config = {
 				'md': '8px',
 				'sm': '6px',
 			},
+			boxShadow: {
+				// Consolidates the hover-shadow already used ad hoc in .job-card:hover
+				// (globals.css) so components can share one elevation language instead
+				// of re-declaring the same rgba() by hand.
+				'card': '0 1px 2px rgba(26, 26, 26, 0.04)',
+				'card-hover': '0 4px 20px rgba(232, 113, 58, 0.08)',
+				// Matches the room-scene panel shadow in JobBoard.tsx so new surfaces
+				// (filter panel, company cards) share its elevation.
+				'popover': '0 20px 60px rgba(120, 80, 40, 0.12)',
+			},
 			animation: {
 				'fade-in': 'fadeIn 0.3s ease-out',
 				'slide-up': 'slideUp 0.4s ease-out',

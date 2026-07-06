@@ -67,6 +67,31 @@ requests to `JOBCLAW_API_INTERNAL_URL`. This avoids most CORS confusion.
 
 `NEXT_PUBLIC_ENABLE_MOCK_JOBS=0` prevents the board from silently showing placeholder jobs.
 
+### Resume matching (optional)
+
+The "Match my resume" feature calls the protected `/resume/match` backend
+endpoint through `web/src/app/api/resume-match/route.ts` — a server-side proxy
+that attaches `X-API-Key`, since the plain `/api/:path*` rewrite above can't
+inject secret headers. To enable it, set the **same** key on **web** as on the
+API service:
+
+```env
+JOBCLAW_API_KEY=
+```
+
+If left blank on **web**, the feature shows a graceful "not enabled" message
+instead of erroring — this is the current default production state.
+
+### Real-time job feed (optional)
+
+```env
+NEXT_PUBLIC_WS_URL=wss://YOUR-API-DOMAIN.up.railway.app/ws/jobs
+```
+
+WebSocket upgrades are not proxied by the Next.js rewrite, so this must point
+directly at the public API. If unset, the frontend derives it from
+`NEXT_PUBLIC_API_URL` by swapping `https://` for `wss://`.
+
 The **web** service settings must use:
 
 ```text

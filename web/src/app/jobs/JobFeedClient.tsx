@@ -3,17 +3,21 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import TopNav from "@/components/TopNav";
 import JobCard, { Job } from "@/components/JobCard";
-import { fetchJobs } from "@/lib/api";
-import { Search, SlidersHorizontal, X } from "lucide-react";
-
-const CATEGORIES = ["AI/ML", "SWE", "Data Science", "Data Engineering", "Data Analyst", "New Grad", "Product", "Research"];
-const SOURCES = ["Greenhouse", "Lever", "Workday", "Ashby", "SmartRecruiters", "Workable", "Rippling", "BambooHR", "GitHub", "Enterprise", "RSS", "LinkedIn", "Indeed"];
+import { fetchJobs, fetchMatchedJobs } from "@/lib/api";
+import { SearchFilterBar, SortMode, MIN_RELEVANCE_QUERY_LENGTH } from "@/components/SearchFilterBar";
+import ResumeMatchModal from "@/components/ResumeMatchModal";
 
 interface SavedJobRef {
     internal_hash: string;
 }
 
-export default function JobFeedClient({ initialSearch }: { initialSearch: string }) {
+export default function JobFeedClient({
+    initialSearch,
+    initialSortMode = "recency",
+}: {
+    initialSearch: string;
+    initialSortMode?: SortMode;
+}) {
     const [jobs, setJobs] = useState<Job[]>([]);
     const [total, setTotal] = useState(0);
     const [search, setSearch] = useState(initialSearch);
@@ -21,9 +25,20 @@ export default function JobFeedClient({ initialSearch }: { initialSearch: string
     const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set());
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
-    const [showFilters, setShowFilters] = useState(true);
     const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
+    const [sortMode, setSortMode] = useState<SortMode>(initialSortMode);
+    const [resumeModalOpen, setResumeModalOpen] = useState(false);
     const LIMIT = 12;
+    const isRelevanceMode = sortMode === "relevance" && search.trim().length >= MIN_RELEVANCE_QUERY_LENGTH;
+
+    // No relevance without a query — if the search box empties out (or shrinks
+    // below the threshold) while "Best match" is active, fall back to recency
+    // rather than silently keep stale ranked results on screen.
+    useEffect(() => {
+        if (sortMode === "relevance" && search.trim().length < MIN_RELEVANCE_QUERY_LENGTH) {
+            setSortMode("recency");
+        }
+    }, [search, sortMode]);
 
     useEffect(() => {
         const saved = localStorage.getItem("jobclaw_saved");
@@ -39,7 +54,15 @@ export default function JobFeedClient({ initialSearch }: { initialSearch: string
         setLoading(true);
         const category = selectedCategories.size === 1 ? Array.from(selectedCategories)[0] : undefined;
         const source = selectedSources.size === 1 ? Array.from(selectedSources)[0].toLowerCase() : undefined;
-        const data = await fetchJobs({ search, page, limit: LIMIT, category, source });
+
+        // Relevance mode ranks against the free-text query semantically and
+        // returns one top-K list (no pagination); recency mode is the normal
+        // paginated /jobs browse. Both populate the same `jobs` state, so
+        // everything downstream (category/source filtering, JobCard rendering)
+        // works identically regardless of which one ran.
+        const data = isRelevanceMode
+            ? await fetchMatchedJobs(search, LIMIT * 2)
+            : await fetchJobs({ search, page, limit: LIMIT, category, source });
         let filtered = data.jobs;
 
         if (selectedCategories.size > 1) {
@@ -74,7 +97,7 @@ export default function JobFeedClient({ initialSearch }: { initialSearch: string
         setJobs(filtered);
         setTotal(data.total);
         setLoading(false);
-    }, [search, page, selectedCategories, selectedSources]);
+    }, [search, page, selectedCategories, selectedSources, isRelevanceMode]);
 
     useEffect(() => { loadJobs(); }, [loadJobs]);
 
@@ -110,132 +133,83 @@ export default function JobFeedClient({ initialSearch }: { initialSearch: string
         setSavedJobs(new Set(arr.map((j) => j.internal_hash)));
     };
 
-    const activeFilters = selectedCategories.size + selectedSources.size;
-
     return (
         <div className="min-h-screen">
             <TopNav />
 
             <div className="max-w-7xl mx-auto px-6 py-8">
-                <div className="flex items-center gap-4 mb-8">
-                    <div className="flex-1 flex items-center bg-white border border-border rounded-xl overflow-hidden focus-within:border-accent transition-colors shadow-sm">
-                        <Search className="w-5 h-5 text-text-secondary ml-4 shrink-0" />
-                        <input
-                            type="text"
-                            placeholder="Search jobs, companies, or keywords…"
-                            className="flex-1 bg-transparent px-4 py-3 text-text-primary placeholder-text-secondary text-sm outline-none"
-                            value={search}
-                            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                        />
-                        {search && (
-                            <button onClick={() => setSearch("")} className="p-2 text-text-secondary hover:text-text-primary">
-                                <X className="w-4 h-4" />
-                            </button>
-                        )}
-                    </div>
-                    <button
-                        onClick={() => setShowFilters(!showFilters)}
-                        className={`btn-outline flex items-center gap-2 ${showFilters ? "border-accent text-accent" : ""}`}
-                    >
-                        <SlidersHorizontal className="w-4 h-4" />
-                        Filters
-                        {activeFilters > 0 && (
-                            <span className="w-5 h-5 rounded-full bg-accent text-white text-xs flex items-center justify-center">{activeFilters}</span>
-                        )}
-                    </button>
+                <div className="mb-8">
+                    <SearchFilterBar
+                        search={search}
+                        onSearchChange={(value) => { setSearch(value); setPage(1); }}
+                        selectedCategories={selectedCategories}
+                        onToggleCategory={toggleCategory}
+                        selectedSources={selectedSources}
+                        onToggleSource={toggleSource}
+                        onClear={() => { setSelectedCategories(new Set()); setSelectedSources(new Set()); }}
+                        sortMode={sortMode}
+                        onSortModeChange={setSortMode}
+                        onOpenResumeMatch={() => setResumeModalOpen(true)}
+                    />
                 </div>
 
-                <div className="flex gap-8">
-                    {showFilters && (
-                        <aside className="w-56 shrink-0 animate-slide-in">
-                            <div className="sticky top-24 space-y-6">
-                                <div>
-                                    <h3 className="text-sm font-semibold text-text-primary mb-3">Category</h3>
-                                    <div className="space-y-2">
-                                        {CATEGORIES.map((cat) => (
-                                            <label key={cat} className="flex items-center gap-2.5 cursor-pointer group">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedCategories.has(cat)}
-                                                    onChange={() => toggleCategory(cat)}
-                                                    className="w-4 h-4 rounded border-border accent-accent"
-                                                />
-                                                <span className="text-sm text-text-secondary group-hover:text-text-primary transition-colors">{cat}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
+                <ResumeMatchModal
+                    open={resumeModalOpen}
+                    onClose={() => setResumeModalOpen(false)}
+                    onSave={handleSave}
+                    savedJobs={savedJobs}
+                />
 
-                                <div>
-                                    <h3 className="text-sm font-semibold text-text-primary mb-3">Source</h3>
-                                    <div className="space-y-2">
-                                        {SOURCES.map((src) => (
-                                            <label key={src} className="flex items-center gap-2.5 cursor-pointer group">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedSources.has(src)}
-                                                    onChange={() => toggleSource(src)}
-                                                    className="w-4 h-4 rounded border-border accent-accent"
-                                                />
-                                                <span className="text-sm text-text-secondary group-hover:text-text-primary transition-colors">{src}</span>
-                                            </label>
-                                        ))}
-                                    </div>
-                                </div>
+                <main>
+                    <div className="flex items-center justify-between mb-6">
+                        <p className="text-sm text-text-secondary">
+                            {isRelevanceMode ? (
+                                <>
+                                    <span className="text-text-primary font-medium">{total}</span> best matches for &ldquo;{search}&rdquo;
+                                </>
+                            ) : (
+                                <>
+                                    Showing <span className="text-text-primary font-medium">{total}</span> jobs
+                                </>
+                            )}
+                        </p>
+                    </div>
 
-                                {activeFilters > 0 && (
-                                    <button
-                                        onClick={() => { setSelectedCategories(new Set()); setSelectedSources(new Set()); }}
-                                        className="text-xs text-accent hover:underline"
-                                    >
-                                        Clear all filters
-                                    </button>
-                                )}
-                            </div>
-                        </aside>
+                    {loading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {Array.from({ length: 6 }).map((_, i) => (
+                                <div key={i} className="bg-white rounded-xl border border-border h-56 animate-pulse" />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {jobs.map((job, i) => (
+                                <div key={job.internal_hash || i} className="animate-fade-in" style={{ animationDelay: `${i * 30}ms` }}>
+                                    <Link href={`/jobs/${job.id}`} className="block h-full">
+                                        <JobCard job={job} onSave={handleSave} saved={savedJobs.has(job.internal_hash)} />
+                                    </Link>
+                                </div>
+                            ))}
+                        </div>
                     )}
 
-                    <main className="flex-1">
-                        <div className="flex items-center justify-between mb-6">
-                            <p className="text-sm text-text-secondary">
-                                Showing <span className="text-text-primary font-medium">{total}</span> jobs
-                            </p>
+                    {!loading && jobs.length === 0 && (
+                        <div className="text-center py-20">
+                            <p className="text-xl font-bold text-text-primary mb-2">No jobs found</p>
+                            <p className="text-text-secondary">Try adjusting your search or filters.</p>
                         </div>
+                    )}
 
-                        {loading ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                {Array.from({ length: 6 }).map((_, i) => (
-                                    <div key={i} className="bg-white rounded-xl border border-border h-56 animate-pulse" />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                                {jobs.map((job, i) => (
-                                    <div key={job.internal_hash || i} className="animate-fade-in" style={{ animationDelay: `${i * 30}ms` }}>
-                                        <Link href={`/jobs/${job.id}`} className="block h-full">
-                                            <JobCard job={job} onSave={handleSave} saved={savedJobs.has(job.internal_hash)} />
-                                        </Link>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {!loading && jobs.length === 0 && (
-                            <div className="text-center py-20">
-                                <p className="text-xl font-bold text-text-primary mb-2">No jobs found</p>
-                                <p className="text-text-secondary">Try adjusting your search or filters.</p>
-                            </div>
-                        )}
-
-                        {total > LIMIT && (
-                            <div className="flex items-center justify-center gap-2 mt-10">
-                                <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="btn-outline disabled:opacity-30">Previous</button>
-                                <span className="text-sm text-text-secondary px-4">Page {page}</span>
-                                <button onClick={() => setPage(page + 1)} disabled={jobs.length < LIMIT} className="btn-outline disabled:opacity-30">Next</button>
-                            </div>
-                        )}
-                    </main>
-                </div>
+                    {/* Relevance mode is a single ranked top-K list, not a paginated
+                        browse — there's no "next page" to request. */}
+                    {!isRelevanceMode && total > LIMIT && (
+                        <div className="flex items-center justify-center gap-2 mt-10">
+                            <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="btn-outline disabled:opacity-30">Previous</button>
+                            <span className="text-sm text-text-secondary px-4">Page {page}</span>
+                            <button onClick={() => setPage(page + 1)} disabled={jobs.length < LIMIT} className="btn-outline disabled:opacity-30">Next</button>
+                        </div>
+                    )}
+                </main>
             </div>
         </div>
     );

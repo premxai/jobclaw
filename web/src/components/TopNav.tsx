@@ -1,10 +1,12 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import LiveJobFeed from "./LiveJobFeed";
 
 const NAV_ITEMS = [
     { href: "/", label: "Home" },
     { href: "/jobs", label: "Jobs" },
+    { href: "/companies", label: "Companies" },
     { href: "/tracker", label: "Tracker" },
     { href: "/dashboard", label: "Dashboard" },
 ];
@@ -62,6 +64,8 @@ export default function TopNav() {
                         );
                     })}
                 </div>
+
+                <LiveJobFeed />
             </div>
         </nav>
     );

@@ -1,45 +1,161 @@
-import { Search, ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+"use client";
+import { useEffect, useRef, useState } from "react";
+import { Search, ChevronDown, X, FileText } from "lucide-react";
 
-export function SearchFilterBar() {
+export const FILTER_CATEGORIES = ["AI/ML", "SWE", "Data Science", "Data Engineering", "Data Analyst", "New Grad", "Product", "Research"];
+export const FILTER_SOURCES = ["Greenhouse", "Lever", "Workday", "Ashby", "SmartRecruiters", "Workable", "Rippling", "BambooHR", "GitHub", "Enterprise", "RSS", "LinkedIn", "Indeed"];
+
+export type SortMode = "recency" | "relevance";
+
+interface SearchFilterBarProps {
+    search: string;
+    onSearchChange: (value: string) => void;
+    selectedCategories: Set<string>;
+    onToggleCategory: (category: string) => void;
+    selectedSources: Set<string>;
+    onToggleSource: (source: string) => void;
+    onClear: () => void;
+    sortMode: SortMode;
+    onSortModeChange: (mode: SortMode) => void;
+    onOpenResumeMatch?: () => void;
+}
+
+// Below this length, semantic matching isn't worth the round trip — there's
+// no meaningful "relevance" to a single word. Keep this in sync with the
+// gating check in JobFeedClient.tsx.
+export const MIN_RELEVANCE_QUERY_LENGTH = 3;
+
+function FilterDropdown({
+    label,
+    options,
+    selected,
+    onToggle,
+}: {
+    label: string;
+    options: string[];
+    selected: Set<string>;
+    onToggle: (value: string) => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!open) return;
+        const onClickOutside = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener("mousedown", onClickOutside);
+        return () => document.removeEventListener("mousedown", onClickOutside);
+    }, [open]);
+
+    const summary = selected.size === 0 ? `All ${label.toLowerCase()}` : selected.size === 1 ? Array.from(selected)[0] : `${selected.size} ${label.toLowerCase()}`;
+
     return (
-        <div className="max-w-5xl mx-auto mt-4 mb-16 px-4">
-            <div className="flex flex-col lg:flex-row items-center bg-card rounded-2xl p-2.5 shadow-sm border border-black/5 gap-2">
-                <div className="flex-1 flex items-center gap-2 px-4 min-w-[200px] border-b lg:border-b-0 lg:border-r border-slate-100 w-full lg:w-auto py-2 lg:py-0">
+        <div ref={ref} className="relative flex-1 min-w-[160px]">
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className={`flex w-full items-center justify-between gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${selected.size > 0 ? "text-accent" : "text-text-primary"
+                    } hover:bg-surface-2`}
+            >
+                <span className="truncate">{summary}</span>
+                <ChevronDown className={`h-4 w-4 shrink-0 text-text-secondary transition-transform ${open ? "rotate-180" : ""}`} />
+            </button>
+            {open && (
+                <div className="absolute left-0 top-[calc(100%+8px)] z-20 w-64 rounded-xl border border-border bg-white p-3 shadow-popover">
+                    <div className="max-h-64 space-y-1 overflow-y-auto">
+                        {options.map((option) => (
+                            <label key={option} className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-surface-2">
+                                <input
+                                    type="checkbox"
+                                    checked={selected.has(option)}
+                                    onChange={() => onToggle(option)}
+                                    className="h-4 w-4 rounded border-border accent-accent"
+                                />
+                                <span className="text-sm text-text-secondary">{option}</span>
+                            </label>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
+export function SearchFilterBar({
+    search,
+    onSearchChange,
+    selectedCategories,
+    onToggleCategory,
+    selectedSources,
+    onToggleSource,
+    onClear,
+    sortMode,
+    onSortModeChange,
+    onOpenResumeMatch,
+}: SearchFilterBarProps) {
+    const activeFilters = selectedCategories.size + selectedSources.size;
+    const canRankByRelevance = search.trim().length >= MIN_RELEVANCE_QUERY_LENGTH;
+
+    return (
+        <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2 rounded-2xl border border-border bg-white p-2.5 shadow-card lg:flex-row lg:items-center">
+                <div className="flex flex-1 items-center gap-2 border-b border-border px-4 py-2 lg:border-b-0 lg:border-r lg:py-0">
+                    <Search className="h-4 w-4 shrink-0 text-text-secondary" />
                     <input
                         type="text"
-                        placeholder="Job title or company..."
-                        className="w-full bg-transparent border-none outline-none text-sm placeholder:text-muted-foreground text-foreground font-medium"
+                        value={search}
+                        onChange={(e) => onSearchChange(e.target.value)}
+                        placeholder="Job title, company, or keywords… (try describing your skills for best-match)"
+                        className="w-full min-w-0 bg-transparent text-sm font-medium text-text-primary placeholder-text-secondary outline-none"
                     />
-                    <Search className="w-4 h-4 text-muted-foreground shrink-0" />
+                    {search && (
+                        <button onClick={() => onSearchChange("")} aria-label="Clear search" className="shrink-0 text-text-secondary hover:text-text-primary">
+                            <X className="h-4 w-4" />
+                        </button>
+                    )}
                 </div>
 
-                <div className="flex-1 flex items-center justify-between px-4 border-b lg:border-b-0 lg:border-r border-slate-100 cursor-pointer hover:bg-muted/50 rounded-lg p-2 transition-colors w-full lg:w-auto">
-                    <span className="text-sm font-medium text-foreground/80">All categories</span>
-                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                </div>
+                <FilterDropdown label="Categories" options={FILTER_CATEGORIES} selected={selectedCategories} onToggle={onToggleCategory} />
+                <FilterDropdown label="Sources" options={FILTER_SOURCES} selected={selectedSources} onToggle={onToggleSource} />
 
-                <div className="flex-1 hidden md:flex items-center justify-between px-4 border-b lg:border-b-0 lg:border-r border-slate-100 cursor-pointer hover:bg-muted/50 rounded-lg p-2 transition-colors w-full lg:w-auto">
-                    <span className="text-sm font-medium text-foreground/80">All related tags</span>
-                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                </div>
+                {onOpenResumeMatch && (
+                    <button
+                        onClick={onOpenResumeMatch}
+                        className="flex shrink-0 items-center gap-1.5 px-3 py-2 text-sm font-medium text-text-secondary hover:text-accent"
+                    >
+                        <FileText className="h-4 w-4" />
+                        Match my resume
+                    </button>
+                )}
 
-                <div className="flex-1 hidden sm:flex items-center justify-between px-4 border-b lg:border-b-0 lg:border-r border-slate-100 cursor-pointer hover:bg-muted/50 rounded-lg p-2 transition-colors w-full lg:w-auto">
-                    <span className="text-sm font-medium text-foreground/80">Job type</span>
-                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                </div>
-
-                <div className="flex-1 flex items-center justify-between px-4 cursor-pointer hover:bg-muted/50 rounded-lg p-2 transition-colors w-full lg:w-auto">
-                    <span className="text-sm font-medium text-foreground/80">Location</span>
-                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                </div>
-
-                <div className="w-full lg:w-auto px-2 lg:px-0 pb-2 lg:pb-0 pt-2 lg:pt-0">
-                    <Button className="w-full lg:w-auto rounded-xl px-8 bg-secondary hover:bg-secondary/90 text-white font-medium h-11 border-none shadow-sm">
-                        Filter jobs
-                    </Button>
-                </div>
+                {activeFilters > 0 && (
+                    <button onClick={onClear} className="shrink-0 px-3 py-2 text-sm font-medium text-accent hover:underline">
+                        Clear ({activeFilters})
+                    </button>
+                )}
             </div>
+
+            {/* Only meaningful once there's a query to rank against — hidden
+                otherwise so users never see a toggle with nothing to toggle. */}
+            {canRankByRelevance && (
+                <div className="flex items-center gap-1 self-start rounded-full border border-border bg-white p-1 shadow-card animate-fade-in">
+                    <button
+                        onClick={() => onSortModeChange("recency")}
+                        className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${sortMode === "recency" ? "bg-accent text-white" : "text-text-secondary hover:text-text-primary"
+                            }`}
+                    >
+                        Most recent
+                    </button>
+                    <button
+                        onClick={() => onSortModeChange("relevance")}
+                        className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${sortMode === "relevance" ? "bg-accent text-white" : "text-text-secondary hover:text-text-primary"
+                            }`}
+                    >
+                        Best match
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

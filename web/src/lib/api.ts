@@ -28,9 +28,45 @@ export interface ApiJob {
     is_active: boolean;
 }
 
+// /jobs/match returns the same raw `jobs` row shape as ApiJob, plus these two
+// fields computed server-side (cosine similarity + minutes since first_seen).
+interface ApiMatchedJob extends ApiJob {
+    match_score: number | null;
+    freshness_minutes: number | null;
+}
+
 interface JobsResponse {
     jobs: ApiJob[];
     total: number;
+}
+
+interface MatchResponse {
+    results: ApiMatchedJob[];
+    query: string;
+    total: number;
+}
+
+// /resume/match (via our own /api/resume-match route) returns a narrower,
+// differently-named shape than /jobs and /jobs/match — no job_id/date_posted/
+// source_ats, and the score field is "score" + "match_tier", not "match_score".
+interface ApiResumeMatch {
+    internal_hash: string;
+    title: string;
+    company: string;
+    location: string;
+    url: string;
+    salary_min: number | null;
+    salary_max: number | null;
+    keywords_matched: string[] | string;
+    score: number;
+    match_tier: "excellent" | "good" | "fair";
+}
+
+interface ResumeMatchResponse {
+    enabled: boolean;
+    matches?: ApiResumeMatch[];
+    count?: number;
+    error?: string;
 }
 
 interface StatsResponse {
@@ -50,6 +86,34 @@ function normaliseJob(j: ApiJob, index?: number): Job {
         ...j,
         id: index ?? j.internal_hash,  // numeric id for link URLs
         keywords_matched: kw,
+    };
+}
+
+// Same shape as normaliseJob, but also carries through match_score/freshness_minutes
+// so JobCard can render its match-percent + freshness pills (it already knows how).
+function normaliseMatchedJob(j: ApiMatchedJob, index?: number): Job {
+    return { ...normaliseJob(j, index), match_score: j.match_score, freshness_minutes: j.freshness_minutes };
+}
+
+// /resume/match's result shape is missing date_posted/source_ats (it's a
+// narrower "scored jobs" query, not a full jobs row) — JobCard only requires
+// those for display, so empty strings render as blank rather than breaking.
+function normaliseResumeMatch(m: ApiResumeMatch, index: number): Job {
+    let kw = m.keywords_matched;
+    if (Array.isArray(kw)) kw = JSON.stringify(kw);
+    return {
+        id: index,
+        internal_hash: m.internal_hash,
+        title: m.title,
+        company: m.company,
+        location: m.location,
+        url: m.url,
+        date_posted: "",
+        source_ats: "",
+        salary_min: m.salary_min,
+        salary_max: m.salary_max,
+        keywords_matched: kw,
+        match_score: m.score,
     };
 }
 
@@ -84,6 +148,49 @@ export async function fetchJobs(params?: {
         if (!ENABLE_MOCK_JOBS) return { jobs: [], total: 0 };
 
         return { jobs: getMockJobs(), total: getMockJobs().length };
+    }
+}
+
+// ─── Semantic "best match" search ──────────────────────────────────
+// Hits /jobs/match — a single ranked top-K list, not paginated, so callers
+// should hide pagination controls when using this instead of fetchJobs().
+export async function fetchMatchedJobs(query: string, topK = 20): Promise<{ jobs: Job[]; total: number }> {
+    const sp = new URLSearchParams({ q: query, top_k: String(topK) });
+    try {
+        const res = await fetch(`${API_BASE}/jobs/match?${sp.toString()}`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`API ${res.status}`);
+        const data: MatchResponse = await res.json();
+        return {
+            jobs: data.results.map((j, i) => normaliseMatchedJob(j, i + 1)),
+            total: data.total,
+        };
+    } catch {
+        return { jobs: [], total: 0 };
+    }
+}
+
+// ─── Resume-to-job scoring ──────────────────────────────────────────
+// Calls our OWN same-origin Route Handler (web/src/app/api/resume-match/route.ts),
+// never the FastAPI backend directly — that route is what holds the protected
+// X-API-Key server-side. `enabled: false` means the deployment hasn't configured
+// a key yet (today's actual production state); callers should show that as a
+// distinct "not enabled" message rather than a generic error.
+export async function matchResume(
+    resumeText: string,
+    topK = 20
+): Promise<{ enabled: boolean; jobs: Job[]; error?: string }> {
+    try {
+        const res = await fetch("/api/resume-match", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ resume_text: resumeText, top_k: topK }),
+        });
+        const data: ResumeMatchResponse = await res.json();
+        if (!data.enabled) return { enabled: false, jobs: [] };
+        if (data.error || !data.matches) return { enabled: true, jobs: [], error: data.error || "No matches returned" };
+        return { enabled: true, jobs: data.matches.map((m, i) => normaliseResumeMatch(m, i + 1)) };
+    } catch (e) {
+        return { enabled: true, jobs: [], error: e instanceof Error ? e.message : "Request failed" };
     }
 }
 
@@ -137,6 +244,27 @@ export async function fetchStats(): Promise<StatsResponse> {
             total_companies: 11800,
             sources: 9,
         };
+    }
+}
+
+// ─── Fetch companies ────────────────────────────────────────────────
+export interface Company {
+    company: string;
+    source_ats: string;
+    job_count: number;
+    latest_job: string | null;
+}
+
+export async function fetchCompanies(ats?: string): Promise<Company[]> {
+    const sp = new URLSearchParams();
+    if (ats) sp.set("ats", ats);
+    const qs = sp.toString();
+    try {
+        const res = await fetch(`${API_BASE}/companies${qs ? `?${qs}` : ""}`, { cache: "no-store" });
+        if (!res.ok) throw new Error(`API ${res.status}`);
+        return (await res.json()) as Company[];
+    } catch {
+        return [];
     }
 }
 
