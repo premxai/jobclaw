@@ -6,9 +6,22 @@ import JobCard, { Job } from "@/components/JobCard";
 import { fetchJobs, fetchMatchedJobs } from "@/lib/api";
 import { SearchFilterBar, SortMode, MIN_RELEVANCE_QUERY_LENGTH } from "@/components/SearchFilterBar";
 import ResumeMatchModal from "@/components/ResumeMatchModal";
+import { isUsLocation, isRemoteLocation } from "@/lib/location-filters";
 
 interface SavedJobRef {
     internal_hash: string;
+}
+
+// Builds a compact page-number list with "…" gaps for large page counts,
+// e.g. [1, "…", 4, 5, 6, "…", 42] instead of rendering every page button.
+function getPageNumbers(current: number, totalPages: number): (number | "…")[] {
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+    const pages: (number | "…")[] = [1];
+    if (current > 3) pages.push("…");
+    for (let p = Math.max(2, current - 1); p <= Math.min(totalPages - 1, current + 1); p++) pages.push(p);
+    if (current < totalPages - 2) pages.push("…");
+    pages.push(totalPages);
+    return pages;
 }
 
 export default function JobFeedClient({
@@ -29,6 +42,9 @@ export default function JobFeedClient({
     const [search, setSearch] = useState(initialSearch);
     const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
     const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set());
+    const [usOnly, setUsOnly] = useState(false);
+    const [remoteOnly, setRemoteOnly] = useState(false);
+    const [recentHours, setRecentHours] = useState<number | null>(null);
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
     const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
@@ -68,8 +84,19 @@ export default function JobFeedClient({
         // works identically regardless of which one ran.
         const data = isRelevanceMode
             ? await fetchMatchedJobs(search, LIMIT * 2)
-            : await fetchJobs({ search, page, limit: LIMIT, category, source });
+            : await fetchJobs({ search, page, limit: LIMIT, category, source, recentHours: recentHours ?? undefined });
         let filtered = data.jobs;
+
+        // /jobs/match has no recent_hours param, so relevance mode applies the
+        // same window client-side using the freshness_minutes it already returns.
+        // Unknown freshness is kept rather than dropped (consistent with the
+        // "include on unknown" convention used elsewhere in the scraper pipeline).
+        if (isRelevanceMode && recentHours !== null) {
+            filtered = filtered.filter((j) => j.freshness_minutes == null || j.freshness_minutes <= recentHours * 60);
+        }
+
+        if (usOnly) filtered = filtered.filter((j) => isUsLocation(j.location));
+        if (remoteOnly) filtered = filtered.filter((j) => isRemoteLocation(j.location));
 
         if (selectedCategories.size > 1) {
             filtered = filtered.filter((j) => {
@@ -103,7 +130,7 @@ export default function JobFeedClient({
         setJobs(filtered);
         setTotal(data.total);
         setLoading(false);
-    }, [search, page, selectedCategories, selectedSources, isRelevanceMode]);
+    }, [search, page, selectedCategories, selectedSources, usOnly, remoteOnly, recentHours, isRelevanceMode]);
 
     useEffect(() => { loadJobs(); }, [loadJobs]);
 
@@ -124,6 +151,10 @@ export default function JobFeedClient({
         });
         setPage(1);
     };
+
+    const toggleUsOnly = () => { setUsOnly((v) => !v); setPage(1); };
+    const toggleRemoteOnly = () => { setRemoteOnly((v) => !v); setPage(1); };
+    const changeRecentHours = (hours: number | null) => { setRecentHours(hours); setPage(1); };
 
     const handleSave = (job: Job) => {
         const saved = localStorage.getItem("jobclaw_saved");
@@ -153,7 +184,20 @@ export default function JobFeedClient({
                         onToggleCategory={toggleCategory}
                         selectedSources={selectedSources}
                         onToggleSource={toggleSource}
-                        onClear={() => { setSelectedCategories(new Set()); setSelectedSources(new Set()); }}
+                        usOnly={usOnly}
+                        onToggleUsOnly={toggleUsOnly}
+                        remoteOnly={remoteOnly}
+                        onToggleRemoteOnly={toggleRemoteOnly}
+                        recentHours={recentHours}
+                        onRecentHoursChange={changeRecentHours}
+                        onClear={() => {
+                            setSelectedCategories(new Set());
+                            setSelectedSources(new Set());
+                            setUsOnly(false);
+                            setRemoteOnly(false);
+                            setRecentHours(null);
+                            setPage(1);
+                        }}
                         sortMode={sortMode}
                         onSortModeChange={setSortMode}
                         onOpenResumeMatch={() => setResumeModalOpen(true)}
@@ -210,10 +254,38 @@ export default function JobFeedClient({
                     {/* Relevance mode is a single ranked top-K list, not a paginated
                         browse — there's no "next page" to request. */}
                     {!isRelevanceMode && total > LIMIT && (
-                        <div className="flex items-center justify-center gap-2 mt-10">
-                            <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="btn-outline disabled:opacity-30">Previous</button>
-                            <span className="text-sm text-text-secondary px-4">Page {page}</span>
-                            <button onClick={() => setPage(page + 1)} disabled={jobs.length < LIMIT} className="btn-outline disabled:opacity-30">Next</button>
+                        <div className="flex flex-wrap items-center justify-center gap-1.5 mt-10">
+                            <button
+                                onClick={() => setPage(Math.max(1, page - 1))}
+                                disabled={page === 1}
+                                className="btn-outline disabled:opacity-30 px-3"
+                                aria-label="Previous page"
+                            >
+                                ‹
+                            </button>
+                            {getPageNumbers(page, Math.ceil(total / LIMIT)).map((p, i) =>
+                                p === "…" ? (
+                                    <span key={`ellipsis-${i}`} className="px-1.5 text-sm text-text-secondary">…</span>
+                                ) : (
+                                    <button
+                                        key={p}
+                                        onClick={() => setPage(p)}
+                                        aria-current={p === page ? "page" : undefined}
+                                        className={`h-9 min-w-9 rounded-lg px-2 text-sm font-medium transition-colors ${p === page ? "bg-accent text-white" : "text-text-secondary hover:bg-surface-2"
+                                            }`}
+                                    >
+                                        {p}
+                                    </button>
+                                )
+                            )}
+                            <button
+                                onClick={() => setPage(page + 1)}
+                                disabled={page >= Math.ceil(total / LIMIT)}
+                                className="btn-outline disabled:opacity-30 px-3"
+                                aria-label="Next page"
+                            >
+                                ›
+                            </button>
                         </div>
                     )}
                 </main>

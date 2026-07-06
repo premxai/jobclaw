@@ -21,7 +21,7 @@ export default function TopNav() {
                 <Link href="/" className="flex items-center gap-2 group">
                     <span className="text-2xl">🦀</span>
                     <span className="text-lg font-bold text-text-primary tracking-tight">
-                        Job<span className="text-accent">Claw</span>
+                        Nori
                     </span>
                 </Link>
 

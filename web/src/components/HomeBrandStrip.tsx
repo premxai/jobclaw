@@ -22,7 +22,7 @@ export default function HomeBrandStrip() {
                 <div className="flex items-center justify-center gap-2 sm:justify-start">
                     <span className="text-2xl">🦀</span>
                     <h1 className="text-lg font-bold text-text-primary">
-                        Job<span className="text-accent">Claw</span>
+                        Nori
                     </h1>
                 </div>
                 <p className="mt-1 text-sm text-text-secondary">Fresh tech jobs from the last 48 hours, less noise.</p>

@@ -186,7 +186,7 @@ export default function StatusPage() {
   }, []);
 
   const summary = useMemo(() => {
-    if (checks.some((check) => check.state === "checking")) return "Checking JobClaw wiring...";
+    if (checks.some((check) => check.state === "checking")) return "Checking Nori wiring...";
     if (checks.some((check) => check.state === "fail")) return "A required service is not wired yet.";
     if (checks.some((check) => check.state === "warn")) return "The app is connected, but fresh job output needs attention.";
     return "The website, API, database, and scraper history are connected.";
@@ -204,7 +204,7 @@ export default function StatusPage() {
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
               Job board
             </Link>
-            <h1 className="text-3xl font-bold tracking-[-0.03em] text-black sm:text-4xl">JobClaw status</h1>
+            <h1 className="text-3xl font-bold tracking-[-0.03em] text-black sm:text-4xl">Nori status</h1>
             <p className="mt-2 max-w-xl text-sm leading-6 text-zinc-600 sm:text-base">{summary}</p>
           </div>
           <button

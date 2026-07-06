@@ -5,6 +5,13 @@ import { Search, ChevronDown, X, FileText } from "lucide-react";
 export const FILTER_CATEGORIES = ["AI/ML", "SWE", "Data Science", "Data Engineering", "Data Analyst", "New Grad", "Product", "Research"];
 export const FILTER_SOURCES = ["Greenhouse", "Lever", "Workday", "Ashby", "SmartRecruiters", "Workable", "Rippling", "BambooHR", "GitHub", "Enterprise", "RSS", "LinkedIn", "Indeed"];
 
+export const RECENCY_OPTIONS: { label: string; hours: number | null }[] = [
+    { label: "Any time", hours: null },
+    { label: "Last hour", hours: 1 },
+    { label: "Last 24h", hours: 24 },
+    { label: "Last 48h", hours: 48 },
+];
+
 export type SortMode = "recency" | "relevance";
 
 interface SearchFilterBarProps {
@@ -14,10 +21,60 @@ interface SearchFilterBarProps {
     onToggleCategory: (category: string) => void;
     selectedSources: Set<string>;
     onToggleSource: (source: string) => void;
+    usOnly: boolean;
+    onToggleUsOnly: () => void;
+    remoteOnly: boolean;
+    onToggleRemoteOnly: () => void;
+    recentHours: number | null;
+    onRecentHoursChange: (hours: number | null) => void;
     onClear: () => void;
     sortMode: SortMode;
     onSortModeChange: (mode: SortMode) => void;
     onOpenResumeMatch?: () => void;
+}
+
+function RecencyDropdown({ value, onChange }: { value: number | null; onChange: (hours: number | null) => void }) {
+    const [open, setOpen] = useState(false);
+    const ref = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!open) return;
+        const onClickOutside = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+        };
+        document.addEventListener("mousedown", onClickOutside);
+        return () => document.removeEventListener("mousedown", onClickOutside);
+    }, [open]);
+
+    const current = RECENCY_OPTIONS.find((o) => o.hours === value) ?? RECENCY_OPTIONS[0];
+
+    return (
+        <div ref={ref} className="relative">
+            <button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${value !== null ? "border-accent bg-accent text-white" : "border-border bg-white text-text-secondary hover:text-text-primary"
+                    }`}
+            >
+                {value !== null ? current.label : "Posted"}
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+            </button>
+            {open && (
+                <div className="absolute left-0 top-[calc(100%+8px)] z-20 w-40 rounded-xl border border-border bg-white p-1.5 shadow-popover">
+                    {RECENCY_OPTIONS.map((option) => (
+                        <button
+                            key={option.label}
+                            onClick={() => { onChange(option.hours); setOpen(false); }}
+                            className={`block w-full rounded-md px-2.5 py-1.5 text-left text-sm ${option.hours === value ? "bg-accent-light text-accent font-medium" : "text-text-secondary hover:bg-surface-2"
+                                }`}
+                        >
+                            {option.label}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 }
 
 // Below this length, semantic matching isn't worth the round trip — there's
@@ -89,12 +146,19 @@ export function SearchFilterBar({
     onToggleCategory,
     selectedSources,
     onToggleSource,
+    usOnly,
+    onToggleUsOnly,
+    remoteOnly,
+    onToggleRemoteOnly,
+    recentHours,
+    onRecentHoursChange,
     onClear,
     sortMode,
     onSortModeChange,
     onOpenResumeMatch,
 }: SearchFilterBarProps) {
-    const activeFilters = selectedCategories.size + selectedSources.size;
+    const activeFilters =
+        selectedCategories.size + selectedSources.size + (usOnly ? 1 : 0) + (remoteOnly ? 1 : 0) + (recentHours !== null ? 1 : 0);
     const canRankByRelevance = search.trim().length >= MIN_RELEVANCE_QUERY_LENGTH;
 
     return (
@@ -134,6 +198,24 @@ export function SearchFilterBar({
                         Clear ({activeFilters})
                     </button>
                 )}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+                <button
+                    onClick={onToggleUsOnly}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${usOnly ? "border-accent bg-accent text-white" : "border-border bg-white text-text-secondary hover:text-text-primary"
+                        }`}
+                >
+                    US only
+                </button>
+                <button
+                    onClick={onToggleRemoteOnly}
+                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${remoteOnly ? "border-accent bg-accent text-white" : "border-border bg-white text-text-secondary hover:text-text-primary"
+                        }`}
+                >
+                    Remote only
+                </button>
+                <RecencyDropdown value={recentHours} onChange={onRecentHoursChange} />
             </div>
 
             {/* Only meaningful once there's a query to rank against — hidden

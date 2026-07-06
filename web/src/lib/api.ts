@@ -124,6 +124,7 @@ export async function fetchJobs(params?: {
     source?: string;
     page?: number;
     limit?: number;
+    recentHours?: number;
 }): Promise<{ jobs: Job[]; total: number }> {
     const sp = new URLSearchParams();
     if (params?.search) sp.set("search", params.search);
@@ -131,6 +132,7 @@ export async function fetchJobs(params?: {
     if (params?.source) sp.set("ats", params.source);            // backend uses "ats"
     if (params?.page) sp.set("page", String(params.page));
     if (params?.limit) sp.set("per_page", String(params.limit)); // backend uses "per_page"
+    if (params?.recentHours) sp.set("recent_hours", String(params.recentHours));
 
     const qs = sp.toString();
     const url = `${API_BASE}/jobs${qs ? `?${qs}` : ""}`;
