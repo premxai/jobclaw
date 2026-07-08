@@ -11,7 +11,7 @@ export default function JobFeedPage({
             <JobFeedClient
                 initialSearch={searchParams?.search || ""}
                 initialSortMode={searchParams?.mode === "relevance" ? "relevance" : "recency"}
-                previewLocked={searchParams?.preview === "1"}
+                previewLocked={false}
             />
         </Suspense>
     );

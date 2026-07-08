@@ -1,4 +1,4 @@
-import { ArrowRight, Bookmark, BookmarkCheck, CheckCircle2, ChevronRight, MapPin, Send } from "lucide-react";
+import { ArrowRight, Bookmark, BookmarkCheck, CheckCircle2, ChevronRight, MapPin } from "lucide-react";
 import CompanyLogo from "./CompanyLogo";
 import { displayCompany, displayTitle } from "@/lib/job-display";
 
@@ -110,7 +110,7 @@ export default function JobCard({
     const skillTags = getSkillTags(job.keywords_matched, title);
 
     return (
-        <article className="group relative flex h-[238px] flex-col rounded-lg border border-[#E7D7B7] bg-[#FFF7E5] p-5 shadow-[0_8px_18px_rgba(70,45,16,0.08)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(70,45,16,0.11)] [background-image:linear-gradient(rgba(255,247,229,0.78),rgba(255,247,229,0.78)),url('/nori-assets/paper-texture.png')] [background-size:cover]">
+        <article className="group relative flex h-[258px] flex-col rounded-lg border border-[#E7D7B7] bg-[#FFF7E5] p-5 shadow-[0_8px_18px_rgba(70,45,16,0.08)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(70,45,16,0.11)] [background-image:linear-gradient(rgba(255,247,229,0.78),rgba(255,247,229,0.78)),url('/nori-assets/paper-texture.png')] [background-size:cover]">
             <span className="absolute left-1/2 top-[-7px] h-[18px] w-[18px] -translate-x-1/2 rounded-full bg-[#C99635] shadow-[0_4px_8px_rgba(77,48,18,0.24),inset_0_1px_2px_rgba(255,255,255,0.55)]" />
             <div className="flex items-start justify-between gap-4">
                 <CompanyLogo company={company} size="md" shape="rounded" />
@@ -126,20 +126,6 @@ export default function JobCard({
                             aria-label="Save role"
                         >
                             {saved ? <BookmarkCheck className="h-5 w-5 fill-[#526736] text-[#526736]" /> : <Bookmark className="h-5 w-5" />}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                onApply?.(job);
-                            }}
-                            className={`grid h-8 w-8 place-items-center rounded-lg transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#526736] ${
-                                applied ? "bg-[#E8ECD9] text-[#526736]" : "text-[#263A22] hover:bg-[#EEF1DD]"
-                            }`}
-                            aria-label="Apply and add role to tracker"
-                        >
-                            {applied ? <CheckCircle2 className="h-5 w-5" /> : <Send className="h-[18px] w-[18px]" />}
                         </button>
                     </div>
                 )}
@@ -187,16 +173,20 @@ export default function JobCard({
                 </button>
             )}
 
-            <a
-                href={job.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className="absolute bottom-[18px] right-[18px] text-[#526736] transition group-hover:translate-x-0.5 hover:text-[#263A22]"
-                aria-label="Open application link"
+            <button
+                type="button"
+                onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onApply?.(job);
+                }}
+                className={`absolute bottom-[18px] right-[18px] grid h-9 w-9 place-items-center rounded-full transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#526736] ${
+                    applied ? "bg-[#E8ECD9] text-[#526736]" : "text-[#526736] hover:translate-x-0.5 hover:bg-[#F7EED7] hover:text-[#263A22]"
+                }`}
+                aria-label="Apply to role"
             >
-                <ArrowRight className="h-5 w-5" />
-            </a>
+                {applied ? <CheckCircle2 className="h-5 w-5" /> : <ArrowRight className="h-6 w-6" />}
+            </button>
         </article>
     );
 }

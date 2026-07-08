@@ -23,6 +23,7 @@ interface SavedJobRef {
 
 const LIMIT = 12;
 const WORKING_SET_LIMIT = 120;
+const PENDING_APPLY_KEY = "nori_pending_apply";
 
 function getPageNumbers(current: number, totalPages: number): (number | "...")[] {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -122,8 +123,8 @@ const recencyOptions = [
 
 function LockPrompt({ onClose }: { onClose: () => void }) {
     return (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-[#1F281B]/35 px-5 backdrop-blur-sm">
-            <section className="w-full max-w-md rounded-[24px] border border-[#E7D7B7] bg-[#FFF9EC] p-6 text-center shadow-[0_24px_60px_rgba(60,42,16,0.22)]">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-[#1F281B]/35 px-5 backdrop-blur-sm" onClick={onClose}>
+            <section className="w-full max-w-md rounded-[24px] border border-[#E7D7B7] bg-[#FFF9EC] p-6 text-center shadow-[0_24px_60px_rgba(60,42,16,0.22)]" onClick={(event) => event.stopPropagation()}>
                 <p className="mb-2 font-serif text-3xl font-bold tracking-[-0.04em] text-[#1F281B]">Unlock Nori</p>
                 <p className="text-sm font-medium leading-6 text-[#5F665C]">
                     Login or sign up to use filters, save roles, track applications, and browse beyond the first page.
@@ -137,6 +138,68 @@ function LockPrompt({ onClose }: { onClose: () => void }) {
                     </Link>
                     <button type="button" onClick={onClose} className="inline-flex h-11 items-center rounded-xl px-3 text-sm font-bold text-[#5F665C]">
                         Close
+                    </button>
+                </div>
+            </section>
+        </div>
+    );
+}
+
+function AppliedConfirmPrompt({
+    job,
+    onYes,
+    onNo,
+}: {
+    job: Job;
+    onYes: () => void;
+    onNo: () => void;
+}) {
+    return (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-[#1F281B]/35 px-5 backdrop-blur-sm" onClick={onNo}>
+            <section className="w-full max-w-md rounded-[24px] border border-[#E7D7B7] bg-[#FFF9EC] p-6 text-center shadow-[0_24px_60px_rgba(60,42,16,0.22)]" onClick={(event) => event.stopPropagation()}>
+                <p className="mb-2 font-serif text-3xl font-bold tracking-[-0.04em] text-[#1F281B]">Did you apply?</p>
+                <p className="text-sm font-medium leading-6 text-[#5F665C]">
+                    Should Nori move <span className="font-bold text-[#1F281B]">{displayTitle(job)}</span> at{" "}
+                    <span className="font-bold text-[#1F281B]">{displayCompany(job)}</span> to Applied in your tracker?
+                </p>
+                <div className="mt-6 flex justify-center gap-3">
+                    <button type="button" onClick={onYes} className="inline-flex h-11 items-center rounded-xl bg-[#526736] px-5 text-sm font-bold text-white">
+                        Yes, add it
+                    </button>
+                    <button type="button" onClick={onNo} className="inline-flex h-11 items-center rounded-xl border border-[#D8C9A7] px-5 text-sm font-bold text-[#1F281B]">
+                        No
+                    </button>
+                </div>
+            </section>
+        </div>
+    );
+}
+
+function AlreadyAppliedPrompt({
+    job,
+    onOpen,
+    onRemove,
+    onClose,
+}: {
+    job: Job;
+    onOpen: () => void;
+    onRemove: () => void;
+    onClose: () => void;
+}) {
+    return (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-[#1F281B]/35 px-5 backdrop-blur-sm" onClick={onClose}>
+            <section className="w-full max-w-md rounded-[24px] border border-[#E7D7B7] bg-[#FFF9EC] p-6 text-center shadow-[0_24px_60px_rgba(60,42,16,0.22)]" onClick={(event) => event.stopPropagation()}>
+                <p className="mb-2 font-serif text-3xl font-bold tracking-[-0.04em] text-[#1F281B]">Already applied</p>
+                <p className="text-sm font-medium leading-6 text-[#5F665C]">
+                    <span className="font-bold text-[#1F281B]">{displayTitle(job)}</span> at{" "}
+                    <span className="font-bold text-[#1F281B]">{displayCompany(job)}</span> is already marked applied.
+                </p>
+                <div className="mt-6 flex flex-wrap justify-center gap-3">
+                    <button type="button" onClick={onOpen} className="inline-flex h-11 items-center rounded-xl bg-[#526736] px-5 text-sm font-bold text-white">
+                        Open job
+                    </button>
+                    <button type="button" onClick={onRemove} className="inline-flex h-11 items-center rounded-xl border border-[#D8C9A7] px-5 text-sm font-bold text-[#1F281B]">
+                        Remove from applied
                     </button>
                 </div>
             </section>
@@ -388,6 +451,8 @@ export default function JobFeedClient({
     const [companyJobIndexes, setCompanyJobIndexes] = useState<Record<string, number>>({});
     const [sortMode, setSortMode] = useState<SortMode>(initialSortMode);
     const [showLockPrompt, setShowLockPrompt] = useState(false);
+    const [pendingAppliedJob, setPendingAppliedJob] = useState<Job | null>(null);
+    const [alreadyAppliedJob, setAlreadyAppliedJob] = useState<Job | null>(null);
     const isRelevanceMode = sortMode === "relevance" && search.trim().length >= MIN_RELEVANCE_QUERY_LENGTH;
     const categoryValue = selectedCategories.size === 1 ? Array.from(selectedCategories)[0] : "";
     const locationMode = "us";
@@ -413,6 +478,25 @@ export default function JobFeedClient({
                 );
             } catch {}
         }
+    }, []);
+
+    useEffect(() => {
+        const readPendingApply = () => {
+            try {
+                const raw = window.sessionStorage.getItem(PENDING_APPLY_KEY);
+                setPendingAppliedJob(raw ? (JSON.parse(raw) as Job) : null);
+            } catch {
+                setPendingAppliedJob(null);
+            }
+        };
+
+        readPendingApply();
+        window.addEventListener("focus", readPendingApply);
+        window.addEventListener("pageshow", readPendingApply);
+        return () => {
+            window.removeEventListener("focus", readPendingApply);
+            window.removeEventListener("pageshow", readPendingApply);
+        };
     }, []);
 
     const loadJobs = useCallback(async () => {
@@ -474,11 +558,7 @@ export default function JobFeedClient({
         );
     };
 
-    const handleApply = (job: Job) => {
-        if (previewLocked) {
-            setShowLockPrompt(true);
-            return;
-        }
+    const markJobApplied = (job: Job) => {
         const saved = localStorage.getItem("jobclaw_saved");
         let arr: Job[] = [];
         try {
@@ -495,6 +575,42 @@ export default function JobFeedClient({
                 return acc;
             }, {}),
         );
+    };
+
+    const removeJobFromApplied = (job: Job) => {
+        const saved = localStorage.getItem("jobclaw_saved");
+        let arr: Job[] = [];
+        try {
+            arr = JSON.parse(saved || "[]");
+        } catch {}
+        arr = arr.map((savedJob) => (savedJob.internal_hash === job.internal_hash ? { ...savedJob, status: "saved", updatedAt: new Date().toISOString() } : savedJob));
+        localStorage.setItem("jobclaw_saved", JSON.stringify(arr));
+        setTrackedStatuses(
+            arr.reduce<Record<string, string>>((acc, savedJob) => {
+                acc[savedJob.internal_hash] = (savedJob.status || "saved").toLowerCase();
+                return acc;
+            }, {}),
+        );
+        setAlreadyAppliedJob(null);
+    };
+
+    const clearPendingApply = () => {
+        window.sessionStorage.removeItem(PENDING_APPLY_KEY);
+        setPendingAppliedJob(null);
+    };
+
+    const handleApply = (job: Job) => {
+        if (previewLocked) {
+            setShowLockPrompt(true);
+            return;
+        }
+        if (trackedStatuses[job.internal_hash] === "applied") {
+            setAlreadyAppliedJob(job);
+            return;
+        }
+        try {
+            window.sessionStorage.setItem(PENDING_APPLY_KEY, JSON.stringify(job));
+        } catch {}
         window.open(job.url, "_blank", "noopener,noreferrer");
     };
 
@@ -530,6 +646,27 @@ export default function JobFeedClient({
     return (
         <div className="min-h-screen bg-[#FBF4E7] text-[#1F281B] [background-image:radial-gradient(circle_at_12%_22%,rgba(215,234,220,0.55),transparent_30%),radial-gradient(circle_at_88%_12%,rgba(246,218,158,0.45),transparent_28%),linear-gradient(135deg,#FBF4E7_0%,#F8ECD7_100%)]">
             {showLockPrompt && <LockPrompt onClose={() => setShowLockPrompt(false)} />}
+            {pendingAppliedJob && (
+                <AppliedConfirmPrompt
+                    job={pendingAppliedJob}
+                    onYes={() => {
+                        markJobApplied(pendingAppliedJob);
+                        clearPendingApply();
+                    }}
+                    onNo={clearPendingApply}
+                />
+            )}
+            {alreadyAppliedJob && (
+                <AlreadyAppliedPrompt
+                    job={alreadyAppliedJob}
+                    onOpen={() => {
+                        window.open(alreadyAppliedJob.url, "_blank", "noopener,noreferrer");
+                        setAlreadyAppliedJob(null);
+                    }}
+                    onRemove={() => removeJobFromApplied(alreadyAppliedJob)}
+                    onClose={() => setAlreadyAppliedJob(null)}
+                />
+            )}
             <NoriAppSidebar locked={previewLocked} onLockedAction={() => setShowLockPrompt(true)} />
             <TopAppHeader
                 search={search}

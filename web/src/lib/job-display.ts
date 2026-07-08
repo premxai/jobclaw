@@ -1,7 +1,12 @@
 import type { Job } from "@/components/JobCard";
 
 function cleanWhitespace(value?: string | null): string {
-    return (value || "").replace(/\s+/g, " ").trim();
+    return (value || "")
+        .replace(/\*\*/g, "")
+        .replace(/__/g, "")
+        .replace(/`/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
 }
 
 export function displayCompany(job: Pick<Job, "company" | "canonical_company">): string {
