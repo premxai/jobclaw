@@ -51,9 +51,10 @@ function fallbackColor(company: string): string {
 interface CompanyLogoProps {
     company: string;
     size?: "sm" | "md" | "lg";
+    shape?: "circle" | "rounded";
 }
 
-export default function CompanyLogo({ company, size = "md" }: CompanyLogoProps) {
+export default function CompanyLogo({ company, size = "md", shape = "circle" }: CompanyLogoProps) {
     const [failed, setFailed] = useState(false);
     const logoUrl = useMemo(() => knownLogoUrl(company), [company]);
     const initial = initialsFor(company);
@@ -63,9 +64,10 @@ export default function CompanyLogo({ company, size = "md" }: CompanyLogoProps) 
         md: "h-11 w-11 text-sm",
         lg: "h-16 w-16 text-lg",
     };
+    const radius = shape === "rounded" ? "rounded-[10px]" : "rounded-full";
 
     return (
-        <div className={`${sizes[size]} grid shrink-0 place-items-center overflow-hidden rounded-full border border-border bg-white shadow-card`}>
+        <div className={`${sizes[size]} ${radius} grid shrink-0 place-items-center overflow-hidden border border-border bg-white shadow-card`}>
             {logoUrl && !failed ? (
                 <img
                     src={logoUrl}
@@ -76,7 +78,7 @@ export default function CompanyLogo({ company, size = "md" }: CompanyLogoProps) 
                 />
             ) : initial ? (
                 <span
-                    className="grid h-full w-full place-items-center rounded-full text-sm font-black text-white"
+                    className={`grid h-full w-full place-items-center ${radius} text-sm font-black text-white`}
                     style={{ backgroundColor: fallbackColor(company) }}
                     aria-label={`${company} initials`}
                 >

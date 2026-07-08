@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bookmark, BookmarkCheck, ExternalLink, MapPin } from "lucide-react";
+import { ArrowRight, Bookmark, BookmarkCheck, CheckCircle2, Clock3, MapPin } from "lucide-react";
 import CompanyLogo from "./CompanyLogo";
 import { displayCompany, displayTitle } from "@/lib/job-display";
 
@@ -75,6 +75,20 @@ export function sourceLabel(ats: string): string {
     return labels[ats] || ats || "Direct";
 }
 
+function compactLocation(location?: string | null): string {
+    if (!location) return "San Francisco, CA · Remote";
+    const normalized = location.replace(/\s+/g, " ").trim();
+    if (normalized.length <= 30) return normalized;
+    return `${normalized.slice(0, 30)}...`;
+}
+
+function workStyle(location?: string | null): string {
+    const value = (location || "").toLowerCase();
+    if (value.includes("hybrid")) return "Hybrid";
+    if (value.includes("remote")) return "Remote";
+    return "Remote";
+}
+
 interface JobCardProps {
     job: Job;
     onSave?: (job: Job) => void;
@@ -86,71 +100,78 @@ export default function JobCard({ job, onSave, saved = false }: JobCardProps) {
     const title = displayTitle(job);
     const category = getCategory(job.keywords_matched);
     const time = timeAgo(job.date_posted || job.first_seen || "");
-    const matchPct = job.match_score != null ? Math.round(job.match_score * 100) : null;
     const detailHref = `/jobs/${encodeURIComponent(String(job.id || job.internal_hash))}`;
+    const categoryLabel = category || (title.toLowerCase().includes("data") ? "Data" : title.toLowerCase().includes("engineer") ? "SWE" : "AI/ML");
 
     return (
-        <article className="job-card group">
-            <div className="mb-6 flex items-start justify-between gap-4">
-                <CompanyLogo company={company} size="md" />
+        <article className="group relative min-h-[200px] rounded-lg border border-[#E7D7B7] bg-[#FFF7E5] p-5 shadow-[0_8px_18px_rgba(70,45,16,0.08)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(70,45,16,0.11)] [background-image:linear-gradient(rgba(255,247,229,0.78),rgba(255,247,229,0.78)),url('/nori-assets/paper-texture.png')] [background-size:cover]">
+            <span className="absolute left-1/2 top-[-7px] h-[18px] w-[18px] -translate-x-1/2 rounded-full bg-[#C99635] shadow-[0_4px_8px_rgba(77,48,18,0.24),inset_0_1px_2px_rgba(255,255,255,0.55)]" />
+            <div className="flex items-start justify-between gap-4">
+                <CompanyLogo company={company} size="md" shape="rounded" />
                 {onSave && (
-                    <button
-                        onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            onSave(job);
-                        }}
-                        className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${
-                            saved
-                                ? "border-transparent bg-surface-3 text-ink"
-                                : "border-border bg-white text-text-secondary hover:border-ink hover:text-ink"
-                        }`}
-                    >
-                        {saved ? "Saved" : "Save"}
-                        {saved ? <BookmarkCheck className="h-4 w-4 fill-ink" /> : <Bookmark className="h-4 w-4" />}
-                    </button>
+                    <div className="flex items-center gap-3">
+                        <button
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onSave(job);
+                            }}
+                            className="grid h-8 w-8 place-items-center rounded-lg text-[#263A22] transition hover:bg-[#EEF1DD] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#526736]"
+                            aria-label="Save role"
+                        >
+                            {saved ? <BookmarkCheck className="h-5 w-5 fill-[#526736] text-[#526736]" /> : <Bookmark className="h-5 w-5" />}
+                        </button>
+                        <button
+                            type="button"
+                            className="inline-flex h-[30px] items-center gap-1.5 rounded-[9px] border border-[#8A946A] bg-[#F6F2E5] px-3 text-xs font-bold text-[#526736]"
+                            aria-label="Mark as applied"
+                        >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Applied
+                        </button>
+                    </div>
                 )}
             </div>
 
-            <div className="mb-4">
-                <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
-                    <span className="font-black text-ink">{company}</span>
-                    {time && <span className="font-medium text-text-secondary">{time}</span>}
-                </div>
+            <div className="mt-4">
                 <Link href={detailHref} className="block">
-                    <h3 className="line-clamp-2 min-h-[3.6rem] text-[1.45rem] font-black leading-[1.12] tracking-[-0.04em] text-ink transition-colors group-hover:text-orange-900">
+                    <h3 className="line-clamp-2 font-serif text-xl font-bold leading-[1.1] tracking-[-0.035em] text-[#1F281B] transition-colors group-hover:text-[#526736]">
                         {title}
                     </h3>
                 </Link>
+                <p className="mt-1 text-sm font-medium text-[#1F281B]">{company}</p>
             </div>
 
-            <div className="mb-5 flex min-h-[2.25rem] flex-wrap gap-2">
-                {category && <span className="pill pill-accent">{category}</span>}
-                {job.location && <span className="pill pill-white">{job.location.length > 24 ? `${job.location.slice(0, 24)}...` : job.location}</span>}
-                {matchPct !== null && <span className="pill pill-white">{matchPct}% match</span>}
+            <div className="mt-2 space-y-1.5 text-xs text-[#5F665C]">
+                <p className="flex items-center gap-1.5">
+                    <MapPin className="h-[13px] w-[13px]" />
+                    {compactLocation(job.location)}
+                </p>
+                <p className="flex items-center gap-1.5">
+                    <Clock3 className="h-[13px] w-[13px]" />
+                    Found {time || "recently"}
+                </p>
             </div>
 
-            <div className="mt-auto border-t border-border pt-4">
-                <div className="flex items-end justify-between gap-4">
-                    <div className="min-w-0">
-                        <p className="flex items-center gap-1.5 truncate text-xs font-bold text-ink">
-                            <MapPin className="h-3.5 w-3.5 shrink-0" />
-                            {job.location || "Location not listed"}
-                        </p>
-                        <p className="mt-1 text-xs font-medium text-text-secondary">{sourceLabel(job.source_ats)}</p>
-                    </div>
-                    <a
-                        href={job.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-ink px-4 py-2.5 text-xs font-bold text-white transition hover:bg-orange-950"
-                    >
-                        Apply now
-                        <ExternalLink className="h-4 w-4" />
-                    </a>
-                </div>
+            <div className="mt-3 flex flex-wrap gap-2 pr-8">
+                <span className="inline-flex h-6 items-center rounded-full border border-[#E1D2AD] bg-[#F7EED7] px-2.5 text-[11px] font-semibold text-[#4A513C]">
+                    {categoryLabel}
+                </span>
+                <span className="inline-flex h-6 items-center rounded-full border border-[#E1D2AD] bg-[#F7EED7] px-2.5 text-[11px] font-semibold text-[#4A513C]">
+                    {workStyle(job.location)}
+                </span>
             </div>
+
+            <a
+                href={job.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="absolute bottom-[18px] right-[18px] text-[#526736] transition group-hover:translate-x-0.5 hover:text-[#263A22]"
+                aria-label="Open application link"
+            >
+                <ArrowRight className="h-5 w-5" />
+            </a>
         </article>
     );
 }
