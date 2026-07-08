@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { ArrowRight, Bookmark, BookmarkCheck, CheckCircle2, Clock3, MapPin } from "lucide-react";
+﻿import { ArrowRight, Bookmark, BookmarkCheck, CheckCircle2, Clock3, MapPin } from "lucide-react";
 import CompanyLogo from "./CompanyLogo";
 import { displayCompany, displayTitle } from "@/lib/job-display";
 
@@ -100,7 +99,6 @@ export default function JobCard({ job, onSave, saved = false }: JobCardProps) {
     const title = displayTitle(job);
     const category = getCategory(job.keywords_matched);
     const time = timeAgo(job.date_posted || job.first_seen || "");
-    const detailHref = `/jobs/${encodeURIComponent(String(job.id || job.internal_hash))}`;
     const categoryLabel = category || (title.toLowerCase().includes("data") ? "Data" : title.toLowerCase().includes("engineer") ? "SWE" : "AI/ML");
 
     return (
@@ -134,11 +132,11 @@ export default function JobCard({ job, onSave, saved = false }: JobCardProps) {
             </div>
 
             <div className="mt-4">
-                <Link href={detailHref} className="block">
+                <a href={job.url} target="_blank" rel="noopener noreferrer" className="block" aria-label="Open application link">
                     <h3 className="line-clamp-2 font-serif text-xl font-bold leading-[1.1] tracking-[-0.035em] text-[#1F281B] transition-colors group-hover:text-[#526736]">
                         {title}
                     </h3>
-                </Link>
+                </a>
                 <p className="mt-1 text-sm font-medium text-[#1F281B]">{company}</p>
             </div>
 

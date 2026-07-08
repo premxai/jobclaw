@@ -1,24 +1,10 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import {
-    ArrowRight,
-    Bookmark,
-    CalendarDays,
-    ChevronDown,
-    Clock3,
-    Globe2,
-    Grid2X2,
-    LayoutDashboard,
-    MapPin,
-    Search,
-    Settings,
-    SlidersHorizontal,
-    Star,
-} from "lucide-react";
+import { ArrowRight, Bookmark, CalendarDays, ChevronDown, Clock3, Grid2X2, LayoutDashboard, MapPin, Search, Settings, SlidersHorizontal, Star } from "lucide-react";
 import JobCard, { Job } from "@/components/JobCard";
 import NoriMark from "@/components/landing/NoriMark";
 import { FILTER_CATEGORIES } from "@/components/SearchFilterBar";
@@ -46,9 +32,9 @@ function getPageNumbers(current: number, totalPages: number): (number | "...")[]
 
 const navItems = [
     { label: "Live Feed", href: "/jobs", icon: CalendarDays, active: true },
-    { label: "Matches", href: "/jobs?mode=relevance", icon: Star },
-    { label: "Saved Roles", href: "/tracker", icon: Bookmark },
-    { label: "Sources", href: "/companies", icon: Globe2 },
+    { label: "Saved Roles", href: "/saved-roles", icon: Bookmark },
+    { label: "Profile", href: "/profile", icon: Star },
+    { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 const recencyOptions = [
@@ -80,13 +66,6 @@ function DashboardSidebar() {
                     </Link>
                 ))}
             </nav>
-
-            <div className="mx-2 my-7 border-t border-[#E7D7B7]" />
-
-            <Link href="/profile" className="flex h-14 items-center gap-3.5 rounded-[14px] px-[18px] text-[17px] font-medium text-[#1F281B] transition hover:bg-[#FFF9EC]">
-                <Settings className="h-6 w-6" />
-                Settings
-            </Link>
 
             <div className="mt-auto">
                 <div className="mb-8 rounded-[18px] border border-[#E7D7B7] bg-[#FFF9EC]/80 p-[18px] shadow-[0_8px_18px_rgba(70,45,16,0.06)]">

@@ -185,7 +185,7 @@ export function SearchFilterBar({
                     <FilterDropdown label="Categories" icon={<BriefcaseBusiness className="h-4 w-4" />} options={FILTER_CATEGORIES} selected={selectedCategories} onToggle={onToggleCategory} />
                     <FilterDropdown label="Sources" icon={<Layers3 className="h-4 w-4" />} options={FILTER_SOURCES} selected={selectedSources} onToggle={onToggleSource} />
 
-                    <Link href="/tracker" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-bold text-white transition hover:bg-neutral-800">
+                    <Link href="/saved-roles" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-bold text-white transition hover:bg-neutral-800">
                         <Bookmark className="h-4 w-4" />
                         Saved jobs
                     </Link>

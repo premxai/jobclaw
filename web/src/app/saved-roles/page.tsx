@@ -21,7 +21,7 @@ interface TrackedJob extends Job {
     addedAt?: string;
 }
 
-export default function TrackerPage() {
+export default function SavedRolesPage() {
     const [jobs, setJobs] = useState<TrackedJob[]>([]);
     const [draggedJob, setDraggedJob] = useState<string | null>(null);
     const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
@@ -64,9 +64,9 @@ export default function TrackerPage() {
                 <header className="mb-8 flex flex-col gap-4 rounded-[30px] bg-ink p-6 text-white sm:p-8 lg:flex-row lg:items-end lg:justify-between">
                     <div>
                         <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-white/55">saved jobs</p>
-                        <h1 className="text-4xl font-black tracking-[-0.06em] sm:text-5xl">Your application tracker</h1>
+                        <h1 className="text-4xl font-black tracking-[-0.06em] sm:text-5xl">Your saved roles</h1>
                         <p className="mt-3 max-w-2xl text-sm font-medium text-white/65">
-                            Save jobs from the board, then drag each note through your search pipeline.
+                            Save jobs from the board, then keep the best ones organized while authentication is still locked.
                         </p>
                     </div>
                     <Link href="/jobs" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-black text-ink transition hover:bg-surface-2">
@@ -82,7 +82,7 @@ export default function TrackerPage() {
                         </div>
                         <h2 className="text-2xl font-black tracking-[-0.04em] text-ink">No tracked jobs yet</h2>
                         <p className="mx-auto mt-2 max-w-md text-sm font-medium text-text-secondary">
-                            Browse the job board and hit Save to build your first application board.
+                            Browse the job board and hit Save to build your first saved roles list.
                         </p>
                         <Link href="/jobs" className="btn-primary mt-6">
                             Browse jobs
