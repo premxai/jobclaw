@@ -5,7 +5,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 const jobs = [
   {
     company: "OpenAI",
-    logo: "AI",
+    logo: "openai",
     title: "Research Engineer",
     found: "Found 3m ago",
     tags: ["AI/ML", "Remote", "Direct apply"],
@@ -23,7 +23,7 @@ const jobs = [
   },
   {
     company: "Airbnb",
-    logo: "A",
+    logo: "airbnb",
     title: "Data Scientist",
     found: "Found 24m ago",
     tags: ["Data", "Hybrid", "Direct apply"],
@@ -46,12 +46,27 @@ function PaperClip({ className = "" }: { className?: string }) {
 }
 
 function JobNote({ job }: { job: (typeof jobs)[number] }) {
+  const logo =
+    job.logo === "openai" ? (
+      <svg viewBox="0 0 32 32" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="2.4">
+        <path d="M16 5.5c3.5-3.2 8.9-.8 9.1 3.9 4.4 1.4 5.1 7.4 1.1 9.7.8 4.6-4 8-8 5.8-3.5 3.2-8.9.8-9.1-3.9-4.4-1.4-5.1-7.4-1.1-9.7-.8-4.6 4-8 8-5.8Z" />
+        <path d="M10 12.2 16 8.8l6 3.4v6.9l-6 3.4-6-3.4z" />
+      </svg>
+    ) : job.logo === "airbnb" ? (
+      <svg viewBox="0 0 32 32" className="h-8 w-8" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16 25c-4.6-5.1-8-10.3-4.9-14.4 2.1-2.8 4.9.9 4.9 5.1 0-4.2 2.8-7.9 4.9-5.1C24 14.7 20.6 19.9 16 25Z" />
+        <path d="M11.1 23.4c-5.1 1.5-6.3-3.9-2.7-6.8M20.9 23.4c5.1 1.5 6.3-3.9 2.7-6.8" />
+      </svg>
+    ) : (
+      <span className="text-3xl font-black">S</span>
+    );
+
   return (
     <article
       className={`relative h-[300px] rounded-lg border border-[#E5D2A8] bg-[#FFF7E5] p-7 shadow-[0_16px_28px_rgba(70,45,16,0.14),inset_0_1px_0_rgba(255,255,255,0.8)] [clip-path:polygon(0_2%,100%_0,98%_97%,82%_99%,68%_97%,53%_100%,36%_98%,18%_100%,2%_97%)] ${job.rotate}`}
       style={paperBackground}
     >
-      <div className={`mb-[22px] grid h-12 w-12 place-items-center rounded-xl text-lg font-black shadow-sm ${job.tone}`}>{job.logo}</div>
+      <div className={`mb-[22px] grid h-12 w-12 place-items-center rounded-xl shadow-sm ${job.tone}`}>{logo}</div>
       <h3 className="font-serif text-[28px] font-bold leading-[1.05] tracking-[-0.035em] text-[#1F281B]">{job.company}</h3>
       <p className="mt-1.5 min-h-[44px] text-base font-medium leading-[1.35] text-[#30352C]">{job.title}</p>
       <p className="mt-4 flex items-center gap-2 text-sm font-medium text-[#66705F]">
@@ -65,7 +80,7 @@ function JobNote({ job }: { job: (typeof jobs)[number] }) {
           </span>
         ))}
       </div>
-      <Link href="/jobs" className="absolute bottom-[22px] right-6 text-[#526736]" aria-label={`Apply to ${job.title} at ${job.company}`}>
+      <Link href="/jobs?preview=1" className="absolute bottom-[22px] right-6 text-[#526736]" aria-label={`Open ${job.title} at ${job.company}`}>
         <ArrowRight className="h-5 w-5" />
       </Link>
     </article>
@@ -121,6 +136,10 @@ export default function NotesBoard() {
           New notes arrive
           <br />
           while you focus.
+          <svg viewBox="0 0 36 24" className="absolute bottom-3 right-4 h-6 w-9 text-[#7B8552]" fill="none" stroke="currentColor" strokeWidth="1.8">
+            <path d="M3 19c9-9 18-11 30-15" />
+            <path d="M15 10c-6-1-9 2-10 7 6 1 9-2 10-7ZM25 6c-5-1-8 1-10 6 5 1 8-1 10-6Z" />
+          </svg>
         </div>
       </div>
     </section>

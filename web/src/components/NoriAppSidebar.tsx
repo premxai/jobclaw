@@ -14,7 +14,7 @@ const navItems = [
     { label: "Settings", href: "/settings", icon: Settings },
 ];
 
-export default function NoriAppSidebar() {
+export default function NoriAppSidebar({ locked = false, onLockedAction }: { locked?: boolean; onLockedAction?: () => void }) {
     const pathname = usePathname();
 
     return (
@@ -31,6 +31,12 @@ export default function NoriAppSidebar() {
                         <Link
                             key={href}
                             href={href}
+                            onClick={(event) => {
+                                if (locked && href !== "/jobs") {
+                                    event.preventDefault();
+                                    onLockedAction?.();
+                                }
+                            }}
                             className={`flex h-14 items-center gap-3.5 rounded-[14px] px-[18px] text-[17px] transition ${
                                 active ? "bg-[#EEF1DD] font-bold text-[#526736]" : "font-medium text-[#1F281B] hover:bg-[#FFF9EC]"
                             }`}
@@ -48,7 +54,16 @@ export default function NoriAppSidebar() {
                         <NoriMark />
                         <p className="text-[15px] font-medium leading-6 text-[#1F281B]">Nori keeps your roles, saves, and progress in one calm place.</p>
                     </div>
-                    <Link href="/tracker" className="mt-3 inline-flex items-center gap-2 text-[15px] font-semibold text-[#526736]">
+                    <Link
+                        href="/tracker"
+                        onClick={(event) => {
+                            if (locked) {
+                                event.preventDefault();
+                                onLockedAction?.();
+                            }
+                        }}
+                        className="mt-3 inline-flex items-center gap-2 text-[15px] font-semibold text-[#526736]"
+                    >
                         Open tracker
                     </Link>
                 </div>

@@ -61,14 +61,46 @@ const recencyOptions = [
     { label: "Last 48h", value: "48", hours: 48 },
 ];
 
-function TopAppHeader({ search, onSearchChange }: { search: string; onSearchChange: (value: string) => void }) {
+function LockPrompt({ onClose }: { onClose: () => void }) {
+    return (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-[#1F281B]/35 px-5 backdrop-blur-sm">
+            <section className="w-full max-w-md rounded-[24px] border border-[#E7D7B7] bg-[#FFF9EC] p-6 text-center shadow-[0_24px_60px_rgba(60,42,16,0.22)]">
+                <p className="mb-2 font-serif text-3xl font-bold tracking-[-0.04em] text-[#1F281B]">Unlock Nori</p>
+                <p className="text-sm font-medium leading-6 text-[#5F665C]">
+                    Login or sign up to use filters, save roles, track applications, and browse beyond the first page.
+                </p>
+                <div className="mt-6 flex justify-center gap-3">
+                    <Link href="/profile" className="inline-flex h-11 items-center rounded-xl bg-[#526736] px-5 text-sm font-bold text-white">
+                        Login
+                    </Link>
+                    <Link href="/profile" className="inline-flex h-11 items-center rounded-xl border border-[#D8C9A7] px-5 text-sm font-bold text-[#1F281B]">
+                        Sign up
+                    </Link>
+                    <button type="button" onClick={onClose} className="inline-flex h-11 items-center rounded-xl px-3 text-sm font-bold text-[#5F665C]">
+                        Close
+                    </button>
+                </div>
+            </section>
+        </div>
+    );
+}
+
+function TopAppHeader({ search, onSearchChange, locked, onLockedAction }: { search: string; onSearchChange: (value: string) => void; locked?: boolean; onLockedAction?: () => void }) {
     return (
         <header className="sticky top-0 z-20 flex min-h-24 items-center gap-6 border-b border-[#E7D7B7] bg-[#FFF9EC]/82 px-5 backdrop-blur-md sm:px-8 lg:ml-[280px]">
             <div className="flex h-14 w-full max-w-[820px] items-center gap-4 rounded-[14px] border border-[#D8C9A7] bg-[#FFF9EC] px-[22px] shadow-[0_4px_12px_rgba(70,45,16,0.04)]">
                 <Search className="h-[22px] w-[22px] shrink-0 text-[#0F2744]" />
                 <input
                     value={search}
-                    onChange={(e) => onSearchChange(e.target.value)}
+                    onFocus={() => locked && onLockedAction?.()}
+                    onChange={(e) => {
+                        if (locked) {
+                            onLockedAction?.();
+                            return;
+                        }
+                        onSearchChange(e.target.value);
+                    }}
+                    readOnly={locked}
                     placeholder="Search roles, companies, or skills..."
                     className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-[#1F281B] placeholder:text-[#7B7F70] focus:outline-none"
                 />
@@ -239,9 +271,11 @@ function JobsFilterBar({
 export default function JobFeedClient({
     initialSearch,
     initialSortMode = "recency",
+    previewLocked = false,
 }: {
     initialSearch: string;
     initialSortMode?: SortMode;
+    previewLocked?: boolean;
     headerExtra?: React.ReactNode;
 }) {
     const [jobs, setJobs] = useState<Job[]>([]);
@@ -258,6 +292,7 @@ export default function JobFeedClient({
     const [loading, setLoading] = useState(true);
     const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
     const [sortMode, setSortMode] = useState<SortMode>(initialSortMode);
+    const [showLockPrompt, setShowLockPrompt] = useState(false);
     const isRelevanceMode = sortMode === "relevance" && search.trim().length >= MIN_RELEVANCE_QUERY_LENGTH;
     const categoryValue = selectedCategories.size === 1 ? Array.from(selectedCategories)[0] : "";
     const locationMode = remoteOnly ? "remote" : usOnly ? "us" : "all";
@@ -280,6 +315,13 @@ export default function JobFeedClient({
 
     const loadJobs = useCallback(async () => {
         setLoading(true);
+        if (previewLocked) {
+            const data = await fetchJobs({ page: 1, limit: LIMIT });
+            setJobs(data.jobs.slice(0, LIMIT));
+            setTotal(Math.min(data.total, LIMIT));
+            setLoading(false);
+            return;
+        }
         const category = selectedCategories.size === 1 ? Array.from(selectedCategories)[0] : undefined;
         const source = selectedSources.size === 1 ? Array.from(selectedSources)[0].toLowerCase() : undefined;
         const data = isRelevanceMode
@@ -309,13 +351,17 @@ export default function JobFeedClient({
         setJobs(filtered);
         setTotal(data.total);
         setLoading(false);
-    }, [search, page, selectedCategories, selectedSources, usOnly, remoteOnly, recentHours, experienceLevel, employmentType, isRelevanceMode]);
+    }, [search, page, selectedCategories, selectedSources, usOnly, remoteOnly, recentHours, experienceLevel, employmentType, isRelevanceMode, previewLocked]);
 
     useEffect(() => {
         loadJobs();
     }, [loadJobs]);
 
     const handleSave = (job: Job) => {
+        if (previewLocked) {
+            setShowLockPrompt(true);
+            return;
+        }
         const saved = localStorage.getItem("jobclaw_saved");
         let arr: Job[] = [];
         try {
@@ -328,6 +374,10 @@ export default function JobFeedClient({
     };
 
     const handleApply = (job: Job) => {
+        if (previewLocked) {
+            setShowLockPrompt(true);
+            return;
+        }
         const saved = localStorage.getItem("jobclaw_saved");
         let arr: Job[] = [];
         try {
@@ -368,9 +418,12 @@ export default function JobFeedClient({
 
     return (
         <div className="min-h-screen bg-[#FBF4E7] text-[#1F281B] [background-image:radial-gradient(circle_at_12%_22%,rgba(215,234,220,0.55),transparent_30%),radial-gradient(circle_at_88%_12%,rgba(246,218,158,0.45),transparent_28%),linear-gradient(135deg,#FBF4E7_0%,#F8ECD7_100%)]">
-            <NoriAppSidebar />
+            {showLockPrompt && <LockPrompt onClose={() => setShowLockPrompt(false)} />}
+            <NoriAppSidebar locked={previewLocked} onLockedAction={() => setShowLockPrompt(true)} />
             <TopAppHeader
                 search={search}
+                locked={previewLocked}
+                onLockedAction={() => setShowLockPrompt(true)}
                 onSearchChange={(value) => {
                     setSearch(value);
                     setPage(1);
@@ -380,29 +433,34 @@ export default function JobFeedClient({
             <main className="px-5 py-6 sm:px-8 lg:ml-[280px] lg:p-8">
                 <div className="space-y-6">
                     <JobsHeroBanner />
-                    <JobsFilterBar
-                        recentHours={recentHours}
-                        onRecentHoursChange={(hours) => {
-                            setRecentHours(hours);
-                            setPage(1);
-                        }}
-                        category={categoryValue}
-                        onCategoryChange={handleCategoryChange}
-                        locationMode={locationMode}
-                        onLocationChange={handleLocationChange}
-                        experienceLevel={experienceLevel}
-                        onExperienceLevelChange={(value) => {
-                            setExperienceLevel(value);
-                            setPage(1);
-                        }}
-                        employmentType={employmentType}
-                        onEmploymentTypeChange={(value) => {
-                            setEmploymentType(value);
-                            setPage(1);
-                        }}
-                        onClear={clearFilters}
-                        onApply={loadJobs}
-                    />
+                    <div className={previewLocked ? "relative" : ""}>
+                        {previewLocked && <button type="button" onClick={() => setShowLockPrompt(true)} aria-label="Unlock filters" className="absolute inset-0 z-10 rounded-[14px] cursor-not-allowed bg-transparent" />}
+                        <div className={previewLocked ? "pointer-events-none opacity-55" : ""}>
+                            <JobsFilterBar
+                                recentHours={recentHours}
+                                onRecentHoursChange={(hours) => {
+                                    setRecentHours(hours);
+                                    setPage(1);
+                                }}
+                                category={categoryValue}
+                                onCategoryChange={handleCategoryChange}
+                                locationMode={locationMode}
+                                onLocationChange={handleLocationChange}
+                                experienceLevel={experienceLevel}
+                                onExperienceLevelChange={(value) => {
+                                    setExperienceLevel(value);
+                                    setPage(1);
+                                }}
+                                employmentType={employmentType}
+                                onEmploymentTypeChange={(value) => {
+                                    setEmploymentType(value);
+                                    setPage(1);
+                                }}
+                                onClear={clearFilters}
+                                onApply={loadJobs}
+                            />
+                        </div>
+                    </div>
 
                     {loading ? (
                         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
