@@ -24,6 +24,7 @@ interface SavedJobRef {
 const LIMIT = 12;
 const WORKING_SET_LIMIT = 120;
 const PENDING_APPLY_KEY = "nori_pending_apply";
+const JOB_GRID_CLASS = "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-5 2xl:grid-cols-4";
 
 function getPageNumbers(current: number, totalPages: number): (number | "...")[] {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -258,8 +259,8 @@ function ProfileMenu() {
 
 function TopAppHeader({ search, onSearchChange, locked, onLockedAction }: { search: string; onSearchChange: (value: string) => void; locked?: boolean; onLockedAction?: () => void }) {
     return (
-        <header className="sticky top-0 z-20 flex min-h-24 flex-wrap items-center gap-4 border-b border-[#E7D7B7] bg-[#FFF9EC]/82 px-5 py-3 backdrop-blur-md sm:px-8 lg:ml-[280px]">
-            <div className="order-1 flex h-14 min-w-[240px] flex-1 items-center gap-4 rounded-[14px] border border-[#D8C9A7] bg-[#FFF9EC] px-[22px] shadow-[0_4px_12px_rgba(70,45,16,0.04)] sm:max-w-[560px]">
+        <header className="sticky top-0 z-20 flex min-h-[84px] flex-wrap items-center gap-3 border-b border-[#E7D7B7] bg-[#FFF9EC]/82 px-3 py-3 backdrop-blur-md sm:min-h-24 sm:gap-4 sm:px-8 lg:ml-[280px]">
+            <div className="order-1 flex h-12 min-w-[220px] flex-1 items-center gap-3 rounded-[14px] border border-[#D8C9A7] bg-[#FFF9EC] px-4 shadow-[0_4px_12px_rgba(70,45,16,0.04)] sm:h-14 sm:gap-4 sm:px-[22px] md:max-w-[560px]">
                 <Search className="h-[22px] w-[22px] shrink-0 text-[#0F2744]" />
                 <input
                     value={search}
@@ -277,7 +278,7 @@ function TopAppHeader({ search, onSearchChange, locked, onLockedAction }: { sear
                 />
             </div>
 
-            <div className="order-3 ml-auto flex w-full items-center justify-end gap-2.5 whitespace-nowrap text-xs font-medium text-[#1F281B] sm:order-2 sm:w-auto sm:text-sm">
+            <div className="order-3 ml-auto flex w-full items-center justify-end gap-2 whitespace-nowrap text-[11px] font-medium text-[#1F281B] sm:order-2 sm:w-auto sm:gap-2.5 sm:text-sm">
                 <LocalDateTime />
             </div>
 
@@ -290,15 +291,15 @@ function TopAppHeader({ search, onSearchChange, locked, onLockedAction }: { sear
 
 function JobsHeroBanner() {
     return (
-        <section className="relative min-h-[190px] overflow-hidden rounded-2xl border border-[#E7D7B7] bg-[#FFF9EC] px-6 py-9 shadow-[0_10px_24px_rgba(70,45,16,0.07)] [background-image:linear-gradient(rgba(255,249,236,0.80),rgba(255,249,236,0.80)),url('/nori-assets/paper-texture.png')] [background-size:cover] sm:px-12 sm:py-10">
+        <section className="relative min-h-[140px] overflow-hidden rounded-2xl border border-[#E7D7B7] bg-[#FFF9EC] px-4 py-5 shadow-[0_10px_24px_rgba(70,45,16,0.07)] [background-image:linear-gradient(rgba(255,249,236,0.80),rgba(255,249,236,0.80)),url('/nori-assets/paper-texture.png')] [background-size:cover] sm:min-h-[190px] sm:px-12 sm:py-10">
             <div className="relative z-10 max-w-3xl">
-                <h1 className="font-serif text-[34px] font-bold leading-[1.1] tracking-[-0.045em] text-[#12302A] sm:text-[42px]">
+                <h1 className="font-serif text-[28px] font-bold leading-[1.08] tracking-[-0.045em] text-[#12302A] sm:text-[42px] sm:leading-[1.1]">
                     Fresh roles from Nori
                     <span className="ml-4 inline-block align-middle">
                         <NoriMark />
                     </span>
                 </h1>
-                <p className="mt-2.5 text-[17px] font-normal leading-[1.45] text-[#5F665C]">Live roles continuously found and posted by your agent.</p>
+                <p className="mt-2 text-sm font-normal leading-[1.45] text-[#5F665C] sm:mt-2.5 sm:text-[17px]">Live roles continuously found and posted by your agent.</p>
             </div>
             <span className="pointer-events-none absolute right-[330px] top-4 hidden h-36 w-36 rotate-12 opacity-95 drop-shadow-[0_14px_20px_rgba(70,45,16,0.16)] lg:block">
                 <Image src="/nori-assets/coffee-cup.png" alt="" aria-hidden="true" fill sizes="144px" className="object-contain" />
@@ -376,8 +377,8 @@ function JobsFilterBar({
     const recentValue = recencyOptions.find((option) => option.hours === recentHours)?.value ?? "all";
 
     return (
-        <section className="flex min-h-[104px] flex-col gap-4 rounded-[14px] border border-[#E7D7B7] bg-[#FFF9EC]/90 px-[22px] py-[18px] shadow-[0_8px_18px_rgba(70,45,16,0.06)] xl:flex-row xl:items-center">
-            <div className="grid flex-1 gap-[22px] md:grid-cols-2 xl:grid-cols-5">
+        <section className="flex min-h-[92px] flex-col gap-4 rounded-[14px] border border-[#E7D7B7] bg-[#FFF9EC]/90 px-4 py-4 shadow-[0_8px_18px_rgba(70,45,16,0.06)] sm:min-h-[104px] sm:px-[22px] sm:py-[18px] xl:flex-row xl:items-center">
+            <div className="grid flex-1 gap-3 sm:gap-[22px] md:grid-cols-2 xl:grid-cols-5">
                 <FilterSelect label="Time posted" icon={<Clock3 className="h-[17px] w-[17px]" />} value={recentValue} onChange={(value) => onRecentHoursChange(recencyOptions.find((option) => option.value === value)?.hours ?? null)}>
                     {recencyOptions.map((option) => (
                         <option key={option.value} value={option.value}>
@@ -414,7 +415,7 @@ function JobsFilterBar({
                 </FilterSelect>
             </div>
 
-            <div className="flex shrink-0 items-end justify-end gap-5 xl:self-end">
+            <div className="flex shrink-0 items-end justify-end gap-3 sm:gap-5 xl:self-end">
                 <button type="button" onClick={onClear} className="h-[46px] text-sm font-semibold text-[#526736] underline underline-offset-2">
                     Clear all
                 </button>
@@ -678,8 +679,8 @@ export default function JobFeedClient({
                 }}
             />
 
-            <main className="px-5 py-6 sm:px-8 lg:ml-[280px] lg:p-8">
-                <div className="space-y-6">
+            <main className="px-3 py-4 sm:px-6 sm:py-6 lg:ml-[280px] lg:p-8">
+                <div className="space-y-4 sm:space-y-6">
                     <JobsHeroBanner />
                     <div className={previewLocked ? "relative" : ""}>
                         {previewLocked && <button type="button" onClick={() => setShowLockPrompt(true)} aria-label="Unlock filters" className="absolute inset-0 z-10 rounded-[14px] cursor-not-allowed bg-transparent" />}
@@ -711,13 +712,13 @@ export default function JobFeedClient({
                     </div>
 
                     {loading ? (
-                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                        <div className={JOB_GRID_CLASS}>
                             {Array.from({ length: LIMIT }).map((_, index) => (
-                                <div key={index} className="h-[200px] animate-pulse rounded-lg border border-[#E7D7B7] bg-[#FFF9EC]" />
+                                <div key={index} className="h-[220px] animate-pulse rounded-lg border border-[#E7D7B7] bg-[#FFF9EC] sm:h-[248px] xl:h-[288px]" />
                             ))}
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                        <div className={JOB_GRID_CLASS}>
                             {visibleCompanyGroups.map((group, index) => {
                                 const groupJobIndex = companyJobIndexes[group.key] || 0;
                                 const job = group.jobs[groupJobIndex] || group.jobs[0];
