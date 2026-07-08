@@ -3,14 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
-import { CalendarDays, ChevronDown, Clock3, Grid2X2, LayoutDashboard, MapPin, Search, SlidersHorizontal } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CalendarDays, ChevronDown, Clock3, Grid2X2, LayoutDashboard, LogOut, MapPin, Search, SlidersHorizontal, UserCircle } from "lucide-react";
 import JobCard, { Job } from "@/components/JobCard";
 import NoriAppSidebar from "@/components/NoriAppSidebar";
 import NoriMark from "@/components/landing/NoriMark";
 import { FILTER_CATEGORIES } from "@/components/SearchFilterBar";
 import { fetchJobs, fetchMatchedJobs } from "@/lib/api";
-import { isRemoteLocation, isUsLocation } from "@/lib/location-filters";
+import { displayCompany, displayTitle, companySlug } from "@/lib/job-display";
+import { isUsLocation } from "@/lib/location-filters";
 
 export type SortMode = "recency" | "relevance";
 export const MIN_RELEVANCE_QUERY_LENGTH = 3;
@@ -21,6 +22,7 @@ interface SavedJobRef {
 }
 
 const LIMIT = 12;
+const WORKING_SET_LIMIT = 120;
 
 function getPageNumbers(current: number, totalPages: number): (number | "...")[] {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -33,7 +35,64 @@ function getPageNumbers(current: number, totalPages: number): (number | "...")[]
 }
 
 function jobSearchText(job: Job): string {
-    return `${job.title} ${job.canonical_title || ""} ${job.company} ${job.canonical_company || ""} ${job.description || ""}`.toLowerCase();
+    return `${displayTitle(job)} ${job.title} ${displayCompany(job)} ${job.company} ${job.location || ""} ${job.source_ats || ""} ${parseSkillTags(job).join(" ")} ${job.description || ""}`.toLowerCase();
+}
+
+function normalizeSearch(value: string): string {
+    return value.toLowerCase().replace(/[^a-z0-9+#./-]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function parseSkillTags(job: Job): string[] {
+    let tags: string[] = [];
+    try {
+        const parsed = JSON.parse(job.keywords_matched || "[]");
+        if (Array.isArray(parsed)) tags = parsed.map((tag) => String(tag));
+    } catch {
+        tags = (job.keywords_matched || "").split(",");
+    }
+
+    const blocked = /\b(remote|hybrid|onsite|on-site|united states|usa|us|direct apply|full[- ]?time|contract|internship)\b/i;
+    return tags.map((tag) => tag.replace(/\s+/g, " ").trim()).filter(Boolean).filter((tag) => !blocked.test(tag));
+}
+
+function matchesSearchQuery(job: Job, query: string): boolean {
+    const tokens = normalizeSearch(query).split(" ").filter(Boolean);
+    if (tokens.length === 0) return true;
+    const haystack = normalizeSearch(jobSearchText(job));
+    return tokens.every((token) => haystack.includes(token));
+}
+
+function matchesCategory(job: Job, selected: Set<string>): boolean {
+    if (selected.size === 0) return true;
+    const tags = parseSkillTags(job).map((tag) => tag.toLowerCase());
+    return Array.from(selected).some((category) => tags.includes(category.toLowerCase()));
+}
+
+interface CompanyJobGroup {
+    key: string;
+    company: string;
+    jobs: Job[];
+}
+
+function sortByFreshness(a: Job, b: Job): number {
+    const aTime = new Date(a.first_seen || a.date_posted || 0).getTime() || 0;
+    const bTime = new Date(b.first_seen || b.date_posted || 0).getTime() || 0;
+    return bTime - aTime;
+}
+
+function groupCompanyJobs(jobs: Job[]): CompanyJobGroup[] {
+    const groups = new Map<string, CompanyJobGroup>();
+    jobs.forEach((job) => {
+        const company = displayCompany(job);
+        const key = companySlug(company) || company.toLowerCase();
+        const existing = groups.get(key);
+        if (existing) existing.jobs.push(job);
+        else groups.set(key, { key, company, jobs: [job] });
+    });
+
+    return Array.from(groups.values())
+        .map((group) => ({ ...group, jobs: group.jobs.sort(sortByFreshness) }))
+        .sort((a, b) => sortByFreshness(a.jobs[0], b.jobs[0]));
 }
 
 function matchesExperience(job: Job, level: string): boolean {
@@ -85,10 +144,59 @@ function LockPrompt({ onClose }: { onClose: () => void }) {
     );
 }
 
+function LocalDateTime() {
+    const [now, setNow] = useState<Date | null>(null);
+
+    useEffect(() => {
+        setNow(new Date());
+        const timer = window.setInterval(() => setNow(new Date()), 30_000);
+        return () => window.clearInterval(timer);
+    }, []);
+
+    if (!now) return null;
+
+    return (
+        <>
+            <CalendarDays className="h-5 w-5" />
+            {new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" }).format(now)}
+            <span>·</span>
+            {new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(now)}
+        </>
+    );
+}
+
+function ProfileMenu() {
+    const [open, setOpen] = useState(false);
+
+    return (
+        <div className="relative order-2 block sm:order-3">
+            <button type="button" onClick={() => setOpen((value) => !value)} className="flex items-center gap-3" aria-expanded={open} aria-haspopup="menu">
+                <span className="grid h-12 w-12 place-items-center rounded-full bg-[#D9B08C] text-sm font-black text-[#1F281B] shadow-sm">AC</span>
+                <span className="hidden leading-tight sm:block">
+                    <span className="block text-[15px] font-bold text-[#1F281B]">Alex Chen</span>
+                </span>
+                <ChevronDown className={`h-4 w-4 text-[#526736] transition ${open ? "rotate-180" : ""}`} />
+            </button>
+            {open && (
+                <div role="menu" className="absolute right-0 top-[calc(100%+14px)] w-48 rounded-2xl border border-[#E7D7B7] bg-[#FFF9EC] p-2 shadow-[0_18px_42px_rgba(70,45,16,0.16)]">
+                    <Link href="/profile" role="menuitem" className="flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-[#1F281B] hover:bg-[#F7EED7]">
+                        <UserCircle className="h-4 w-4 text-[#526736]" />
+                        Profile
+                    </Link>
+                    <Link href="/profile" role="menuitem" className="flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-[#1F281B] hover:bg-[#F7EED7]">
+                        <LogOut className="h-4 w-4 text-[#526736]" />
+                        Logout
+                    </Link>
+                </div>
+            )}
+        </div>
+    );
+}
+
 function TopAppHeader({ search, onSearchChange, locked, onLockedAction }: { search: string; onSearchChange: (value: string) => void; locked?: boolean; onLockedAction?: () => void }) {
     return (
-        <header className="sticky top-0 z-20 flex min-h-24 items-center gap-6 border-b border-[#E7D7B7] bg-[#FFF9EC]/82 px-5 backdrop-blur-md sm:px-8 lg:ml-[280px]">
-            <div className="flex h-14 w-full max-w-[820px] items-center gap-4 rounded-[14px] border border-[#D8C9A7] bg-[#FFF9EC] px-[22px] shadow-[0_4px_12px_rgba(70,45,16,0.04)]">
+        <header className="sticky top-0 z-20 flex min-h-24 flex-wrap items-center gap-4 border-b border-[#E7D7B7] bg-[#FFF9EC]/82 px-5 py-3 backdrop-blur-md sm:px-8 lg:ml-[280px]">
+            <div className="order-1 flex h-14 min-w-[240px] flex-1 items-center gap-4 rounded-[14px] border border-[#D8C9A7] bg-[#FFF9EC] px-[22px] shadow-[0_4px_12px_rgba(70,45,16,0.04)] sm:max-w-[560px]">
                 <Search className="h-[22px] w-[22px] shrink-0 text-[#0F2744]" />
                 <input
                     value={search}
@@ -106,23 +214,13 @@ function TopAppHeader({ search, onSearchChange, locked, onLockedAction }: { sear
                 />
             </div>
 
-            <div className="ml-auto hidden items-center gap-2.5 text-[15px] font-medium text-[#1F281B] xl:flex">
-                <CalendarDays className="h-5 w-5" />
-                May 15, 2025
-                <span>·</span>
-                10:24 AM
+            <div className="order-3 ml-auto flex w-full items-center justify-end gap-2.5 whitespace-nowrap text-xs font-medium text-[#1F281B] sm:order-2 sm:w-auto sm:text-sm">
+                <LocalDateTime />
             </div>
 
-            <div className="hidden h-11 w-px bg-[#E7D7B7] xl:block" />
+            <div className="order-3 hidden h-11 w-px bg-[#E7D7B7] md:block" />
 
-            <Link href="/profile" className="hidden items-center gap-3 xl:flex">
-                <span className="grid h-12 w-12 place-items-center rounded-full bg-[#D9B08C] text-sm font-black text-[#1F281B] shadow-sm">AC</span>
-                <span className="leading-tight">
-                    <span className="block text-[15px] font-bold text-[#1F281B]">Alex Chen</span>
-                    <span className="block text-[13px] font-medium text-[#5F665C]">Premium Scout</span>
-                </span>
-                <ChevronDown className="h-4 w-4 text-[#526736]" />
-            </Link>
+            <ProfileMenu />
         </header>
     );
 }
@@ -235,9 +333,7 @@ function JobsFilterBar({
                 </FilterSelect>
 
                 <FilterSelect label="Location" icon={<MapPin className="h-[17px] w-[17px]" />} value={locationMode} onChange={onLocationChange}>
-                    <option value="all">All locations</option>
                     <option value="us">United States</option>
-                    <option value="remote">Remote</option>
                 </FilterSelect>
 
                 <FilterSelect label="Experience level" icon={<LayoutDashboard className="h-[17px] w-[17px]" />} value={experienceLevel} onChange={onExperienceLevelChange}>
@@ -283,19 +379,20 @@ export default function JobFeedClient({
     const [search, setSearch] = useState(initialSearch);
     const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
     const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set());
-    const [usOnly, setUsOnly] = useState(false);
-    const [remoteOnly, setRemoteOnly] = useState(false);
     const [recentHours, setRecentHours] = useState<number | null>(null);
     const [experienceLevel, setExperienceLevel] = useState("any");
     const [employmentType, setEmploymentType] = useState("all");
     const [page, setPage] = useState(1);
     const [loading, setLoading] = useState(true);
-    const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
+    const [trackedStatuses, setTrackedStatuses] = useState<Record<string, string>>({});
+    const [companyJobIndexes, setCompanyJobIndexes] = useState<Record<string, number>>({});
     const [sortMode, setSortMode] = useState<SortMode>(initialSortMode);
     const [showLockPrompt, setShowLockPrompt] = useState(false);
     const isRelevanceMode = sortMode === "relevance" && search.trim().length >= MIN_RELEVANCE_QUERY_LENGTH;
     const categoryValue = selectedCategories.size === 1 ? Array.from(selectedCategories)[0] : "";
-    const locationMode = remoteOnly ? "remote" : usOnly ? "us" : "all";
+    const locationMode = "us";
+    const companyGroups = useMemo(() => groupCompanyJobs(jobs), [jobs]);
+    const visibleCompanyGroups = useMemo(() => companyGroups.slice((page - 1) * LIMIT, page * LIMIT), [companyGroups, page]);
 
     useEffect(() => {
         if (sortMode === "relevance" && search.trim().length < MIN_RELEVANCE_QUERY_LENGTH) {
@@ -308,7 +405,12 @@ export default function JobFeedClient({
         if (saved) {
             try {
                 const parsed = JSON.parse(saved) as SavedJobRef[];
-                setSavedJobs(new Set(parsed.map((j) => j.internal_hash)));
+                setTrackedStatuses(
+                    parsed.reduce<Record<string, string>>((acc, job) => {
+                        acc[job.internal_hash] = (job.status || "saved").toLowerCase();
+                        return acc;
+                    }, {}),
+                );
             } catch {}
         }
     }, []);
@@ -316,42 +418,36 @@ export default function JobFeedClient({
     const loadJobs = useCallback(async () => {
         setLoading(true);
         if (previewLocked) {
-            const data = await fetchJobs({ page: 1, limit: LIMIT });
-            setJobs(data.jobs.slice(0, LIMIT));
-            setTotal(Math.min(data.total, LIMIT));
+            const data = await fetchJobs({ page: 1, limit: WORKING_SET_LIMIT });
+            const filtered = data.jobs.filter((job) => isUsLocation(job.location)).filter((job) => matchesSearchQuery(job, search));
+            setJobs(filtered.slice(0, LIMIT));
+            setTotal(groupCompanyJobs(filtered.slice(0, LIMIT)).length);
             setLoading(false);
             return;
         }
         const category = selectedCategories.size === 1 ? Array.from(selectedCategories)[0] : undefined;
         const source = selectedSources.size === 1 ? Array.from(selectedSources)[0].toLowerCase() : undefined;
         const data = isRelevanceMode
-            ? await fetchMatchedJobs(search, LIMIT * 2)
-            : await fetchJobs({ search, page, limit: LIMIT, category, source, recentHours: recentHours ?? undefined });
+            ? await fetchMatchedJobs(search, WORKING_SET_LIMIT)
+            : await fetchJobs({ search, page: 1, limit: WORKING_SET_LIMIT, category, source, recentHours: recentHours ?? undefined });
         let filtered = data.jobs;
 
         if (isRelevanceMode && recentHours !== null) {
             filtered = filtered.filter((j) => j.freshness_minutes == null || j.freshness_minutes <= recentHours * 60);
         }
 
-        if (usOnly) filtered = filtered.filter((j) => isUsLocation(j.location));
-        if (remoteOnly) filtered = filtered.filter((j) => isRemoteLocation(j.location));
+        filtered = filtered.filter((j) => isUsLocation(j.location));
+        filtered = filtered.filter((j) => matchesSearchQuery(j, search));
         if (experienceLevel !== "any") filtered = filtered.filter((j) => matchesExperience(j, experienceLevel));
         if (employmentType !== "all") filtered = filtered.filter((j) => matchesEmploymentType(j, employmentType));
-        if (selectedCategories.size > 1) {
-            filtered = filtered.filter((j) => {
-                try {
-                    const keywords = JSON.parse(j.keywords_matched || "[]");
-                    return keywords.some((keyword: string) => selectedCategories.has(keyword));
-                } catch {
-                    return false;
-                }
-            });
-        }
+        filtered = filtered.filter((j) => matchesCategory(j, selectedCategories));
 
+        const groupedTotal = groupCompanyJobs(filtered).length;
         setJobs(filtered);
-        setTotal(data.total);
+        setTotal(groupedTotal);
+        if ((page - 1) * LIMIT >= groupedTotal) setPage(1);
         setLoading(false);
-    }, [search, page, selectedCategories, selectedSources, usOnly, remoteOnly, recentHours, experienceLevel, employmentType, isRelevanceMode, previewLocked]);
+    }, [search, selectedCategories, selectedSources, recentHours, experienceLevel, employmentType, isRelevanceMode, previewLocked, page]);
 
     useEffect(() => {
         loadJobs();
@@ -368,9 +464,14 @@ export default function JobFeedClient({
             arr = JSON.parse(saved || "[]");
         } catch {}
         const exists = arr.find((j) => j.internal_hash === job.internal_hash);
-        arr = exists ? arr.filter((j) => j.internal_hash !== job.internal_hash) : [...arr, { ...job, status: "saved" }];
+        arr = exists ? arr.filter((j) => j.internal_hash !== job.internal_hash) : [...arr, { ...job, status: "saved", updatedAt: new Date().toISOString() }];
         localStorage.setItem("jobclaw_saved", JSON.stringify(arr));
-        setSavedJobs(new Set(arr.map((j) => j.internal_hash)));
+        setTrackedStatuses(
+            arr.reduce<Record<string, string>>((acc, savedJob) => {
+                acc[savedJob.internal_hash] = (savedJob.status || "saved").toLowerCase();
+                return acc;
+            }, {}),
+        );
     };
 
     const handleApply = (job: Job) => {
@@ -384,9 +485,16 @@ export default function JobFeedClient({
             arr = JSON.parse(saved || "[]");
         } catch {}
         const exists = arr.find((j) => j.internal_hash === job.internal_hash);
-        arr = exists ? arr.map((j) => (j.internal_hash === job.internal_hash ? { ...j, status: "applied" } : j)) : [...arr, { ...job, status: "applied" }];
+        arr = exists
+            ? arr.map((j) => (j.internal_hash === job.internal_hash ? { ...j, status: "applied", updatedAt: new Date().toISOString() } : j))
+            : [...arr, { ...job, status: "applied", addedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }];
         localStorage.setItem("jobclaw_saved", JSON.stringify(arr));
-        setSavedJobs(new Set(arr.map((j) => j.internal_hash)));
+        setTrackedStatuses(
+            arr.reduce<Record<string, string>>((acc, savedJob) => {
+                acc[savedJob.internal_hash] = (savedJob.status || "saved").toLowerCase();
+                return acc;
+            }, {}),
+        );
         window.open(job.url, "_blank", "noopener,noreferrer");
     };
 
@@ -395,21 +503,24 @@ export default function JobFeedClient({
         setPage(1);
     };
 
-    const handleLocationChange = (value: string) => {
-        setUsOnly(value === "us");
-        setRemoteOnly(value === "remote");
+    const handleLocationChange = () => {
         setPage(1);
     };
 
     const clearFilters = () => {
         setSelectedCategories(new Set());
         setSelectedSources(new Set());
-        setUsOnly(false);
-        setRemoteOnly(false);
         setRecentHours(null);
         setExperienceLevel("any");
         setEmploymentType("all");
         setPage(1);
+    };
+
+    const handleNextCompanyJob = (group: CompanyJobGroup) => {
+        setCompanyJobIndexes((current) => ({
+            ...current,
+            [group.key]: ((current[group.key] || 0) + 1) % group.jobs.length,
+        }));
     };
 
     const totalPages = Math.max(1, Math.ceil(total / LIMIT));
@@ -470,15 +581,29 @@ export default function JobFeedClient({
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                            {jobs.map((job, index) => (
-                                <div key={job.internal_hash || index} className="animate-fade-in" style={{ animationDelay: `${index * 25}ms` }}>
-                                    <JobCard job={job} onSave={handleSave} onApply={handleApply} saved={savedJobs.has(job.internal_hash)} />
-                                </div>
-                            ))}
+                            {visibleCompanyGroups.map((group, index) => {
+                                const groupJobIndex = companyJobIndexes[group.key] || 0;
+                                const job = group.jobs[groupJobIndex] || group.jobs[0];
+                                const status = trackedStatuses[job.internal_hash];
+                                return (
+                                    <div key={group.key} className="animate-fade-in" style={{ animationDelay: `${index * 25}ms` }}>
+                                        <JobCard
+                                            job={job}
+                                            onSave={handleSave}
+                                            onApply={handleApply}
+                                            onNextCompanyJob={() => handleNextCompanyJob(group)}
+                                            saved={Boolean(status)}
+                                            applied={status === "applied"}
+                                            companyJobCount={group.jobs.length}
+                                            companyJobIndex={groupJobIndex}
+                                        />
+                                    </div>
+                                );
+                            })}
                         </div>
                     )}
 
-                    {!loading && jobs.length === 0 && (
+                    {!loading && companyGroups.length === 0 && (
                         <div className="rounded-2xl border border-[#E7D7B7] bg-[#FFF9EC]/82 py-20 text-center shadow-[0_10px_24px_rgba(70,45,16,0.07)]">
                             <p className="mb-2 font-serif text-2xl font-bold text-[#1F281B]">No roles found</p>
                             <p className="text-[#5F665C]">Try adjusting your search or filters.</p>

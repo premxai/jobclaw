@@ -1,4 +1,4 @@
-﻿import { ArrowRight, Bookmark, BookmarkCheck, CheckCircle2, Clock3, MapPin } from "lucide-react";
+import { ArrowRight, Bookmark, BookmarkCheck, CheckCircle2, ChevronRight, MapPin, Send } from "lucide-react";
 import CompanyLogo from "./CompanyLogo";
 import { displayCompany, displayTitle } from "@/lib/job-display";
 
@@ -20,34 +20,37 @@ export interface Job {
     description?: string | null;
     first_seen?: string | null;
     status?: string | null;
+    addedAt?: string | null;
+    updatedAt?: string | null;
     freshness_minutes?: number | null;
     match_score?: number | null;
 }
 
-function timeAgo(dateStr: string): string {
-    if (!dateStr) return "";
-    const date = new Date(dateStr);
-    if (Number.isNaN(date.getTime())) return "";
-    const diffMs = Date.now() - date.getTime();
-    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-    if (diffHrs < 1) return "just now";
-    if (diffHrs < 24) return `${diffHrs}h ago`;
-    const diffDays = Math.floor(diffHrs / 24);
-    if (diffDays === 1) return "1 day ago";
-    if (diffDays < 30) return `${diffDays} days ago`;
-    const diffMonths = Math.floor(diffDays / 30);
-    return diffMonths === 1 ? "1 month ago" : `${diffMonths} months ago`;
-}
-
-function getCategory(keywords?: string | null): string | null {
-    if (!keywords) return null;
-    try {
-        const parsed = JSON.parse(keywords);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
-    } catch {
-        return keywords;
+function getSkillTags(keywords?: string | null, title = ""): string[] {
+    let tags: string[] = [];
+    if (keywords) {
+        try {
+            const parsed = JSON.parse(keywords);
+            if (Array.isArray(parsed)) tags = parsed.map((tag) => String(tag));
+        } catch {
+            tags = keywords.split(",");
+        }
     }
-    return null;
+
+    const blocked = /\b(remote|hybrid|onsite|on-site|united states|usa|us|direct apply|full[- ]?time|contract|internship)\b/i;
+    const clean = tags
+        .map((tag) => tag.replace(/\s+/g, " ").trim())
+        .filter(Boolean)
+        .filter((tag) => !blocked.test(tag));
+
+    if (clean.length > 0) return Array.from(new Set(clean)).slice(0, 3);
+
+    const lowerTitle = title.toLowerCase();
+    if (/\b(data|analytics|scientist)\b/.test(lowerTitle)) return ["Data"];
+    if (/\b(product|pm)\b/.test(lowerTitle)) return ["Product"];
+    if (/\b(design|ux|ui)\b/.test(lowerTitle)) return ["Design"];
+    if (/\b(ai|ml|machine learning|research)\b/.test(lowerTitle)) return ["AI/ML"];
+    return ["SWE"];
 }
 
 export function sourceLabel(ats: string): string {
@@ -75,40 +78,44 @@ export function sourceLabel(ats: string): string {
 }
 
 function compactLocation(location?: string | null): string {
-    if (!location) return "San Francisco, CA · Remote";
+    if (!location) return "United States";
     const normalized = location.replace(/\s+/g, " ").trim();
-    if (normalized.length <= 30) return normalized;
-    return `${normalized.slice(0, 30)}...`;
-}
-
-function workStyle(location?: string | null): string {
-    const value = (location || "").toLowerCase();
-    if (value.includes("hybrid")) return "Hybrid";
-    if (value.includes("remote")) return "Remote";
-    return "Remote";
+    if (normalized.length <= 34) return normalized;
+    return `${normalized.slice(0, 34)}...`;
 }
 
 interface JobCardProps {
     job: Job;
     onSave?: (job: Job) => void;
     onApply?: (job: Job) => void;
+    onNextCompanyJob?: () => void;
     saved?: boolean;
+    applied?: boolean;
+    companyJobCount?: number;
+    companyJobIndex?: number;
 }
 
-export default function JobCard({ job, onSave, onApply, saved = false }: JobCardProps) {
+export default function JobCard({
+    job,
+    onSave,
+    onApply,
+    onNextCompanyJob,
+    saved = false,
+    applied = false,
+    companyJobCount = 1,
+    companyJobIndex = 0,
+}: JobCardProps) {
     const company = displayCompany(job);
     const title = displayTitle(job);
-    const category = getCategory(job.keywords_matched);
-    const time = timeAgo(job.date_posted || job.first_seen || "");
-    const categoryLabel = category || (title.toLowerCase().includes("data") ? "Data" : title.toLowerCase().includes("engineer") ? "SWE" : "AI/ML");
+    const skillTags = getSkillTags(job.keywords_matched, title);
 
     return (
-        <article className="group relative min-h-[200px] rounded-lg border border-[#E7D7B7] bg-[#FFF7E5] p-5 shadow-[0_8px_18px_rgba(70,45,16,0.08)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(70,45,16,0.11)] [background-image:linear-gradient(rgba(255,247,229,0.78),rgba(255,247,229,0.78)),url('/nori-assets/paper-texture.png')] [background-size:cover]">
+        <article className="group relative flex h-[238px] flex-col rounded-lg border border-[#E7D7B7] bg-[#FFF7E5] p-5 shadow-[0_8px_18px_rgba(70,45,16,0.08)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(70,45,16,0.11)] [background-image:linear-gradient(rgba(255,247,229,0.78),rgba(255,247,229,0.78)),url('/nori-assets/paper-texture.png')] [background-size:cover]">
             <span className="absolute left-1/2 top-[-7px] h-[18px] w-[18px] -translate-x-1/2 rounded-full bg-[#C99635] shadow-[0_4px_8px_rgba(77,48,18,0.24),inset_0_1px_2px_rgba(255,255,255,0.55)]" />
             <div className="flex items-start justify-between gap-4">
                 <CompanyLogo company={company} size="md" shape="rounded" />
                 {onSave && (
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                         <button
                             onClick={(e) => {
                                 e.preventDefault();
@@ -127,11 +134,12 @@ export default function JobCard({ job, onSave, onApply, saved = false }: JobCard
                                 e.stopPropagation();
                                 onApply?.(job);
                             }}
-                            className="inline-flex h-[30px] items-center gap-1.5 rounded-[9px] border border-[#8A946A] bg-[#F6F2E5] px-3 text-xs font-bold text-[#526736]"
-                            aria-label="Apply to role"
+                            className={`grid h-8 w-8 place-items-center rounded-lg transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#526736] ${
+                                applied ? "bg-[#E8ECD9] text-[#526736]" : "text-[#263A22] hover:bg-[#EEF1DD]"
+                            }`}
+                            aria-label="Apply and add role to tracker"
                         >
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            Apply
+                            {applied ? <CheckCircle2 className="h-5 w-5" /> : <Send className="h-[18px] w-[18px]" />}
                         </button>
                     </div>
                 )}
@@ -146,25 +154,38 @@ export default function JobCard({ job, onSave, onApply, saved = false }: JobCard
                 <p className="mt-1 text-sm font-medium text-[#1F281B]">{company}</p>
             </div>
 
-            <div className="mt-2 space-y-1.5 text-xs text-[#5F665C]">
+            <div className="mt-2 text-xs text-[#5F665C]">
                 <p className="flex items-center gap-1.5">
                     <MapPin className="h-[13px] w-[13px]" />
                     {compactLocation(job.location)}
                 </p>
-                <p className="flex items-center gap-1.5">
-                    <Clock3 className="h-[13px] w-[13px]" />
-                    Found {time || "recently"}
-                </p>
             </div>
 
-            <div className="mt-3 flex flex-wrap gap-2 pr-8">
-                <span className="inline-flex h-6 items-center rounded-full border border-[#E1D2AD] bg-[#F7EED7] px-2.5 text-[11px] font-semibold text-[#4A513C]">
-                    {categoryLabel}
-                </span>
-                <span className="inline-flex h-6 items-center rounded-full border border-[#E1D2AD] bg-[#F7EED7] px-2.5 text-[11px] font-semibold text-[#4A513C]">
-                    {workStyle(job.location)}
-                </span>
+            <div className="mt-auto flex flex-wrap gap-2 pr-10 pt-4">
+                {skillTags.map((tag) => (
+                    <span key={tag} className="inline-flex h-6 items-center rounded-full border border-[#E1D2AD] bg-[#F7EED7] px-2.5 text-[11px] font-semibold text-[#4A513C]">
+                        {tag}
+                    </span>
+                ))}
             </div>
+
+            {companyJobCount > 1 && (
+                <button
+                    type="button"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        onNextCompanyJob?.();
+                    }}
+                    className="absolute right-[-13px] top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full border border-[#D8C9A7] bg-[#FFF9EC] text-[#526736] shadow-[0_8px_18px_rgba(70,45,16,0.14)] transition hover:translate-x-0.5 hover:bg-[#F7EED7]"
+                    aria-label={`Show next ${company} role`}
+                >
+                    <ChevronRight className="h-5 w-5" />
+                    <span className="sr-only">
+                        {companyJobIndex + 1} of {companyJobCount}
+                    </span>
+                </button>
+            )}
 
             <a
                 href={job.url}
