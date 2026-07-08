@@ -1,162 +1,126 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import type React from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import TopNav from "@/components/TopNav";
+import NoriAppSidebar from "@/components/NoriAppSidebar";
 import CompanyLogo from "@/components/CompanyLogo";
 import { Job } from "@/components/JobCard";
 import { displayCompany, displayTitle } from "@/lib/job-display";
-import { Bookmark, CheckCircle2, ExternalLink, GripVertical, Send, Target, Trash2, Trophy } from "lucide-react";
+import { ArrowRight, Bookmark, ExternalLink, Trash2 } from "lucide-react";
 
-const COLUMNS = [
-    { id: "saved", label: "Saved", icon: Bookmark, color: "bg-surface-2 text-ink" },
-    { id: "applied", label: "Applied", icon: Send, color: "bg-blue-50 text-info" },
-    { id: "interview", label: "Interview", icon: Target, color: "bg-amber-50 text-warning" },
-    { id: "offer", label: "Offer", icon: Trophy, color: "bg-green-50 text-success" },
-];
-
-interface TrackedJob extends Job {
-    status: string;
+interface SavedRole extends Job {
+    status?: string | null;
     addedAt?: string;
 }
 
+function statusLabel(status?: string | null) {
+    if (!status || status === "saved") return "Saved";
+    if (status === "oa") return "OA";
+    return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
 export default function SavedRolesPage() {
-    const [jobs, setJobs] = useState<TrackedJob[]>([]);
-    const [draggedJob, setDraggedJob] = useState<string | null>(null);
-    const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+    const [roles, setRoles] = useState<SavedRole[]>([]);
 
     useEffect(() => {
-        const saved = localStorage.getItem("jobclaw_saved");
-        if (saved) {
-            try {
-                const parsed: TrackedJob[] = JSON.parse(saved);
-                setJobs(parsed.map((j) => ({ ...j, status: j.status || "saved", addedAt: j.addedAt || new Date().toISOString() })));
-            } catch { }
+        try {
+            const parsed = JSON.parse(localStorage.getItem("jobclaw_saved") || "[]") as SavedRole[];
+            setRoles(Array.isArray(parsed) ? parsed : []);
+        } catch {
+            setRoles([]);
         }
     }, []);
 
-    const persist = useCallback((updatedJobs: TrackedJob[]) => {
-        setJobs(updatedJobs);
-        localStorage.setItem("jobclaw_saved", JSON.stringify(updatedJobs));
-    }, []);
-
-    const handleDragStart = (hash: string) => setDraggedJob(hash);
-    const handleDragOver = (e: React.DragEvent, columnId: string) => {
-        e.preventDefault();
-        setDragOverColumn(columnId);
+    const removeRole = (hash: string) => {
+        const updated = roles.filter((role) => role.internal_hash !== hash);
+        setRoles(updated);
+        localStorage.setItem("jobclaw_saved", JSON.stringify(updated));
     };
-    const handleDragLeave = () => setDragOverColumn(null);
-    const handleDrop = (columnId: string) => {
-        if (!draggedJob) return;
-        persist(jobs.map((j) => (j.internal_hash === draggedJob ? { ...j, status: columnId } : j)));
-        setDraggedJob(null);
-        setDragOverColumn(null);
-    };
-    const removeJob = (hash: string) => persist(jobs.filter((j) => j.internal_hash !== hash));
-    const getColumnJobs = (columnId: string) => jobs.filter((j) => j.status === columnId);
 
     return (
-        <div className="page-shell">
-            <TopNav />
+        <div className="min-h-screen bg-[#FBF4E7] text-[#1F281B]">
+            <NoriAppSidebar />
 
-            <main className="mx-auto max-w-7xl px-5 py-8 sm:px-6">
+            <main className="px-5 py-8 sm:px-6 lg:ml-[280px]">
                 <header className="mb-8 flex flex-col gap-4 rounded-[30px] bg-ink p-6 text-white sm:p-8 lg:flex-row lg:items-end lg:justify-between">
                     <div>
-                        <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-white/55">saved jobs</p>
-                        <h1 className="text-4xl font-black tracking-[-0.06em] sm:text-5xl">Your saved roles</h1>
+                        <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-white/55">saved roles</p>
+                        <h1 className="text-4xl font-black tracking-[-0.06em] sm:text-5xl">Saved roles</h1>
                         <p className="mt-3 max-w-2xl text-sm font-medium text-white/65">
-                            Save jobs from the board, then keep the best ones organized while authentication is still locked.
+                            A clean list of roles you saved or applied to. Move them through the pipeline from Tracker.
                         </p>
                     </div>
-                    <Link href="/jobs" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-black text-ink transition hover:bg-surface-2">
-                        Browse jobs
-                        <ExternalLink className="h-4 w-4" />
-                    </Link>
+                    <div className="flex flex-wrap gap-3">
+                        <Link href="/tracker" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-black text-ink transition hover:bg-surface-2">
+                            Open tracker
+                            <ArrowRight className="h-4 w-4" />
+                        </Link>
+                        <Link href="/jobs" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 px-5 py-3 text-sm font-black text-white transition hover:bg-white/15">
+                            Browse jobs
+                            <ExternalLink className="h-4 w-4" />
+                        </Link>
+                    </div>
                 </header>
 
-                {jobs.length === 0 ? (
-                    <div className="nori-panel py-20 text-center">
-                        <div className="mx-auto mb-6 grid h-20 w-20 place-items-center rounded-full bg-surface-2">
-                            <CheckCircle2 className="h-9 w-9 text-ink" />
+                {roles.length === 0 ? (
+                    <section className="rounded-[28px] border border-[#E7D7B7] bg-[#FFF9EC] py-20 text-center shadow-[0_10px_24px_rgba(70,45,16,0.08)]">
+                        <div className="mx-auto mb-6 grid h-20 w-20 place-items-center rounded-full bg-[#EEF1DD] text-[#526736]">
+                            <Bookmark className="h-9 w-9" />
                         </div>
-                        <h2 className="text-2xl font-black tracking-[-0.04em] text-ink">No tracked jobs yet</h2>
-                        <p className="mx-auto mt-2 max-w-md text-sm font-medium text-text-secondary">
-                            Browse the job board and hit Save to build your first saved roles list.
+                        <h2 className="font-serif text-3xl font-bold tracking-[-0.04em] text-[#1F281B]">No saved roles yet</h2>
+                        <p className="mx-auto mt-2 max-w-md text-sm font-medium text-[#5F665C]">
+                            Save a job from the live feed and it will appear here.
                         </p>
                         <Link href="/jobs" className="btn-primary mt-6">
                             Browse jobs
                         </Link>
-                    </div>
+                    </section>
                 ) : (
-                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-                        {COLUMNS.map((column) => {
-                            const columnJobs = getColumnJobs(column.id);
-                            const isOver = dragOverColumn === column.id;
-                            const Icon = column.icon;
+                    <section className="grid gap-4 xl:grid-cols-2">
+                        {roles.map((role) => {
+                            const company = displayCompany(role);
                             return (
-                                <section
-                                    key={column.id}
-                                    className={`kanban-column transition ${isOver ? "ring-2 ring-ink" : ""}`}
-                                    onDragOver={(e) => handleDragOver(e, column.id)}
-                                    onDragLeave={handleDragLeave}
-                                    onDrop={() => handleDrop(column.id)}
+                                <article
+                                    key={role.internal_hash}
+                                    className="rounded-2xl border border-[#E7D7B7] bg-[#FFF9EC] p-5 shadow-[0_8px_18px_rgba(70,45,16,0.06)] [background-image:linear-gradient(rgba(255,249,236,0.84),rgba(255,249,236,0.84)),url('/nori-assets/paper-texture.png')] [background-size:cover]"
                                 >
-                                    <div className="mb-4 flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <span className={`grid h-9 w-9 place-items-center rounded-xl ${column.color}`}>
-                                                <Icon className="h-4 w-4" />
-                                            </span>
-                                            <div>
-                                                <h2 className="text-sm font-black text-ink">{column.label}</h2>
-                                                <p className="text-xs font-semibold text-text-secondary">{columnJobs.length} jobs</p>
+                                    <div className="flex items-start gap-4">
+                                        <CompanyLogo company={company} size="md" shape="rounded" />
+                                        <div className="min-w-0 flex-1">
+                                            <div className="mb-1 flex flex-wrap items-center gap-2">
+                                                <span className="text-sm font-black text-[#1F281B]">{company}</span>
+                                                <span className="rounded-full border border-[#D8C9A7] bg-[#F7EED7] px-2.5 py-1 text-xs font-bold text-[#526736]">
+                                                    {statusLabel(role.status)}
+                                                </span>
                                             </div>
+                                            <h2 className="line-clamp-2 font-serif text-2xl font-bold leading-tight tracking-[-0.04em] text-[#1F281B]">
+                                                {displayTitle(role)}
+                                            </h2>
+                                            <p className="mt-2 text-sm font-medium text-[#5F665C]">{role.location || "Location not listed"}</p>
                                         </div>
                                     </div>
-
-                                    <div className="space-y-3">
-                                        {columnJobs.map((job) => {
-                                            const company = displayCompany(job);
-                                            return (
-                                                <article
-                                                    key={job.internal_hash}
-                                                    draggable
-                                                    onDragStart={() => handleDragStart(job.internal_hash)}
-                                                    className={`kanban-card ${draggedJob === job.internal_hash ? "scale-95 opacity-50" : ""}`}
-                                                >
-                                                    <div className="flex items-start gap-3">
-                                                        <GripVertical className="mt-1 h-4 w-4 shrink-0 text-text-secondary opacity-40" />
-                                                        <div className="min-w-0 flex-1">
-                                                            <div className="mb-2 flex items-center gap-2">
-                                                                <CompanyLogo company={company} size="sm" />
-                                                                <span className="truncate text-xs font-black text-ink">{company}</span>
-                                                            </div>
-                                                            <p className="line-clamp-2 text-sm font-black leading-tight text-ink">{displayTitle(job)}</p>
-                                                            <p className="mt-2 truncate text-xs font-semibold text-text-secondary">{job.location || "Location not listed"}</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="mt-4 flex items-center gap-1 border-t border-border pt-3">
-                                                        <a href={job.url} target="_blank" rel="noopener noreferrer" className="rounded-lg p-2 text-text-secondary transition hover:bg-white hover:text-ink" title="Open listing">
-                                                            <ExternalLink className="h-4 w-4" />
-                                                        </a>
-                                                        <button onClick={() => removeJob(job.internal_hash)} className="ml-auto rounded-lg p-2 text-text-secondary transition hover:bg-white hover:text-red-500" title="Remove">
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </button>
-                                                    </div>
-                                                </article>
-                                            );
-                                        })}
-
-                                        {columnJobs.length === 0 && (
-                                            <div className="rounded-2xl border border-dashed border-border bg-surface-2 py-8 text-center text-xs font-bold text-text-secondary">
-                                                {column.id === "saved" ? "Save jobs from the board" : "Drag jobs here"}
-                                            </div>
-                                        )}
+                                    <div className="mt-5 flex items-center gap-2 border-t border-[#E7D7B7] pt-4">
+                                        <a href={role.url} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#526736] px-4 text-sm font-bold text-white">
+                                            Open job
+                                            <ExternalLink className="h-4 w-4" />
+                                        </a>
+                                        <Link href="/tracker" className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#D8C9A7] bg-[#FFF9EC] px-4 text-sm font-bold text-[#1F281B]">
+                                            Track
+                                            <ArrowRight className="h-4 w-4" />
+                                        </Link>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeRole(role.internal_hash)}
+                                            className="ml-auto grid h-10 w-10 place-items-center rounded-xl border border-[#D8C9A7] bg-[#FFF9EC] text-[#5F665C] transition hover:text-red-600"
+                                            aria-label="Remove saved role"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
                                     </div>
-                                </section>
+                                </article>
                             );
                         })}
-                    </div>
+                    </section>
                 )}
             </main>
         </div>

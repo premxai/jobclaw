@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import TopNav from "@/components/TopNav";
+import NoriAppSidebar from "@/components/NoriAppSidebar";
 import { Bell, LockKeyhole, MapPin, Moon, ShieldCheck, SlidersHorizontal } from "lucide-react";
 
 const settings = [
@@ -30,9 +30,9 @@ const settings = [
 export default function SettingsPage() {
     return (
         <div className="page-shell">
-            <TopNav />
+            <NoriAppSidebar />
 
-            <main className="mx-auto max-w-6xl px-5 py-8 sm:px-6">
+            <main className="px-5 py-8 sm:px-6 lg:ml-[280px]">
                 <header className="mb-8 rounded-[30px] bg-ink p-6 text-white sm:p-8">
                     <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-black uppercase tracking-[0.18em] text-white/60">
                         <LockKeyhole className="h-3.5 w-3.5" />

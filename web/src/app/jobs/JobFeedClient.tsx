@@ -4,8 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowRight, Bookmark, CalendarDays, ChevronDown, Clock3, Grid2X2, LayoutDashboard, MapPin, Search, Settings, SlidersHorizontal, Star } from "lucide-react";
+import { CalendarDays, ChevronDown, Clock3, Grid2X2, LayoutDashboard, MapPin, Search, SlidersHorizontal } from "lucide-react";
 import JobCard, { Job } from "@/components/JobCard";
+import NoriAppSidebar from "@/components/NoriAppSidebar";
 import NoriMark from "@/components/landing/NoriMark";
 import { FILTER_CATEGORIES } from "@/components/SearchFilterBar";
 import { fetchJobs, fetchMatchedJobs } from "@/lib/api";
@@ -16,6 +17,7 @@ export const MIN_RELEVANCE_QUERY_LENGTH = 3;
 
 interface SavedJobRef {
     internal_hash: string;
+    status?: string | null;
 }
 
 const LIMIT = 12;
@@ -30,12 +32,27 @@ function getPageNumbers(current: number, totalPages: number): (number | "...")[]
     return pages;
 }
 
-const navItems = [
-    { label: "Live Feed", href: "/jobs", icon: CalendarDays, active: true },
-    { label: "Saved Roles", href: "/saved-roles", icon: Bookmark },
-    { label: "Profile", href: "/profile", icon: Star },
-    { label: "Settings", href: "/settings", icon: Settings },
-];
+function jobSearchText(job: Job): string {
+    return `${job.title} ${job.canonical_title || ""} ${job.company} ${job.canonical_company || ""} ${job.description || ""}`.toLowerCase();
+}
+
+function matchesExperience(job: Job, level: string): boolean {
+    if (level === "any") return true;
+    const text = jobSearchText(job);
+    if (level === "junior") return /\b(junior|jr\.?|entry|new grad|university|graduate|intern)\b/.test(text);
+    if (level === "mid") return !/\b(senior|sr\.?|staff|principal|lead|manager|director|vp|junior|jr\.?|intern|new grad)\b/.test(text);
+    if (level === "senior") return /\b(senior|sr\.?|staff|principal|lead)\b/.test(text);
+    return true;
+}
+
+function matchesEmploymentType(job: Job, type: string): boolean {
+    if (type === "all") return true;
+    const text = jobSearchText(job);
+    if (type === "full-time") return /\b(full[- ]?time|permanent)\b/.test(text) || !/\b(contract|intern|internship|temporary|part[- ]?time)\b/.test(text);
+    if (type === "contract") return /\b(contract|contractor|temporary|freelance)\b/.test(text);
+    if (type === "internship") return /\b(intern|internship|co-op|summer)\b/.test(text);
+    return true;
+}
 
 const recencyOptions = [
     { label: "Any time", value: "all", hours: null as number | null },
@@ -43,52 +60,6 @@ const recencyOptions = [
     { label: "Last 24h", value: "24", hours: 24 },
     { label: "Last 48h", value: "48", hours: 48 },
 ];
-
-function DashboardSidebar() {
-    return (
-        <aside className="fixed inset-y-0 left-0 z-30 hidden w-[280px] border-r border-[#E7D7B7] bg-[#FFF8EA] px-[18px] py-7 lg:flex lg:flex-col">
-            <Link href="/" className="mb-[46px] flex items-center gap-3" aria-label="Nori home">
-                <NoriMark />
-                <span className="font-serif text-[34px] font-bold leading-none tracking-[-0.04em] text-[#1F281B]">Nori</span>
-            </Link>
-
-            <nav className="space-y-2.5">
-                {navItems.map(({ label, href, icon: Icon, active }) => (
-                    <Link
-                        key={label}
-                        href={href}
-                        className={`flex h-14 items-center gap-3.5 rounded-[14px] px-[18px] text-[17px] transition ${
-                            active ? "bg-[#EEF1DD] font-bold text-[#526736]" : "font-medium text-[#1F281B] hover:bg-[#FFF9EC]"
-                        }`}
-                    >
-                        <Icon className="h-6 w-6" />
-                        {label}
-                    </Link>
-                ))}
-            </nav>
-
-            <div className="mt-auto">
-                <div className="mb-8 rounded-[18px] border border-[#E7D7B7] bg-[#FFF9EC]/80 p-[18px] shadow-[0_8px_18px_rgba(70,45,16,0.06)]">
-                    <div className="flex items-start gap-3">
-                        <NoriMark />
-                        <p className="text-[15px] font-medium leading-6 text-[#1F281B]">Nori is quietly scouting the best roles for you.</p>
-                    </div>
-                    <Link href="/#how-it-works" className="mt-3 inline-flex items-center gap-2 text-[15px] font-semibold text-[#526736]">
-                        How it works
-                        <ArrowRight className="h-4 w-4" />
-                    </Link>
-                </div>
-
-                <div className="relative -ml-12 h-80 overflow-hidden">
-                    <div className="absolute bottom-0 left-0 h-64 w-48 -rotate-12 rounded-[20px] border border-[#526736]/35 bg-[#526736] shadow-[0_18px_34px_rgba(70,45,16,0.18)] [background-image:linear-gradient(rgba(82,103,54,0.42),rgba(82,103,54,0.42)),url('/nori-assets/notebook-texture.png')] [background-size:cover]" />
-                    <span className="absolute bottom-12 left-28 h-48 w-40 rotate-12 opacity-80">
-                        <Image src="/nori-assets/dried-flowers.png" alt="" aria-hidden="true" fill sizes="160px" className="object-contain" />
-                    </span>
-                </div>
-            </div>
-        </aside>
-    );
-}
 
 function TopAppHeader({ search, onSearchChange }: { search: string; onSearchChange: (value: string) => void }) {
     return (
@@ -192,6 +163,7 @@ interface FilterBarProps {
     employmentType: string;
     onEmploymentTypeChange: (value: string) => void;
     onClear: () => void;
+    onApply: () => void;
 }
 
 function JobsFilterBar({
@@ -206,6 +178,7 @@ function JobsFilterBar({
     employmentType,
     onEmploymentTypeChange,
     onClear,
+    onApply,
 }: FilterBarProps) {
     const recentValue = recencyOptions.find((option) => option.hours === recentHours)?.value ?? "all";
 
@@ -254,7 +227,7 @@ function JobsFilterBar({
                 <button type="button" onClick={onClear} className="h-[46px] text-sm font-semibold text-[#526736] underline underline-offset-2">
                     Clear all
                 </button>
-                <button type="button" className="inline-flex h-[46px] items-center gap-2.5 rounded-[10px] bg-[#526736] px-[22px] text-[15px] font-bold text-[#FFF9EC] shadow-[0_8px_18px_rgba(38,58,34,0.15)]" aria-label="Filter roles">
+                <button type="button" onClick={onApply} className="inline-flex h-[46px] items-center gap-2.5 rounded-[10px] bg-[#526736] px-[22px] text-[15px] font-bold text-[#FFF9EC] shadow-[0_8px_18px_rgba(38,58,34,0.15)]" aria-label="Filter roles">
                     <SlidersHorizontal className="h-4 w-4" />
                     Filters
                 </button>
@@ -320,6 +293,8 @@ export default function JobFeedClient({
 
         if (usOnly) filtered = filtered.filter((j) => isUsLocation(j.location));
         if (remoteOnly) filtered = filtered.filter((j) => isRemoteLocation(j.location));
+        if (experienceLevel !== "any") filtered = filtered.filter((j) => matchesExperience(j, experienceLevel));
+        if (employmentType !== "all") filtered = filtered.filter((j) => matchesEmploymentType(j, employmentType));
         if (selectedCategories.size > 1) {
             filtered = filtered.filter((j) => {
                 try {
@@ -334,7 +309,7 @@ export default function JobFeedClient({
         setJobs(filtered);
         setTotal(data.total);
         setLoading(false);
-    }, [search, page, selectedCategories, selectedSources, usOnly, remoteOnly, recentHours, isRelevanceMode]);
+    }, [search, page, selectedCategories, selectedSources, usOnly, remoteOnly, recentHours, experienceLevel, employmentType, isRelevanceMode]);
 
     useEffect(() => {
         loadJobs();
@@ -350,6 +325,19 @@ export default function JobFeedClient({
         arr = exists ? arr.filter((j) => j.internal_hash !== job.internal_hash) : [...arr, { ...job, status: "saved" }];
         localStorage.setItem("jobclaw_saved", JSON.stringify(arr));
         setSavedJobs(new Set(arr.map((j) => j.internal_hash)));
+    };
+
+    const handleApply = (job: Job) => {
+        const saved = localStorage.getItem("jobclaw_saved");
+        let arr: Job[] = [];
+        try {
+            arr = JSON.parse(saved || "[]");
+        } catch {}
+        const exists = arr.find((j) => j.internal_hash === job.internal_hash);
+        arr = exists ? arr.map((j) => (j.internal_hash === job.internal_hash ? { ...j, status: "applied" } : j)) : [...arr, { ...job, status: "applied" }];
+        localStorage.setItem("jobclaw_saved", JSON.stringify(arr));
+        setSavedJobs(new Set(arr.map((j) => j.internal_hash)));
+        window.open(job.url, "_blank", "noopener,noreferrer");
     };
 
     const handleCategoryChange = (value: string) => {
@@ -380,7 +368,7 @@ export default function JobFeedClient({
 
     return (
         <div className="min-h-screen bg-[#FBF4E7] text-[#1F281B] [background-image:radial-gradient(circle_at_12%_22%,rgba(215,234,220,0.55),transparent_30%),radial-gradient(circle_at_88%_12%,rgba(246,218,158,0.45),transparent_28%),linear-gradient(135deg,#FBF4E7_0%,#F8ECD7_100%)]">
-            <DashboardSidebar />
+            <NoriAppSidebar />
             <TopAppHeader
                 search={search}
                 onSearchChange={(value) => {
@@ -403,10 +391,17 @@ export default function JobFeedClient({
                         locationMode={locationMode}
                         onLocationChange={handleLocationChange}
                         experienceLevel={experienceLevel}
-                        onExperienceLevelChange={setExperienceLevel}
+                        onExperienceLevelChange={(value) => {
+                            setExperienceLevel(value);
+                            setPage(1);
+                        }}
                         employmentType={employmentType}
-                        onEmploymentTypeChange={setEmploymentType}
+                        onEmploymentTypeChange={(value) => {
+                            setEmploymentType(value);
+                            setPage(1);
+                        }}
                         onClear={clearFilters}
+                        onApply={loadJobs}
                     />
 
                     {loading ? (
@@ -419,7 +414,7 @@ export default function JobFeedClient({
                         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                             {jobs.map((job, index) => (
                                 <div key={job.internal_hash || index} className="animate-fade-in" style={{ animationDelay: `${index * 25}ms` }}>
-                                    <JobCard job={job} onSave={handleSave} saved={savedJobs.has(job.internal_hash)} />
+                                    <JobCard job={job} onSave={handleSave} onApply={handleApply} saved={savedJobs.has(job.internal_hash)} />
                                 </div>
                             ))}
                         </div>

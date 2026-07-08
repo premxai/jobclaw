@@ -91,10 +91,11 @@ function workStyle(location?: string | null): string {
 interface JobCardProps {
     job: Job;
     onSave?: (job: Job) => void;
+    onApply?: (job: Job) => void;
     saved?: boolean;
 }
 
-export default function JobCard({ job, onSave, saved = false }: JobCardProps) {
+export default function JobCard({ job, onSave, onApply, saved = false }: JobCardProps) {
     const company = displayCompany(job);
     const title = displayTitle(job);
     const category = getCategory(job.keywords_matched);
@@ -121,11 +122,16 @@ export default function JobCard({ job, onSave, saved = false }: JobCardProps) {
                         </button>
                         <button
                             type="button"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onApply?.(job);
+                            }}
                             className="inline-flex h-[30px] items-center gap-1.5 rounded-[9px] border border-[#8A946A] bg-[#F6F2E5] px-3 text-xs font-bold text-[#526736]"
-                            aria-label="Mark as applied"
+                            aria-label="Apply to role"
                         >
                             <CheckCircle2 className="h-3.5 w-3.5" />
-                            Applied
+                            Apply
                         </button>
                     </div>
                 )}
