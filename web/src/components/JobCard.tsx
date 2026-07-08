@@ -1,11 +1,15 @@
-// Job Card — uniform height, warm theme
+import Link from "next/link";
+import { Bookmark, BookmarkCheck, ExternalLink, MapPin } from "lucide-react";
 import CompanyLogo from "./CompanyLogo";
+import { displayCompany, displayTitle } from "@/lib/job-display";
 
 export interface Job {
     id: number | string;
     internal_hash: string;
     title: string;
     company: string;
+    canonical_company?: string | null;
+    canonical_title?: string | null;
     location: string;
     url: string;
     date_posted: string;
@@ -17,43 +21,23 @@ export interface Job {
     description?: string | null;
     first_seen?: string | null;
     status?: string | null;
-    freshness_minutes?: number | null;  // computed by /jobs/match
-    match_score?: number | null;        // cosine similarity 0-1
+    freshness_minutes?: number | null;
+    match_score?: number | null;
 }
 
 function timeAgo(dateStr: string): string {
     if (!dateStr) return "";
-    const now = new Date();
     const date = new Date(dateStr);
-    const diffMs = now.getTime() - date.getTime();
+    if (Number.isNaN(date.getTime())) return "";
+    const diffMs = Date.now() - date.getTime();
     const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
     if (diffHrs < 1) return "just now";
     if (diffHrs < 24) return `${diffHrs}h ago`;
     const diffDays = Math.floor(diffHrs / 24);
     if (diffDays === 1) return "1 day ago";
     if (diffDays < 30) return `${diffDays} days ago`;
-    return dateStr;
-}
-
-function getFreshnessLabel(minutes?: number | null): { emoji: string; color: string } | null {
-    if (minutes === null || minutes === undefined) return null;
-    if (minutes < 5)  return { emoji: "🔥🔥🔥", color: "text-red-500 font-bold" };
-    if (minutes < 15) return { emoji: "🔥🔥",   color: "text-orange-500 font-bold" };
-    if (minutes < 60) return { emoji: "🔥",     color: "text-orange-400 font-semibold" };
-    if (minutes < 240) return { emoji: "⚡",    color: "text-yellow-500 font-medium" };
-    return null;  // older than 4h — no badge needed
-}
-
-function formatSalary(min?: number | null, max?: number | null): string | null {
-    if (!min && !max) return null;
-    const fmt = (n: number) => {
-        if (n >= 1000) return `$${Math.round(n / 1000)}k`;
-        return `$${n}`;
-    };
-    if (min && max) return `${fmt(min)} – ${fmt(max)}`;
-    if (min) return `${fmt(min)}+`;
-    if (max) return `Up to ${fmt(max)}`;
-    return null;
+    const diffMonths = Math.floor(diffDays / 30);
+    return diffMonths === 1 ? "1 month ago" : `${diffMonths} months ago`;
 }
 
 function getCategory(keywords?: string | null): string | null {
@@ -74,6 +58,10 @@ export function sourceLabel(ats: string): string {
         workday: "Workday",
         ashby: "Ashby",
         rippling: "Rippling",
+        workable: "Workable",
+        smartrecruiters: "SmartRecruiters",
+        bamboohr: "BambooHR",
+        oracle: "Oracle",
         linkedin: "LinkedIn",
         indeed: "Indeed",
         glassdoor: "Glassdoor",
@@ -84,7 +72,7 @@ export function sourceLabel(ats: string): string {
         "github-internship": "GitHub",
         "github-new-grad": "GitHub",
     };
-    return labels[ats] || ats;
+    return labels[ats] || ats || "Direct";
 }
 
 interface JobCardProps {
@@ -94,82 +82,75 @@ interface JobCardProps {
 }
 
 export default function JobCard({ job, onSave, saved = false }: JobCardProps) {
-    const salary = formatSalary(job.salary_min, job.salary_max);
+    const company = displayCompany(job);
+    const title = displayTitle(job);
     const category = getCategory(job.keywords_matched);
     const time = timeAgo(job.date_posted || job.first_seen || "");
-    const freshness = getFreshnessLabel(job.freshness_minutes);
     const matchPct = job.match_score != null ? Math.round(job.match_score * 100) : null;
+    const detailHref = `/jobs/${encodeURIComponent(String(job.id || job.internal_hash))}`;
 
     return (
-        <div className="job-card">
-            {/* Header: logo + company + time + save */}
-            <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                    <CompanyLogo company={job.company} size="md" />
-                    <div>
-                        <p className="text-sm font-medium text-text-primary">{job.company}</p>
-                        {time && <p className="text-xs text-text-secondary">{time}</p>}
-                    </div>
-                </div>
+        <article className="job-card group">
+            <div className="mb-6 flex items-start justify-between gap-4">
+                <CompanyLogo company={company} size="md" />
                 {onSave && (
                     <button
-                        onClick={(e) => { e.preventDefault(); onSave(job); }}
-                        className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${saved
-                                ? "bg-accent text-white border-accent"
-                                : "bg-white text-text-secondary border-border hover:border-accent"
-                            }`}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onSave(job);
+                        }}
+                        className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-bold transition ${
+                            saved
+                                ? "border-transparent bg-surface-3 text-ink"
+                                : "border-border bg-white text-text-secondary hover:border-ink hover:text-ink"
+                        }`}
                     >
-                        {saved ? "Saved ✓" : "Save"}
+                        {saved ? "Saved" : "Save"}
+                        {saved ? <BookmarkCheck className="h-4 w-4 fill-ink" /> : <Bookmark className="h-4 w-4" />}
                     </button>
                 )}
             </div>
 
-            {/* Title — fixed 2 lines */}
-            <h3 className="text-base font-bold text-text-primary mb-3 leading-tight line-clamp-2 min-h-[2.5rem]">
-                {job.title}
-            </h3>
-
-            {/* Tags — fixed height area */}
-            <div className="flex flex-wrap gap-1.5 mb-4 min-h-[2rem]">
-                {/* Freshness badge — highest priority, shown first */}
-                {freshness && (
-                    <span className={`pill-fresh text-xs ${freshness.color}`}>
-                        {freshness.emoji} {job.freshness_minutes! < 60
-                            ? `${job.freshness_minutes}m ago`
-                            : `${Math.round(job.freshness_minutes! / 60)}h ago`
-                        }
-                    </span>
-                )}
-                {matchPct !== null && (
-                    <span className="pill-match text-xs">
-                        {matchPct}% match
-                    </span>
-                )}
-                {category && <span className="pill pill-accent">{category}</span>}
-                {job.location && (
-                    <span className="pill pill-white">{job.location.length > 22 ? job.location.slice(0, 22) + "…" : job.location}</span>
-                )}
-                <span className="pill pill-white">{sourceLabel(job.source_ats)}</span>
-            </div>
-
-            {/* Spacer to push footer to bottom */}
-            <div className="flex-1" />
-
-            {/* Footer: salary + apply */}
-            <div className="flex items-center justify-between pt-3 border-t border-border">
-                <div>
-                    {salary && <p className="text-sm font-bold text-text-primary">{salary}</p>}
-                    {!salary && <p className="text-xs text-text-secondary">{job.location || "—"}</p>}
+            <div className="mb-4">
+                <div className="mb-2 flex flex-wrap items-center gap-2 text-sm">
+                    <span className="font-black text-ink">{company}</span>
+                    {time && <span className="font-medium text-text-secondary">{time}</span>}
                 </div>
-                <a
-                    href={job.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-dark text-xs px-4 py-2"
-                >
-                    Apply now
-                </a>
+                <Link href={detailHref} className="block">
+                    <h3 className="line-clamp-2 min-h-[3.6rem] text-[1.45rem] font-black leading-[1.12] tracking-[-0.04em] text-ink transition-colors group-hover:text-orange-900">
+                        {title}
+                    </h3>
+                </Link>
             </div>
-        </div>
+
+            <div className="mb-5 flex min-h-[2.25rem] flex-wrap gap-2">
+                {category && <span className="pill pill-accent">{category}</span>}
+                {job.location && <span className="pill pill-white">{job.location.length > 24 ? `${job.location.slice(0, 24)}...` : job.location}</span>}
+                {matchPct !== null && <span className="pill pill-white">{matchPct}% match</span>}
+            </div>
+
+            <div className="mt-auto border-t border-border pt-4">
+                <div className="flex items-end justify-between gap-4">
+                    <div className="min-w-0">
+                        <p className="flex items-center gap-1.5 truncate text-xs font-bold text-ink">
+                            <MapPin className="h-3.5 w-3.5 shrink-0" />
+                            {job.location || "Location not listed"}
+                        </p>
+                        <p className="mt-1 text-xs font-medium text-text-secondary">{sourceLabel(job.source_ats)}</p>
+                    </div>
+                    <a
+                        href={job.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-ink px-4 py-2.5 text-xs font-bold text-white transition hover:bg-orange-950"
+                    >
+                        Apply now
+                        <ExternalLink className="h-4 w-4" />
+                    </a>
+                </div>
+            </div>
+        </article>
     );
 }

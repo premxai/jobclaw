@@ -12,10 +12,10 @@ interface StageChartProps {
 // chart reads as the same taxonomy as the stat cards and status pills above it,
 // rather than introducing an unrelated palette.
 const STAGE_COLORS: Record<string, string> = {
-    Saved: "#9CA3AF",
-    Applied: "#3B82F6",
-    Interview: "#D97706",
-    Offer: "#16A34A",
+    Saved: "#080808",
+    Applied: "#3C6FD7",
+    Interview: "#B67A20",
+    Offer: "#247A4D",
 };
 
 export default function StageChart({ saved, applied, interview, offer }: StageChartProps) {
@@ -40,8 +40,8 @@ export default function StageChart({ saved, applied, interview, offer }: StageCh
                         tick={{ fontSize: 12, fill: "#7A7062" }}
                     />
                     <Tooltip
-                        cursor={{ fill: "rgba(232, 113, 58, 0.06)" }}
-                        contentStyle={{ borderRadius: 8, border: "1px solid #E5DDD0", fontSize: 12 }}
+                        cursor={{ fill: "rgba(8, 8, 8, 0.05)" }}
+                        contentStyle={{ borderRadius: 12, border: "1px solid #E4E4E1", fontSize: 12 }}
                         formatter={(value?: number) => [value ?? 0, "Jobs"]}
                     />
                     <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={20}>

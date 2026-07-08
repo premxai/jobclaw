@@ -1,12 +1,11 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import TopNav from "@/components/TopNav";
 import JobCard, { Job } from "@/components/JobCard";
 import { fetchJobs, fetchMatchedJobs } from "@/lib/api";
 import { SearchFilterBar, SortMode, MIN_RELEVANCE_QUERY_LENGTH } from "@/components/SearchFilterBar";
-import ResumeMatchModal from "@/components/ResumeMatchModal";
 import { isUsLocation, isRemoteLocation } from "@/lib/location-filters";
+import { Sparkles } from "lucide-react";
 
 interface SavedJobRef {
     internal_hash: string;
@@ -49,7 +48,6 @@ export default function JobFeedClient({
     const [loading, setLoading] = useState(true);
     const [savedJobs, setSavedJobs] = useState<Set<string>>(new Set());
     const [sortMode, setSortMode] = useState<SortMode>(initialSortMode);
-    const [resumeModalOpen, setResumeModalOpen] = useState(false);
     const LIMIT = 12;
     const isRelevanceMode = sortMode === "relevance" && search.trim().length >= MIN_RELEVANCE_QUERY_LENGTH;
 
@@ -171,11 +169,36 @@ export default function JobFeedClient({
     };
 
     return (
-        <div className="min-h-screen">
+        <div className="page-shell">
             <TopNav />
 
-            <div className="max-w-7xl mx-auto px-6 py-8">
+            <div className="max-w-7xl mx-auto px-5 py-8 sm:px-6">
                 {headerExtra}
+                {!headerExtra && (
+                    <header className="mb-8 flex flex-col gap-5 rounded-[32px] bg-ink p-6 text-white sm:p-8 lg:flex-row lg:items-end lg:justify-between">
+                        <div className="max-w-3xl">
+                            <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-white/70">
+                                <Sparkles className="h-3.5 w-3.5" />
+                                Nori&apos;s live job notes
+                            </div>
+                            <h1 className="text-4xl font-black tracking-[-0.05em] sm:text-5xl">Find the roles Nori just noted.</h1>
+                            <p className="mt-3 max-w-2xl text-sm font-medium text-white/70 sm:text-base">
+                                Search fresh tech jobs by role, category, company, source, and location. Save the good ones into your tracker.
+                            </p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div className="rounded-2xl bg-white/10 p-4">
+                                <p className="text-2xl font-black">31k+</p>
+                                <p className="font-semibold text-white/60">targets watched</p>
+                            </div>
+                            <div className="rounded-2xl bg-white/10 p-4">
+                                <p className="text-2xl font-black">Direct</p>
+                                <p className="font-semibold text-white/60">apply links</p>
+                            </div>
+                        </div>
+                    </header>
+                )}
+
                 <div className="mb-8">
                     <SearchFilterBar
                         search={search}
@@ -200,16 +223,8 @@ export default function JobFeedClient({
                         }}
                         sortMode={sortMode}
                         onSortModeChange={setSortMode}
-                        onOpenResumeMatch={() => setResumeModalOpen(true)}
                     />
                 </div>
-
-                <ResumeMatchModal
-                    open={resumeModalOpen}
-                    onClose={() => setResumeModalOpen(false)}
-                    onSave={handleSave}
-                    savedJobs={savedJobs}
-                />
 
                 <main>
                     <div className="flex items-center justify-between mb-6">
@@ -229,16 +244,14 @@ export default function JobFeedClient({
                     {loading ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                             {Array.from({ length: 6 }).map((_, i) => (
-                                <div key={i} className="bg-white rounded-xl border border-border h-56 animate-pulse" />
+                                <div key={i} className="h-[330px] rounded-[18px] border border-border bg-white animate-pulse" />
                             ))}
                         </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                             {jobs.map((job, i) => (
                                 <div key={job.internal_hash || i} className="animate-fade-in" style={{ animationDelay: `${i * 30}ms` }}>
-                                    <Link href={`/jobs/${job.id}`} className="block h-full">
-                                        <JobCard job={job} onSave={handleSave} saved={savedJobs.has(job.internal_hash)} />
-                                    </Link>
+                                    <JobCard job={job} onSave={handleSave} saved={savedJobs.has(job.internal_hash)} />
                                 </div>
                             ))}
                         </div>

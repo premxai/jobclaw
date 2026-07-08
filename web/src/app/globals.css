@@ -2,10 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ═══════════════════════════════════════════════════════════
-   Nori — Warm Theme
-   Typography: Geist/System | Theme: Warm Cream | Style: Clean
-   ═══════════════════════════════════════════════════════════ */
+/* Nori Note design system */
 
 @layer base {
   * {
@@ -21,16 +18,16 @@
   }
 
   body {
-    background-color: #FAF7F2;
-    color: #1A1A1A;
-    font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
-    line-height: 1.6;
     min-height: 100vh;
+    background-color: #fff3d6;
+    color: #2a1606;
+    font-family: var(--font-inter), var(--font-geist-sans), -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+    line-height: 1.6;
   }
 
   ::selection {
-    background: rgba(232, 113, 58, 0.2);
-    color: #1A1A1A;
+    background: rgba(245, 158, 11, 0.28);
+    color: #2a1606;
   }
 
   ::-webkit-scrollbar {
@@ -39,145 +36,136 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: #FAF7F2;
+    background: #fff3d6;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #D5CEC2;
+    background: #e5b85f;
     border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: #B8AFA0;
+    background: #c98a1a;
   }
 
   *:focus-visible {
-    outline: 2px solid #E8713A;
+    outline: 2px solid #f59e0b;
     outline-offset: 2px;
   }
 }
 
 @layer components {
-  /* Job card — uniform height with flex layout */
+  .page-shell {
+    @apply min-h-screen bg-background;
+  }
+
+  .nori-panel {
+    @apply rounded-[28px] border border-border bg-white shadow-card;
+  }
+
   .job-card {
-    @apply bg-white rounded-xl p-5 transition-all duration-200 flex flex-col h-full;
-    border: 1px solid #E5DDD0;
+    @apply flex h-full min-h-[330px] flex-col rounded-[18px] bg-white p-5 transition-all duration-200;
+    border: 1px solid rgba(173, 98, 6, 0.12);
   }
 
   .job-card:hover {
-    border-color: #E8713A;
     @apply shadow-card-hover;
+    border-color: rgba(245, 158, 11, 0.42);
     transform: translateY(-2px);
   }
 
-  /* Shared hover-lift for whole-card links (JobCard/JobRow) that previously
-     hand-rolled the same translateY + shadow pair inline. */
   .card-hover-lift {
     @apply transition-all duration-200;
   }
 
   .card-hover-lift:hover {
-    @apply shadow-card-hover -translate-y-0.5;
+    @apply -translate-y-0.5 shadow-card-hover;
   }
 
-  /* Pill/tag */
   .pill {
-    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+    @apply inline-flex items-center rounded-lg px-3 py-1.5 text-xs font-semibold;
   }
 
   .pill-dark {
-    @apply bg-surface-2 text-text-secondary;
-    border: 1px solid #E5DDD0;
+    @apply bg-ink text-white;
+    border: 1px solid #2a1606;
   }
 
   .pill-accent {
-    background: #FFF0E6;
-    color: #E8713A;
+    @apply bg-accent-light text-ink;
   }
 
   .pill-white {
     @apply bg-surface-2 text-text-secondary;
   }
 
-  /* Freshness badge (JobCard) — consolidates the inline "pill ${color} bg-red-50
-     border-red-200 border" string that was duplicated wherever a freshness
-     signal is shown. */
   .pill-fresh {
-    @apply pill bg-red-50 border border-red-200;
+    @apply pill border border-accent/20 bg-accent-light text-ink;
   }
 
-  /* Match-score badge (JobCard, and reused by the relevance-search results
-     and resume-match results, which render the same job cards). */
   .pill-match {
-    @apply pill bg-accent/10 text-accent border border-accent/30 font-bold;
+    @apply pill border border-accent/20 bg-accent-light font-bold text-ink;
   }
 
-  /* Stat card */
   .stat-card {
-    @apply bg-white rounded-xl p-5;
-    border: 1px solid #E5DDD0;
+    @apply rounded-[22px] bg-white p-5;
+    border: 1px solid rgba(173, 98, 6, 0.14);
   }
 
-  /* Section heading */
   .section-heading {
-    @apply text-xl font-bold tracking-tight text-text-primary;
+    @apply text-xl font-black tracking-tight text-text-primary;
   }
 
-  /* CTA button */
   .btn-primary {
-    @apply inline-flex items-center justify-center px-5 py-2.5 text-white font-semibold rounded-lg transition-colors duration-150 text-sm;
-    background: #E8713A;
+    @apply inline-flex items-center justify-center rounded-xl bg-ink px-5 py-3 text-sm font-bold text-white transition-colors duration-150;
   }
 
   .btn-primary:hover {
-    background: #D4612E;
+    @apply bg-neutral-800;
   }
 
   .btn-dark {
-    @apply inline-flex items-center justify-center px-5 py-2.5 bg-gray-900 text-white font-semibold rounded-lg transition-colors duration-150 text-sm;
+    @apply inline-flex items-center justify-center rounded-xl bg-ink px-5 py-3 text-sm font-bold text-white transition-colors duration-150;
   }
 
   .btn-dark:hover {
-    @apply bg-gray-800;
+    @apply bg-neutral-800;
   }
 
   .btn-outline {
-    @apply inline-flex items-center justify-center px-5 py-2.5 bg-white text-text-primary font-medium rounded-lg transition-colors duration-150 text-sm;
-    border: 1px solid #E5DDD0;
+    @apply inline-flex items-center justify-center rounded-xl bg-white px-5 py-3 text-sm font-bold text-text-primary transition-colors duration-150;
+    border: 1px solid #f0c979;
   }
 
   .btn-outline:hover {
     @apply bg-surface-2;
   }
 
-  /* Kanban column */
   .kanban-column {
-    @apply bg-surface-2 rounded-xl p-4 min-h-[400px];
-    border: 1px solid #E5DDD0;
+    @apply min-h-[400px] rounded-[22px] bg-white p-4;
+    border: 1px solid rgba(173, 98, 6, 0.14);
   }
 
-  /* Kanban card */
   .kanban-card {
-    @apply bg-white rounded-lg p-4 cursor-grab transition-all duration-150;
-    border: 1px solid #E5DDD0;
+    @apply cursor-grab rounded-2xl bg-surface-2 p-4 transition-all duration-150;
+    border: 1px solid #f0c979;
   }
 
   .kanban-card:hover {
-    border-color: #E8713A;
+    border-color: #f59e0b;
   }
 
   .kanban-card:active {
     @apply cursor-grabbing;
   }
 
-  /* Input field */
   .input-field {
-    @apply w-full bg-white rounded-lg px-4 py-3 text-text-primary placeholder-text-secondary text-sm transition-colors focus:outline-none;
-    border: 1px solid #E5DDD0;
+    @apply w-full rounded-xl bg-white px-4 py-3 text-sm text-text-primary placeholder-text-secondary transition-colors focus:outline-none;
+    border: 1px solid #f0c979;
   }
 
   .input-field:focus {
-    border-color: #E8713A;
+    border-color: #f59e0b;
   }
 }
 

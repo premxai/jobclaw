@@ -26,6 +26,8 @@ export interface ApiJob {
     salary_max: number | null;
     salary_currency: string | null;
     is_active: boolean;
+    canonical_company?: string | null;
+    canonical_title?: string | null;
 }
 
 // /jobs/match returns the same raw `jobs` row shape as ApiJob, plus these two
@@ -122,6 +124,7 @@ export async function fetchJobs(params?: {
     search?: string;
     category?: string;
     source?: string;
+    company?: string;
     page?: number;
     limit?: number;
     recentHours?: number;
@@ -130,6 +133,7 @@ export async function fetchJobs(params?: {
     if (params?.search) sp.set("search", params.search);
     if (params?.category) sp.set("keyword", params.category);   // backend uses "keyword"
     if (params?.source) sp.set("ats", params.source);            // backend uses "ats"
+    if (params?.company) sp.set("company", params.company);
     if (params?.page) sp.set("page", String(params.page));
     if (params?.limit) sp.set("per_page", String(params.limit)); // backend uses "per_page"
     if (params?.recentHours) sp.set("recent_hours", String(params.recentHours));

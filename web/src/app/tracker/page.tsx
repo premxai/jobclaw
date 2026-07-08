@@ -1,15 +1,19 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+
+import { useCallback, useEffect, useState } from "react";
+import type React from "react";
+import Link from "next/link";
 import TopNav from "@/components/TopNav";
 import CompanyLogo from "@/components/CompanyLogo";
 import { Job } from "@/components/JobCard";
-import { GripVertical, Trash2, ExternalLink } from "lucide-react";
+import { displayCompany, displayTitle } from "@/lib/job-display";
+import { Bookmark, CheckCircle2, ExternalLink, GripVertical, Send, Target, Trash2, Trophy } from "lucide-react";
 
 const COLUMNS = [
-    { id: "saved", label: "Saved", icon: "📌", color: "#7A7062" },
-    { id: "applied", label: "Applied", icon: "📤", color: "#3574D4" },
-    { id: "interview", label: "Interview", icon: "🎯", color: "#C98A1A" },
-    { id: "offer", label: "Offer", icon: "🎉", color: "#2D8A4E" },
+    { id: "saved", label: "Saved", icon: Bookmark, color: "bg-surface-2 text-ink" },
+    { id: "applied", label: "Applied", icon: Send, color: "bg-blue-50 text-info" },
+    { id: "interview", label: "Interview", icon: Target, color: "bg-amber-50 text-warning" },
+    { id: "offer", label: "Offer", icon: Trophy, color: "bg-green-50 text-success" },
 ];
 
 interface TrackedJob extends Job {
@@ -27,11 +31,7 @@ export default function TrackerPage() {
         if (saved) {
             try {
                 const parsed: TrackedJob[] = JSON.parse(saved);
-                setJobs(parsed.map((j) => ({
-                    ...j,
-                    status: j.status || "saved",
-                    addedAt: j.addedAt || new Date().toISOString(),
-                })));
+                setJobs(parsed.map((j) => ({ ...j, status: j.status || "saved", addedAt: j.addedAt || new Date().toISOString() })));
             } catch { }
         }
     }, []);
@@ -41,108 +41,124 @@ export default function TrackerPage() {
         localStorage.setItem("jobclaw_saved", JSON.stringify(updatedJobs));
     }, []);
 
-    const handleDragStart = (hash: string) => { setDraggedJob(hash); };
-    const handleDragOver = (e: React.DragEvent, columnId: string) => { e.preventDefault(); setDragOverColumn(columnId); };
-    const handleDragLeave = () => { setDragOverColumn(null); };
+    const handleDragStart = (hash: string) => setDraggedJob(hash);
+    const handleDragOver = (e: React.DragEvent, columnId: string) => {
+        e.preventDefault();
+        setDragOverColumn(columnId);
+    };
+    const handleDragLeave = () => setDragOverColumn(null);
     const handleDrop = (columnId: string) => {
         if (!draggedJob) return;
-        persist(jobs.map((j) => j.internal_hash === draggedJob ? { ...j, status: columnId } : j));
+        persist(jobs.map((j) => (j.internal_hash === draggedJob ? { ...j, status: columnId } : j)));
         setDraggedJob(null);
         setDragOverColumn(null);
     };
-    const removeJob = (hash: string) => { persist(jobs.filter((j) => j.internal_hash !== hash)); };
+    const removeJob = (hash: string) => persist(jobs.filter((j) => j.internal_hash !== hash));
     const getColumnJobs = (columnId: string) => jobs.filter((j) => j.status === columnId);
 
     return (
-        <div className="min-h-screen">
+        <div className="page-shell">
             <TopNav />
 
-            <div className="max-w-7xl mx-auto px-6 py-8">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold tracking-tight text-text-primary mb-2">Job Tracker</h1>
-                    <p className="text-text-secondary text-sm">
-                        Drag jobs between columns to track your application progress. Save jobs from the{" "}
-                        <a href="/jobs" className="text-accent hover:underline">Job Feed</a> to get started.
-                    </p>
-                </div>
+            <main className="mx-auto max-w-7xl px-5 py-8 sm:px-6">
+                <header className="mb-8 flex flex-col gap-4 rounded-[30px] bg-ink p-6 text-white sm:p-8 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                        <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-white/55">saved jobs</p>
+                        <h1 className="text-4xl font-black tracking-[-0.06em] sm:text-5xl">Your application tracker</h1>
+                        <p className="mt-3 max-w-2xl text-sm font-medium text-white/65">
+                            Save jobs from the board, then drag each note through your search pipeline.
+                        </p>
+                    </div>
+                    <Link href="/jobs" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-black text-ink transition hover:bg-surface-2">
+                        Browse jobs
+                        <ExternalLink className="h-4 w-4" />
+                    </Link>
+                </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                    {COLUMNS.map((column) => {
-                        const columnJobs = getColumnJobs(column.id);
-                        const isOver = dragOverColumn === column.id;
-                        return (
-                            <div
-                                key={column.id}
-                                className={`kanban-column transition-colors ${isOver ? "border-accent bg-accent-light" : ""}`}
-                                onDragOver={(e) => handleDragOver(e, column.id)}
-                                onDragLeave={handleDragLeave}
-                                onDrop={() => handleDrop(column.id)}
-                            >
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-lg">{column.icon}</span>
-                                        <h2 className="font-semibold text-sm text-text-primary">{column.label}</h2>
-                                        <span
-                                            className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
-                                            style={{ backgroundColor: column.color + "18", color: column.color }}
-                                        >
-                                            {columnJobs.length}
-                                        </span>
+                {jobs.length === 0 ? (
+                    <div className="nori-panel py-20 text-center">
+                        <div className="mx-auto mb-6 grid h-20 w-20 place-items-center rounded-full bg-surface-2">
+                            <CheckCircle2 className="h-9 w-9 text-ink" />
+                        </div>
+                        <h2 className="text-2xl font-black tracking-[-0.04em] text-ink">No tracked jobs yet</h2>
+                        <p className="mx-auto mt-2 max-w-md text-sm font-medium text-text-secondary">
+                            Browse the job board and hit Save to build your first application board.
+                        </p>
+                        <Link href="/jobs" className="btn-primary mt-6">
+                            Browse jobs
+                        </Link>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+                        {COLUMNS.map((column) => {
+                            const columnJobs = getColumnJobs(column.id);
+                            const isOver = dragOverColumn === column.id;
+                            const Icon = column.icon;
+                            return (
+                                <section
+                                    key={column.id}
+                                    className={`kanban-column transition ${isOver ? "ring-2 ring-ink" : ""}`}
+                                    onDragOver={(e) => handleDragOver(e, column.id)}
+                                    onDragLeave={handleDragLeave}
+                                    onDrop={() => handleDrop(column.id)}
+                                >
+                                    <div className="mb-4 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className={`grid h-9 w-9 place-items-center rounded-xl ${column.color}`}>
+                                                <Icon className="h-4 w-4" />
+                                            </span>
+                                            <div>
+                                                <h2 className="text-sm font-black text-ink">{column.label}</h2>
+                                                <p className="text-xs font-semibold text-text-secondary">{columnJobs.length} jobs</p>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="space-y-3">
-                                    {columnJobs.map((job) => (
-                                        <div
-                                            key={job.internal_hash}
-                                            draggable
-                                            onDragStart={() => handleDragStart(job.internal_hash)}
-                                            className={`kanban-card ${draggedJob === job.internal_hash ? "opacity-50 scale-95" : ""}`}
-                                        >
-                                            <div className="flex items-start gap-3">
-                                                <GripVertical className="w-4 h-4 text-text-secondary mt-0.5 shrink-0 opacity-40" />
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <CompanyLogo company={job.company} size="sm" />
-                                                        <span className="text-xs text-text-secondary truncate">{job.company}</span>
+                                    <div className="space-y-3">
+                                        {columnJobs.map((job) => {
+                                            const company = displayCompany(job);
+                                            return (
+                                                <article
+                                                    key={job.internal_hash}
+                                                    draggable
+                                                    onDragStart={() => handleDragStart(job.internal_hash)}
+                                                    className={`kanban-card ${draggedJob === job.internal_hash ? "scale-95 opacity-50" : ""}`}
+                                                >
+                                                    <div className="flex items-start gap-3">
+                                                        <GripVertical className="mt-1 h-4 w-4 shrink-0 text-text-secondary opacity-40" />
+                                                        <div className="min-w-0 flex-1">
+                                                            <div className="mb-2 flex items-center gap-2">
+                                                                <CompanyLogo company={company} size="sm" />
+                                                                <span className="truncate text-xs font-black text-ink">{company}</span>
+                                                            </div>
+                                                            <p className="line-clamp-2 text-sm font-black leading-tight text-ink">{displayTitle(job)}</p>
+                                                            <p className="mt-2 truncate text-xs font-semibold text-text-secondary">{job.location || "Location not listed"}</p>
+                                                        </div>
                                                     </div>
-                                                    <p className="font-semibold text-sm text-text-primary leading-tight mb-2 line-clamp-2">{job.title}</p>
-                                                    <p className="text-xs text-text-secondary">{job.date_posted || "No date"}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-1 mt-3 pt-2 border-t border-border">
-                                                <a href={job.url} target="_blank" rel="noopener noreferrer"
-                                                    className="p-1.5 rounded hover:bg-surface-2 text-text-secondary hover:text-accent transition-colors" title="Open listing">
-                                                    <ExternalLink className="w-3.5 h-3.5" />
-                                                </a>
-                                                <button onClick={() => removeJob(job.internal_hash)}
-                                                    className="p-1.5 rounded hover:bg-surface-2 text-text-secondary hover:text-red-500 transition-colors ml-auto" title="Remove">
-                                                    <Trash2 className="w-3.5 h-3.5" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
+                                                    <div className="mt-4 flex items-center gap-1 border-t border-border pt-3">
+                                                        <a href={job.url} target="_blank" rel="noopener noreferrer" className="rounded-lg p-2 text-text-secondary transition hover:bg-white hover:text-ink" title="Open listing">
+                                                            <ExternalLink className="h-4 w-4" />
+                                                        </a>
+                                                        <button onClick={() => removeJob(job.internal_hash)} className="ml-auto rounded-lg p-2 text-text-secondary transition hover:bg-white hover:text-red-500" title="Remove">
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </button>
+                                                    </div>
+                                                </article>
+                                            );
+                                        })}
 
-                                    {columnJobs.length === 0 && (
-                                        <div className="text-center py-8 text-text-secondary text-xs border border-dashed border-border rounded-lg">
-                                            {column.id === "saved" ? "Save jobs from the feed" : "Drag jobs here"}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {jobs.length === 0 && (
-                    <div className="text-center py-20 animate-fade-in">
-                        <p className="text-6xl mb-4">📋</p>
-                        <h2 className="text-xl font-bold text-text-primary mb-2">No tracked jobs yet</h2>
-                        <p className="text-text-secondary mb-6">Browse the job feed and click Save to start tracking your applications.</p>
-                        <a href="/jobs" className="btn-primary">Browse Jobs</a>
+                                        {columnJobs.length === 0 && (
+                                            <div className="rounded-2xl border border-dashed border-border bg-surface-2 py-8 text-center text-xs font-bold text-text-secondary">
+                                                {column.id === "saved" ? "Save jobs from the board" : "Drag jobs here"}
+                                            </div>
+                                        )}
+                                    </div>
+                                </section>
+                            );
+                        })}
                     </div>
                 )}
-            </div>
+            </main>
         </div>
     );
 }

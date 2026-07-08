@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Fraunces, Inter } from "next/font/google";
 import localFont from "next/font/local";
 import "./globals.css";
 
@@ -14,26 +15,43 @@ const geistMono = localFont({
   display: "swap",
 });
 
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://norinote.xyz"),
   title: {
-    default: "norinote — Fresh tech jobs, less noise",
-    template: "%s · norinote",
+    default: "Nori Note - Fresh tech jobs, neatly noted",
+    template: "%s - Nori Note",
   },
   description:
-    "Fresh US tech roles from thousands of companies, updated every few hours. AI/ML, SWE, Data, Product, and New Grad — direct links, less noise.",
-  keywords: ["norinote", "jobs", "tech jobs", "AI jobs", "software engineer", "new grad", "job board"],
+    "Nori searches across the internet for fresh tech jobs, notes the good ones, and keeps your job hunt organized.",
+  keywords: ["Nori Note", "jobs", "tech jobs", "AI jobs", "software engineer", "new grad", "job board"],
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
+  },
   openGraph: {
-    title: "norinote — Fresh tech jobs, less noise",
-    description: "Thousands of companies monitored. Fresh roles every few hours — direct links, less noise.",
+    title: "Nori Note - Fresh tech jobs, neatly noted",
+    description: "Thousands of companies monitored. Fresh roles every few hours, direct links, and an organized tracker.",
     type: "website",
     url: "https://norinote.xyz",
-    siteName: "norinote",
+    siteName: "Nori Note",
   },
   twitter: {
     card: "summary",
-    title: "norinote — Fresh tech jobs, less noise",
-    description: "Fresh US tech roles every few hours. Direct links, less noise.",
+    title: "Nori Note - Fresh tech jobs, neatly noted",
+    description: "Nori searches the internet and notes fresh roles for your job hunt.",
   },
 };
 
@@ -44,7 +62,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>{children}</body>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${fraunces.variable} antialiased`}>{children}</body>
     </html>
   );
 }

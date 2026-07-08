@@ -1,6 +1,9 @@
 "use client";
+
+import Link from "next/link";
+import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { Search, ChevronDown, X, FileText } from "lucide-react";
+import { Bookmark, BriefcaseBusiness, ChevronDown, Clock3, Layers3, MapPin, Search, SlidersHorizontal, X } from "lucide-react";
 
 export const FILTER_CATEGORIES = ["AI/ML", "SWE", "Data Science", "Data Engineering", "Data Analyst", "New Grad", "Product", "Research"];
 export const FILTER_SOURCES = ["Greenhouse", "Lever", "Workday", "Ashby", "SmartRecruiters", "Workable", "Rippling", "BambooHR", "GitHub", "Enterprise", "RSS", "LinkedIn", "Indeed"];
@@ -13,6 +16,7 @@ export const RECENCY_OPTIONS: { label: string; hours: number | null }[] = [
 ];
 
 export type SortMode = "recency" | "relevance";
+export const MIN_RELEVANCE_QUERY_LENGTH = 3;
 
 interface SearchFilterBarProps {
     search: string;
@@ -30,13 +34,10 @@ interface SearchFilterBarProps {
     onClear: () => void;
     sortMode: SortMode;
     onSortModeChange: (mode: SortMode) => void;
-    onOpenResumeMatch?: () => void;
 }
 
-function RecencyDropdown({ value, onChange }: { value: number | null; onChange: (hours: number | null) => void }) {
-    const [open, setOpen] = useState(false);
+function useOutsideClose(open: boolean, setOpen: (open: boolean) => void) {
     const ref = useRef<HTMLDivElement>(null);
-
     useEffect(() => {
         if (!open) return;
         const onClickOutside = (e: MouseEvent) => {
@@ -44,8 +45,13 @@ function RecencyDropdown({ value, onChange }: { value: number | null; onChange: 
         };
         document.addEventListener("mousedown", onClickOutside);
         return () => document.removeEventListener("mousedown", onClickOutside);
-    }, [open]);
+    }, [open, setOpen]);
+    return ref;
+}
 
+function RecencyDropdown({ value, onChange }: { value: number | null; onChange: (hours: number | null) => void }) {
+    const [open, setOpen] = useState(false);
+    const ref = useOutsideClose(open, setOpen);
     const current = RECENCY_OPTIONS.find((o) => o.hours === value) ?? RECENCY_OPTIONS[0];
 
     return (
@@ -53,20 +59,26 @@ function RecencyDropdown({ value, onChange }: { value: number | null; onChange: 
             <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
-                className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${value !== null ? "border-accent bg-accent text-white" : "border-border bg-white text-text-secondary hover:text-text-primary"
-                    }`}
+                className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition ${
+                    value !== null ? "border-ink bg-ink text-white" : "border-border bg-white text-text-secondary hover:text-ink"
+                }`}
             >
+                <Clock3 className="h-4 w-4" />
                 {value !== null ? current.label : "Posted"}
-                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? "rotate-180" : ""}`} />
+                <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
             {open && (
-                <div className="absolute left-0 top-[calc(100%+8px)] z-20 w-40 rounded-xl border border-border bg-white p-1.5 shadow-popover">
+                <div className="absolute left-0 top-[calc(100%+8px)] z-20 w-44 rounded-2xl border border-border bg-white p-2 shadow-popover">
                     {RECENCY_OPTIONS.map((option) => (
                         <button
                             key={option.label}
-                            onClick={() => { onChange(option.hours); setOpen(false); }}
-                            className={`block w-full rounded-md px-2.5 py-1.5 text-left text-sm ${option.hours === value ? "bg-accent-light text-accent font-medium" : "text-text-secondary hover:bg-surface-2"
-                                }`}
+                            onClick={() => {
+                                onChange(option.hours);
+                                setOpen(false);
+                            }}
+                            className={`block w-full rounded-xl px-3 py-2 text-left text-sm font-bold ${
+                                option.hours === value ? "bg-ink text-white" : "text-text-secondary hover:bg-surface-2 hover:text-ink"
+                            }`}
                         >
                             {option.label}
                         </button>
@@ -77,59 +89,50 @@ function RecencyDropdown({ value, onChange }: { value: number | null; onChange: 
     );
 }
 
-// Below this length, semantic matching isn't worth the round trip — there's
-// no meaningful "relevance" to a single word. Keep this in sync with the
-// gating check in JobFeedClient.tsx.
-export const MIN_RELEVANCE_QUERY_LENGTH = 3;
-
 function FilterDropdown({
     label,
+    icon,
     options,
     selected,
     onToggle,
 }: {
     label: string;
+    icon: React.ReactNode;
     options: string[];
     selected: Set<string>;
     onToggle: (value: string) => void;
 }) {
     const [open, setOpen] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        if (!open) return;
-        const onClickOutside = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-        };
-        document.addEventListener("mousedown", onClickOutside);
-        return () => document.removeEventListener("mousedown", onClickOutside);
-    }, [open]);
-
+    const ref = useOutsideClose(open, setOpen);
     const summary = selected.size === 0 ? `All ${label.toLowerCase()}` : selected.size === 1 ? Array.from(selected)[0] : `${selected.size} ${label.toLowerCase()}`;
 
     return (
-        <div ref={ref} className="relative flex-1 min-w-[160px]">
+        <div ref={ref} className="relative min-w-[180px] flex-1">
             <button
                 type="button"
                 onClick={() => setOpen((v) => !v)}
-                className={`flex w-full items-center justify-between gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${selected.size > 0 ? "text-accent" : "text-text-primary"
-                    } hover:bg-surface-2`}
+                className={`flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-bold transition ${
+                    selected.size > 0 ? "border-ink bg-ink text-white" : "border-border bg-white text-text-primary hover:bg-surface-2"
+                }`}
             >
-                <span className="truncate">{summary}</span>
-                <ChevronDown className={`h-4 w-4 shrink-0 text-text-secondary transition-transform ${open ? "rotate-180" : ""}`} />
+                <span className="flex min-w-0 items-center gap-2">
+                    {icon}
+                    <span className="truncate">{summary}</span>
+                </span>
+                <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
             {open && (
-                <div className="absolute left-0 top-[calc(100%+8px)] z-20 w-64 rounded-xl border border-border bg-white p-3 shadow-popover">
+                <div className="absolute left-0 top-[calc(100%+8px)] z-20 w-72 rounded-2xl border border-border bg-white p-3 shadow-popover">
                     <div className="max-h-64 space-y-1 overflow-y-auto">
                         {options.map((option) => (
-                            <label key={option} className="flex cursor-pointer items-center gap-2.5 rounded-md px-2 py-1.5 hover:bg-surface-2">
+                            <label key={option} className="flex cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 hover:bg-surface-2">
                                 <input
                                     type="checkbox"
                                     checked={selected.has(option)}
                                     onChange={() => onToggle(option)}
-                                    className="h-4 w-4 rounded border-border accent-accent"
+                                    className="h-4 w-4 rounded border-border accent-ink"
                                 />
-                                <span className="text-sm text-text-secondary">{option}</span>
+                                <span className="text-sm font-semibold text-text-secondary">{option}</span>
                             </label>
                         ))}
                     </div>
@@ -155,84 +158,78 @@ export function SearchFilterBar({
     onClear,
     sortMode,
     onSortModeChange,
-    onOpenResumeMatch,
 }: SearchFilterBarProps) {
-    const activeFilters =
-        selectedCategories.size + selectedSources.size + (usOnly ? 1 : 0) + (remoteOnly ? 1 : 0) + (recentHours !== null ? 1 : 0);
+    const activeFilters = selectedCategories.size + selectedSources.size + (usOnly ? 1 : 0) + (remoteOnly ? 1 : 0) + (recentHours !== null ? 1 : 0);
     const canRankByRelevance = search.trim().length >= MIN_RELEVANCE_QUERY_LENGTH;
 
     return (
-        <div className="flex flex-col gap-3">
-            <div className="flex flex-col gap-2 rounded-2xl border border-border bg-white p-2.5 shadow-card lg:flex-row lg:items-center">
-                <div className="flex flex-1 items-center gap-2 border-b border-border px-4 py-2 lg:border-b-0 lg:border-r lg:py-0">
-                    <Search className="h-4 w-4 shrink-0 text-text-secondary" />
-                    <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => onSearchChange(e.target.value)}
-                        placeholder="Job title, company, or keywords… (try describing your skills for best-match)"
-                        className="w-full min-w-0 bg-transparent text-sm font-medium text-text-primary placeholder-text-secondary outline-none"
-                    />
-                    {search && (
-                        <button onClick={() => onSearchChange("")} aria-label="Clear search" className="shrink-0 text-text-secondary hover:text-text-primary">
-                            <X className="h-4 w-4" />
-                        </button>
-                    )}
+        <div className="space-y-3">
+            <div className="nori-panel p-3">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                    <div className="flex min-h-[3.25rem] flex-1 items-center gap-3 rounded-2xl bg-surface-2 px-4">
+                        <Search className="h-5 w-5 shrink-0 text-text-secondary" />
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(e) => onSearchChange(e.target.value)}
+                            placeholder="Search role, company, keyword, or location"
+                            className="w-full min-w-0 bg-transparent text-base font-bold text-text-primary placeholder:text-text-secondary focus:outline-none"
+                        />
+                        {search && (
+                            <button onClick={() => onSearchChange("")} aria-label="Clear search" className="shrink-0 rounded-full p-1 text-text-secondary hover:bg-white hover:text-ink">
+                                <X className="h-4 w-4" />
+                            </button>
+                        )}
+                    </div>
+
+                    <FilterDropdown label="Categories" icon={<BriefcaseBusiness className="h-4 w-4" />} options={FILTER_CATEGORIES} selected={selectedCategories} onToggle={onToggleCategory} />
+                    <FilterDropdown label="Sources" icon={<Layers3 className="h-4 w-4" />} options={FILTER_SOURCES} selected={selectedSources} onToggle={onToggleSource} />
+
+                    <Link href="/tracker" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-bold text-white transition hover:bg-neutral-800">
+                        <Bookmark className="h-4 w-4" />
+                        Saved jobs
+                    </Link>
                 </div>
-
-                <FilterDropdown label="Categories" options={FILTER_CATEGORIES} selected={selectedCategories} onToggle={onToggleCategory} />
-                <FilterDropdown label="Sources" options={FILTER_SOURCES} selected={selectedSources} onToggle={onToggleSource} />
-
-                {onOpenResumeMatch && (
-                    <button
-                        onClick={onOpenResumeMatch}
-                        className="flex shrink-0 items-center gap-1.5 px-3 py-2 text-sm font-medium text-text-secondary hover:text-accent"
-                    >
-                        <FileText className="h-4 w-4" />
-                        Match my resume
-                    </button>
-                )}
-
-                {activeFilters > 0 && (
-                    <button onClick={onClear} className="shrink-0 px-3 py-2 text-sm font-medium text-accent hover:underline">
-                        Clear ({activeFilters})
-                    </button>
-                )}
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
                 <button
                     onClick={onToggleUsOnly}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${usOnly ? "border-accent bg-accent text-white" : "border-border bg-white text-text-secondary hover:text-text-primary"
-                        }`}
+                    className={`inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold transition ${
+                        usOnly ? "border-ink bg-ink text-white" : "border-border bg-white text-text-secondary hover:text-ink"
+                    }`}
                 >
+                    <MapPin className="h-4 w-4" />
                     US only
                 </button>
                 <button
                     onClick={onToggleRemoteOnly}
-                    className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${remoteOnly ? "border-accent bg-accent text-white" : "border-border bg-white text-text-secondary hover:text-text-primary"
-                        }`}
+                    className={`rounded-xl border px-4 py-2.5 text-sm font-bold transition ${
+                        remoteOnly ? "border-ink bg-ink text-white" : "border-border bg-white text-text-secondary hover:text-ink"
+                    }`}
                 >
                     Remote only
                 </button>
                 <RecencyDropdown value={recentHours} onChange={onRecentHoursChange} />
+                {activeFilters > 0 && (
+                    <button onClick={onClear} className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-text-secondary hover:text-ink">
+                        <SlidersHorizontal className="h-4 w-4" />
+                        Clear ({activeFilters})
+                    </button>
+                )}
             </div>
 
-            {/* Only meaningful once there's a query to rank against — hidden
-                otherwise so users never see a toggle with nothing to toggle. */}
             {canRankByRelevance && (
-                <div className="flex items-center gap-1 self-start rounded-full border border-border bg-white p-1 shadow-card animate-fade-in">
+                <div className="inline-flex items-center gap-1 rounded-xl border border-border bg-white p-1 shadow-card animate-fade-in">
                     <button
                         onClick={() => onSortModeChange("recency")}
-                        className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${sortMode === "recency" ? "bg-accent text-white" : "text-text-secondary hover:text-text-primary"
-                            }`}
+                        className={`rounded-lg px-3 py-2 text-xs font-bold transition ${sortMode === "recency" ? "bg-ink text-white" : "text-text-secondary hover:text-ink"}`}
                     >
                         Most recent
                     </button>
                     <button
                         onClick={() => onSortModeChange("relevance")}
-                        className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${sortMode === "relevance" ? "bg-accent text-white" : "text-text-secondary hover:text-text-primary"
-                            }`}
+                        className={`rounded-lg px-3 py-2 text-xs font-bold transition ${sortMode === "relevance" ? "bg-ink text-white" : "text-text-secondary hover:text-ink"}`}
                     >
                         Best match
                     </button>

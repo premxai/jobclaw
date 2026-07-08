@@ -1,25 +1,19 @@
 "use client";
-import { useState, useEffect } from "react";
+
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, BookmarkCheck, BookmarkPlus, BriefcaseBusiness, CalendarDays, ExternalLink, Link2, MapPin } from "lucide-react";
 import TopNav from "@/components/TopNav";
 import CompanyLogo from "@/components/CompanyLogo";
-import JobCard, { Job } from "@/components/JobCard";
+import JobCard, { Job, sourceLabel } from "@/components/JobCard";
 import { fetchJobById, fetchJobs } from "@/lib/api";
-import { ArrowLeft, MapPin, DollarSign, Calendar, Link2, Briefcase, BookmarkPlus, BookmarkCheck } from "lucide-react";
-
-function formatSalary(min?: number | null, max?: number | null): string | null {
-    if (!min && !max) return null;
-    const fmt = (n: number) => `$${Math.round(n / 1000)}k`;
-    if (min && max) return `${fmt(min)} – ${fmt(max)}`;
-    if (min) return `${fmt(min)}+`;
-    return max ? `Up to ${fmt(max)}` : null;
-}
+import { displayCompany, displayTitle } from "@/lib/job-display";
 
 export default function JobDetailPage() {
     const params = useParams();
     const router = useRouter();
     const [job, setJob] = useState<Job | null>(null);
-    const [related, setRelated] = useState<Job[]>([]);
+    const [companyJobs, setCompanyJobs] = useState<Job[]>([]);
     const [saved, setSaved] = useState(false);
 
     useEffect(() => {
@@ -29,8 +23,13 @@ export default function JobDetailPage() {
             const savedList = JSON.parse(localStorage.getItem("jobclaw_saved") || "[]") as Array<{ internal_hash: string }>;
             setSaved(savedList.some((s) => s.internal_hash === j?.internal_hash));
             if (j) {
-                fetchJobs({ limit: 6 }).then((data) => {
-                    setRelated(data.jobs.filter((r) => r.internal_hash !== j.internal_hash).slice(0, 3));
+                const company = displayCompany(j);
+                fetchJobs({ company: j.company || company, limit: 6 }).then((data) => {
+                    const sameCompany = data.jobs
+                        .filter((candidate) => candidate.internal_hash !== j.internal_hash)
+                        .filter((candidate) => displayCompany(candidate).toLowerCase() === company.toLowerCase())
+                        .slice(0, 3);
+                    setCompanyJobs(sameCompany);
                 });
             }
         });
@@ -40,117 +39,127 @@ export default function JobDetailPage() {
         if (!job) return;
         const savedList: Job[] = JSON.parse(localStorage.getItem("jobclaw_saved") || "[]");
         if (saved) {
-            const filtered = savedList.filter((j) => j.internal_hash !== job.internal_hash);
-            localStorage.setItem("jobclaw_saved", JSON.stringify(filtered));
+            localStorage.setItem("jobclaw_saved", JSON.stringify(savedList.filter((j) => j.internal_hash !== job.internal_hash)));
         } else {
-            savedList.push({ ...job, status: "saved" });
-            localStorage.setItem("jobclaw_saved", JSON.stringify(savedList));
+            localStorage.setItem("jobclaw_saved", JSON.stringify([...savedList, { ...job, status: "saved" }]));
         }
         setSaved(!saved);
     };
 
     if (!job) {
         return (
-            <div className="min-h-screen">
+            <div className="page-shell">
                 <TopNav />
-                <div className="max-w-3xl mx-auto px-6 py-20 text-center">
-                    <div className="w-16 h-16 rounded-full bg-surface-2 mx-auto mb-4 animate-pulse" />
-                    <div className="h-8 bg-surface-2 rounded-lg w-64 mx-auto mb-3 animate-pulse" />
-                    <div className="h-5 bg-surface-2 rounded w-48 mx-auto animate-pulse" />
+                <div className="mx-auto max-w-4xl px-6 py-16">
+                    <div className="nori-panel p-8">
+                        <div className="mb-6 h-16 w-16 animate-pulse rounded-full bg-surface-2" />
+                        <div className="mb-3 h-9 w-2/3 animate-pulse rounded-xl bg-surface-2" />
+                        <div className="h-5 w-1/2 animate-pulse rounded-xl bg-surface-2" />
+                    </div>
                 </div>
             </div>
         );
     }
 
-    const salary = formatSalary(job.salary_min, job.salary_max);
-    let category = null;
-    try { const kw = JSON.parse(job.keywords_matched || "[]"); category = kw[0]; } catch { }
+    const company = displayCompany(job);
+    const title = displayTitle(job);
+    let category = "";
+    try {
+        const kw = JSON.parse(job.keywords_matched || "[]");
+        category = kw[0] || "";
+    } catch {
+        category = "";
+    }
 
     return (
-        <div className="min-h-screen">
+        <div className="page-shell">
             <TopNav />
 
-            <div className="max-w-3xl mx-auto px-6 py-8">
+            <main className="mx-auto max-w-5xl px-5 py-8 sm:px-6">
                 <button
                     onClick={() => router.back()}
-                    className="flex items-center gap-2 text-text-secondary hover:text-text-primary text-sm mb-8 transition-colors"
+                    className="mb-6 inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-text-secondary shadow-card transition hover:text-ink"
                 >
-                    <ArrowLeft className="w-4 h-4" />
-                    Back to Jobs
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to jobs
                 </button>
 
-                {/* Header */}
-                <div className="flex items-start gap-5 mb-8 animate-fade-in">
-                    <CompanyLogo company={job.company} size="lg" />
-                    <div className="flex-1">
-                        <p className="text-sm text-text-secondary mb-1">{job.company}</p>
-                        <h1 className="text-3xl font-bold text-text-primary tracking-tight mb-3">{job.title}</h1>
-
-                        <div className="flex flex-wrap gap-3">
-                            {job.location && (
-                                <div className="flex items-center gap-1.5 pill-dark">
-                                    <MapPin className="w-3.5 h-3.5" /> {job.location}
-                                </div>
-                            )}
-                            {salary && (
-                                <div className="flex items-center gap-1.5 pill-dark">
-                                    <DollarSign className="w-3.5 h-3.5" /> {salary}
-                                </div>
-                            )}
-                            {job.date_posted && (
-                                <div className="flex items-center gap-1.5 pill-dark">
-                                    <Calendar className="w-3.5 h-3.5" /> {job.date_posted}
-                                </div>
-                            )}
-                            {job.source_ats && (
-                                <div className="flex items-center gap-1.5 pill-dark">
-                                    <Link2 className="w-3.5 h-3.5" /> {job.source_ats}
-                                </div>
-                            )}
-                            {category && (
-                                <div className="flex items-center gap-1.5 pill-accent">
-                                    <Briefcase className="w-3.5 h-3.5" /> {category}
-                                </div>
-                            )}
+                <section className="nori-panel p-6 sm:p-8">
+                    <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="flex gap-5">
+                            <CompanyLogo company={company} size="lg" />
+                            <div>
+                                <p className="mb-2 text-sm font-black text-text-secondary">{company}</p>
+                                <h1 className="max-w-3xl text-4xl font-black leading-[1.03] tracking-[-0.06em] text-ink sm:text-5xl">
+                                    {title}
+                                </h1>
+                            </div>
+                        </div>
+                        <div className="flex shrink-0 flex-col gap-2 sm:flex-row lg:flex-col">
+                            <a href={job.url} target="_blank" rel="noopener noreferrer" className="btn-primary gap-2 px-6">
+                                Apply now
+                                <ExternalLink className="h-4 w-4" />
+                            </a>
+                            <button onClick={toggleSave} className="btn-outline gap-2">
+                                {saved ? <BookmarkCheck className="h-4 w-4" /> : <BookmarkPlus className="h-4 w-4" />}
+                                {saved ? "Saved" : "Save job"}
+                            </button>
                         </div>
                     </div>
-                </div>
 
-                {/* CTA */}
-                <div className="flex gap-3 mb-10 animate-slide-up">
-                    <a href={job.url} target="_blank" rel="noopener noreferrer" className="btn-primary text-base px-8 py-3">
-                        Apply Now →
-                    </a>
-                    <button onClick={toggleSave} className="btn-outline flex items-center gap-2">
-                        {saved ? <BookmarkCheck className="w-4 h-4" /> : <BookmarkPlus className="w-4 h-4" />}
-                        {saved ? "Saved" : "Save Job"}
-                    </button>
-                </div>
+                    <div className="mt-8 flex flex-wrap gap-2">
+                        {job.location && (
+                            <span className="pill pill-white gap-2">
+                                <MapPin className="h-4 w-4" />
+                                {job.location}
+                            </span>
+                        )}
+                        {job.date_posted && (
+                            <span className="pill pill-white gap-2">
+                                <CalendarDays className="h-4 w-4" />
+                                {job.date_posted}
+                            </span>
+                        )}
+                        {job.source_ats && (
+                            <span className="pill pill-white gap-2">
+                                <Link2 className="h-4 w-4" />
+                                {sourceLabel(job.source_ats)}
+                            </span>
+                        )}
+                        {category && (
+                            <span className="pill pill-accent gap-2">
+                                <BriefcaseBusiness className="h-4 w-4" />
+                                {category}
+                            </span>
+                        )}
+                    </div>
+                </section>
 
-                {/* Description */}
                 {job.description && (
-                    <div className="mb-12 animate-fade-in">
-                        <h2 className="text-lg font-bold text-text-primary mb-4">About this Role</h2>
-                        <div className="bg-white border border-border rounded-xl p-6">
-                            <p className="text-text-secondary leading-relaxed whitespace-pre-line">{job.description}</p>
+                    <section className="mt-6 nori-panel p-6 sm:p-8">
+                        <h2 className="mb-4 text-xl font-black tracking-[-0.04em] text-ink">About this role</h2>
+                        <div className="whitespace-pre-line text-sm font-medium leading-7 text-text-secondary sm:text-base">
+                            {job.description}
                         </div>
-                    </div>
+                    </section>
                 )}
 
-                {/* Related jobs */}
-                {related.length > 0 && (
-                    <div className="animate-slide-up">
-                        <h2 className="text-lg font-bold text-text-primary mb-4">Similar Jobs</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {related.map((r, i) => (
-                                <a key={r.internal_hash || i} href={`/jobs/${r.id}`} className="block h-full">
-                                    <JobCard job={r} />
-                                </a>
+                {companyJobs.length > 0 && (
+                    <section className="mt-10">
+                        <div className="mb-4 flex items-end justify-between gap-4">
+                            <div>
+                                <p className="text-xs font-black uppercase tracking-[0.18em] text-text-secondary">same company</p>
+                                <h2 className="text-2xl font-black tracking-[-0.05em] text-ink">More jobs at {company}</h2>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+                            {companyJobs.map((candidate) => (
+                                <JobCard key={candidate.internal_hash} job={candidate} />
                             ))}
                         </div>
-                    </div>
+                    </section>
                 )}
-            </div>
+            </main>
         </div>
     );
 }
