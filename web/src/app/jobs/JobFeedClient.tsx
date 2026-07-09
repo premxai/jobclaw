@@ -25,6 +25,7 @@ const LIMIT = 12;
 const WORKING_SET_LIMIT = 200;
 const WORKING_SET_PAGES = 5;
 const MIN_BOARD_COMPANY_GROUPS = LIMIT * 4;
+const DEFAULT_RECENT_HOURS = 48;
 const PENDING_APPLY_KEY = "nori_pending_apply";
 const JOB_GRID_CLASS = "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-5 2xl:grid-cols-4";
 
@@ -445,7 +446,7 @@ export default function JobFeedClient({
     const [search, setSearch] = useState(initialSearch);
     const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
     const [selectedSources, setSelectedSources] = useState<Set<string>>(new Set());
-    const [recentHours, setRecentHours] = useState<number | null>(null);
+    const [recentHours, setRecentHours] = useState<number | null>(DEFAULT_RECENT_HOURS);
     const [experienceLevel, setExperienceLevel] = useState("any");
     const [employmentType, setEmploymentType] = useState("all");
     const [page, setPage] = useState(1);
@@ -524,7 +525,7 @@ export default function JobFeedClient({
     const loadJobs = useCallback(async () => {
         setLoading(true);
         if (previewLocked) {
-            const data = await fetchJobs({ page: 1, limit: WORKING_SET_LIMIT });
+            const data = await fetchJobs({ page: 1, limit: WORKING_SET_LIMIT, recentHours: recentHours ?? undefined });
             const filtered = filterBoardJobs(data.jobs);
             setJobs(filtered.slice(0, LIMIT));
             setTotal(groupCompanyJobs(filtered.slice(0, LIMIT)).length);
@@ -659,7 +660,7 @@ export default function JobFeedClient({
     const clearFilters = () => {
         setSelectedCategories(new Set());
         setSelectedSources(new Set());
-        setRecentHours(null);
+        setRecentHours(DEFAULT_RECENT_HOURS);
         setExperienceLevel("any");
         setEmploymentType("all");
         setPage(1);
