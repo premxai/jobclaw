@@ -62,28 +62,36 @@ function JobNote({ job }: { job: (typeof jobs)[number] }) {
     );
 
   return (
-    <article
-      className={`relative h-[300px] rounded-lg border border-[#E5D2A8] bg-[#FFF7E5] p-7 shadow-[0_16px_28px_rgba(70,45,16,0.14),inset_0_1px_0_rgba(255,255,255,0.8)] [clip-path:polygon(0_2%,100%_0,98%_97%,82%_99%,68%_97%,53%_100%,36%_98%,18%_100%,2%_97%)] ${job.rotate}`}
-      style={paperBackground}
-    >
-      <div className={`mb-[22px] grid h-12 w-12 place-items-center rounded-xl shadow-sm ${job.tone}`}>{logo}</div>
-      <h3 className="font-serif text-[28px] font-bold leading-[1.05] tracking-[-0.035em] text-[#1F281B]">{job.company}</h3>
-      <p className="mt-1.5 min-h-[44px] text-base font-medium leading-[1.35] text-[#30352C]">{job.title}</p>
-      <p className="mt-4 flex items-center gap-2 text-sm font-medium text-[#66705F]">
-        <span className="h-2.5 w-2.5 rounded-full bg-[#526736]" />
-        {job.found}
-      </p>
-      <div className="mt-[18px] flex flex-wrap gap-2">
-        {job.tags.map((tag) => (
-          <span key={tag} className="inline-flex h-7 items-center rounded-full border border-[#E1D2AD] bg-[#F7EED7] px-3 text-xs font-semibold text-[#4A513C]">
-            {tag}
-          </span>
-        ))}
-      </div>
-      <Link href="/jobs?preview=1" className="absolute bottom-[22px] right-6 text-[#526736]" aria-label={`Open ${job.title} at ${job.company}`}>
-        <ArrowRight className="h-5 w-5" />
-      </Link>
-    </article>
+    <div className={`relative h-[300px] ${job.rotate}`}>
+      <span
+        aria-hidden="true"
+        className="absolute inset-1 translate-x-2 translate-y-2 rounded-lg border border-[#D7BF8D] bg-[#F1DFC0] shadow-[0_18px_28px_rgba(70,45,16,0.18)] [clip-path:polygon(0_3%,99%_0,100%_96%,83%_99%,66%_97%,50%_100%,34%_98%,17%_100%,1%_96%)]"
+        style={paperBackground}
+      />
+      <article
+        className="relative h-full rounded-lg border border-[#D0B678] bg-[#FFF7E5] p-7 shadow-[0_18px_32px_rgba(70,45,16,0.18),0_0_0_1px_rgba(255,255,255,0.72)_inset,inset_0_-12px_24px_rgba(199,154,67,0.05)] [clip-path:polygon(0_2%,100%_0,99%_96%,82%_99%,68%_97%,53%_100%,36%_98%,18%_100%,1%_96%)]"
+        style={paperBackground}
+      >
+        <span aria-hidden="true" className="pointer-events-none absolute inset-[7px] rounded-md border border-[#E8D8B4]/80 [clip-path:polygon(0_2%,100%_0,99%_96%,82%_99%,68%_97%,53%_100%,36%_98%,18%_100%,1%_96%)]" />
+        <div className={`mb-[22px] grid h-12 w-12 place-items-center rounded-xl shadow-sm ${job.tone}`}>{logo}</div>
+        <h3 className="font-serif text-[28px] font-bold leading-[1.05] tracking-[-0.035em] text-[#1F281B]">{job.company}</h3>
+        <p className="mt-1.5 min-h-[44px] text-base font-medium leading-[1.35] text-[#30352C]">{job.title}</p>
+        <p className="mt-4 flex items-center gap-2 text-sm font-medium text-[#66705F]">
+          <span className="h-2.5 w-2.5 rounded-full bg-[#526736]" />
+          {job.found}
+        </p>
+        <div className="mt-[18px] flex flex-wrap gap-2">
+          {job.tags.map((tag) => (
+            <span key={tag} className="inline-flex h-7 items-center rounded-full border border-[#E1D2AD] bg-[#F7EED7] px-3 text-xs font-semibold text-[#4A513C]">
+              {tag}
+            </span>
+          ))}
+        </div>
+        <Link href="/jobs?preview=1" className="absolute bottom-[22px] right-6 text-[#526736]" aria-label={`Open ${job.title} at ${job.company}`}>
+          <ArrowRight className="h-5 w-5" />
+        </Link>
+      </article>
+    </div>
   );
 }
 
