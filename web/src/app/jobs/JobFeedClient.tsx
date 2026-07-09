@@ -13,6 +13,7 @@ import { FILTER_CATEGORIES } from "@/components/SearchFilterBar";
 import { fetchJobs, fetchMatchedJobs } from "@/lib/api";
 import { displayCompany, displayTitle, companySlug } from "@/lib/job-display";
 import { isUsLocation } from "@/lib/location-filters";
+import { useSavedJobsStorageKey } from "@/lib/use-saved-jobs-storage-key";
 
 export type SortMode = "recency" | "relevance";
 export const MIN_RELEVANCE_QUERY_LENGTH = 3;
@@ -424,6 +425,7 @@ export default function JobFeedClient({
     const [showLockPrompt, setShowLockPrompt] = useState(false);
     const [pendingAppliedJob, setPendingAppliedJob] = useState<Job | null>(null);
     const [alreadyAppliedJob, setAlreadyAppliedJob] = useState<Job | null>(null);
+    const savedJobsStorageKey = useSavedJobsStorageKey();
     const isRelevanceMode = sortMode === "relevance" && search.trim().length >= MIN_RELEVANCE_QUERY_LENGTH;
     const categoryValue = selectedCategories.size === 1 ? Array.from(selectedCategories)[0] : "";
     const locationMode = "us";
@@ -437,7 +439,7 @@ export default function JobFeedClient({
     }, [search, sortMode]);
 
     useEffect(() => {
-        const saved = localStorage.getItem("jobclaw_saved");
+        const saved = localStorage.getItem(savedJobsStorageKey);
         if (saved) {
             try {
                 const parsed = JSON.parse(saved) as SavedJobRef[];
@@ -448,8 +450,10 @@ export default function JobFeedClient({
                     }, {}),
                 );
             } catch {}
+        } else {
+            setTrackedStatuses({});
         }
-    }, []);
+    }, [savedJobsStorageKey]);
 
     useEffect(() => {
         const readPendingApply = () => {
@@ -543,14 +547,14 @@ export default function JobFeedClient({
             setShowLockPrompt(true);
             return;
         }
-        const saved = localStorage.getItem("jobclaw_saved");
+        const saved = localStorage.getItem(savedJobsStorageKey);
         let arr: Job[] = [];
         try {
             arr = JSON.parse(saved || "[]");
         } catch {}
         const exists = arr.find((j) => j.internal_hash === job.internal_hash);
         arr = exists ? arr.filter((j) => j.internal_hash !== job.internal_hash) : [...arr, { ...job, status: "saved", updatedAt: new Date().toISOString() }];
-        localStorage.setItem("jobclaw_saved", JSON.stringify(arr));
+        localStorage.setItem(savedJobsStorageKey, JSON.stringify(arr));
         setTrackedStatuses(
             arr.reduce<Record<string, string>>((acc, savedJob) => {
                 acc[savedJob.internal_hash] = (savedJob.status || "saved").toLowerCase();
@@ -560,7 +564,7 @@ export default function JobFeedClient({
     };
 
     const markJobApplied = (job: Job) => {
-        const saved = localStorage.getItem("jobclaw_saved");
+        const saved = localStorage.getItem(savedJobsStorageKey);
         let arr: Job[] = [];
         try {
             arr = JSON.parse(saved || "[]");
@@ -569,7 +573,7 @@ export default function JobFeedClient({
         arr = exists
             ? arr.map((j) => (j.internal_hash === job.internal_hash ? { ...j, status: "applied", updatedAt: new Date().toISOString() } : j))
             : [...arr, { ...job, status: "applied", addedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }];
-        localStorage.setItem("jobclaw_saved", JSON.stringify(arr));
+        localStorage.setItem(savedJobsStorageKey, JSON.stringify(arr));
         setTrackedStatuses(
             arr.reduce<Record<string, string>>((acc, savedJob) => {
                 acc[savedJob.internal_hash] = (savedJob.status || "saved").toLowerCase();
@@ -579,13 +583,13 @@ export default function JobFeedClient({
     };
 
     const removeJobFromApplied = (job: Job) => {
-        const saved = localStorage.getItem("jobclaw_saved");
+        const saved = localStorage.getItem(savedJobsStorageKey);
         let arr: Job[] = [];
         try {
             arr = JSON.parse(saved || "[]");
         } catch {}
         arr = arr.map((savedJob) => (savedJob.internal_hash === job.internal_hash ? { ...savedJob, status: "saved", updatedAt: new Date().toISOString() } : savedJob));
-        localStorage.setItem("jobclaw_saved", JSON.stringify(arr));
+        localStorage.setItem(savedJobsStorageKey, JSON.stringify(arr));
         setTrackedStatuses(
             arr.reduce<Record<string, string>>((acc, savedJob) => {
                 acc[savedJob.internal_hash] = (savedJob.status || "saved").toLowerCase();

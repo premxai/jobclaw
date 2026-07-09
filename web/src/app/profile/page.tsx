@@ -4,9 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Bookmark, BriefcaseBusiness, Calendar, Edit3, FileText, MapPin, Target, Users, XCircle } from "lucide-react";
-import AuthPanel from "@/components/auth/AuthPanel";
 import NoriAppSidebar from "@/components/NoriAppSidebar";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
+import { useSavedJobsStorageKey } from "@/lib/use-saved-jobs-storage-key";
 
 interface TrackedRole {
     status?: string | null;
@@ -235,15 +235,18 @@ export default function ProfilePage() {
     const [profile, setProfile] = useState<ProfileInfo>(defaultProfile);
     const [editingProfile, setEditingProfile] = useState(false);
     const supabase = createBrowserSupabaseClient();
+    const savedJobsStorageKey = useSavedJobsStorageKey();
 
     useEffect(() => {
         try {
-            const parsed = JSON.parse(localStorage.getItem("jobclaw_saved") || "[]") as TrackedRole[];
+            const parsed = JSON.parse(localStorage.getItem(savedJobsStorageKey) || "[]") as TrackedRole[];
             setTrackedRoles(Array.isArray(parsed) ? parsed : []);
         } catch {
             setTrackedRoles([]);
         }
+    }, [savedJobsStorageKey]);
 
+    useEffect(() => {
         try {
             const savedProfile = JSON.parse(localStorage.getItem("nori_profile") || "null") as ProfileInfo | null;
             if (savedProfile) setProfile({ ...defaultProfile, ...savedProfile });
@@ -325,10 +328,6 @@ export default function ProfilePage() {
                             Browse jobs
                             <ArrowRight className="h-5 w-5" />
                         </Link>
-                    </div>
-
-                    <div className="mb-5">
-                        <AuthPanel />
                     </div>
 
                     <section className="relative overflow-hidden rounded-[16px] border border-[#E7D7B7] bg-white p-6 shadow-[0_10px_24px_rgba(44,30,12,0.07)] sm:p-7">

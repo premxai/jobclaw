@@ -5,6 +5,7 @@ import Link from "next/link";
 import NoriAppSidebar from "@/components/NoriAppSidebar";
 import JobCard, { Job } from "@/components/JobCard";
 import { ArrowRight, Bookmark, ExternalLink } from "lucide-react";
+import { useSavedJobsStorageKey } from "@/lib/use-saved-jobs-storage-key";
 
 interface SavedRole extends Job {
     status?: string | null;
@@ -13,20 +14,21 @@ interface SavedRole extends Job {
 
 export default function SavedRolesPage() {
     const [roles, setRoles] = useState<SavedRole[]>([]);
+    const savedJobsStorageKey = useSavedJobsStorageKey();
 
     useEffect(() => {
         try {
-            const parsed = JSON.parse(localStorage.getItem("jobclaw_saved") || "[]") as SavedRole[];
+            const parsed = JSON.parse(localStorage.getItem(savedJobsStorageKey) || "[]") as SavedRole[];
             setRoles(Array.isArray(parsed) ? parsed : []);
         } catch {
             setRoles([]);
         }
-    }, []);
+    }, [savedJobsStorageKey]);
 
     const removeRole = (hash: string) => {
         const updated = roles.filter((role) => role.internal_hash !== hash);
         setRoles(updated);
-        localStorage.setItem("jobclaw_saved", JSON.stringify(updated));
+        localStorage.setItem(savedJobsStorageKey, JSON.stringify(updated));
     };
 
     return (

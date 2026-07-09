@@ -101,7 +101,6 @@ export default function FeedbackButton() {
                         <div className="mb-4 flex items-center justify-between">
                             <div>
                                 <h2 className="font-serif text-2xl font-bold tracking-[-0.04em] text-[#12302A]">Send feedback</h2>
-                                <p className="mt-1 text-sm font-medium text-[#5F665C]">Tell us what felt off. It goes straight to Prem.</p>
                             </div>
                             <button type="button" onClick={closeFeedback} className="grid h-9 w-9 place-items-center rounded-xl text-[#526736] hover:bg-[#EEF1DD]" aria-label="Close feedback">
                                 <X className="h-5 w-5" />

@@ -7,6 +7,7 @@ import { ArrowRight, CheckCircle2, Plus, X } from "lucide-react";
 import NoriAppSidebar from "@/components/NoriAppSidebar";
 import { Job } from "@/components/JobCard";
 import { displayCompany, displayTitle } from "@/lib/job-display";
+import { useSavedJobsStorageKey } from "@/lib/use-saved-jobs-storage-key";
 
 const COLUMNS = [
     { id: "saved", label: "Saved", tone: "bg-[#EEF1DD] text-[#526736]" },
@@ -135,10 +136,11 @@ export default function TrackerPage() {
     const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState<NewRoleForm>(initialForm);
+    const savedJobsStorageKey = useSavedJobsStorageKey();
 
     useEffect(() => {
         try {
-            const parsed = JSON.parse(localStorage.getItem("jobclaw_saved") || "[]") as TrackedJob[];
+            const parsed = JSON.parse(localStorage.getItem(savedJobsStorageKey) || "[]") as TrackedJob[];
             setJobs(
                 Array.isArray(parsed)
                     ? parsed.map((job) => ({
@@ -152,12 +154,15 @@ export default function TrackerPage() {
         } catch {
             setJobs([]);
         }
-    }, []);
+    }, [savedJobsStorageKey]);
 
-    const persist = useCallback((updatedJobs: TrackedJob[]) => {
-        setJobs(updatedJobs);
-        localStorage.setItem("jobclaw_saved", JSON.stringify(updatedJobs));
-    }, []);
+    const persist = useCallback(
+        (updatedJobs: TrackedJob[]) => {
+            setJobs(updatedJobs);
+            localStorage.setItem(savedJobsStorageKey, JSON.stringify(updatedJobs));
+        },
+        [savedJobsStorageKey],
+    );
 
     const getColumnJobs = (columnId: string) => jobs.filter((job) => normalizeStatus(job.status) === columnId);
     const moveJob = (hash: string, status: string) => persist(jobs.map((job) => (job.internal_hash === hash ? { ...job, status, updatedAt: new Date().toISOString() } : job)));
