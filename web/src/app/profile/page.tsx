@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Bookmark, BriefcaseBusiness, Calendar, Edit3, FileText, MapPin, Target, Users, XCircle } from "lucide-react";
 import NoriAppSidebar from "@/components/NoriAppSidebar";
@@ -22,7 +23,6 @@ interface ProfileInfo {
     name: string;
     location: string;
     role: string;
-    image: string;
 }
 
 const emptyPipeline: PipelineCounts = {
@@ -38,7 +38,6 @@ const defaultProfile: ProfileInfo = {
     name: "Alex Chen",
     location: "San Francisco, CA",
     role: "Senior Product Designer",
-    image: "",
 };
 
 function getAppliedTotal(counts: PipelineCounts) {
@@ -67,26 +66,8 @@ function ProfileAvatar({ profile }: { profile: ProfileInfo }) {
         .toUpperCase();
 
     return (
-        <div className="grid h-[104px] w-[104px] shrink-0 place-items-center overflow-hidden rounded-full bg-[#EEF1DD] shadow-[inset_0_0_0_1px_rgba(82,103,54,0.10)] xl:h-[118px] xl:w-[118px]">
-            {profile.image ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={profile.image} alt="" className="h-full w-full object-cover" />
-            ) : (
-                <svg viewBox="0 0 140 140" aria-hidden="true" className="h-full w-full">
-                    <defs>
-                        <radialGradient id="profileGlow" cx="48%" cy="22%" r="75%">
-                            <stop offset="0%" stopColor="#8EA66C" />
-                            <stop offset="100%" stopColor="#2F4A1D" />
-                        </radialGradient>
-                    </defs>
-                    <rect width="140" height="140" fill="#EEF1DD" />
-                    <circle cx="70" cy="50" r="24" fill="url(#profileGlow)" />
-                    <path d="M29 124c5-33 22-50 41-50s36 17 41 50" fill="url(#profileGlow)" />
-                    <text x="70" y="131" textAnchor="middle" fontSize="18" fontWeight="800" fill="#FFF9EC">
-                        {initials}
-                    </text>
-                </svg>
-            )}
+        <div className="grid h-[104px] w-[104px] shrink-0 place-items-center rounded-full bg-[radial-gradient(circle_at_35%_25%,#8EA66C_0%,#496B2D_48%,#203D18_100%)] font-serif text-[34px] font-bold tracking-[-0.06em] text-[#FFF9EC] shadow-[inset_0_0_0_10px_rgba(238,241,221,0.82),0_12px_28px_rgba(47,74,29,0.18)] xl:h-[118px] xl:w-[118px] xl:text-[38px]">
+            {initials || "AC"}
         </div>
     );
 }
@@ -122,7 +103,6 @@ function EditProfileDialog({
                     <input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="Name" className="h-12 rounded-xl border border-[#D8C9A7] bg-white px-4 text-sm" />
                     <input value={draft.role} onChange={(event) => setDraft({ ...draft, role: event.target.value })} placeholder="Role or desired role" className="h-12 rounded-xl border border-[#D8C9A7] bg-white px-4 text-sm" />
                     <input value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} placeholder="Location" className="h-12 rounded-xl border border-[#D8C9A7] bg-white px-4 text-sm" />
-                    <input value={draft.image} onChange={(event) => setDraft({ ...draft, image: event.target.value })} placeholder="Image URL" className="h-12 rounded-xl border border-[#D8C9A7] bg-white px-4 text-sm" />
                 </div>
                 <button type="submit" className="mt-5 h-12 rounded-xl bg-[#123C24] px-5 text-sm font-bold text-white">
                     Save profile
@@ -290,7 +270,6 @@ export default function ProfilePage() {
                             name: updatedProfile.name.trim() || defaultProfile.name,
                             location: updatedProfile.location.trim() || defaultProfile.location,
                             role: updatedProfile.role.trim() || defaultProfile.role,
-                            image: updatedProfile.image.trim(),
                         };
                         setProfile(cleanProfile);
                         localStorage.setItem("nori_profile", JSON.stringify(cleanProfile));
@@ -314,16 +293,6 @@ export default function ProfilePage() {
                     </div>
 
                     <section className="relative overflow-hidden rounded-[16px] border border-[#E7D7B7] bg-white p-6 shadow-[0_10px_24px_rgba(44,30,12,0.07)] sm:p-7">
-                        <div className="pointer-events-none absolute bottom-0 right-0 h-36 w-40 opacity-30">
-                            <svg viewBox="0 0 180 180" className="h-full w-full" aria-hidden="true">
-                                <g fill="none" stroke="#526736" strokeWidth="1.5" opacity="0.55">
-                                    <path d="M124 174C125 124 142 82 168 28" />
-                                    <path d="M126 144c-18-16-28-30-28-44 19 4 31 18 28 44Z" />
-                                    <path d="M141 103c-17-14-25-26-24-40 18 4 28 16 24 40Z" />
-                                    <path d="M155 64c-14-12-20-23-18-34 14 4 22 14 18 34Z" />
-                                </g>
-                            </svg>
-                        </div>
                         <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                             <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
                                 <ProfileAvatar profile={profile} />
@@ -336,10 +305,15 @@ export default function ProfilePage() {
                                     </p>
                                 </div>
                             </div>
-                            <button type="button" onClick={() => setEditingProfile(true)} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#D8C9A7] bg-white px-4 text-sm font-bold text-[#123C24] transition hover:bg-[#EEF1DD]">
-                                <Edit3 className="h-4 w-4" />
-                                Edit profile
-                            </button>
+                            <div className="relative z-10 flex flex-col items-end gap-3">
+                                <button type="button" onClick={() => setEditingProfile(true)} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#D8C9A7] bg-white px-4 text-sm font-bold text-[#123C24] transition hover:bg-[#EEF1DD]">
+                                    <Edit3 className="h-4 w-4" />
+                                    Edit profile
+                                </button>
+                                <span className="pointer-events-none relative hidden h-20 w-24 opacity-45 sm:block">
+                                    <Image src="/nori-assets/dried-flowers.png" alt="" aria-hidden="true" fill sizes="96px" className="object-contain object-right-top" />
+                                </span>
+                            </div>
                         </div>
                     </section>
 
