@@ -60,7 +60,7 @@ export default function UserMenu() {
                             Logout
                         </button>
                     ) : (
-                        <Link href="/profile?mode=login" role="menuitem" className="flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-[#1F281B] hover:bg-[#F7EED7]">
+                        <Link href="/login" role="menuitem" className="flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-[#1F281B] hover:bg-[#F7EED7]">
                             <LogOut className="h-4 w-4 text-[#526736]" />
                             Login
                         </Link>

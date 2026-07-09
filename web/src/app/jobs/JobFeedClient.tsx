@@ -135,10 +135,10 @@ function LockPrompt({ onClose }: { onClose: () => void }) {
                     Login or sign up to use filters, save roles, track applications, and browse beyond the first page.
                 </p>
                 <div className="mt-6 flex justify-center gap-3">
-                    <Link href="/profile" className="inline-flex h-11 items-center rounded-xl bg-[#526736] px-5 text-sm font-bold text-white">
+                    <Link href="/login" className="inline-flex h-11 items-center rounded-xl bg-[#526736] px-5 text-sm font-bold text-white">
                         Login
                     </Link>
-                    <Link href="/profile" className="inline-flex h-11 items-center rounded-xl border border-[#D8C9A7] px-5 text-sm font-bold text-[#1F281B]">
+                    <Link href="/signup" className="inline-flex h-11 items-center rounded-xl border border-[#D8C9A7] px-5 text-sm font-bold text-[#1F281B]">
                         Sign up
                     </Link>
                     <button type="button" onClick={onClose} className="inline-flex h-11 items-center rounded-xl px-3 text-sm font-bold text-[#5F665C]">
