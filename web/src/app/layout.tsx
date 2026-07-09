@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Inter } from "next/font/google";
 import localFont from "next/font/local";
+import FeedbackButton from "@/components/FeedbackButton";
 import "./globals.css";
 
 const geistSans = localFont({
@@ -62,7 +63,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${fraunces.variable} antialiased`}>{children}</body>
+      <body className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} ${fraunces.variable} antialiased`}>
+        {children}
+        <FeedbackButton />
+      </body>
     </html>
   );
 }

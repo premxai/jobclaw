@@ -4,9 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarDays, ChevronDown, Clock3, Grid2X2, LayoutDashboard, LogOut, MapPin, Search, UserCircle } from "lucide-react";
+import { CalendarDays, ChevronDown, Clock3, Grid2X2, LayoutDashboard, MapPin, Search } from "lucide-react";
 import JobCard, { Job } from "@/components/JobCard";
 import NoriAppSidebar from "@/components/NoriAppSidebar";
+import UserMenu from "@/components/auth/UserMenu";
 import NoriMark from "@/components/landing/NoriMark";
 import { FILTER_CATEGORIES } from "@/components/SearchFilterBar";
 import { fetchJobs, fetchMatchedJobs } from "@/lib/api";
@@ -232,34 +233,6 @@ function LocalDateTime() {
     );
 }
 
-function ProfileMenu() {
-    const [open, setOpen] = useState(false);
-
-    return (
-        <div className="relative order-2 block sm:order-3">
-            <button type="button" onClick={() => setOpen((value) => !value)} className="flex items-center gap-3" aria-expanded={open} aria-haspopup="menu">
-                <span className="grid h-12 w-12 place-items-center rounded-full bg-[#D9B08C] text-sm font-black text-[#1F281B] shadow-sm">AC</span>
-                <span className="hidden leading-tight sm:block">
-                    <span className="block text-[15px] font-bold text-[#1F281B]">Alex Chen</span>
-                </span>
-                <ChevronDown className={`h-4 w-4 text-[#526736] transition ${open ? "rotate-180" : ""}`} />
-            </button>
-            {open && (
-                <div role="menu" className="absolute right-0 top-[calc(100%+14px)] w-48 rounded-2xl border border-[#E7D7B7] bg-[#FFF9EC] p-2 shadow-[0_18px_42px_rgba(70,45,16,0.16)]">
-                    <Link href="/profile" role="menuitem" className="flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-[#1F281B] hover:bg-[#F7EED7]">
-                        <UserCircle className="h-4 w-4 text-[#526736]" />
-                        Profile
-                    </Link>
-                    <Link href="/profile" role="menuitem" className="flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-[#1F281B] hover:bg-[#F7EED7]">
-                        <LogOut className="h-4 w-4 text-[#526736]" />
-                        Logout
-                    </Link>
-                </div>
-            )}
-        </div>
-    );
-}
-
 function TopAppHeader({ search, onSearchChange, locked, onLockedAction }: { search: string; onSearchChange: (value: string) => void; locked?: boolean; onLockedAction?: () => void }) {
     return (
         <header className="sticky top-0 z-20 flex min-h-[84px] flex-wrap items-center gap-3 border-b border-[#E7D7B7] bg-[#FFF9EC]/82 px-3 py-3 backdrop-blur-md sm:min-h-24 sm:gap-4 sm:px-8 lg:ml-[280px]">
@@ -287,7 +260,7 @@ function TopAppHeader({ search, onSearchChange, locked, onLockedAction }: { sear
 
             <div className="order-3 hidden h-11 w-px bg-[#E7D7B7] md:block" />
 
-            <ProfileMenu />
+            <UserMenu />
         </header>
     );
 }

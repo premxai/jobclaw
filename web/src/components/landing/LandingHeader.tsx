@@ -10,10 +10,10 @@ export default function LandingHeader() {
       </Link>
 
       <div className="flex items-center gap-2 sm:gap-4">
-        <Link href="/profile" className="hidden h-11 items-center px-[18px] text-sm font-semibold text-[#1F281B] transition hover:text-[#526736] sm:inline-flex">
+        <Link href="/profile?mode=login" className="hidden h-11 items-center px-[18px] text-sm font-semibold text-[#1F281B] transition hover:text-[#526736] sm:inline-flex">
           Login
         </Link>
-        <Link href="/profile" className="inline-flex h-[46px] items-center rounded-[14px] bg-[#526736] px-[26px] text-sm font-bold text-[#FFF9EC] shadow-[0_8px_18px_rgba(38,58,34,0.18)] transition hover:bg-[#43552C]">
+        <Link href="/profile?mode=signup" className="inline-flex h-[46px] items-center rounded-[14px] bg-[#526736] px-[26px] text-sm font-bold text-[#FFF9EC] shadow-[0_8px_18px_rgba(38,58,34,0.18)] transition hover:bg-[#43552C]">
           Sign up
         </Link>
       </div>

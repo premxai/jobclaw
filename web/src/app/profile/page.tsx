@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Bookmark, BriefcaseBusiness, Calendar, Edit3, FileText, MapPin, Target, Users, XCircle } from "lucide-react";
+import AuthPanel from "@/components/auth/AuthPanel";
 import NoriAppSidebar from "@/components/NoriAppSidebar";
+import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 interface TrackedRole {
     status?: string | null;
@@ -232,6 +234,7 @@ export default function ProfilePage() {
     const [trackedRoles, setTrackedRoles] = useState<TrackedRole[]>([]);
     const [profile, setProfile] = useState<ProfileInfo>(defaultProfile);
     const [editingProfile, setEditingProfile] = useState(false);
+    const supabase = createBrowserSupabaseClient();
 
     useEffect(() => {
         try {
@@ -245,7 +248,32 @@ export default function ProfilePage() {
             const savedProfile = JSON.parse(localStorage.getItem("nori_profile") || "null") as ProfileInfo | null;
             if (savedProfile) setProfile({ ...defaultProfile, ...savedProfile });
         } catch {}
-    }, []);
+
+        if (!supabase) return;
+        supabase.auth.getUser().then(({ data }) => {
+            if (!data.user) return;
+            const metadata = data.user.user_metadata || {};
+            setProfile((current) => ({
+                ...current,
+                name: metadata.full_name || data.user.email?.split("@")[0] || current.name,
+                role: metadata.role || current.role,
+                location: metadata.location || current.location,
+            }));
+        });
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (!session?.user) return;
+            const metadata = session.user.user_metadata || {};
+            setProfile((current) => ({
+                ...current,
+                name: metadata.full_name || session.user.email?.split("@")[0] || current.name,
+                role: metadata.role || current.role,
+                location: metadata.location || current.location,
+            }));
+        });
+        return () => subscription.unsubscribe();
+    }, [supabase]);
 
     const counts = useMemo(
         () =>
@@ -273,6 +301,13 @@ export default function ProfilePage() {
                         };
                         setProfile(cleanProfile);
                         localStorage.setItem("nori_profile", JSON.stringify(cleanProfile));
+                        void supabase?.auth.updateUser({
+                            data: {
+                                full_name: cleanProfile.name,
+                                role: cleanProfile.role,
+                                location: cleanProfile.location,
+                            },
+                        });
                         setEditingProfile(false);
                     }}
                 />
@@ -290,6 +325,10 @@ export default function ProfilePage() {
                             Browse jobs
                             <ArrowRight className="h-5 w-5" />
                         </Link>
+                    </div>
+
+                    <div className="mb-5">
+                        <AuthPanel />
                     </div>
 
                     <section className="relative overflow-hidden rounded-[16px] border border-[#E7D7B7] bg-white p-6 shadow-[0_10px_24px_rgba(44,30,12,0.07)] sm:p-7">
