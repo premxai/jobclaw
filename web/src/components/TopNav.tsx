@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bookmark, Settings, UserRound } from "lucide-react";
+import { Bookmark, UserRound } from "lucide-react";
 import BrandMark from "./BrandMark";
 import LiveJobFeed from "./LiveJobFeed";
 
@@ -10,7 +10,6 @@ const NAV_ITEMS = [
     { href: "/jobs", label: "Jobs" },
     { href: "/saved-roles", label: "Saved Roles" },
     { href: "/profile", label: "Profile" },
-    { href: "/settings", label: "Settings" },
 ];
 
 export default function TopNav() {
@@ -43,9 +42,6 @@ export default function TopNav() {
                     <Link href="/saved-roles" className="hidden items-center gap-2 rounded-xl border border-border bg-white px-3.5 py-2 text-sm font-bold text-ink shadow-card transition hover:bg-surface-2 sm:inline-flex">
                         <Bookmark className="h-4 w-4" />
                         Saved
-                    </Link>
-                    <Link href="/settings" className="hidden rounded-xl border border-border bg-white p-2.5 text-ink shadow-card transition hover:bg-surface-2 lg:inline-flex" aria-label="Settings">
-                        <Settings className="h-4 w-4" />
                     </Link>
                     <Link href="/profile" className="rounded-xl bg-ink p-2.5 text-white transition hover:bg-neutral-800" aria-label="Profile">
                         <UserRound className="h-4 w-4" />

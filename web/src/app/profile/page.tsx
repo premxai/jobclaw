@@ -1,22 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import {
-    ArrowRight,
-    Bell,
-    Calendar,
-    ChevronDown,
-    ClipboardCheck,
-    Compass,
-    Edit3,
-    MapPin,
-    Search,
-    Target,
-    Trophy,
-} from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Bookmark, BriefcaseBusiness, Calendar, Edit3, FileText, MapPin, Target, Users, XCircle } from "lucide-react";
 import NoriAppSidebar from "@/components/NoriAppSidebar";
-import NoriMark from "@/components/landing/NoriMark";
 
 interface TrackedRole {
     status?: string | null;
@@ -29,7 +16,6 @@ interface PipelineCounts {
     interview: number;
     offer: number;
     rejected: number;
-    withdrawn: number;
 }
 
 interface ProfileInfo {
@@ -46,19 +32,17 @@ const emptyPipeline: PipelineCounts = {
     interview: 0,
     offer: 0,
     rejected: 0,
-    withdrawn: 0,
 };
 
-const activeStages = ["applied", "oa", "interview"] as const;
 const defaultProfile: ProfileInfo = {
     name: "Alex Chen",
-    location: "San Francisco",
+    location: "San Francisco, CA",
     role: "Senior Product Designer",
     image: "",
 };
 
 function getAppliedTotal(counts: PipelineCounts) {
-    return counts.applied + counts.oa + counts.interview + counts.offer + counts.rejected + counts.withdrawn;
+    return counts.applied + counts.oa + counts.interview + counts.offer + counts.rejected;
 }
 
 function percent(value: number, total: number) {
@@ -66,8 +50,15 @@ function percent(value: number, total: number) {
     return `${Math.round((value / total) * 100)}%`;
 }
 
-function ProfileAvatar({ profile, size = "md" }: { profile: ProfileInfo; size?: "md" | "lg" }) {
-    const box = size === "lg" ? "h-[132px] w-[132px]" : "h-12 w-12";
+function normalizeStatus(status?: string | null): keyof PipelineCounts {
+    const value = (status || "saved").toLowerCase();
+    if (value === "phone_screen" || value === "onsite") return "interview";
+    if (value === "withdrawn") return "rejected";
+    if (value in emptyPipeline) return value as keyof PipelineCounts;
+    return "saved";
+}
+
+function ProfileAvatar({ profile }: { profile: ProfileInfo }) {
     const initials = profile.name
         .split(" ")
         .map((part) => part[0])
@@ -76,95 +67,27 @@ function ProfileAvatar({ profile, size = "md" }: { profile: ProfileInfo; size?: 
         .toUpperCase();
 
     return (
-        <span className={`relative grid ${box} shrink-0 place-items-center overflow-hidden rounded-full border border-[#E7D7B7] bg-[#EEF1DD] text-[#526736] shadow-sm`}>
+        <div className="grid h-[138px] w-[138px] shrink-0 place-items-center overflow-hidden rounded-full bg-[#EEF1DD] shadow-[inset_0_0_0_1px_rgba(82,103,54,0.10)]">
             {profile.image ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={profile.image} alt="" className="h-full w-full object-cover" />
             ) : (
-                <svg viewBox="0 0 120 120" aria-hidden="true" className="h-full w-full">
-                    <rect width="120" height="120" fill="#EEF1DD" />
-                    <circle cx="60" cy="44" r="22" fill="#526736" opacity="0.92" />
-                    <path d="M24 110c5-25 20-39 36-39s31 14 36 39" fill="#526736" opacity="0.92" />
-                    <text x="60" y="108" textAnchor="middle" fontSize="18" fontWeight="800" fill="#FFF9EC">
+                <svg viewBox="0 0 140 140" aria-hidden="true" className="h-full w-full">
+                    <defs>
+                        <radialGradient id="profileGlow" cx="48%" cy="22%" r="75%">
+                            <stop offset="0%" stopColor="#8EA66C" />
+                            <stop offset="100%" stopColor="#2F4A1D" />
+                        </radialGradient>
+                    </defs>
+                    <rect width="140" height="140" fill="#EEF1DD" />
+                    <circle cx="70" cy="50" r="24" fill="url(#profileGlow)" />
+                    <path d="M29 124c5-33 22-50 41-50s36 17 41 50" fill="url(#profileGlow)" />
+                    <text x="70" y="131" textAnchor="middle" fontSize="18" fontWeight="800" fill="#FFF9EC">
                         {initials}
                     </text>
                 </svg>
             )}
-        </span>
-    );
-}
-
-function ProfileHeader({ profile }: { profile: ProfileInfo }) {
-    return (
-        <header className="sticky top-0 z-20 flex min-h-[100px] items-center gap-6 border-b border-[#E7D7B7] bg-[#FFF9EC]/86 px-5 backdrop-blur-md sm:px-8 lg:ml-[280px] lg:px-11">
-            <Link href="/" className="flex items-center gap-2 lg:hidden" aria-label="Nori home">
-                <NoriMark />
-                <span className="font-serif text-3xl font-bold tracking-[-0.04em] text-[#1F281B]">Nori</span>
-            </Link>
-
-            <div className="hidden h-14 flex-1 max-w-[820px] items-center gap-4 rounded-[14px] border border-[#D8C9A7] bg-[#FFF9EC] px-[22px] shadow-[0_4px_12px_rgba(70,45,16,0.04)] sm:flex">
-                <Search className="h-[22px] w-[22px] shrink-0 text-[#0F2744]" />
-                <input
-                    placeholder="Search profile, skills, or preferences..."
-                    className="h-full min-w-0 flex-1 bg-transparent text-[15px] text-[#1F281B] placeholder:text-[#7B7F70] focus:outline-none"
-                    aria-label="Search profile, skills, or preferences"
-                />
-            </div>
-
-            <div className="ml-auto hidden items-center gap-2.5 text-[15px] font-medium text-[#1F281B] xl:flex">
-                <Calendar className="h-5 w-5" />
-                May 15, 2025
-                <span aria-hidden="true">·</span>
-                10:24 AM
-            </div>
-
-            <div className="hidden h-11 w-px bg-[#E7D7B7] xl:block" />
-
-            <Link href="/profile" className="flex items-center gap-3">
-                <ProfileAvatar profile={profile} />
-                <span className="hidden leading-tight sm:block">
-                    <span className="block text-[15px] font-bold text-[#1F281B]">{profile.name}</span>
-                </span>
-                <ChevronDown className="hidden h-4 w-4 text-[#526736] sm:block" />
-            </Link>
-        </header>
-    );
-}
-
-function Pin({ className = "" }: { className?: string }) {
-    return <span className={`absolute h-[18px] w-[18px] rounded-full bg-[#C99635] shadow-[0_4px_8px_rgba(70,45,16,0.18),inset_0_1px_2px_rgba(255,255,255,0.55)] ${className}`} />;
-}
-
-function ProfileSummaryCard({ profile, onEdit }: { profile: ProfileInfo; onEdit: () => void }) {
-    return (
-        <section className="relative min-h-[210px] rounded-2xl border border-[#E7D7B7] bg-[#FFF9EC] p-6 shadow-[0_10px_24px_rgba(70,45,16,0.08)] [background-image:linear-gradient(rgba(255,249,236,0.82),rgba(255,249,236,0.82)),url('/nori-assets/paper-texture.png')] [background-size:cover] sm:p-7">
-            <Pin className="left-1/2 top-[-8px] -translate-x-1/2" />
-            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-                <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-                    <ProfileAvatar profile={profile} size="lg" />
-                    <div>
-                        <h1 className="font-serif text-[42px] font-bold leading-none tracking-[-0.045em] text-[#1F281B]">{profile.name}</h1>
-                        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-[18px] font-medium text-[#5F665C]">
-                            <span>{profile.role}</span>
-                            <span className="inline-flex items-center gap-1.5">
-                                <MapPin className="h-4 w-4" />
-                                {profile.location}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <button
-                    type="button"
-                    onClick={onEdit}
-                    aria-label="Edit profile"
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-[#D8C9A7] bg-[#FFF9EC] px-4 text-sm font-bold text-[#1F281B] transition hover:bg-[#EEF1DD] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#526736]"
-                >
-                    <Edit3 className="h-4 w-4" />
-                    Edit profile
-                </button>
-            </div>
-        </section>
+        </div>
     );
 }
 
@@ -190,18 +113,18 @@ function EditProfileDialog({
                 onClick={(event) => event.stopPropagation()}
             >
                 <div className="mb-5 flex items-center justify-between gap-4">
-                    <h2 className="font-serif text-3xl font-bold tracking-[-0.04em] text-[#1F281B]">Edit profile</h2>
+                    <h2 className="font-serif text-3xl font-bold tracking-[-0.04em] text-[#12302A]">Edit profile</h2>
                     <button type="button" onClick={onClose} className="rounded-xl px-3 py-2 text-sm font-bold text-[#5F665C]">
                         Close
                     </button>
                 </div>
                 <div className="grid gap-3">
                     <input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="Name" className="h-12 rounded-xl border border-[#D8C9A7] bg-white px-4 text-sm" />
-                    <input value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} placeholder="Location" className="h-12 rounded-xl border border-[#D8C9A7] bg-white px-4 text-sm" />
                     <input value={draft.role} onChange={(event) => setDraft({ ...draft, role: event.target.value })} placeholder="Role or desired role" className="h-12 rounded-xl border border-[#D8C9A7] bg-white px-4 text-sm" />
+                    <input value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} placeholder="Location" className="h-12 rounded-xl border border-[#D8C9A7] bg-white px-4 text-sm" />
                     <input value={draft.image} onChange={(event) => setDraft({ ...draft, image: event.target.value })} placeholder="Image URL" className="h-12 rounded-xl border border-[#D8C9A7] bg-white px-4 text-sm" />
                 </div>
-                <button type="submit" className="mt-5 h-12 rounded-xl bg-[#526736] px-5 text-sm font-bold text-white">
+                <button type="submit" className="mt-5 h-12 rounded-xl bg-[#123C24] px-5 text-sm font-bold text-white">
                     Save profile
                 </button>
             </form>
@@ -214,141 +137,109 @@ function MetricCards({ appliedTotal }: { appliedTotal: number }) {
     const dailyProgress = Math.min(100, Math.round((appliedTotal / dailyTarget) * 100));
 
     return (
-        <div className="mt-6 grid gap-6 xl:grid-cols-2">
-            <section className="relative rounded-2xl border border-[#E7D7B7] bg-[#FFF9EC] p-6 shadow-[0_8px_18px_rgba(70,45,16,0.06)] [background-image:linear-gradient(rgba(255,249,236,0.84),rgba(255,249,236,0.84)),url('/nori-assets/paper-texture.png')] [background-size:cover]">
-                <Pin className="right-8 top-[-8px]" />
-                <div className="flex items-start justify-between gap-4">
-                    <div>
-                        <h2 className="font-serif text-2xl font-bold tracking-[-0.035em] text-[#1F281B]">Daily target</h2>
-                        <p className="mt-1 text-sm font-medium text-[#5F665C]">Applications to keep momentum.</p>
-                    </div>
-                    <Link
-                        href="/settings"
-                        aria-label="Edit daily target"
-                        className="grid min-h-11 min-w-11 place-items-center rounded-[10px] border border-[#D8C9A7] bg-[#FFF9EC] text-[#526736] transition hover:bg-[#EEF1DD] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#526736]"
-                    >
-                        <Edit3 className="h-4 w-4" />
-                    </Link>
-                </div>
-                <div className="mt-6 flex items-end justify-between gap-4">
-                    <p className="font-serif text-4xl font-bold leading-none text-[#1F281B]">
-                        {appliedTotal}<span className="text-2xl text-[#5F665C]">/{dailyTarget}</span>
-                    </p>
-                    <p className="text-sm font-bold text-[#526736]">{dailyProgress}%</p>
-                </div>
-                <div className="mt-4 h-3 overflow-hidden rounded-full bg-[#E7D7B7]">
-                    <div className="h-full rounded-full bg-[#526736]" style={{ width: `${dailyProgress}%` }} />
-                </div>
-            </section>
-
-            <section className="relative rounded-2xl border border-[#E7D7B7] bg-[#FFF9EC] p-6 shadow-[0_8px_18px_rgba(70,45,16,0.06)] [background-image:linear-gradient(rgba(255,249,236,0.84),rgba(255,249,236,0.84)),url('/nori-assets/paper-texture.png')] [background-size:cover]">
-                <Pin className="right-8 top-[-8px]" />
-                <h2 className="font-serif text-2xl font-bold tracking-[-0.035em] text-[#1F281B]">Jobs applied</h2>
-                <p className="mt-1 text-sm font-medium text-[#5F665C]">This week across saved roles and direct applies.</p>
-                <div className="mt-5 flex items-end justify-between gap-4">
-                    <p className="font-serif text-[58px] font-bold leading-none tracking-[-0.045em] text-[#1F281B]">{appliedTotal}</p>
-                    <span className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#D8C9A7] bg-[#F7EED7] px-3 py-1 text-sm font-bold text-[#526736]">
-                        <ArrowRight className="h-4 w-4 -rotate-45" />
-                        +11%
+        <section className="mt-6 grid gap-6 xl:grid-cols-2">
+            <article className="rounded-[18px] border border-[#E7D7B7] bg-white p-7 shadow-[0_14px_34px_rgba(44,30,12,0.08)]">
+                <div className="flex items-start gap-7">
+                    <span className="grid h-[98px] w-[98px] shrink-0 place-items-center rounded-full bg-[#EEF1DD] text-[#2F6B22]">
+                        <Target className="h-10 w-10" />
                     </span>
-                </div>
-            </section>
-        </div>
-    );
-}
-
-function StageBarChart({ counts }: { counts: PipelineCounts }) {
-    const appliedTotal = getAppliedTotal(counts);
-    const total = Object.values(counts).reduce((sum, value) => sum + value, 0);
-    const max = Math.max(1, ...Object.values(counts));
-    const bars = [
-        { key: "saved", label: "Saved", value: counts.saved, color: "#A5A777" },
-        { key: "applied", label: "Applied", value: counts.applied, color: "#8E9463" },
-        { key: "oa", label: "OA", value: counts.oa, color: "#C7C78B" },
-        { key: "interview", label: "Interview", value: counts.interview, color: "#E8B85B" },
-        { key: "offer", label: "Offer", value: counts.offer, color: "#708052" },
-        { key: "rejected", label: "Rejected", value: counts.rejected, color: "#D87861" },
-        { key: "withdrawn", label: "Withdrawn", value: counts.withdrawn, color: "#969184" },
-    ];
-    const ariaSummary = `Tracker status: ${counts.saved} saved, ${counts.applied} applied, ${counts.oa} OA, ${counts.interview} interview, ${counts.offer} offers, ${counts.rejected} rejected, ${counts.withdrawn} withdrawn.`;
-
-    return (
-        <div className="mt-5" role="img" aria-label={ariaSummary}>
-            <div className="grid min-h-[230px] grid-cols-7 items-end gap-3 rounded-2xl border border-[#E7D7B7] bg-[#FFF7E5]/72 p-4 sm:gap-5 sm:p-6">
-                {bars.map((bar) => {
-                    const height = `${Math.max(10, Math.round((bar.value / max) * 100))}%`;
-                    return (
-                        <div key={bar.key} className="flex h-[180px] min-w-0 flex-col items-center justify-end gap-2">
-                            <div className="text-sm font-black text-[#1F281B]">{bar.value}</div>
-                            <div className="flex h-full w-full max-w-[72px] items-end rounded-t-2xl bg-[#EFE5C9]">
-                                <div
-                                    className="w-full rounded-t-2xl shadow-[0_8px_18px_rgba(70,45,16,0.08)] transition-all"
-                                    style={{ height, backgroundColor: bar.color }}
-                                />
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <h2 className="font-serif text-2xl font-bold tracking-[-0.035em] text-[#12302A]">Daily target</h2>
+                                <p className="mt-1 text-sm font-medium text-[#5F665C]">Applications to keep momentum.</p>
                             </div>
-                            <div className="w-full truncate text-center text-[11px] font-bold text-[#5F665C] sm:text-xs">{bar.label}</div>
+                            <button type="button" className="grid h-11 w-11 place-items-center rounded-xl border border-[#D8C9A7] text-[#123C24]" aria-label="Edit daily target">
+                                <Edit3 className="h-4 w-4" />
+                            </button>
                         </div>
-                    );
-                })}
-            </div>
-            <div className="mt-4 grid gap-3 rounded-2xl border border-[#E7D7B7] bg-[#FFF9EC] p-4 sm:grid-cols-3">
-                <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#7B7F70]">All tracked</p>
-                    <p className="mt-1 font-serif text-3xl font-bold text-[#1F281B]">{total}</p>
+                        <div className="mt-6 flex items-end justify-between">
+                            <p className="font-serif text-[44px] font-bold leading-none text-[#12302A]">
+                                {appliedTotal}<span className="text-2xl text-[#1F281B]">/{dailyTarget}</span>
+                            </p>
+                            <p className="text-sm font-bold text-[#2F6B22]">{dailyProgress}%</p>
+                        </div>
+                        <div className="mt-4 h-3 overflow-hidden rounded-full bg-[#EFE8D6]">
+                            <div className="h-full rounded-full bg-[#2F6B22]" style={{ width: `${dailyProgress}%` }} />
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#7B7F70]">Applied pipeline</p>
-                    <p className="mt-1 font-serif text-3xl font-bold text-[#1F281B]">{appliedTotal}</p>
+            </article>
+
+            <article className="rounded-[18px] border border-[#E7D7B7] bg-white p-7 shadow-[0_14px_34px_rgba(44,30,12,0.08)]">
+                <div className="flex items-center gap-7">
+                    <span className="grid h-[98px] w-[98px] shrink-0 place-items-center rounded-full bg-[#EEF1DD] text-[#2F6B22]">
+                        <BriefcaseBusiness className="h-10 w-10" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                        <h2 className="font-serif text-2xl font-bold tracking-[-0.035em] text-[#12302A]">Jobs applied</h2>
+                        <p className="mt-1 text-sm font-medium text-[#5F665C]">This week across saved roles and direct applies.</p>
+                        <div className="mt-6 flex items-end justify-between gap-4">
+                            <p className="font-serif text-[58px] font-bold leading-none tracking-[-0.045em] text-[#12302A]">{appliedTotal}</p>
+                            <span className="mb-2 inline-flex items-center gap-2 rounded-xl bg-[#EEF1DD] px-4 py-2 text-sm font-bold text-[#2F6B22]">
+                                <ArrowRight className="h-4 w-4 -rotate-45" />
+                                +11%
+                            </span>
+                        </div>
+                    </div>
                 </div>
-                <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#7B7F70]">Offer rate</p>
-                    <p className="mt-1 font-serif text-3xl font-bold text-[#1F281B]">{percent(counts.offer, appliedTotal)}</p>
-                </div>
-            </div>
-        </div>
+            </article>
+        </section>
     );
 }
 
 function ApplicationStatusCard({ counts }: { counts: PipelineCounts }) {
-    const [range, setRange] = useState("This week");
     const appliedTotal = getAppliedTotal(counts);
-    const inProgress = activeStages.reduce((total, stage) => total + counts[stage], 0);
-    const summaryItems = [
-        { label: "Total applied", value: String(appliedTotal), icon: ClipboardCheck },
-        { label: "In progress", value: `${inProgress} (${percent(inProgress, appliedTotal)})`, icon: Target },
-        { label: "Converted to offer", value: `${counts.offer} (${percent(counts.offer, appliedTotal)})`, icon: Trophy },
-        { label: "Rejected", value: `${counts.rejected} (${percent(counts.rejected, appliedTotal)})`, icon: Bell },
-        { label: "Withdrawn", value: `${counts.withdrawn} (${percent(counts.withdrawn, appliedTotal)})`, icon: Compass },
+    const max = Math.max(15, ...Object.values(counts));
+    const bars = [
+        { key: "saved", label: "Saved", value: counts.saved, color: "#486D26", icon: Bookmark },
+        { key: "applied", label: "Applied", value: counts.applied, color: "#91B27F", icon: Target },
+        { key: "oa", label: "OA", value: counts.oa, color: "#6EA0BF", icon: FileText },
+        { key: "interview", label: "Interview", value: counts.interview, color: "#E8B42F", icon: Users },
+        { key: "offer", label: "Offer", value: counts.offer, color: "#50B9A3", icon: ArrowRight },
+        { key: "rejected", label: "Rejected", value: counts.rejected, color: "#E1644F", icon: XCircle },
     ];
 
     return (
-        <section className="relative mt-6 rounded-2xl border border-[#E7D7B7] bg-[#FFF9EC] px-5 py-6 shadow-[0_10px_24px_rgba(70,45,16,0.08)] [background-image:linear-gradient(rgba(255,249,236,0.84),rgba(255,249,236,0.84)),url('/nori-assets/paper-texture.png')] [background-size:cover] sm:px-8 sm:py-7">
-            <Pin className="left-1/2 top-[-8px] -translate-x-1/2" />
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <h2 className="font-serif text-[26px] font-bold tracking-[-0.035em] text-[#1F281B]">Application status</h2>
-                <button
-                    type="button"
-                    aria-label="Change date range"
-                    onClick={() => setRange((current) => (current === "This week" ? "All saved" : "This week"))}
-                    className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-[10px] border border-[#D8C9A7] bg-[#FFF9EC] px-4 text-sm font-semibold text-[#1F281B] transition hover:bg-[#EEF1DD] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#526736]"
-                >
-                    <Calendar className="h-4 w-4 text-[#526736]" />
-                    {range}
-                    <ChevronDown className="h-4 w-4" />
+        <section className="mt-6 rounded-[18px] border border-[#E7D7B7] bg-white p-7 shadow-[0_14px_34px_rgba(44,30,12,0.08)]">
+            <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <h2 className="font-serif text-[28px] font-bold tracking-[-0.035em] text-[#12302A]">Application status</h2>
+                <button type="button" className="inline-flex h-12 items-center gap-3 rounded-xl border border-[#E7D7B7] px-4 text-sm font-semibold text-[#1F281B]">
+                    <Calendar className="h-4 w-4 text-[#123C24]" />
+                    This week
                 </button>
             </div>
 
-            <StageBarChart counts={counts} />
+            <div className="relative min-h-[245px] border-b border-[#B9B2A4] pl-10">
+                {[15, 10, 5, 0].map((tick) => (
+                    <div key={tick} className="absolute left-0 right-0 flex items-center gap-4" style={{ bottom: `${(tick / max) * 100}%` }}>
+                        <span className="w-7 text-sm text-[#5F665C]">{tick}</span>
+                        <span className="h-px flex-1 border-t border-dashed border-[#E1D8C8]" />
+                    </div>
+                ))}
+                <div className="absolute inset-x-10 bottom-0 grid h-full grid-cols-6 items-end gap-7">
+                    {bars.map((bar) => (
+                        <div key={bar.key} className="relative z-10 flex min-w-0 flex-col items-center gap-3">
+                            <p className="font-serif text-2xl font-bold text-[#1F281B]">{bar.value}</p>
+                            <div className="w-full max-w-[92px] rounded-t-md shadow-[0_10px_18px_rgba(44,30,12,0.12)]" style={{ height: `${Math.max(10, Math.round((bar.value / max) * 100))}%`, minHeight: 12, backgroundColor: bar.color }} />
+                            <p className="text-sm font-medium text-[#5F665C]">{bar.label}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
 
-            <div className="mt-[18px] grid border-t border-[#E7D7B7] pt-[18px] sm:grid-cols-2 xl:grid-cols-5">
-                {summaryItems.map(({ label, value, icon: Icon }, index) => (
-                    <div key={label} className={`flex items-center gap-3 py-3 xl:px-4 xl:py-0 ${index > 0 ? "xl:border-l xl:border-[#E7D7B7]" : ""}`}>
-                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#F2E8C9] text-[#526736]">
+            <div className="mt-5 grid rounded-2xl border border-[#E7D7B7] bg-[#FFFDF8] sm:grid-cols-3 xl:grid-cols-6">
+                {bars.map(({ key, label, value, icon: Icon }, index) => (
+                    <div key={key} className={`flex items-center gap-3 px-5 py-4 ${index > 0 ? "border-t border-[#E7D7B7] sm:border-l sm:border-t-0" : ""}`}>
+                        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-[#EEF1DD] text-[#2F6B22]">
                             <Icon className="h-5 w-5" />
                         </span>
                         <div>
-                            <p className="text-[14px] font-medium text-[#5F665C]">{label}</p>
-                            <p className="text-[15px] font-bold text-[#1F281B]">{value}</p>
+                            <p className="text-sm font-medium text-[#5F665C]">{label === "Saved" ? "Total saved" : label}</p>
+                            <p className="font-serif text-xl font-bold text-[#1F281B]">
+                                {value}
+                                {key !== "saved" ? ` (${percent(value, appliedTotal)})` : ""}
+                            </p>
                         </div>
                     </div>
                 ))}
@@ -379,9 +270,7 @@ export default function ProfilePage() {
     const counts = useMemo(
         () =>
             trackedRoles.reduce<PipelineCounts>((acc, role) => {
-                const status = (role.status || "saved").toLowerCase();
-                if (status in acc) acc[status as keyof PipelineCounts] += 1;
-                else acc.saved += 1;
+                acc[normalizeStatus(role.status)] += 1;
                 return acc;
             }, { ...emptyPipeline }),
         [trackedRoles],
@@ -389,7 +278,7 @@ export default function ProfilePage() {
     const appliedTotal = getAppliedTotal(counts);
 
     return (
-        <div className="min-h-screen bg-[#FFF3D6] text-[#1F281B] [background-image:radial-gradient(circle_at_8%_8%,rgba(146,189,179,0.25),transparent_32%),radial-gradient(circle_at_96%_4%,rgba(255,211,130,0.26),transparent_30%),linear-gradient(rgba(255,243,214,0.80),rgba(255,243,214,0.80)),url('/nori-assets/desk-paper-texture.png')] [background-size:auto,auto,auto,520px]">
+        <div className="min-h-screen bg-[#FAF6EF] text-[#1F281B]">
             {editingProfile && (
                 <EditProfileDialog
                     profile={profile}
@@ -410,25 +299,50 @@ export default function ProfilePage() {
                 />
             )}
             <NoriAppSidebar />
-            <ProfileHeader profile={profile} />
 
-            <main className="px-5 py-8 sm:px-8 lg:ml-[280px] lg:px-11">
-                <div className="mx-auto max-w-[1280px]">
-                    <div className="mb-4 flex items-center justify-between gap-4">
+            <main className="px-5 py-10 sm:px-8 lg:ml-[280px] lg:px-11">
+                <div className="mx-auto max-w-[1460px]">
+                    <div className="mb-7 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                         <div>
-                            <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-[#526736]">Profile dashboard</p>
-                            <h1 className="font-serif text-[38px] font-bold leading-tight tracking-[-0.045em] text-[#1F281B]">My Profile</h1>
+                            <p className="mb-2 text-sm font-black uppercase tracking-[0.28em] text-[#2F6B22]">Profile Dashboard</p>
+                            <h1 className="font-serif text-[48px] font-bold leading-none tracking-[-0.05em] text-[#12302A] sm:text-[64px]">My Profile</h1>
                         </div>
-                        <Link
-                            href="/jobs"
-                            className="hidden min-h-11 items-center gap-2 rounded-[10px] bg-[#526736] px-5 text-sm font-bold text-white shadow-[0_10px_18px_rgba(70,45,16,0.16)] transition hover:bg-[#415329] sm:inline-flex"
-                        >
+                        <Link href="/jobs" className="inline-flex h-14 items-center justify-center gap-3 rounded-xl bg-[#123C24] px-7 text-lg font-semibold text-white shadow-[0_14px_30px_rgba(18,60,36,0.22)] transition hover:bg-[#0F2F1E]">
                             Browse jobs
-                            <ArrowRight className="h-4 w-4" />
+                            <ArrowRight className="h-5 w-5" />
                         </Link>
                     </div>
 
-                    <ProfileSummaryCard profile={profile} onEdit={() => setEditingProfile(true)} />
+                    <section className="relative overflow-hidden rounded-[18px] border border-[#E7D7B7] bg-white p-8 shadow-[0_14px_34px_rgba(44,30,12,0.08)] sm:p-10">
+                        <div className="pointer-events-none absolute bottom-0 right-0 h-44 w-48 opacity-35">
+                            <svg viewBox="0 0 180 180" className="h-full w-full" aria-hidden="true">
+                                <g fill="none" stroke="#526736" strokeWidth="1.5" opacity="0.55">
+                                    <path d="M124 174C125 124 142 82 168 28" />
+                                    <path d="M126 144c-18-16-28-30-28-44 19 4 31 18 28 44Z" />
+                                    <path d="M141 103c-17-14-25-26-24-40 18 4 28 16 24 40Z" />
+                                    <path d="M155 64c-14-12-20-23-18-34 14 4 22 14 18 34Z" />
+                                </g>
+                            </svg>
+                        </div>
+                        <div className="relative flex flex-col gap-7 md:flex-row md:items-center md:justify-between">
+                            <div className="flex flex-col gap-7 sm:flex-row sm:items-center">
+                                <ProfileAvatar profile={profile} />
+                                <div>
+                                    <h2 className="font-serif text-[44px] font-bold leading-none tracking-[-0.045em] text-[#12302A]">{profile.name}</h2>
+                                    <p className="mt-4 text-xl font-medium text-[#1F281B]">{profile.role}</p>
+                                    <p className="mt-3 inline-flex items-center gap-2 text-lg font-medium text-[#5F665C]">
+                                        <MapPin className="h-5 w-5" />
+                                        {profile.location}
+                                    </p>
+                                </div>
+                            </div>
+                            <button type="button" onClick={() => setEditingProfile(true)} className="inline-flex h-12 items-center justify-center gap-2 rounded-xl border border-[#D8C9A7] bg-white px-5 text-base font-bold text-[#123C24] transition hover:bg-[#EEF1DD]">
+                                <Edit3 className="h-4 w-4" />
+                                Edit profile
+                            </button>
+                        </div>
+                    </section>
+
                     <MetricCards appliedTotal={appliedTotal} />
                     <ApplicationStatusCard counts={counts} />
                 </div>

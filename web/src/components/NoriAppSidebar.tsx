@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bookmark, BriefcaseBusiness, KanbanSquare, Settings, UserRound } from "lucide-react";
+import { Bookmark, BriefcaseBusiness, KanbanSquare, UserRound } from "lucide-react";
 import NoriMark from "@/components/landing/NoriMark";
 
 const navItems = [
@@ -11,7 +11,6 @@ const navItems = [
     { label: "Saved Roles", href: "/saved-roles", icon: Bookmark },
     { label: "Tracker", href: "/tracker", icon: KanbanSquare },
     { label: "Profile", href: "/profile", icon: UserRound },
-    { label: "Settings", href: "/settings", icon: Settings },
 ];
 
 export default function NoriAppSidebar({ locked = false, onLockedAction }: { locked?: boolean; onLockedAction?: () => void }) {
