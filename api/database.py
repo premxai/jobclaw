@@ -21,6 +21,7 @@ DATABASE_URL_PLACEHOLDER_HINTS = (
     "your-postgres",
     "localhost:5432/jobclaw",
 )
+_COLUMN_CACHE: dict[tuple[str, str], set[str]] = {}
 
 
 def _env_int(name: str, default: int) -> int:
@@ -120,6 +121,41 @@ def _ph() -> str:
     return "%s" if _is_pg() else "?"
 
 
+def _table_columns(conn, table: str) -> set[str]:
+    """Return known columns for a table, cached per backend.
+
+    Production databases can lag behind the latest application schema. Public
+    read endpoints should degrade with defaults for optional columns instead of
+    failing the whole jobs board with a 500.
+    """
+    backend = "pg" if _is_pg() else "sqlite"
+    cache_key = (backend, table)
+    if cache_key in _COLUMN_CACHE:
+        return _COLUMN_CACHE[cache_key]
+
+    cursor = conn.cursor()
+    if _is_pg():
+        cursor.execute(
+            """
+            SELECT column_name
+            FROM information_schema.columns
+            WHERE table_schema = 'public' AND table_name = %s
+            """,
+            (table,),
+        )
+        columns = {str(_row_to_mapping(row).get("column_name")) for row in cursor.fetchall()}
+    else:
+        cursor.execute(f"PRAGMA table_info({table})")
+        columns = {str(_row_to_mapping(row).get("name")) for row in cursor.fetchall()}
+
+    _COLUMN_CACHE[cache_key] = columns
+    return columns
+
+
+def _select_or_default(columns: set[str], column: str, default_sql: str) -> str:
+    return column if column in columns else f"{default_sql} AS {column}"
+
+
 def get_jobs(
     page: int = 1,
     per_page: int = 50,
@@ -136,36 +172,41 @@ def get_jobs(
     conn = get_db()
     p = _ph()
     try:
+        columns = _table_columns(conn, "jobs")
         conditions = []
         params = []
 
-        if active_only:
+        if active_only and "is_active" in columns:
             conditions.append("is_active = TRUE" if _is_pg() else "is_active = 1")
-        if company:
+        if company and "company" in columns:
             conditions.append(f"LOWER(company) = LOWER({p})")
             params.append(company)
-        if ats:
+        if ats and "source_ats" in columns:
             conditions.append(f"LOWER(source_ats) = LOWER({p})")
             params.append(ats)
-        if keyword:
+        if keyword and "keywords_matched" in columns:
             conditions.append(f"keywords_matched LIKE {p}")
             params.append(f"%{keyword}%")
         if search:
-            if _is_pg():
+            if _is_pg() and "search_vector" in columns:
                 conditions.append(f"search_vector @@ websearch_to_tsquery('english', {p})")
                 params.append(search)
             else:
-                conditions.append(f"(title LIKE {p} OR company LIKE {p} OR description LIKE {p})")
-                params.extend([f"%{search}%"] * 3)
-        if recent_hours:
+                searchable = [column for column in ("title", "company", "description") if column in columns]
+                if searchable:
+                    operator = "ILIKE" if _is_pg() else "LIKE"
+                    conditions.append("(" + " OR ".join(f"{column} {operator} {p}" for column in searchable) + ")")
+                    params.extend([f"%{search}%"] * len(searchable))
+        if recent_hours and ("first_seen" in columns or "date_posted" in columns):
+            date_column = "first_seen" if "first_seen" in columns else "date_posted"
             if _is_pg():
                 cutoff = datetime.now(timezone.utc) - timedelta(hours=recent_hours)
-                conditions.append(f"first_seen >= {p}")
+                conditions.append(f"{date_column} >= {p}")
                 params.append(cutoff.isoformat())
             else:
-                conditions.append(f"datetime(first_seen) >= datetime('now', {p})")
+                conditions.append(f"datetime({date_column}) >= datetime('now', {p})")
                 params.append(f"-{recent_hours} hours")
-        if quality:
+        if quality and "quality_state" in columns:
             conditions.append(f"COALESCE(quality_state, 'needs_review') = {p}")
             params.append(quality)
 
@@ -180,24 +221,46 @@ def get_jobs(
 
         # Safe ORDER BY — choose between two pre-defined static strings only.
         # Never interpolate user input into ORDER BY.
-        if _is_pg() and search:
+        if _is_pg() and search and "search_vector" in columns:
             order_clause = "ts_rank(search_vector, websearch_to_tsquery('english', %s)) DESC, first_seen DESC"
             extra_params = [search]
         else:
-            order_clause = "first_seen DESC"
+            order_column = "first_seen" if "first_seen" in columns else ("date_posted" if "date_posted" in columns else "internal_hash")
+            order_clause = f"{order_column} DESC"
             extra_params = []
 
         # Job descriptions are the heaviest column in this table. Public list
         # views do not need them, so keep /jobs lean by default and reserve full
         # descriptions for /jobs/{internal_hash} or explicit callers.
-        description_column = "description" if include_description else "NULL AS description"
-        select_columns = f"""
-            internal_hash, job_id, title, company, location, url, date_posted,
-            source_ats, first_seen, status, keywords_matched, {description_column},
-            salary_min, salary_max, salary_currency, experience_years, is_active,
-            last_seen_at, quality_state, quality_reasons, canonical_company,
-            canonical_title, source_confidence
-        """
+        description_column = "description" if include_description and "description" in columns else "NULL AS description"
+        active_default = "TRUE" if _is_pg() else "1"
+        select_columns = ", ".join(
+            [
+                _select_or_default(columns, "internal_hash", "''"),
+                _select_or_default(columns, "job_id", "''"),
+                _select_or_default(columns, "title", "'Untitled Role'"),
+                _select_or_default(columns, "company", "'Unknown Company'"),
+                _select_or_default(columns, "location", "''"),
+                _select_or_default(columns, "url", "''"),
+                _select_or_default(columns, "date_posted", "''"),
+                _select_or_default(columns, "source_ats", "'direct'"),
+                _select_or_default(columns, "first_seen", "NULL"),
+                _select_or_default(columns, "status", "'posted'"),
+                _select_or_default(columns, "keywords_matched", "'[]'"),
+                description_column,
+                _select_or_default(columns, "salary_min", "NULL"),
+                _select_or_default(columns, "salary_max", "NULL"),
+                _select_or_default(columns, "salary_currency", "NULL"),
+                _select_or_default(columns, "experience_years", "NULL"),
+                _select_or_default(columns, "is_active", active_default),
+                _select_or_default(columns, "last_seen_at", "NULL"),
+                _select_or_default(columns, "quality_state", "NULL"),
+                _select_or_default(columns, "quality_reasons", "NULL"),
+                _select_or_default(columns, "canonical_company", "NULL"),
+                _select_or_default(columns, "canonical_title", "NULL"),
+                _select_or_default(columns, "source_confidence", "NULL"),
+            ]
+        )
 
         query = f"""
             SELECT {select_columns} FROM jobs {where}
@@ -228,15 +291,22 @@ def get_companies(ats: str = None) -> list[dict]:
     """Get companies with job counts."""
     conn = get_db()
     p = _ph()
-    active = "TRUE" if _is_pg() else "1"
     try:
+        columns = _table_columns(conn, "jobs")
+        if not {"company", "source_ats"}.issubset(columns):
+            return []
+        active_where = ""
+        if "is_active" in columns:
+            active = "TRUE" if _is_pg() else "1"
+            active_where = f" AND is_active = {active}"
+        latest_expr = "MAX(first_seen)" if "first_seen" in columns else ("MAX(date_posted)" if "date_posted" in columns else "NULL")
         cursor = conn.cursor()
         if ats:
             cursor.execute(
                 f"""
                 SELECT company, source_ats, COUNT(*) as job_count,
-                       MAX(first_seen) as latest_job
-                FROM jobs WHERE LOWER(source_ats) = LOWER({p}) AND is_active = {active}
+                       {latest_expr} as latest_job
+                FROM jobs WHERE LOWER(source_ats) = LOWER({p}){active_where}
                 GROUP BY company, source_ats
                 ORDER BY job_count DESC
             """,
@@ -245,8 +315,8 @@ def get_companies(ats: str = None) -> list[dict]:
         else:
             cursor.execute(f"""
                 SELECT company, source_ats, COUNT(*) as job_count,
-                       MAX(first_seen) as latest_job
-                FROM jobs WHERE is_active = {active}
+                       {latest_expr} as latest_job
+                FROM jobs WHERE 1 = 1{active_where}
                 GROUP BY company, source_ats
                 ORDER BY job_count DESC
             """)
