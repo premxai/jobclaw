@@ -24,9 +24,6 @@ export default function AuthPageShell({
                         <NoriMark />
                         <span className="font-serif text-[34px] font-bold leading-none tracking-[-0.04em] text-[#1F281B]">Nori</span>
                     </Link>
-                    <Link href="/jobs" className="hidden h-11 items-center rounded-xl border border-[#D8C9A7] bg-[#FFF9EC] px-4 text-sm font-bold text-[#526736] sm:inline-flex">
-                        Browse jobs
-                    </Link>
                 </header>
 
                 <section className="grid flex-1 place-items-center py-10">

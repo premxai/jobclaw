@@ -25,8 +25,7 @@ interface SavedJobRef {
 
 const LIMIT = 12;
 const WORKING_SET_LIMIT = 200;
-const WORKING_SET_PAGES = 5;
-const MIN_BOARD_COMPANY_GROUPS = LIMIT * 4;
+const PAGE_REQUEST_BATCH_SIZE = 4;
 const DEFAULT_RECENT_HOURS = 48;
 const PENDING_APPLY_KEY = "nori_pending_apply";
 const JOB_GRID_CLASS = "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-5 2xl:grid-cols-4";
@@ -510,22 +509,35 @@ export default function JobFeedClient({
             const data = await fetchMatchedJobs(search, WORKING_SET_LIMIT);
             fetchedJobs = data.jobs;
         } else {
-            let backendTotal = 0;
-            for (let apiPage = 1; apiPage <= WORKING_SET_PAGES; apiPage++) {
-                const data = await fetchJobs({
-                    search,
-                    page: apiPage,
-                    limit: WORKING_SET_LIMIT,
-                    category,
-                    source,
-                    recentHours: recentHours ?? undefined,
-                });
-                if (apiPage === 1) backendTotal = data.total;
-                fetchedJobs = [...fetchedJobs, ...data.jobs];
+            const firstPage = await fetchJobs({
+                search,
+                page: 1,
+                limit: WORKING_SET_LIMIT,
+                category,
+                source,
+                recentHours: recentHours ?? undefined,
+            });
+            fetchedJobs = firstPage.jobs;
 
-                const enoughCompanyVariety = groupCompanyJobs(filterBoardJobs(fetchedJobs)).length >= MIN_BOARD_COMPANY_GROUPS;
-                const reachedEnd = fetchedJobs.length >= backendTotal || data.jobs.length < WORKING_SET_LIMIT;
-                if (enoughCompanyVariety || reachedEnd) break;
+            const totalPages = Math.ceil(firstPage.total / WORKING_SET_LIMIT);
+            for (let batchStart = 2; batchStart <= totalPages; batchStart += PAGE_REQUEST_BATCH_SIZE) {
+                const batchPages = Array.from(
+                    { length: Math.min(PAGE_REQUEST_BATCH_SIZE, totalPages - batchStart + 1) },
+                    (_, index) => batchStart + index,
+                );
+                const batch = await Promise.all(
+                    batchPages.map((apiPage) =>
+                        fetchJobs({
+                            search,
+                            page: apiPage,
+                            limit: WORKING_SET_LIMIT,
+                            category,
+                            source,
+                            recentHours: recentHours ?? undefined,
+                        }),
+                    ),
+                );
+                fetchedJobs = [...fetchedJobs, ...batch.flatMap((data) => data.jobs)];
             }
         }
 
@@ -534,9 +546,8 @@ export default function JobFeedClient({
         const groupedTotal = groupCompanyJobs(filtered).length;
         setJobs(filtered);
         setTotal(groupedTotal);
-        if ((page - 1) * LIMIT >= groupedTotal) setPage(1);
         setLoading(false);
-    }, [search, selectedCategories, selectedSources, recentHours, isRelevanceMode, previewLocked, page, filterBoardJobs]);
+    }, [search, selectedCategories, selectedSources, recentHours, isRelevanceMode, previewLocked, filterBoardJobs]);
 
     useEffect(() => {
         loadJobs();

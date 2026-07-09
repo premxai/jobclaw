@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { ChevronDown, LogOut, UserCircle } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 function initialsFor(user: User | null) {
-    const source = String(user?.user_metadata?.full_name || user?.email || "Alex Chen");
+    const source = String(user?.user_metadata?.full_name || user?.email || "Guest");
     return source
         .split(/[\s@._-]+/)
         .filter(Boolean)
@@ -20,9 +21,10 @@ function initialsFor(user: User | null) {
 export default function UserMenu() {
     const [open, setOpen] = useState(false);
     const [user, setUser] = useState<User | null>(null);
+    const router = useRouter();
     const supabase = createBrowserSupabaseClient();
     const initials = useMemo(() => initialsFor(user), [user]);
-    const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Alex Chen";
+    const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Guest";
 
     useEffect(() => {
         if (!supabase) return;
@@ -34,9 +36,12 @@ export default function UserMenu() {
     }, [supabase]);
 
     const signOut = async () => {
-        await supabase?.auth.signOut();
+        const result = await supabase?.auth.signOut();
+        if (result?.error) return;
+        window.sessionStorage.removeItem("nori_pending_apply");
         setUser(null);
         setOpen(false);
+        router.replace("/");
     };
 
     return (
