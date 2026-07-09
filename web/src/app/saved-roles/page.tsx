@@ -11,12 +11,6 @@ interface SavedRole extends Job {
     addedAt?: string;
 }
 
-function statusLabel(status?: string | null) {
-    if (!status || status === "saved") return "Saved";
-    if (status === "oa") return "OA";
-    return status.charAt(0).toUpperCase() + status.slice(1);
-}
-
 export default function SavedRolesPage() {
     const [roles, setRoles] = useState<SavedRole[]>([]);
 
@@ -75,22 +69,16 @@ export default function SavedRolesPage() {
                     </section>
                 ) : (
                     <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-5 2xl:grid-cols-4">
-                        {roles.map((role) => {
-                            return (
-                                <div key={role.internal_hash} className="relative">
-                                    <JobCard
-                                        job={role}
-                                        saved
-                                        applied={role.status === "applied"}
-                                        onSave={() => removeRole(role.internal_hash)}
-                                        onApply={() => window.open(role.url, "_blank", "noopener,noreferrer")}
-                                    />
-                                    <span className="pointer-events-none absolute left-4 top-16 rounded-full border border-[#D8C9A7] bg-[#F7EED7] px-2.5 py-1 text-[11px] font-bold text-[#526736]">
-                                        {statusLabel(role.status)}
-                                    </span>
-                                </div>
-                            );
-                        })}
+                        {roles.map((role) => (
+                            <JobCard
+                                key={role.internal_hash}
+                                job={role}
+                                saved
+                                applied={role.status === "applied"}
+                                onSave={() => removeRole(role.internal_hash)}
+                                onApply={() => window.open(role.url, "_blank", "noopener,noreferrer")}
+                            />
+                        ))}
                     </section>
                 )}
             </main>
