@@ -22,7 +22,9 @@ interface SavedJobRef {
 }
 
 const LIMIT = 12;
-const WORKING_SET_LIMIT = 120;
+const WORKING_SET_LIMIT = 200;
+const WORKING_SET_PAGES = 5;
+const MIN_BOARD_COMPANY_GROUPS = LIMIT * 4;
 const PENDING_APPLY_KEY = "nori_pending_apply";
 const JOB_GRID_CLASS = "grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-5 2xl:grid-cols-4";
 
@@ -500,11 +502,30 @@ export default function JobFeedClient({
         };
     }, []);
 
+    const filterBoardJobs = useCallback(
+        (inputJobs: Job[]) => {
+            let filtered = inputJobs;
+
+            if (isRelevanceMode && recentHours !== null) {
+                filtered = filtered.filter((j) => j.freshness_minutes == null || j.freshness_minutes <= recentHours * 60);
+            }
+
+            filtered = filtered.filter((j) => isUsLocation(j.location));
+            filtered = filtered.filter((j) => matchesSearchQuery(j, search));
+            if (experienceLevel !== "any") filtered = filtered.filter((j) => matchesExperience(j, experienceLevel));
+            if (employmentType !== "all") filtered = filtered.filter((j) => matchesEmploymentType(j, employmentType));
+            filtered = filtered.filter((j) => matchesCategory(j, selectedCategories));
+
+            return filtered;
+        },
+        [employmentType, experienceLevel, isRelevanceMode, recentHours, search, selectedCategories],
+    );
+
     const loadJobs = useCallback(async () => {
         setLoading(true);
         if (previewLocked) {
             const data = await fetchJobs({ page: 1, limit: WORKING_SET_LIMIT });
-            const filtered = data.jobs.filter((job) => isUsLocation(job.location)).filter((job) => matchesSearchQuery(job, search));
+            const filtered = filterBoardJobs(data.jobs);
             setJobs(filtered.slice(0, LIMIT));
             setTotal(groupCompanyJobs(filtered.slice(0, LIMIT)).length);
             setLoading(false);
@@ -512,27 +533,38 @@ export default function JobFeedClient({
         }
         const category = selectedCategories.size === 1 ? Array.from(selectedCategories)[0] : undefined;
         const source = selectedSources.size === 1 ? Array.from(selectedSources)[0].toLowerCase() : undefined;
-        const data = isRelevanceMode
-            ? await fetchMatchedJobs(search, WORKING_SET_LIMIT)
-            : await fetchJobs({ search, page: 1, limit: WORKING_SET_LIMIT, category, source, recentHours: recentHours ?? undefined });
-        let filtered = data.jobs;
+        let fetchedJobs: Job[] = [];
+        if (isRelevanceMode) {
+            const data = await fetchMatchedJobs(search, WORKING_SET_LIMIT);
+            fetchedJobs = data.jobs;
+        } else {
+            let backendTotal = 0;
+            for (let apiPage = 1; apiPage <= WORKING_SET_PAGES; apiPage++) {
+                const data = await fetchJobs({
+                    search,
+                    page: apiPage,
+                    limit: WORKING_SET_LIMIT,
+                    category,
+                    source,
+                    recentHours: recentHours ?? undefined,
+                });
+                if (apiPage === 1) backendTotal = data.total;
+                fetchedJobs = [...fetchedJobs, ...data.jobs];
 
-        if (isRelevanceMode && recentHours !== null) {
-            filtered = filtered.filter((j) => j.freshness_minutes == null || j.freshness_minutes <= recentHours * 60);
+                const enoughCompanyVariety = groupCompanyJobs(filterBoardJobs(fetchedJobs)).length >= MIN_BOARD_COMPANY_GROUPS;
+                const reachedEnd = fetchedJobs.length >= backendTotal || data.jobs.length < WORKING_SET_LIMIT;
+                if (enoughCompanyVariety || reachedEnd) break;
+            }
         }
 
-        filtered = filtered.filter((j) => isUsLocation(j.location));
-        filtered = filtered.filter((j) => matchesSearchQuery(j, search));
-        if (experienceLevel !== "any") filtered = filtered.filter((j) => matchesExperience(j, experienceLevel));
-        if (employmentType !== "all") filtered = filtered.filter((j) => matchesEmploymentType(j, employmentType));
-        filtered = filtered.filter((j) => matchesCategory(j, selectedCategories));
+        const filtered = filterBoardJobs(fetchedJobs);
 
         const groupedTotal = groupCompanyJobs(filtered).length;
         setJobs(filtered);
         setTotal(groupedTotal);
         if ((page - 1) * LIMIT >= groupedTotal) setPage(1);
         setLoading(false);
-    }, [search, selectedCategories, selectedSources, recentHours, experienceLevel, employmentType, isRelevanceMode, previewLocked, page]);
+    }, [search, selectedCategories, selectedSources, recentHours, isRelevanceMode, previewLocked, page, filterBoardJobs]);
 
     useEffect(() => {
         loadJobs();
