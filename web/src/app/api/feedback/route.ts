@@ -5,6 +5,13 @@ export const runtime = "nodejs";
 
 const MAX_IMAGES = 4;
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const MAX_TOTAL_IMAGE_BYTES = 20 * 1024 * 1024;
+const MAX_MESSAGE_LENGTH = 5_000;
+const MAX_PAGE_LENGTH = 2_048;
+const MAX_EMAIL_LENGTH = 254;
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1_000;
+const RATE_LIMIT_MAX = 5;
+const rateLimit = new Map<string, { count: number; resetAt: number }>();
 
 function escapeHtml(value: string) {
     return value.replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] || char);
@@ -15,7 +22,24 @@ function safeFileName(name: string) {
 }
 
 export async function POST(request: NextRequest) {
-    const formData = await request.formData();
+    const now = Date.now();
+    const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+    const ipKey = forwardedFor || request.headers.get("x-real-ip") || "unknown";
+    const currentLimit = rateLimit.get(ipKey);
+    if (!currentLimit || currentLimit.resetAt <= now) {
+        rateLimit.set(ipKey, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    } else if (currentLimit.count >= RATE_LIMIT_MAX) {
+        return NextResponse.json({ error: "Please wait a few minutes before sending more feedback." }, { status: 429 });
+    } else {
+        currentLimit.count += 1;
+    }
+
+    let formData: FormData;
+    try {
+        formData = await request.formData();
+    } catch {
+        return NextResponse.json({ error: "The feedback form could not be read." }, { status: 400 });
+    }
     const message = String(formData.get("message") || "").trim();
     const senderEmail = String(formData.get("email") || "").trim();
     const page = String(formData.get("page") || "").trim();
@@ -24,7 +48,14 @@ export async function POST(request: NextRequest) {
     if (message.length < 3) {
         return NextResponse.json({ error: "Please write a short message first." }, { status: 400 });
     }
+    if (message.length > MAX_MESSAGE_LENGTH || page.length > MAX_PAGE_LENGTH || senderEmail.length > MAX_EMAIL_LENGTH) {
+        return NextResponse.json({ error: "Please shorten the feedback details and try again." }, { status: 400 });
+    }
+    if (senderEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail)) {
+        return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
+    }
 
+    let totalImageBytes = 0;
     for (const image of images) {
         if (!image.type.startsWith("image/")) {
             return NextResponse.json({ error: "Only image uploads are supported." }, { status: 400 });
@@ -32,6 +63,10 @@ export async function POST(request: NextRequest) {
         if (image.size > MAX_IMAGE_BYTES) {
             return NextResponse.json({ error: "Each image must be 5MB or less." }, { status: 400 });
         }
+        totalImageBytes += image.size;
+    }
+    if (totalImageBytes > MAX_TOTAL_IMAGE_BYTES) {
+        return NextResponse.json({ error: "Please keep all attachments under 20MB total." }, { status: 400 });
     }
 
     const supabase = createServerSupabaseClient();
@@ -78,8 +113,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-        const detail = await response.text();
-        return NextResponse.json({ error: "Could not send feedback email.", detail }, { status: 502 });
+        return NextResponse.json({ error: "Could not send feedback email." }, { status: 502 });
     }
 
     return NextResponse.json({ ok: true });

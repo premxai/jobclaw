@@ -4,13 +4,14 @@ import { useEffect, useState } from "react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 
 export const ANONYMOUS_SAVED_JOBS_KEY = "jobclaw_saved";
+export const ANONYMOUS_PROFILE_KEY = "nori_profile";
 
-export function getSavedJobsStorageKey(userId?: string | null) {
-    return userId ? `${ANONYMOUS_SAVED_JOBS_KEY}:${userId}` : ANONYMOUS_SAVED_JOBS_KEY;
+function getScopedStorageKey(prefix: string, anonymousKey: string, userId?: string | null) {
+    return userId ? `${prefix}:${userId}` : anonymousKey;
 }
 
-export function useSavedJobsStorageKey() {
-    const [storageKey, setStorageKey] = useState(ANONYMOUS_SAVED_JOBS_KEY);
+function useUserScopedStorageKey(prefix: string, anonymousKey: string) {
+    const [storageKey, setStorageKey] = useState(anonymousKey);
 
     useEffect(() => {
         const supabase = createBrowserSupabaseClient();
@@ -18,21 +19,32 @@ export function useSavedJobsStorageKey() {
 
         let active = true;
         supabase.auth.getUser().then(({ data }) => {
-            if (active) setStorageKey(getSavedJobsStorageKey(data.user?.id));
+            if (active) setStorageKey(getScopedStorageKey(prefix, anonymousKey, data.user?.id));
         });
 
         const {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((_event, session) => {
-            setStorageKey(getSavedJobsStorageKey(session?.user?.id));
+            setStorageKey(getScopedStorageKey(prefix, anonymousKey, session?.user?.id));
         });
 
         return () => {
             active = false;
             subscription.unsubscribe();
         };
-    }, []);
+    }, [anonymousKey, prefix]);
 
     return storageKey;
 }
 
+export function getSavedJobsStorageKey(userId?: string | null) {
+    return getScopedStorageKey(ANONYMOUS_SAVED_JOBS_KEY, ANONYMOUS_SAVED_JOBS_KEY, userId);
+}
+
+export function useSavedJobsStorageKey() {
+    return useUserScopedStorageKey(ANONYMOUS_SAVED_JOBS_KEY, ANONYMOUS_SAVED_JOBS_KEY);
+}
+
+export function useProfileStorageKey() {
+    return useUserScopedStorageKey(ANONYMOUS_PROFILE_KEY, ANONYMOUS_PROFILE_KEY);
+}

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
-import { LogOut, Mail, MapPin, ShieldCheck, Target, UserRound } from "lucide-react";
+import { MapPin, Target, UserRound } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -25,6 +25,7 @@ export default function AuthPanel({
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [user, setUser] = useState<User | null>(null);
+    const [checkingSession, setCheckingSession] = useState(true);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const supabase = createBrowserSupabaseClient();
@@ -34,15 +35,31 @@ export default function AuthPanel({
         if (requestedMode === "signup") setMode("signup");
         if (requestedMode === "login") setMode("login");
 
-        if (!supabase) return;
-        supabase.auth.getUser().then(({ data }) => setUser(data.user));
+        if (!supabase) {
+            setCheckingSession(false);
+            return;
+        }
+
+        let mounted = true;
+        supabase.auth.getUser().then(({ data }) => {
+            if (!mounted) return;
+            setUser(data.user);
+            setCheckingSession(false);
+            if (data.user) router.replace(redirectTo);
+        });
         const {
             data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, session) => setUser(session?.user ?? null));
-        return () => subscription.unsubscribe();
-    }, [initialMode, supabase]);
-
-    const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Nori user";
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (!mounted) return;
+            setUser(session?.user ?? null);
+            setCheckingSession(false);
+            if (session?.user) router.replace(redirectTo);
+        });
+        return () => {
+            mounted = false;
+            subscription.unsubscribe();
+        };
+    }, [initialMode, redirectTo, router, supabase]);
 
     const submit = async () => {
         if (!supabase) return;
@@ -69,8 +86,9 @@ export default function AuthPanel({
         else if (mode === "signup" && !result.data.session) setMessage("Check your email to confirm your account.");
         else {
             if (mode === "signup") {
+                const profileKey = result.data.user?.id ? `nori_profile:${result.data.user.id}` : "nori_profile";
                 localStorage.setItem(
-                    "nori_profile",
+                    profileKey,
                     JSON.stringify({
                         name: name.trim(),
                         role: role.trim(),
@@ -84,13 +102,6 @@ export default function AuthPanel({
         setLoading(false);
     };
 
-    const signOut = async () => {
-        if (!supabase) return;
-        await supabase.auth.signOut();
-        setUser(null);
-        setMessage("Logged out.");
-    };
-
     if (!isSupabaseConfigured) {
         return (
             <section className="rounded-[22px] border border-[#E7D7B7] bg-[#FFF9EC] p-5 shadow-[0_16px_36px_rgba(44,30,12,0.10)]">
@@ -102,27 +113,10 @@ export default function AuthPanel({
         );
     }
 
-    if (user) {
+    if (checkingSession || user) {
         return (
-            <section className="rounded-[16px] border border-[#E7D7B7] bg-[#FFF9EC] p-5 shadow-[0_10px_24px_rgba(44,30,12,0.07)]">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-4">
-                        <span className="grid h-12 w-12 place-items-center rounded-full bg-[#EEF1DD] text-[#526736]">
-                            <ShieldCheck className="h-6 w-6" />
-                        </span>
-                        <div>
-                            <h2 className="font-serif text-2xl font-bold text-[#12302A]">Signed in as {displayName}</h2>
-                            <p className="mt-1 flex items-center gap-2 text-sm font-medium text-[#5F665C]">
-                                <Mail className="h-4 w-4" />
-                                {user.email}
-                            </p>
-                        </div>
-                    </div>
-                    <button type="button" onClick={signOut} className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-[#D8C9A7] bg-white px-4 text-sm font-bold text-[#123C24] transition hover:bg-[#EEF1DD]">
-                        <LogOut className="h-4 w-4" />
-                        Logout
-                    </button>
-                </div>
+            <section className="rounded-[16px] border border-[#E7D7B7] bg-[#FFF9EC] p-5 text-center shadow-[0_10px_24px_rgba(44,30,12,0.07)]">
+                <p className="text-sm font-semibold text-[#526736]">Opening your Nori board...</p>
             </section>
         );
     }

@@ -9,10 +9,33 @@ function cleanWhitespace(value?: string | null): string {
         .trim();
 }
 
+const COMPANY_ALIASES: Record<string, string> = {
+    cargurus: "CarGurus",
+    clearstreet: "Clear Street",
+    datasystemsanalystsinc: "Data Systems Analysts, Inc.",
+    guidepointsecurity: "GuidePoint Security",
+    parachutehealth: "Parachute Health",
+    ttecdigital: "TTEC Digital",
+};
+
+function companyIdentity(value: string): string {
+    return value.toLowerCase().replace(/[^a-z0-9]+/g, "");
+}
+
+function formatCompanyName(value: string): string {
+    const cleaned = cleanWhitespace(value);
+    if (!cleaned) return "Unknown company";
+
+    const roleLikePrefix = /\b(analyst|engineer|manager|designer|developer|specialist|coordinator|director|intern|scientist|recruiter|associate)\b/i;
+    const atParts = cleaned.split(/\s+@\s+/);
+    const candidate = atParts.length === 2 && roleLikePrefix.test(atParts[0]) ? atParts[1] : cleaned;
+    return COMPANY_ALIASES[companyIdentity(candidate)] || candidate.replace(/([a-z])([A-Z])/g, "$1 $2");
+}
+
 export function displayCompany(job: Pick<Job, "company" | "canonical_company">): string {
     const canonical = cleanWhitespace(job.canonical_company);
     const fallback = cleanWhitespace(job.company);
-    return canonical || fallback || "Unknown company";
+    return formatCompanyName(canonical || fallback);
 }
 
 export function displayTitle(job: Pick<Job, "title" | "canonical_title">): string {

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowRight, Bookmark, BriefcaseBusiness, Calendar, Edit3, FileText, MapPin, Target, Users, XCircle } from "lucide-react";
 import NoriAppSidebar from "@/components/NoriAppSidebar";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
-import { useSavedJobsStorageKey } from "@/lib/use-saved-jobs-storage-key";
+import { useProfileStorageKey, useSavedJobsStorageKey } from "@/lib/use-saved-jobs-storage-key";
 
 interface TrackedRole {
     status?: string | null;
@@ -236,6 +236,7 @@ export default function ProfilePage() {
     const [editingProfile, setEditingProfile] = useState(false);
     const supabase = createBrowserSupabaseClient();
     const savedJobsStorageKey = useSavedJobsStorageKey();
+    const profileStorageKey = useProfileStorageKey();
 
     useEffect(() => {
         try {
@@ -248,7 +249,7 @@ export default function ProfilePage() {
 
     useEffect(() => {
         try {
-            const savedProfile = JSON.parse(localStorage.getItem("nori_profile") || "null") as ProfileInfo | null;
+            const savedProfile = JSON.parse(localStorage.getItem(profileStorageKey) || "null") as ProfileInfo | null;
             if (savedProfile) setProfile({ ...defaultProfile, ...savedProfile });
         } catch {}
 
@@ -276,7 +277,7 @@ export default function ProfilePage() {
             }));
         });
         return () => subscription.unsubscribe();
-    }, [supabase]);
+    }, [profileStorageKey, supabase]);
 
     const counts = useMemo(
         () =>
@@ -303,7 +304,7 @@ export default function ProfilePage() {
                             role: updatedProfile.role.trim() || defaultProfile.role,
                         };
                         setProfile(cleanProfile);
-                        localStorage.setItem("nori_profile", JSON.stringify(cleanProfile));
+                        localStorage.setItem(profileStorageKey, JSON.stringify(cleanProfile));
                         void supabase?.auth.updateUser({
                             data: {
                                 full_name: cleanProfile.name,

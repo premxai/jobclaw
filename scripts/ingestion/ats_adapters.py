@@ -27,6 +27,7 @@ Supported platforms:
 
 import hashlib
 import html
+import inspect
 import os
 import re
 from contextvars import ContextVar
@@ -35,7 +36,6 @@ from datetime import datetime, timezone
 from typing import Any
 
 from scripts.utils.http_client import (
-    HAS_CURL_CFFI,
     NOT_MODIFIED,
     RateLimiter,
     consume_last_failure,
@@ -85,11 +85,11 @@ async def _parse_json(resp) -> Any:
         return {}  # 304 Not Modified — no new data
     if _declared_too_large(resp):
         raise ValueError(f"response exceeds max size ({MAX_RESPONSE_BYTES} bytes)")
-    if HAS_CURL_CFFI and hasattr(resp, "status_code"):
-        # curl_cffi responses have .json() as a sync method
-        return resp.json()
-    # aiohttp responses have .json() as an async method
-    return await resp.json()
+    parser = getattr(resp, "json", None)
+    if parser is None:
+        raise ValueError("response has no JSON parser")
+    value = parser()
+    return await value if inspect.isawaitable(value) else value
 
 
 async def _parse_text(resp) -> str:
@@ -98,9 +98,12 @@ async def _parse_text(resp) -> str:
         return ""
     if _declared_too_large(resp):
         raise ValueError(f"response exceeds max size ({MAX_RESPONSE_BYTES} bytes)")
-    if HAS_CURL_CFFI and hasattr(resp, "status_code"):
-        return resp.text  # curl_cffi: sync property
-    return await resp.text()  # aiohttp: async method
+    value = getattr(resp, "text", None)
+    if value is None:
+        raise ValueError("response has no text body")
+    if callable(value):
+        value = value()
+    return await value if inspect.isawaitable(value) else value
 
 
 def _record_parse_failure(ats: str, slug: str, message: str) -> None:

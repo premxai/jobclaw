@@ -62,7 +62,7 @@ def _print_check(ok: bool, title: str, detail: str) -> None:
 def _latest_run_age(runs: list[dict[str, Any]]) -> str:
     if not runs:
         return "no runs returned"
-    raw = runs[0].get("run_at")
+    raw = runs[0].get("timestamp") or runs[0].get("run_at")
     if not raw:
         return "latest run has no run_at"
     try:
@@ -70,7 +70,8 @@ def _latest_run_age(runs: list[dict[str, Any]]) -> str:
     except ValueError:
         return f"latest run_at is not parseable: {raw}"
     age = datetime.now(timezone.utc) - parsed.astimezone(timezone.utc)
-    return f"latest run {runs[0].get('scraper', 'unknown')} at {raw} ({age.total_seconds() / 3600:.1f}h ago)"
+    scraper = runs[0].get("script_name") or runs[0].get("scraper") or "unknown"
+    return f"latest run {scraper} at {raw} ({age.total_seconds() / 3600:.1f}h ago)"
 
 
 def main() -> int:
