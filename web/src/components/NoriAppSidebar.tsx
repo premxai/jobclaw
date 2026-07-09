@@ -48,7 +48,7 @@ export default function NoriAppSidebar({ locked = false, onLockedAction }: { loc
             </nav>
 
             <div className="mt-auto">
-                <div className="mb-8 rounded-[18px] border border-[#E7D7B7] bg-[#FFF9EC]/80 p-[18px] shadow-[0_8px_18px_rgba(70,45,16,0.06)]">
+                <div className="mb-5 rounded-[18px] border border-[#E7D7B7] bg-[#FFF9EC]/80 p-[18px] shadow-[0_8px_18px_rgba(70,45,16,0.06)]">
                     <div className="flex items-start gap-3">
                         <NoriMark />
                         <p className="text-[15px] font-medium leading-6 text-[#1F281B]">Nori keeps your roles, saves, and progress in one calm place.</p>
@@ -67,9 +67,9 @@ export default function NoriAppSidebar({ locked = false, onLockedAction }: { loc
                     </Link>
                 </div>
 
-                <div className="relative -ml-12 h-80 overflow-hidden">
-                    <div className="absolute bottom-0 left-0 h-64 w-48 -rotate-12 rounded-[20px] border border-[#526736]/35 bg-[#526736] shadow-[0_18px_34px_rgba(70,45,16,0.18)] [background-image:linear-gradient(rgba(82,103,54,0.42),rgba(82,103,54,0.42)),url('/nori-assets/notebook-texture.png')] [background-size:cover]" />
-                    <span className="absolute bottom-12 left-28 h-48 w-40 rotate-12 opacity-80">
+                <div className="relative -mx-[18px] h-72 overflow-hidden">
+                    <div className="absolute -bottom-10 -left-10 h-80 w-60 -rotate-12 rounded-[24px] border border-[#526736]/35 bg-[#526736] shadow-[0_18px_34px_rgba(70,45,16,0.18)] [background-image:linear-gradient(rgba(82,103,54,0.42),rgba(82,103,54,0.42)),url('/nori-assets/notebook-texture.png')] [background-size:cover]" />
+                    <span className="absolute bottom-8 left-24 h-48 w-40 rotate-12 opacity-80">
                         <Image src="/nori-assets/dried-flowers.png" alt="" aria-hidden="true" fill sizes="160px" className="object-contain" />
                     </span>
                 </div>
