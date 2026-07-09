@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Plus, X } from "lucide-react";
 import NoriAppSidebar from "@/components/NoriAppSidebar";
@@ -45,39 +45,6 @@ function normalizeStatus(status?: string | null) {
     if (value === "oa" || value === "phone_screen" || value === "onsite") return "interview";
     if (value === "withdrawn") return "rejected";
     return columnIds.includes(value) ? value : "saved";
-}
-
-function PipelineBar({ counts }: { counts: Record<string, number> }) {
-    const max = Math.max(1, ...COLUMNS.map((column) => counts[column.id] || 0));
-
-    return (
-        <section className="mt-[22px] rounded-[22px] border border-[#D8C9A7] bg-[#FFF9EC] p-5 shadow-[0_8px_18px_rgba(70,45,16,0.06)]">
-            <div className="mb-5 flex items-center justify-between gap-4">
-                <div>
-                    <h2 className="font-serif text-2xl font-bold tracking-[-0.035em] text-[#1F281B]">Application status</h2>
-                    <p className="mt-1 text-sm font-medium text-[#5F665C]">A quick read of your saved and applied pipeline.</p>
-                </div>
-                <Link href="/saved-roles" className="hidden h-10 items-center gap-2 rounded-xl border border-[#D8C9A7] px-4 text-sm font-bold text-[#526736] sm:inline-flex">
-                    Saved roles
-                    <ArrowRight className="h-4 w-4" />
-                </Link>
-            </div>
-            <div className="grid min-h-[180px] grid-cols-5 items-end gap-3 sm:gap-5">
-                {COLUMNS.map((column) => {
-                    const value = counts[column.id] || 0;
-                    return (
-                        <div key={column.id} className="flex h-[150px] min-w-0 flex-col items-center justify-end gap-2">
-                            <p className="text-sm font-black text-[#1F281B]">{value}</p>
-                            <div className="flex h-full w-full max-w-[84px] items-end rounded-t-2xl bg-[#EFE5C9]">
-                                <div className="w-full rounded-t-2xl bg-[#526736]" style={{ height: `${Math.max(8, Math.round((value / max) * 100))}%` }} />
-                            </div>
-                            <p className="w-full truncate text-center text-xs font-bold text-[#5F665C]">{column.label}</p>
-                        </div>
-                    );
-                })}
-            </div>
-        </section>
-    );
 }
 
 function RolePill({
@@ -192,15 +159,6 @@ export default function TrackerPage() {
         localStorage.setItem("jobclaw_saved", JSON.stringify(updatedJobs));
     }, []);
 
-    const counts = useMemo(
-        () =>
-            COLUMNS.reduce<Record<string, number>>((acc, column) => {
-                acc[column.id] = jobs.filter((job) => normalizeStatus(job.status) === column.id).length;
-                return acc;
-            }, {}),
-        [jobs],
-    );
-
     const getColumnJobs = (columnId: string) => jobs.filter((job) => normalizeStatus(job.status) === columnId);
     const moveJob = (hash: string, status: string) => persist(jobs.map((job) => (job.internal_hash === hash ? { ...job, status, updatedAt: new Date().toISOString() } : job)));
     const removeJob = (hash: string) => persist(jobs.filter((job) => job.internal_hash !== hash));
@@ -266,8 +224,6 @@ export default function TrackerPage() {
                         </Link>
                     </div>
                 </header>
-
-                <PipelineBar counts={counts} />
 
                 {showForm && (
                     <form onSubmit={addRole} className="mt-5 rounded-[20px] border border-[#D8C9A7] bg-[#FFF9EC] p-5 shadow-[0_8px_18px_rgba(70,45,16,0.06)]">
