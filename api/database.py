@@ -225,14 +225,20 @@ def get_jobs(
             order_clause = "ts_rank(search_vector, websearch_to_tsquery('english', %s)) DESC, first_seen DESC"
             extra_params = [search]
         else:
-            order_column = "first_seen" if "first_seen" in columns else ("date_posted" if "date_posted" in columns else "internal_hash")
+            order_column = (
+                "first_seen"
+                if "first_seen" in columns
+                else ("date_posted" if "date_posted" in columns else "internal_hash")
+            )
             order_clause = f"{order_column} DESC"
             extra_params = []
 
         # Job descriptions are the heaviest column in this table. Public list
         # views do not need them, so keep /jobs lean by default and reserve full
         # descriptions for /jobs/{internal_hash} or explicit callers.
-        description_column = "description" if include_description and "description" in columns else "NULL AS description"
+        description_column = (
+            "description" if include_description and "description" in columns else "NULL AS description"
+        )
         active_default = "TRUE" if _is_pg() else "1"
         select_columns = ", ".join(
             [
@@ -299,7 +305,11 @@ def get_companies(ats: str = None) -> list[dict]:
         if "is_active" in columns:
             active = "TRUE" if _is_pg() else "1"
             active_where = f" AND is_active = {active}"
-        latest_expr = "MAX(first_seen)" if "first_seen" in columns else ("MAX(date_posted)" if "date_posted" in columns else "NULL")
+        latest_expr = (
+            "MAX(first_seen)"
+            if "first_seen" in columns
+            else ("MAX(date_posted)" if "date_posted" in columns else "NULL")
+        )
         cursor = conn.cursor()
         if ats:
             cursor.execute(
