@@ -132,11 +132,9 @@ export default function JobCard({
             </div>
 
             <div className="mt-3 sm:mt-4 xl:mt-5">
-                <a href={job.url} target="_blank" rel="noopener noreferrer" className="block" aria-label="Open application link">
-                    <h3 className="line-clamp-2 font-serif text-[17px] font-bold leading-[1.08] tracking-[-0.035em] text-[#1F281B] transition-colors group-hover:text-[#526736] sm:text-xl sm:leading-[1.1] xl:text-2xl xl:leading-[1.02]">
-                        {title}
-                    </h3>
-                </a>
+                <h3 className="line-clamp-2 font-serif text-[17px] font-bold leading-[1.08] tracking-[-0.035em] text-[#1F281B] sm:text-xl sm:leading-[1.1] xl:text-2xl xl:leading-[1.02]">
+                    {title}
+                </h3>
                 <p className="mt-1 line-clamp-1 text-[12px] font-medium text-[#1F281B] sm:text-sm xl:text-base">{company}</p>
             </div>
 

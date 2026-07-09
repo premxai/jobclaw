@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarDays, ChevronDown, Clock3, Grid2X2, LayoutDashboard, LogOut, MapPin, Search, SlidersHorizontal, UserCircle } from "lucide-react";
+import { CalendarDays, ChevronDown, Clock3, Grid2X2, LayoutDashboard, LogOut, MapPin, Search, UserCircle } from "lucide-react";
 import JobCard, { Job } from "@/components/JobCard";
 import NoriAppSidebar from "@/components/NoriAppSidebar";
 import NoriMark from "@/components/landing/NoriMark";
@@ -360,7 +360,6 @@ interface FilterBarProps {
     employmentType: string;
     onEmploymentTypeChange: (value: string) => void;
     onClear: () => void;
-    onApply: () => void;
 }
 
 function JobsFilterBar({
@@ -375,7 +374,6 @@ function JobsFilterBar({
     employmentType,
     onEmploymentTypeChange,
     onClear,
-    onApply,
 }: FilterBarProps) {
     const recentValue = recencyOptions.find((option) => option.hours === recentHours)?.value ?? "all";
 
@@ -421,10 +419,6 @@ function JobsFilterBar({
             <div className="flex shrink-0 items-end justify-end gap-3 sm:gap-5 xl:self-end">
                 <button type="button" onClick={onClear} className="h-[46px] text-sm font-semibold text-[#526736] underline underline-offset-2">
                     Clear all
-                </button>
-                <button type="button" onClick={onApply} className="inline-flex h-[46px] items-center gap-2.5 rounded-[10px] bg-[#526736] px-[22px] text-[15px] font-bold text-[#FFF9EC] shadow-[0_8px_18px_rgba(38,58,34,0.15)]" aria-label="Filter roles">
-                    <SlidersHorizontal className="h-4 w-4" />
-                    Filters
                 </button>
             </div>
         </section>
@@ -739,7 +733,6 @@ export default function JobFeedClient({
                                     setPage(1);
                                 }}
                                 onClear={clearFilters}
-                                onApply={loadJobs}
                             />
                         </div>
                     </div>

@@ -3,10 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import NoriAppSidebar from "@/components/NoriAppSidebar";
-import CompanyLogo from "@/components/CompanyLogo";
-import { Job } from "@/components/JobCard";
-import { displayCompany, displayTitle } from "@/lib/job-display";
-import { ArrowRight, Bookmark, ExternalLink, Trash2 } from "lucide-react";
+import JobCard, { Job } from "@/components/JobCard";
+import { ArrowRight, Bookmark, ExternalLink } from "lucide-react";
 
 interface SavedRole extends Job {
     status?: string | null;
@@ -42,7 +40,7 @@ export default function SavedRolesPage() {
             <NoriAppSidebar />
 
             <main className="px-5 py-8 sm:px-6 lg:ml-[280px]">
-                <header className="mb-8 flex flex-col gap-4 rounded-[30px] bg-ink p-6 text-white sm:p-8 lg:flex-row lg:items-end lg:justify-between">
+                <header className="mb-8 flex flex-col gap-4 rounded-[30px] bg-[#526736] p-6 text-white shadow-[0_18px_42px_rgba(38,58,34,0.18)] sm:p-8 lg:flex-row lg:items-end lg:justify-between">
                     <div>
                         <p className="mb-3 text-xs font-black uppercase tracking-[0.18em] text-white/55">saved roles</p>
                         <h1 className="text-4xl font-black tracking-[-0.06em] sm:text-5xl">Saved roles</h1>
@@ -51,7 +49,7 @@ export default function SavedRolesPage() {
                         </p>
                     </div>
                     <div className="flex flex-wrap gap-3">
-                        <Link href="/tracker" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-black text-ink transition hover:bg-surface-2">
+                        <Link href="/tracker" className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-black text-[#1F281B] transition hover:bg-[#F7EED7]">
                             Open tracker
                             <ArrowRight className="h-4 w-4" />
                         </Link>
@@ -76,48 +74,21 @@ export default function SavedRolesPage() {
                         </Link>
                     </section>
                 ) : (
-                    <section className="grid gap-4 xl:grid-cols-2">
+                    <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-5 2xl:grid-cols-4">
                         {roles.map((role) => {
-                            const company = displayCompany(role);
                             return (
-                                <article
-                                    key={role.internal_hash}
-                                    className="rounded-2xl border border-[#E7D7B7] bg-[#FFF9EC] p-5 shadow-[0_8px_18px_rgba(70,45,16,0.06)] [background-image:linear-gradient(rgba(255,249,236,0.84),rgba(255,249,236,0.84)),url('/nori-assets/paper-texture.png')] [background-size:cover]"
-                                >
-                                    <div className="flex items-start gap-4">
-                                        <CompanyLogo company={company} size="md" shape="rounded" />
-                                        <div className="min-w-0 flex-1">
-                                            <div className="mb-1 flex flex-wrap items-center gap-2">
-                                                <span className="text-sm font-black text-[#1F281B]">{company}</span>
-                                                <span className="rounded-full border border-[#D8C9A7] bg-[#F7EED7] px-2.5 py-1 text-xs font-bold text-[#526736]">
-                                                    {statusLabel(role.status)}
-                                                </span>
-                                            </div>
-                                            <h2 className="line-clamp-2 font-serif text-2xl font-bold leading-tight tracking-[-0.04em] text-[#1F281B]">
-                                                {displayTitle(role)}
-                                            </h2>
-                                            <p className="mt-2 text-sm font-medium text-[#5F665C]">{role.location || "Location not listed"}</p>
-                                        </div>
-                                    </div>
-                                    <div className="mt-5 flex items-center gap-2 border-t border-[#E7D7B7] pt-4">
-                                        <a href={role.url} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#526736] px-4 text-sm font-bold text-white">
-                                            Open job
-                                            <ExternalLink className="h-4 w-4" />
-                                        </a>
-                                        <Link href="/tracker" className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#D8C9A7] bg-[#FFF9EC] px-4 text-sm font-bold text-[#1F281B]">
-                                            Track
-                                            <ArrowRight className="h-4 w-4" />
-                                        </Link>
-                                        <button
-                                            type="button"
-                                            onClick={() => removeRole(role.internal_hash)}
-                                            className="ml-auto grid h-10 w-10 place-items-center rounded-xl border border-[#D8C9A7] bg-[#FFF9EC] text-[#5F665C] transition hover:text-red-600"
-                                            aria-label="Remove saved role"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </button>
-                                    </div>
-                                </article>
+                                <div key={role.internal_hash} className="relative">
+                                    <JobCard
+                                        job={role}
+                                        saved
+                                        applied={role.status === "applied"}
+                                        onSave={() => removeRole(role.internal_hash)}
+                                        onApply={() => window.open(role.url, "_blank", "noopener,noreferrer")}
+                                    />
+                                    <span className="pointer-events-none absolute left-4 top-16 rounded-full border border-[#D8C9A7] bg-[#F7EED7] px-2.5 py-1 text-[11px] font-bold text-[#526736]">
+                                        {statusLabel(role.status)}
+                                    </span>
+                                </div>
                             );
                         })}
                     </section>

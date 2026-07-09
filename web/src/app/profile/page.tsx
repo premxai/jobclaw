@@ -12,7 +12,6 @@ import {
     Edit3,
     MapPin,
     Search,
-    Sparkles,
     Target,
     Trophy,
 } from "lucide-react";
@@ -33,6 +32,13 @@ interface PipelineCounts {
     withdrawn: number;
 }
 
+interface ProfileInfo {
+    name: string;
+    location: string;
+    role: string;
+    image: string;
+}
+
 const emptyPipeline: PipelineCounts = {
     saved: 0,
     applied: 0,
@@ -44,6 +50,12 @@ const emptyPipeline: PipelineCounts = {
 };
 
 const activeStages = ["applied", "oa", "interview"] as const;
+const defaultProfile: ProfileInfo = {
+    name: "Alex Chen",
+    location: "San Francisco",
+    role: "Senior Product Designer",
+    image: "",
+};
 
 function getAppliedTotal(counts: PipelineCounts) {
     return counts.applied + counts.oa + counts.interview + counts.offer + counts.rejected + counts.withdrawn;
@@ -54,7 +66,35 @@ function percent(value: number, total: number) {
     return `${Math.round((value / total) * 100)}%`;
 }
 
-function ProfileHeader() {
+function ProfileAvatar({ profile, size = "md" }: { profile: ProfileInfo; size?: "md" | "lg" }) {
+    const box = size === "lg" ? "h-[132px] w-[132px]" : "h-12 w-12";
+    const initials = profile.name
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase();
+
+    return (
+        <span className={`relative grid ${box} shrink-0 place-items-center overflow-hidden rounded-full border border-[#E7D7B7] bg-[#EEF1DD] text-[#526736] shadow-sm`}>
+            {profile.image ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={profile.image} alt="" className="h-full w-full object-cover" />
+            ) : (
+                <svg viewBox="0 0 120 120" aria-hidden="true" className="h-full w-full">
+                    <rect width="120" height="120" fill="#EEF1DD" />
+                    <circle cx="60" cy="44" r="22" fill="#526736" opacity="0.92" />
+                    <path d="M24 110c5-25 20-39 36-39s31 14 36 39" fill="#526736" opacity="0.92" />
+                    <text x="60" y="108" textAnchor="middle" fontSize="18" fontWeight="800" fill="#FFF9EC">
+                        {initials}
+                    </text>
+                </svg>
+            )}
+        </span>
+    );
+}
+
+function ProfileHeader({ profile }: { profile: ProfileInfo }) {
     return (
         <header className="sticky top-0 z-20 flex min-h-[100px] items-center gap-6 border-b border-[#E7D7B7] bg-[#FFF9EC]/86 px-5 backdrop-blur-md sm:px-8 lg:ml-[280px] lg:px-11">
             <Link href="/" className="flex items-center gap-2 lg:hidden" aria-label="Nori home">
@@ -81,13 +121,9 @@ function ProfileHeader() {
             <div className="hidden h-11 w-px bg-[#E7D7B7] xl:block" />
 
             <Link href="/profile" className="flex items-center gap-3">
-                <span className="relative grid h-12 w-12 place-items-center overflow-hidden rounded-full border border-[#E7D7B7] bg-[#EFD3B0] text-sm font-black text-[#1F281B] shadow-sm">
-                    AC
-                    <span className="absolute inset-x-2 bottom-1 h-2 rounded-full bg-[#D9A978]/70" />
-                </span>
+                <ProfileAvatar profile={profile} />
                 <span className="hidden leading-tight sm:block">
-                    <span className="block text-[15px] font-bold text-[#1F281B]">Alex Chen</span>
-                    <span className="block text-[13px] font-medium text-[#5F665C]">Premium Scout</span>
+                    <span className="block text-[15px] font-bold text-[#1F281B]">{profile.name}</span>
                 </span>
                 <ChevronDown className="hidden h-4 w-4 text-[#526736] sm:block" />
             </Link>
@@ -99,42 +135,77 @@ function Pin({ className = "" }: { className?: string }) {
     return <span className={`absolute h-[18px] w-[18px] rounded-full bg-[#C99635] shadow-[0_4px_8px_rgba(70,45,16,0.18),inset_0_1px_2px_rgba(255,255,255,0.55)] ${className}`} />;
 }
 
-function ProfileSummaryCard() {
+function ProfileSummaryCard({ profile, onEdit }: { profile: ProfileInfo; onEdit: () => void }) {
     return (
         <section className="relative min-h-[210px] rounded-2xl border border-[#E7D7B7] bg-[#FFF9EC] p-6 shadow-[0_10px_24px_rgba(70,45,16,0.08)] [background-image:linear-gradient(rgba(255,249,236,0.82),rgba(255,249,236,0.82)),url('/nori-assets/paper-texture.png')] [background-size:cover] sm:p-7">
             <Pin className="left-1/2 top-[-8px] -translate-x-1/2" />
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                 <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-                    <div className="relative grid h-[132px] w-[132px] shrink-0 place-items-center overflow-hidden rounded-full border border-[#E7D7B7] bg-[#F0D4B1] shadow-[0_8px_18px_rgba(70,45,16,0.08)]">
-                        <span className="text-[42px] font-black text-[#1F281B]">AC</span>
-                        <span className="absolute bottom-5 h-7 w-20 rounded-t-full bg-[#BC7C53]/50" />
-                    </div>
+                    <ProfileAvatar profile={profile} size="lg" />
                     <div>
-                        <p className="mb-2 inline-flex items-center gap-2 rounded-full border border-[#D8C9A7] bg-[#F7EED7] px-3 py-1 text-sm font-semibold text-[#526736]">
-                            <Sparkles className="h-4 w-4 text-[#C99635]" />
-                            Premium Scout
-                        </p>
-                        <h1 className="font-serif text-[42px] font-bold leading-none tracking-[-0.045em] text-[#1F281B]">Alex Chen</h1>
+                        <h1 className="font-serif text-[42px] font-bold leading-none tracking-[-0.045em] text-[#1F281B]">{profile.name}</h1>
                         <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-[18px] font-medium text-[#5F665C]">
-                            <span>Senior Product Designer</span>
+                            <span>{profile.role}</span>
                             <span className="inline-flex items-center gap-1.5">
                                 <MapPin className="h-4 w-4" />
-                                San Francisco
+                                {profile.location}
                             </span>
                         </div>
                     </div>
                 </div>
 
-                <Link
-                    href="/settings"
+                <button
+                    type="button"
+                    onClick={onEdit}
                     aria-label="Edit profile"
                     className="inline-flex min-h-11 items-center justify-center gap-2 rounded-[10px] border border-[#D8C9A7] bg-[#FFF9EC] px-4 text-sm font-bold text-[#1F281B] transition hover:bg-[#EEF1DD] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#526736]"
                 >
                     <Edit3 className="h-4 w-4" />
                     Edit profile
-                </Link>
+                </button>
             </div>
         </section>
+    );
+}
+
+function EditProfileDialog({
+    profile,
+    onClose,
+    onSave,
+}: {
+    profile: ProfileInfo;
+    onClose: () => void;
+    onSave: (profile: ProfileInfo) => void;
+}) {
+    const [draft, setDraft] = useState(profile);
+
+    return (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-[#1F281B]/35 px-5 backdrop-blur-sm" onClick={onClose}>
+            <form
+                onSubmit={(event) => {
+                    event.preventDefault();
+                    onSave(draft);
+                }}
+                className="w-full max-w-lg rounded-[24px] border border-[#E7D7B7] bg-[#FFF9EC] p-6 shadow-[0_24px_60px_rgba(60,42,16,0.22)]"
+                onClick={(event) => event.stopPropagation()}
+            >
+                <div className="mb-5 flex items-center justify-between gap-4">
+                    <h2 className="font-serif text-3xl font-bold tracking-[-0.04em] text-[#1F281B]">Edit profile</h2>
+                    <button type="button" onClick={onClose} className="rounded-xl px-3 py-2 text-sm font-bold text-[#5F665C]">
+                        Close
+                    </button>
+                </div>
+                <div className="grid gap-3">
+                    <input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} placeholder="Name" className="h-12 rounded-xl border border-[#D8C9A7] bg-white px-4 text-sm" />
+                    <input value={draft.location} onChange={(event) => setDraft({ ...draft, location: event.target.value })} placeholder="Location" className="h-12 rounded-xl border border-[#D8C9A7] bg-white px-4 text-sm" />
+                    <input value={draft.role} onChange={(event) => setDraft({ ...draft, role: event.target.value })} placeholder="Role or desired role" className="h-12 rounded-xl border border-[#D8C9A7] bg-white px-4 text-sm" />
+                    <input value={draft.image} onChange={(event) => setDraft({ ...draft, image: event.target.value })} placeholder="Image URL" className="h-12 rounded-xl border border-[#D8C9A7] bg-white px-4 text-sm" />
+                </div>
+                <button type="submit" className="mt-5 h-12 rounded-xl bg-[#526736] px-5 text-sm font-bold text-white">
+                    Save profile
+                </button>
+            </form>
+        </div>
     );
 }
 
@@ -288,6 +359,8 @@ function ApplicationStatusCard({ counts }: { counts: PipelineCounts }) {
 
 export default function ProfilePage() {
     const [trackedRoles, setTrackedRoles] = useState<TrackedRole[]>([]);
+    const [profile, setProfile] = useState<ProfileInfo>(defaultProfile);
+    const [editingProfile, setEditingProfile] = useState(false);
 
     useEffect(() => {
         try {
@@ -296,6 +369,11 @@ export default function ProfilePage() {
         } catch {
             setTrackedRoles([]);
         }
+
+        try {
+            const savedProfile = JSON.parse(localStorage.getItem("nori_profile") || "null") as ProfileInfo | null;
+            if (savedProfile) setProfile({ ...defaultProfile, ...savedProfile });
+        } catch {}
     }, []);
 
     const counts = useMemo(
@@ -312,8 +390,27 @@ export default function ProfilePage() {
 
     return (
         <div className="min-h-screen bg-[#FFF3D6] text-[#1F281B] [background-image:radial-gradient(circle_at_8%_8%,rgba(146,189,179,0.25),transparent_32%),radial-gradient(circle_at_96%_4%,rgba(255,211,130,0.26),transparent_30%),linear-gradient(rgba(255,243,214,0.80),rgba(255,243,214,0.80)),url('/nori-assets/desk-paper-texture.png')] [background-size:auto,auto,auto,520px]">
+            {editingProfile && (
+                <EditProfileDialog
+                    profile={profile}
+                    onClose={() => setEditingProfile(false)}
+                    onSave={(updatedProfile) => {
+                        const cleanProfile = {
+                            ...defaultProfile,
+                            ...updatedProfile,
+                            name: updatedProfile.name.trim() || defaultProfile.name,
+                            location: updatedProfile.location.trim() || defaultProfile.location,
+                            role: updatedProfile.role.trim() || defaultProfile.role,
+                            image: updatedProfile.image.trim(),
+                        };
+                        setProfile(cleanProfile);
+                        localStorage.setItem("nori_profile", JSON.stringify(cleanProfile));
+                        setEditingProfile(false);
+                    }}
+                />
+            )}
             <NoriAppSidebar />
-            <ProfileHeader />
+            <ProfileHeader profile={profile} />
 
             <main className="px-5 py-8 sm:px-8 lg:ml-[280px] lg:px-11">
                 <div className="mx-auto max-w-[1280px]">
@@ -331,7 +428,7 @@ export default function ProfilePage() {
                         </Link>
                     </div>
 
-                    <ProfileSummaryCard />
+                    <ProfileSummaryCard profile={profile} onEdit={() => setEditingProfile(true)} />
                     <MetricCards appliedTotal={appliedTotal} />
                     <ApplicationStatusCard counts={counts} />
                 </div>
