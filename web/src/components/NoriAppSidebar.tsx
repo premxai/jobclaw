@@ -18,7 +18,7 @@ export default function NoriAppSidebar({ locked = false, onLockedAction }: { loc
 
     return (
         <aside className="fixed inset-y-0 left-0 z-30 hidden w-[280px] border-r border-[#E7D7B7] bg-[#FFF8EA] px-[18px] py-7 lg:flex lg:flex-col">
-            <Link href="/" className="mb-[46px] flex items-center gap-3" aria-label="Nori home">
+            <Link href="/jobs" className="mb-[46px] flex items-center gap-3" aria-label="Nori dashboard">
                 <NoriMark />
                 <span className="font-serif text-[34px] font-bold leading-none tracking-[-0.04em] text-[#1F281B]">Nori</span>
             </Link>

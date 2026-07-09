@@ -28,7 +28,7 @@ export default function HeroCopy() {
       </p>
 
       <div className="mt-8 flex flex-col gap-[18px] sm:flex-row">
-        <Link href="/jobs?preview=1" className="inline-flex h-[58px] items-center justify-center gap-2.5 rounded-[14px] bg-[#526736] px-[30px] text-base font-bold text-[#FFF9EC] shadow-[0_12px_26px_rgba(38,58,34,0.22)] transition hover:bg-[#43552C]">
+        <Link href="/login" className="inline-flex h-[58px] items-center justify-center gap-2.5 rounded-[14px] bg-[#526736] px-[30px] text-base font-bold text-[#FFF9EC] shadow-[0_12px_26px_rgba(38,58,34,0.22)] transition hover:bg-[#43552C]">
           See today&apos;s notes
           <ArrowRight className="h-[18px] w-[18px]" />
         </Link>
