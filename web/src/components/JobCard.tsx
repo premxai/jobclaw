@@ -113,7 +113,7 @@ export default function JobCard({
         <article className="group relative flex h-[220px] flex-col rounded-lg border border-[#E7D7B7] bg-[#FFF7E5] p-4 shadow-[0_8px_18px_rgba(70,45,16,0.08)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_28px_rgba(70,45,16,0.11)] [background-image:linear-gradient(rgba(255,247,229,0.78),rgba(255,247,229,0.78)),url('/nori-assets/paper-texture.png')] [background-size:cover] sm:h-[248px] sm:p-5 xl:h-[288px] xl:p-6">
             <span className="absolute left-1/2 top-[-7px] h-[18px] w-[18px] -translate-x-1/2 rounded-full bg-[#C99635] shadow-[0_4px_8px_rgba(77,48,18,0.24),inset_0_1px_2px_rgba(255,255,255,0.55)]" />
             <div className="flex items-start justify-between gap-3 sm:gap-4">
-                <CompanyLogo company={company} size="md" shape="rounded" />
+                <CompanyLogo company={company} sourceUrl={job.url} size="md" shape="rounded" />
                 {onSave && (
                     <div className="flex items-center gap-2">
                         <button

@@ -66,22 +66,27 @@ export default function FeedbackButton() {
     const submit = async () => {
         setSending(true);
         setStatus("");
-        const formData = new FormData();
-        formData.set("message", message);
-        formData.set("email", email);
-        formData.set("page", window.location.href);
-        images.forEach((image) => formData.append("images", image));
+        try {
+            const formData = new FormData();
+            formData.set("message", message);
+            formData.set("email", email);
+            formData.set("page", window.location.href);
+            images.forEach((image) => formData.append("images", image));
 
-        const response = await fetch("/api/feedback", { method: "POST", body: formData });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) {
-            setStatus(data.error || "Could not send feedback.");
-        } else {
-            setStatus("Sent. Thank you for the note.");
-            setMessage("");
-            setImages([]);
+            const response = await fetch("/api/feedback", { method: "POST", body: formData });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                setStatus(data.error || "Could not send feedback.");
+            } else {
+                setStatus("Sent. Thank you for the note.");
+                setMessage("");
+                setImages([]);
+            }
+        } catch {
+            setStatus("Could not reach the feedback service. Please try again.");
+        } finally {
+            setSending(false);
         }
-        setSending(false);
     };
 
     return (

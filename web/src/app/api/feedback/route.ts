@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import nodemailer from "nodemailer";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
@@ -11,6 +12,7 @@ const MAX_PAGE_LENGTH = 2_048;
 const MAX_EMAIL_LENGTH = 254;
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1_000;
 const RATE_LIMIT_MAX = 5;
+const SMTP_TIMEOUT_MS = 15_000;
 const rateLimit = new Map<string, { count: number; resetAt: number }>();
 
 function escapeHtml(value: string) {
@@ -74,13 +76,17 @@ export async function POST(request: NextRequest) {
     const userEmail = userResult?.data.user?.email || "";
     const fromEmail = senderEmail || userEmail || "anonymous";
 
-    const resendApiKey = process.env.RESEND_API_KEY || "";
-    if (!resendApiKey) {
-        return NextResponse.json({ error: "Feedback email is not configured. Add RESEND_API_KEY in deployment." }, { status: 503 });
+    const smtpUser = process.env.SMTP_USER || "";
+    const smtpPassword = process.env.SMTP_PASSWORD || "";
+    if (!smtpUser || !smtpPassword) {
+        return NextResponse.json({ error: "Feedback email is not configured. Add SMTP_USER and SMTP_PASSWORD in deployment." }, { status: 503 });
     }
 
+    const smtpPort = Number(process.env.SMTP_PORT || "465");
+    const smtpSecure = process.env.SMTP_SECURE ? process.env.SMTP_SECURE === "1" : smtpPort === 465;
+    const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
     const to = process.env.FEEDBACK_TO_EMAIL || "kanaparthiprem03@gmail.com";
-    const from = process.env.FEEDBACK_FROM_EMAIL || "Nori Feedback <feedback@norinote.xyz>";
+    const from = process.env.FEEDBACK_FROM_EMAIL || smtpUser;
     const attachments = await Promise.all(
         images.map(async (image) => ({
             filename: safeFileName(image.name),
@@ -88,15 +94,20 @@ export async function POST(request: NextRequest) {
         })),
     );
 
-    const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${resendApiKey}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
+    const transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: smtpPort,
+        secure: smtpSecure,
+        auth: { user: smtpUser, pass: smtpPassword },
+        connectionTimeout: SMTP_TIMEOUT_MS,
+        greetingTimeout: SMTP_TIMEOUT_MS,
+        socketTimeout: SMTP_TIMEOUT_MS,
+    });
+    try {
+        await transporter.sendMail({
             from,
             to,
+            replyTo: fromEmail === "anonymous" ? undefined : fromEmail,
             subject: "New Nori feedback",
             html: `
                 <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f281b">
@@ -109,11 +120,12 @@ export async function POST(request: NextRequest) {
                 </div>
             `,
             attachments,
-        }),
-    });
-
-    if (!response.ok) {
-        return NextResponse.json({ error: "Could not send feedback email." }, { status: 502 });
+        });
+    } catch (error) {
+        console.error("[feedback] SMTP delivery failed", error instanceof Error ? error.message : error);
+        return NextResponse.json({ error: "Could not send feedback email. Check the SMTP settings." }, { status: 502 });
+    } finally {
+        transporter.close();
     }
 
     return NextResponse.json({ ok: true });
