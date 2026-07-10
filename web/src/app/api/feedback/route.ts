@@ -23,6 +23,17 @@ function safeFileName(name: string) {
     return name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "feedback-image";
 }
 
+function smtpFailureMessage(error: unknown) {
+    const candidate = error as { code?: string; responseCode?: number } | null;
+    if (candidate?.code === "EAUTH" || candidate?.responseCode === 535) {
+        return "SMTP authentication failed. For Gmail, use a 16-character App Password and verify SMTP_USER.";
+    }
+    if (candidate?.code === "ETIMEDOUT" || candidate?.code === "ECONNECTION" || candidate?.code === "ESOCKET") {
+        return "SMTP connection failed. Check SMTP_HOST, SMTP_PORT, and SMTP_SECURE in the web service.";
+    }
+    return "Could not send feedback email. Check the SMTP settings.";
+}
+
 export async function POST(request: NextRequest) {
     const now = Date.now();
     const forwardedFor = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
@@ -77,14 +88,16 @@ export async function POST(request: NextRequest) {
     const fromEmail = senderEmail || userEmail || "anonymous";
 
     const smtpUser = process.env.SMTP_USER || "";
-    const smtpPassword = process.env.SMTP_PASSWORD || "";
+    const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
+    const rawSmtpPassword = process.env.SMTP_PASSWORD || "";
+    // Gmail displays App Passwords in groups of four; spaces are formatting, not part of the credential.
+    const smtpPassword = /(^|\.)gmail\.com$/i.test(smtpHost) ? rawSmtpPassword.replace(/\s+/g, "") : rawSmtpPassword;
     if (!smtpUser || !smtpPassword) {
         return NextResponse.json({ error: "Feedback email is not configured. Add SMTP_USER and SMTP_PASSWORD in deployment." }, { status: 503 });
     }
 
-    const smtpPort = Number(process.env.SMTP_PORT || "465");
+    const smtpPort = Number.parseInt(process.env.SMTP_PORT || "587", 10);
     const smtpSecure = process.env.SMTP_SECURE ? process.env.SMTP_SECURE === "1" : smtpPort === 465;
-    const smtpHost = process.env.SMTP_HOST || "smtp.gmail.com";
     const to = process.env.FEEDBACK_TO_EMAIL || "kanaparthiprem03@gmail.com";
     const from = process.env.FEEDBACK_FROM_EMAIL || smtpUser;
     const attachments = await Promise.all(
@@ -122,8 +135,14 @@ export async function POST(request: NextRequest) {
             attachments,
         });
     } catch (error) {
-        console.error("[feedback] SMTP delivery failed", error instanceof Error ? error.message : error);
-        return NextResponse.json({ error: "Could not send feedback email. Check the SMTP settings." }, { status: 502 });
+        const smtpError = error as { code?: string; responseCode?: number; command?: string; response?: string };
+        console.error("[feedback] SMTP delivery failed", {
+            code: smtpError.code || "unknown",
+            responseCode: smtpError.responseCode || "unknown",
+            command: smtpError.command || "unknown",
+            response: smtpError.response || "unknown",
+        });
+        return NextResponse.json({ error: smtpFailureMessage(error) }, { status: 502 });
     } finally {
         transporter.close();
     }

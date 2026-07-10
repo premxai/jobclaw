@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Bookmark, BriefcaseBusiness, Calendar, Edit3, FileText, MapPin, Target, Users, XCircle } from "lucide-react";
 import NoriAppSidebar from "@/components/NoriAppSidebar";
+import ProfileAvatar from "@/components/ProfileAvatar";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
 import { useProfileStorageKey, useSavedJobsStorageKey } from "@/lib/use-saved-jobs-storage-key";
 
@@ -57,21 +58,6 @@ function normalizeStatus(status?: string | null): keyof PipelineCounts {
     if (value === "withdrawn") return "rejected";
     if (value in emptyPipeline) return value as keyof PipelineCounts;
     return "saved";
-}
-
-function ProfileAvatar({ profile }: { profile: ProfileInfo }) {
-    const initials = profile.name
-        .split(" ")
-        .map((part) => part[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase();
-
-    return (
-        <div className="grid h-[104px] w-[104px] shrink-0 place-items-center rounded-full bg-[radial-gradient(circle_at_35%_25%,#8EA66C_0%,#496B2D_48%,#203D18_100%)] font-serif text-[34px] font-bold tracking-[-0.06em] text-[#FFF9EC] shadow-[inset_0_0_0_10px_rgba(238,241,221,0.82),0_12px_28px_rgba(47,74,29,0.18)] xl:h-[118px] xl:w-[118px] xl:text-[38px]">
-            {initials || "AC"}
-        </div>
-    );
 }
 
 function EditProfileDialog({
@@ -334,7 +320,7 @@ export default function ProfilePage() {
                     <section className="relative overflow-hidden rounded-[16px] border border-[#E7D7B7] bg-white p-6 shadow-[0_10px_24px_rgba(44,30,12,0.07)] sm:p-7">
                         <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
                             <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
-                                <ProfileAvatar profile={profile} />
+                                <ProfileAvatar name={profile.name} size="lg" />
                                 <div>
                                     <h2 className="font-serif text-[36px] font-bold leading-none tracking-[-0.045em] text-[#12302A] xl:text-[40px]">{profile.name}</h2>
                                     <p className="mt-3 text-lg font-medium text-[#1F281B]">{profile.role}</p>

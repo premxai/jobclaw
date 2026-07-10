@@ -61,6 +61,26 @@ function parseSkillTags(job: Job): string[] {
     return tags.map((tag) => tag.replace(/\s+/g, " ").trim()).filter(Boolean).filter((tag) => !blocked.test(tag));
 }
 
+function categoryKey(value: string): string {
+    const normalized = value
+        .toLowerCase()
+        .replace(/&/g, "and")
+        .replace(/[^a-z0-9]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (/\b(ai|ml|machine learning|artificial intelligence|deep learning|applied ai|computer vision|nlp|natural language)\b/.test(normalized)) return "ai/ml";
+    if (/\b(swe|software engineer|software engineering|software development|backend|back end|frontend|front end|full stack|devops|sre)\b/.test(normalized)) return "swe";
+    if (/\b(data science|data scientist)\b/.test(normalized)) return "data science";
+    if (/\b(data engineering|data engineer)\b/.test(normalized)) return "data engineering";
+    if (/\b(data analyst|analytics)\b/.test(normalized)) return "data analyst";
+    if (normalized === "data") return "data science";
+    if (/\b(new grad|new graduate|entry level|entry level)\b/.test(normalized)) return "new grad";
+    if (/\b(product manager|product management|product)\b/.test(normalized)) return "product";
+    if (/\b(research|researcher|scientist)\b/.test(normalized)) return "research";
+    return normalized;
+}
+
 function matchesSearchQuery(job: Job, query: string): boolean {
     const tokens = normalizeSearch(query).split(" ").filter(Boolean);
     if (tokens.length === 0) return true;
@@ -70,8 +90,9 @@ function matchesSearchQuery(job: Job, query: string): boolean {
 
 function matchesCategory(job: Job, selected: Set<string>): boolean {
     if (selected.size === 0) return true;
-    const tags = parseSkillTags(job).map((tag) => tag.toLowerCase());
-    return Array.from(selected).some((category) => tags.includes(category.toLowerCase()));
+    const values = [...parseSkillTags(job), displayTitle(job)];
+    const jobCategories = values.map(categoryKey);
+    return Array.from(selected).some((category) => jobCategories.includes(categoryKey(category)));
 }
 
 interface CompanyJobGroup {
@@ -502,7 +523,6 @@ export default function JobFeedClient({
             setLoading(false);
             return;
         }
-        const category = selectedCategories.size === 1 ? Array.from(selectedCategories)[0] : undefined;
         const source = selectedSources.size === 1 ? Array.from(selectedSources)[0].toLowerCase() : undefined;
         let fetchedJobs: Job[] = [];
         if (isRelevanceMode) {
@@ -513,7 +533,6 @@ export default function JobFeedClient({
                 search,
                 page: 1,
                 limit: WORKING_SET_LIMIT,
-                category,
                 source,
                 recentHours: recentHours ?? undefined,
             });
@@ -531,7 +550,6 @@ export default function JobFeedClient({
                             search,
                             page: apiPage,
                             limit: WORKING_SET_LIMIT,
-                            category,
                             source,
                             recentHours: recentHours ?? undefined,
                         }),
@@ -547,7 +565,7 @@ export default function JobFeedClient({
         setJobs(filtered);
         setTotal(groupedTotal);
         setLoading(false);
-    }, [search, selectedCategories, selectedSources, recentHours, isRelevanceMode, previewLocked, filterBoardJobs]);
+    }, [search, selectedSources, recentHours, isRelevanceMode, previewLocked, filterBoardJobs]);
 
     useEffect(() => {
         loadJobs();

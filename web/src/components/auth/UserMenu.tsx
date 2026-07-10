@@ -1,29 +1,18 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { ChevronDown, LogOut, UserCircle } from "lucide-react";
 import { createBrowserSupabaseClient } from "@/lib/supabase/browser";
-
-function initialsFor(user: User | null) {
-    const source = String(user?.user_metadata?.full_name || user?.email || "Guest");
-    return source
-        .split(/[\s@._-]+/)
-        .filter(Boolean)
-        .map((part) => part[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase();
-}
+import ProfileAvatar from "@/components/ProfileAvatar";
 
 export default function UserMenu() {
     const [open, setOpen] = useState(false);
     const [user, setUser] = useState<User | null>(null);
     const router = useRouter();
     const supabase = createBrowserSupabaseClient();
-    const initials = useMemo(() => initialsFor(user), [user]);
     const displayName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Guest";
 
     useEffect(() => {
@@ -47,7 +36,7 @@ export default function UserMenu() {
     return (
         <div className="relative order-2 block sm:order-3">
             <button type="button" onClick={() => setOpen((value) => !value)} className="flex items-center gap-3" aria-expanded={open} aria-haspopup="menu">
-                <span className="grid h-12 w-12 place-items-center rounded-full bg-[#D9B08C] text-sm font-black text-[#1F281B] shadow-sm">{initials}</span>
+                <ProfileAvatar name={displayName} size="sm" />
                 <span className="hidden leading-tight sm:block">
                     <span className="block text-[15px] font-bold text-[#1F281B]">{displayName}</span>
                 </span>
