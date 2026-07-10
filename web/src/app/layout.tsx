@@ -38,9 +38,9 @@ export const metadata: Metadata = {
     "Nori searches across the internet for fresh tech jobs, notes the good ones, and keeps your job hunt organized.",
   keywords: ["Nori Note", "jobs", "tech jobs", "AI jobs", "software engineer", "new grad", "job board"],
   icons: {
-    icon: "/icon.svg",
-    shortcut: "/icon.svg",
-    apple: "/icon.svg",
+    icon: "/nori-assets/nori-mark.png",
+    shortcut: "/nori-assets/nori-mark.png",
+    apple: "/nori-assets/nori-mark.png",
   },
   openGraph: {
     title: "Nori Note - Fresh tech jobs, neatly noted",
