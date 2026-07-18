@@ -263,6 +263,24 @@ def is_postgres() -> bool:
 # ═══════════════════════════════════════════════════════════════════════
 
 
+def _is_pg_connection_error(error: Exception) -> bool:
+    """Return whether a PostgreSQL error indicates that the connection must be renewed."""
+    try:
+        import psycopg2
+
+        return isinstance(error, (psycopg2.OperationalError, psycopg2.InterfaceError))
+    except ImportError:
+        return error.__class__.__name__ in {"OperationalError", "InterfaceError"}
+
+
+def _safe_pg_rollback(conn) -> None:
+    """Rollback without masking the original database error when a socket is already closed."""
+    try:
+        conn.rollback()
+    except Exception:
+        pass
+
+
 _schema_initialized = False
 _POSTGRES_SCHEMA_LOCK_ID = 839201742
 
@@ -1054,84 +1072,109 @@ def _insert_job_sqlite(conn, job_dict, internal_hash, keywords, first_seen) -> b
         return False
 
 
-def _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
-    """PostgreSQL insert with ON CONFLICT upsert."""
-    try:
-        cursor = conn.cursor()
-        tech_stack_json = json.dumps(job_dict["tech_stack"]) if job_dict.get("tech_stack") else None
-        cursor.execute(
-            """
-            INSERT INTO jobs (
-                internal_hash, job_id, title, company, location, url,
-                date_posted, source_ats, first_seen, status, keywords_matched,
-                description, salary_min, salary_max, salary_currency,
-                experience_years, remote_ok, job_type, seniority_level,
-                visa_sponsorship, tech_stack, is_active, last_seen_at, quality_score,
-                quality_state, quality_reasons, canonical_company, canonical_title, source_confidence
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'unposted', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (internal_hash) DO UPDATE SET
-                last_seen_at = EXCLUDED.last_seen_at,
-                is_active = TRUE,
-                quality_score = EXCLUDED.quality_score,
-                quality_state = EXCLUDED.quality_state,
-                quality_reasons = EXCLUDED.quality_reasons,
-                canonical_company = EXCLUDED.canonical_company,
-                canonical_title = EXCLUDED.canonical_title,
-                source_confidence = EXCLUDED.source_confidence,
-                description = COALESCE(NULLIF(jobs.description, ''), EXCLUDED.description),
-                salary_min = COALESCE(jobs.salary_min, EXCLUDED.salary_min),
-                salary_max = COALESCE(jobs.salary_max, EXCLUDED.salary_max),
-                salary_currency = COALESCE(jobs.salary_currency, EXCLUDED.salary_currency),
-                experience_years = COALESCE(jobs.experience_years, EXCLUDED.experience_years),
-                remote_ok = COALESCE(jobs.remote_ok, EXCLUDED.remote_ok),
-                job_type = COALESCE(jobs.job_type, EXCLUDED.job_type),
-                seniority_level = COALESCE(jobs.seniority_level, EXCLUDED.seniority_level),
-                visa_sponsorship = COALESCE(jobs.visa_sponsorship, EXCLUDED.visa_sponsorship),
-                tech_stack = COALESCE(jobs.tech_stack, EXCLUDED.tech_stack)
-            RETURNING (xmax = 0) AS is_new
-        """,
-            (
-                internal_hash,
-                job_dict.get("job_id", ""),
-                job_dict.get("title", ""),
-                job_dict.get("company", ""),
-                job_dict.get("location", ""),
-                job_dict.get("url", ""),
-                job_dict.get("date_posted", ""),
-                job_dict.get("source_ats", ""),
-                first_seen,
-                keywords,
-                job_dict.get("description"),
-                job_dict.get("salary_min"),
-                job_dict.get("salary_max"),
-                job_dict.get("salary_currency"),
-                job_dict.get("experience_years"),
-                job_dict.get("remote_ok"),
-                job_dict.get("job_type"),
-                job_dict.get("seniority_level"),
-                1
-                if job_dict.get("visa_sponsorship") is True
-                else (0 if job_dict.get("visa_sponsorship") is False else job_dict.get("visa_sponsorship")),
-                tech_stack_json,
-                first_seen,
-                compute_quality_score(job_dict),
-                job_dict["quality_state"],
-                json.dumps(job_dict["quality_reasons"]),
-                job_dict["canonical_company"],
-                job_dict["canonical_title"],
-                job_dict["source_confidence"],
-            ),
-        )
-        result = cursor.fetchone()
-        _upsert_job_fingerprint(cursor, internal_hash, job_dict.get("source_ats", ""), first_seen)
-        conn.commit()
-        return result[0] if result else False
-    except Exception as e:
-        conn.rollback()
-        from scripts.utils.logger import _log
+def _insert_job_pg_once(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
+    """Execute one PostgreSQL insert attempt on the supplied connection."""
+    cursor = conn.cursor()
+    tech_stack_json = json.dumps(job_dict["tech_stack"]) if job_dict.get("tech_stack") else None
+    cursor.execute(
+        """
+        INSERT INTO jobs (
+            internal_hash, job_id, title, company, location, url,
+            date_posted, source_ats, first_seen, status, keywords_matched,
+            description, salary_min, salary_max, salary_currency,
+            experience_years, remote_ok, job_type, seniority_level,
+            visa_sponsorship, tech_stack, is_active, last_seen_at, quality_score,
+            quality_state, quality_reasons, canonical_company, canonical_title, source_confidence
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'unposted', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, TRUE, %s, %s, %s, %s, %s, %s, %s)
+        ON CONFLICT (internal_hash) DO UPDATE SET
+            last_seen_at = EXCLUDED.last_seen_at,
+            is_active = TRUE,
+            quality_score = EXCLUDED.quality_score,
+            quality_state = EXCLUDED.quality_state,
+            quality_reasons = EXCLUDED.quality_reasons,
+            canonical_company = EXCLUDED.canonical_company,
+            canonical_title = EXCLUDED.canonical_title,
+            source_confidence = EXCLUDED.source_confidence,
+            description = COALESCE(NULLIF(jobs.description, ''), EXCLUDED.description),
+            salary_min = COALESCE(jobs.salary_min, EXCLUDED.salary_min),
+            salary_max = COALESCE(jobs.salary_max, EXCLUDED.salary_max),
+            salary_currency = COALESCE(jobs.salary_currency, EXCLUDED.salary_currency),
+            experience_years = COALESCE(jobs.experience_years, EXCLUDED.experience_years),
+            remote_ok = COALESCE(jobs.remote_ok, EXCLUDED.remote_ok),
+            job_type = COALESCE(jobs.job_type, EXCLUDED.job_type),
+            seniority_level = COALESCE(jobs.seniority_level, EXCLUDED.seniority_level),
+            visa_sponsorship = COALESCE(jobs.visa_sponsorship, EXCLUDED.visa_sponsorship),
+            tech_stack = COALESCE(jobs.tech_stack, EXCLUDED.tech_stack)
+        RETURNING (xmax = 0) AS is_new
+    """,
+        (
+            internal_hash,
+            job_dict.get("job_id", ""),
+            job_dict.get("title", ""),
+            job_dict.get("company", ""),
+            job_dict.get("location", ""),
+            job_dict.get("url", ""),
+            job_dict.get("date_posted", ""),
+            job_dict.get("source_ats", ""),
+            first_seen,
+            keywords,
+            job_dict.get("description"),
+            job_dict.get("salary_min"),
+            job_dict.get("salary_max"),
+            job_dict.get("salary_currency"),
+            job_dict.get("experience_years"),
+            job_dict.get("remote_ok"),
+            job_dict.get("job_type"),
+            job_dict.get("seniority_level"),
+            1
+            if job_dict.get("visa_sponsorship") is True
+            else (0 if job_dict.get("visa_sponsorship") is False else job_dict.get("visa_sponsorship")),
+            tech_stack_json,
+            first_seen,
+            compute_quality_score(job_dict),
+            job_dict["quality_state"],
+            json.dumps(job_dict["quality_reasons"]),
+            job_dict["canonical_company"],
+            job_dict["canonical_title"],
+            job_dict["source_confidence"],
+        ),
+    )
+    result = cursor.fetchone()
+    _upsert_job_fingerprint(cursor, internal_hash, job_dict.get("source_ats", ""), first_seen)
+    conn.commit()
+    return result[0] if result else False
 
-        _log(f"PG Insert Error ({job_dict.get('company')} - {job_dict.get('title')}): {e}", "ERROR")
-        return False
+
+def _insert_job_pg(conn, job_dict, internal_hash, keywords, first_seen) -> bool:
+    """Insert a job, renewing a PostgreSQL connection once after a transport failure."""
+    from scripts.utils.logger import _log
+
+    try:
+        return _insert_job_pg_once(conn, job_dict, internal_hash, keywords, first_seen)
+    except Exception as error:
+        _safe_pg_rollback(conn)
+        if not _is_pg_connection_error(error):
+            _log(f"PG Insert Error ({job_dict.get('company')} - {job_dict.get('title')}): {error}", "ERROR")
+            return False
+
+        _log(f"PG connection dropped while inserting {job_dict.get('company')} - retrying once", "WARN")
+        retry_conn = None
+        try:
+            retry_conn = get_connection()
+            return _insert_job_pg_once(retry_conn, job_dict, internal_hash, keywords, first_seen)
+        except Exception as retry_error:
+            _safe_pg_rollback(retry_conn)
+            _log(
+                f"PG Insert Error after reconnect ({job_dict.get('company')} - {job_dict.get('title')}): {retry_error}",
+                "ERROR",
+            )
+            return False
+        finally:
+            if retry_conn is not None:
+                try:
+                    retry_conn.close()
+                except Exception:
+                    pass
 
 
 def mark_stale_jobs(conn, source_ats: str, company: str, active_job_ids: set[str]) -> int:

@@ -22,6 +22,7 @@ except ImportError:
     pass
 
 from scripts.database.db_utils import (
+    _is_pg_connection_error,
     get_companies_for_scrape,
     get_connection,
     record_company_validation,
@@ -42,6 +43,26 @@ CORE_PLATFORMS = {
     "bamboohr",
     "oracle",
 }
+
+
+def _record_validation_with_retry(ats: str, slug: str, result: dict) -> None:
+    """Persist one validation result and renew the connection after a transient DB drop."""
+    for attempt in range(2):
+        conn_inner = None
+        try:
+            conn_inner = get_connection()
+            record_company_validation(conn_inner, ats, slug, result)
+            return
+        except Exception as error:
+            if attempt == 1 or not _is_pg_connection_error(error):
+                raise
+            _log(f"[validate-targets] PostgreSQL connection dropped for {ats}/{slug}; retrying", "WARN")
+        finally:
+            if conn_inner is not None:
+                try:
+                    conn_inner.close()
+                except Exception:
+                    pass
 
 
 async def _probe(session, limiter: RateLimiter, company: dict) -> dict:
@@ -206,11 +227,7 @@ async def validate_targets(limit: int = 200, platforms: set[str] | None = None, 
         async def run_one(target):
             async with semaphore:
                 result = await _probe(session, limiter, target)
-                conn_inner = get_connection()
-                try:
-                    record_company_validation(conn_inner, target["ats"], target["slug"], result)
-                finally:
-                    conn_inner.close()
+                _record_validation_with_retry(target["ats"], target["slug"], result)
                 counts[result.get("category") or result.get("status") or "unknown"] += 1
 
         await asyncio.gather(*(run_one(t) for t in targets))

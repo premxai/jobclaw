@@ -229,7 +229,6 @@ async def run_hot_scraper():
     finally:
         conn_dead.close()
 
-    conn = get_connection()
     new_jobs = 0
     alert_jobs = []
 
@@ -269,8 +268,9 @@ async def run_hot_scraper():
         if pending:
             _log_hot(f"{len(pending)}/{len(tasks)} companies timed out (>90s) — skipped", "WARN")
 
-        # HACK 3: Track permanent failures (404s) in the DB so dead companies are skipped
-        conn_fail = get_connection()
+        # Open the write connection after the network sweep so a long fetch cannot
+        # leave a PostgreSQL socket idle long enough for the provider to close it.
+        conn = get_connection()
         try:
             for (name, ats, _), result in zip(tasks, results):
                 if isinstance(result, Exception):
@@ -278,7 +278,7 @@ async def run_hot_scraper():
                     if "404" in err_str or "permanent" in err_str.lower():
                         slug = next((c.get("slug") for c in hot_list if c.get("company") == name), None)
                         if slug:
-                            mark_company_failure(conn_fail, slug, permanent=True)
+                            mark_company_failure(conn, slug, permanent=True)
                     _log_hot(f"[{ats}/{name}] Error: {result}", "WARN")
                     continue
 
@@ -307,12 +307,16 @@ async def run_hot_scraper():
                     }
 
                     is_new = insert_job(conn, j_dict)
+                    if getattr(conn, "closed", 0):
+                        conn.close()
+                        conn = get_connection()
+                        is_new = insert_job(conn, j_dict)
                     if is_new:
                         new_jobs += 1
                         # All new hot-company jobs are by definition fresh — alert immediately
                         alert_jobs.append((j_dict, 0))  # 0 minutes old = just found
         finally:
-            conn_fail.close()
+            conn.close()
 
     # Batch-send Discord alerts (don't spam — at most 20 per run)
     if alert_jobs:
@@ -323,6 +327,7 @@ async def run_hot_scraper():
 
     duration = round(time.time() - start_time, 2)
 
+    conn = get_connection()
     try:
         log_scraper_run(conn, "scrape_hot", len(hot_list), new_jobs, duration, "")
     finally:

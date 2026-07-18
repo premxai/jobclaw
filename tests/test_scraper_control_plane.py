@@ -2,6 +2,7 @@ import os
 import sqlite3
 import unittest
 from datetime import datetime, timedelta, timezone
+from unittest.mock import patch
 
 import scripts.database.db_utils as db_utils
 from api.board_snapshot import build_snapshot_from_rows
@@ -117,6 +118,44 @@ class ScraperControlPlaneTests(unittest.TestCase):
         self.assertTrue(inserted)
         row = self.conn.execute("SELECT description FROM jobs WHERE company = 'Acme'").fetchone()
         self.assertEqual(len(row["description"]), 24)
+
+    def test_postgres_insert_reconnects_after_connection_drop(self):
+        class OperationalError(Exception):
+            pass
+
+        stale_conn = unittest.mock.Mock()
+        retry_conn = unittest.mock.Mock()
+        old_database_url = db_utils.DATABASE_URL
+        db_utils.DATABASE_URL = "postgresql://example.invalid/jobclaw"
+        try:
+            with (
+                patch.object(
+                    db_utils,
+                    "_insert_job_pg_once",
+                    side_effect=[OperationalError("server closed the connection unexpectedly"), True],
+                ) as insert_once,
+                patch.object(db_utils, "get_connection", return_value=retry_conn) as get_connection,
+            ):
+                inserted = db_utils._insert_job_pg(
+                    stale_conn,
+                    {"company": "Acme", "title": "Software Engineer"},
+                    "greenhouse::acme::1",
+                    "[]",
+                    self.now.isoformat(),
+                )
+        finally:
+            db_utils.DATABASE_URL = old_database_url
+
+        self.assertTrue(inserted)
+        stale_conn.rollback.assert_called_once()
+        insert_once.assert_has_calls(
+            [
+                unittest.mock.call(stale_conn, unittest.mock.ANY, "greenhouse::acme::1", "[]", unittest.mock.ANY),
+                unittest.mock.call(retry_conn, unittest.mock.ANY, "greenhouse::acme::1", "[]", unittest.mock.ANY),
+            ]
+        )
+        get_connection.assert_called_once_with()
+        retry_conn.close.assert_called_once()
 
     def test_database_maintenance_prunes_low_value_rows_only(self):
         old_env = {
