@@ -163569,6 +163569,596 @@
       "company": "Chabez Tech is looking for a Senior Software Engineer (C++ / VxWorks) in VA-206, Dahlgren, VA 22485, USA",
       "ats": "smartrecruiters",
       "slug": "chabeztech"
+    },
+    {
+      "company": "Caci",
+      "ats": "workday",
+      "slug": "caci:1:external/job/denver-co-us/junior-application-developer_328917"
+    },
+    {
+      "company": "Assetmark",
+      "ats": "workday",
+      "slug": "assetmark:5:assetmark_careers/job/charlotte-nc/associate-product-manager--internal-ai_req-003911"
+    },
+    {
+      "company": "Moog",
+      "ats": "workday",
+      "slug": "moog:5:moog_external_career_site/job/buffalo-ny/a-t-technician-i_r-26-19036"
+    },
+    {
+      "company": "Veteransunited",
+      "ats": "workday",
+      "slug": "veteransunited:1:vuhl/job/columbia-mo/data-coordinator_r6132"
+    },
+    {
+      "company": "Boseallaboutme",
+      "ats": "workday",
+      "slug": "boseallaboutme:503:bose_careers/job/us-ga---atlanta/salesforce-marketing-and-loyalty-product-owner_r29108"
+    },
+    {
+      "company": "Jackson",
+      "ats": "workday",
+      "slug": "jackson:1:jackson_careers/job/nashville-tn/crm-platform-analyst_req-03658"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-fl-st-petersburg-381bd--7401-22nd-ave-n--bldg-d/xmlname-2027-conversion---software-engineer-ii---st-petersburg--fl--onsite-_01860305"
+    },
+    {
+      "company": "Avav",
+      "ats": "workday",
+      "slug": "avav:1:en-us/avav/job/melbourne-fl/software-engineer-iii--apps-_7569"
+    },
+    {
+      "company": "Sluhn",
+      "ats": "workday",
+      "slug": "sluhn:1:sluhn/job/allentown-pa---1110-american-parkway/master-data-management-analyst_r138957"
+    },
+    {
+      "company": "Leidos",
+      "ats": "workday",
+      "slug": "leidos:5:external/job/bethesda-md/data-scientist_r-00185399"
+    },
+    {
+      "company": "Nvidia",
+      "ats": "workday",
+      "slug": "nvidia:5:nvidiaexternalcareersite/job/us-ca-santa-clara/software-engineer--physical-design-infrastructure---new-college-grad-2026_jr2021823"
+    },
+    {
+      "company": "Citi",
+      "ats": "workday",
+      "slug": "citi:5:2/job/irving-texas-united-states/junior-generative-ai-application-developer_26962476"
+    },
+    {
+      "company": "Azenta",
+      "ats": "workday",
+      "slug": "azenta:1:azentajobs/job/us---south-plainfield-nj/software-developer_r20260491"
+    },
+    {
+      "company": "Broadridge",
+      "ats": "workday",
+      "slug": "broadridge:5:careers/job/denver-co/software-engineer-_jr1084518"
+    },
+    {
+      "company": "Intel",
+      "ats": "workday",
+      "slug": "intel:1:en-us/external/job/us-oregon-hillsboro/intel-foundry-process-integration-and-yield-technician---metrology_jr0285569"
+    },
+    {
+      "company": "Psu",
+      "ats": "workday",
+      "slug": "psu:1:psu_staff/job/penn-state-university-park/graduate-researcher---redwing-group----materials-science-and-engineering_req_0000080560-1"
+    },
+    {
+      "company": "Motorolasolutions",
+      "ats": "workday",
+      "slug": "motorolasolutions:5:careers/job/gatineau-canada/software-engineer-co-op_r66130"
+    },
+    {
+      "company": "Gresearch",
+      "ats": "workday",
+      "slug": "gresearch:103:g-research/job/london-uk/machine-learning-research-internship_r3682"
+    },
+    {
+      "company": "Sailpoint",
+      "ats": "workday",
+      "slug": "sailpoint:1:en-us/sailpoint/job/headquarters-austin-texas-usa/business-intelligence-analyst_r013800"
+    },
+    {
+      "company": "Abbott",
+      "ats": "workday",
+      "slug": "abbott:5:abbottcareers2/job/united-states---colorado---denver/field-service-engineer--denver--co-_31155413"
+    },
+    {
+      "company": "Williammary",
+      "ats": "workday",
+      "slug": "williammary:12:wm/job/posting-location---william--mary/postdoctoral-fellow-of-computer-science--robust-and-adaptive-intelligence-_jr101939"
+    },
+    {
+      "company": "Clearesult",
+      "ats": "workday",
+      "slug": "clearesult:1:clearesult_external_careers/job/toronto-on---university-avenue/energy-analyst-i_r0017868"
+    },
+    {
+      "company": "Guidehouse",
+      "ats": "workday",
+      "slug": "guidehouse:1:external/job/us---tx-san-antonio/technical-associate---platforms--technology---campus-2026--san-antonio-_42401"
+    },
+    {
+      "company": "Ngc",
+      "ats": "workday",
+      "slug": "ngc:1:northrop_grumman_external_site/job/united-states-north-carolina-morrisville/engineer-principal-engineer-systems_r10241911"
+    },
+    {
+      "company": "Hp",
+      "ats": "workday",
+      "slug": "hp:5:exteu-ac-careersite/job/all-cities-texas-united-states-of-america/data-analytics-and-cloud-engineer---military-bridge_3166463"
+    },
+    {
+      "company": "Dukeenergy",
+      "ats": "workday",
+      "slug": "dukeenergy:1:search/job/charlotte-nc/natural-gas-gis-analyst-i-or-ii_r40652"
+    },
+    {
+      "company": "Scottsmiraclegro",
+      "ats": "workday",
+      "slug": "scottsmiraclegro:5:smgexternal/job/marysville-oh/specialist--quality--systems-and-data-_r26167"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-ia-cedar-rapids-137--855-35th-st-ne--bldg-137/software-engineer-i--onsite-_01861300"
+    },
+    {
+      "company": "Ms",
+      "ats": "workday",
+      "slug": "ms:5:private/job/montreal-canada/consultant-conversion-software-eng-iii---job-level---associate_pt-jr040750"
+    },
+    {
+      "company": "Ameriprise",
+      "ats": "workday",
+      "slug": "ameriprise:5:en-us/ameriprise/job/london-united-kingdom/assistant-product-manager_r26_2812-1"
+    },
+    {
+      "company": "Pnc",
+      "ats": "workday",
+      "slug": "pnc:5:external/job/pa---pittsburgh-15222/software-engineer--java--openshift-kubernetes-_r219224-1"
+    },
+    {
+      "company": "Mastercard",
+      "ats": "workday",
+      "slug": "mastercard:1:corporatecareers/job/ofallon-missouri/software-development-engineer_r-284435"
+    },
+    {
+      "company": "Utaustin",
+      "ats": "workday",
+      "slug": "utaustin:1:utstudent/job/ut-main-campus/e3-alliance-ut-graduate-research-assistant_r_00047491"
+    },
+    {
+      "company": "Intel",
+      "ats": "workday",
+      "slug": "intel:1:en-us/external/job/us-arizona-phoenix/software-application-development-engineer_jr0285267"
+    },
+    {
+      "company": "Umd",
+      "ats": "workday",
+      "slug": "umd:1:umcp/job/university-of-maryland-college-park/critical-and-emerging-technology-research-professional_jr104086"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-ma-tewksbury-tb3--50-apple-hill-dr--concord-bldg-tewksbury-tb3-300-concord/software-engineer-i--onsite-_01861526"
+    },
+    {
+      "company": "Citi",
+      "ats": "workday",
+      "slug": "citi:5:2/job/mississauga-ontario-canada/apps-dev-intmd-programmer-analyst_26980088"
+    },
+    {
+      "company": "Anthelioncap",
+      "ats": "ashby",
+      "slug": "anthelioncap"
+    },
+    {
+      "company": "Walmart",
+      "ats": "workday",
+      "slug": "walmart:504:walmartexternal/job/usa-always-ar-bentonville-home-office/xmlname--usa--senior-manager--data-analytics_r-2573105-1"
+    },
+    {
+      "company": "Transunion",
+      "ats": "workday",
+      "slug": "transunion:5:en-us/transunion/job/leeds-united-kingdom/business-intelligence-analyst_19040027"
+    },
+    {
+      "company": "Intel",
+      "ats": "workday",
+      "slug": "intel:1:en-us/external/job/us-arizona-phoenix/lab-engineering-technician_jr0285732"
+    },
+    {
+      "company": "Rbc",
+      "ats": "workday",
+      "slug": "rbc:3:rbcglobal1/job/cape-breton-nova-scotia-canada/relationship-manager-commercial-markets--intern_r-0000181768"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-ia-cedar-rapids-105--400-collins-rd-ne--bldg-105/software-engineer-i--onsite-_01861196"
+    },
+    {
+      "company": "Salesforce",
+      "ats": "workday",
+      "slug": "salesforce:12:external_career_site/job/washington---bellevue/product-manager-sr-product-manager--agent-fabric_jr347705-1"
+    },
+    {
+      "company": "Boeing",
+      "ats": "workday",
+      "slug": "boeing:1:external_careers/job/usa---long-beach-ca/lab-operations-engineer--electrical-electronic-testing--entry-level-or-associate-or-experienced_jr2026518383-1"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-ma-marlborough-ma2--1001-boston-post-rd--bldg-2/software-engineer-i--onsite-_01861525"
+    },
+    {
+      "company": "Edwards",
+      "ats": "workday",
+      "slug": "edwards:5:edwardscareers/job/usa-irv-1442-altonmic/associate-analyst--technical-product-owner_req-48666"
+    },
+    {
+      "company": "Moog",
+      "ats": "workday",
+      "slug": "moog:5:moog_external_career_site/job/buffalo-ny/a-t-technician-i_r-26-19034"
+    },
+    {
+      "company": "Mmc",
+      "ats": "workday",
+      "slug": "mmc:1:mmc/job/new-york---1166/catastrophe-advisory--avp-or-vp-_r_357272"
+    },
+    {
+      "company": "Alkami",
+      "ats": "workday",
+      "slug": "alkami:12:alkami/job/us-remote/application-support-engineer--temporary-worker-_jr-000770"
+    },
+    {
+      "company": "Wiley",
+      "ats": "workday",
+      "slug": "wiley:1:wiley_careers/job/remote-ontario-can/associate-product-manager---software-and-databases---new-techniques_r2601031"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-ky-fort-campbell-7228ns-cust--7228-nightstalker-wy--bldg-6882-rm-210-external-site/an-zsq-2-electro-optical-systems-depot-technician_01858688"
+    },
+    {
+      "company": "Maxar",
+      "ats": "workday",
+      "slug": "maxar:1:vantor/job/bolling-afb-dc/senior-software-engineer_r24153"
+    },
+    {
+      "company": "Citi",
+      "ats": "workday",
+      "slug": "citi:5:2/job/mississauga-ontario-canada/apps-dev-intmd-programmer-analyst_26980086"
+    },
+    {
+      "company": "Capitalone",
+      "ats": "workday",
+      "slug": "capitalone:12:capital_one/job/new-york-ny/senior-associate--product-management--creditflow_r247633-1"
+    },
+    {
+      "company": "Relx",
+      "ats": "workday",
+      "slug": "relx:3:elsevierjobs/job/home-based-pennsylvania/product-manager-ii--nursing-health-education_r111765"
+    },
+    {
+      "company": "Travelers",
+      "ats": "workday",
+      "slug": "travelers:5:external/job/ct---hartford/data-engineer-i-tm1-ipa-_r-50835"
+    },
+    {
+      "company": "Vizient",
+      "ats": "workday",
+      "slug": "vizient:1:vizient_careers/job/chicago-il-60607/data-and-analytic-fellow_34534r-1"
+    },
+    {
+      "company": "Guardianlife",
+      "ats": "workday",
+      "slug": "guardianlife:5:guardian-life-careers/job/new-york/data-scientist--agentic-ai_r000108002"
+    },
+    {
+      "company": "Jackson",
+      "ats": "workday",
+      "slug": "jackson:1:jackson_campus/job/lansing-mi/strategic-support-associate--operations-process-engineer_req-03847"
+    },
+    {
+      "company": "Uasys",
+      "ats": "workday",
+      "slug": "uasys:5:uasys/job/fayetteville-ar/music-equipment-engineer_r0087067-1"
+    },
+    {
+      "company": "Veralto",
+      "ats": "workday",
+      "slug": "veralto:1:hachjobs/job/london-ontario-canada/aquatic-informatics---machine-learning-co-op--intern-_r10267571"
+    },
+    {
+      "company": "Rbc",
+      "ats": "workday",
+      "slug": "rbc:3:rbcglobal1/job/toronto-ontario-canada/analyst--fx-product_r-0000181595"
+    },
+    {
+      "company": "Brandeis",
+      "ats": "workday",
+      "slug": "brandeis:5:en-us/jobs/job/brandeis---waltham-campus/temporary-research-assistant---school-of-business-and-economics--2026_r0013392-1"
+    },
+    {
+      "company": "Td",
+      "ats": "workday",
+      "slug": "td:3:td_bank_careers/job/toronto-ontario/associate-software-engineer_r_1495599"
+    },
+    {
+      "company": "Nvidia",
+      "ats": "workday",
+      "slug": "nvidia:5:nvidiaexternalcareersite/job/us-ca-santa-clara/system-and-scheduling-architect---gpu_jr2016105"
+    },
+    {
+      "company": "Ciena",
+      "ats": "workday",
+      "slug": "ciena:5:careers/job/ottawa/digital-verification-engineer---fec---new-grad_r031269"
+    },
+    {
+      "company": "Franklintempleton",
+      "ats": "workday",
+      "slug": "franklintempleton:5:primary-external-1/job/new-york-new-york-united-states-of-america/junior-quant-developer_868307-1"
+    },
+    {
+      "company": "Vanguard",
+      "ats": "workday",
+      "slug": "vanguard:5:en-us/contractors_restricted/job/malvern-pa/entry-level-application-engineer---2027-start-date---malvern_180413"
+    },
+    {
+      "company": "Psu",
+      "ats": "workday",
+      "slug": "psu:1:psu_staff/job/reston-va/systems-administrator--linux-cloud-_req_0000079324-2"
+    },
+    {
+      "company": "Mtb",
+      "ats": "workday",
+      "slug": "mtb:5:wtexternal/job/buffalo-ny/credit-risk-model-development-quantitative-analyst-ii---consumer-portfolio--hybrid---see-job-description-for-potential-work-locations-_r83338-2"
+    },
+    {
+      "company": "Cat",
+      "ats": "workday",
+      "slug": "cat:5:caterpillarcareers/job/home-in-ontario/minestar-application-specialist_r0000368919"
+    },
+    {
+      "company": "Hp",
+      "ats": "workday",
+      "slug": "hp:5:externalcareersite/job/all-cities-texas-united-states-of-america/data-analytics-and-cloud-engineer---military-bridge_3166463-1"
+    },
+    {
+      "company": "Bdx",
+      "ats": "workday",
+      "slug": "bdx:1:us_early_talent_site/job/usa-nj---franklin-lakes/edge-program-associate---technology---global-services--tgs-_r-549481"
+    },
+    {
+      "company": "Core Sound Imaging",
+      "ats": "rippling",
+      "slug": "core-sound-imaging"
+    },
+    {
+      "company": "Illumina",
+      "ats": "workday",
+      "slug": "illumina:1:illumina-careers/job/us---texas---remote/field-service-engineer-2--austin-tx_42638-job-1"
+    },
+    {
+      "company": "Leidos",
+      "ats": "workday",
+      "slug": "leidos:5:external/job/san-diego-ca/signal-processing-technical-intern_r-00187499"
+    },
+    {
+      "company": "Highmarkhealth",
+      "ats": "workday",
+      "slug": "highmarkhealth:1:highmark/job/pa-working-at-home---pennsylvania/associate-data-solutions-analyst---medicaid-operations_j284898-1"
+    },
+    {
+      "company": "Nws",
+      "ats": "rippling",
+      "slug": "nws"
+    },
+    {
+      "company": "Relx",
+      "ats": "workday",
+      "slug": "relx:3:en-us/relx/job/home-based-pennsylvania/product-manager-ii--nursing-health-education_r111765-1"
+    },
+    {
+      "company": "Kla",
+      "ats": "workday",
+      "slug": "kla:1:search/job/milpitas-ca/electrical-manufacturing-design-engineer_2636829"
+    },
+    {
+      "company": "Silgancontainers",
+      "ats": "workday",
+      "slug": "silgancontainers:1:silgan/job/ottawa-ohio/backup-operator-7a-7p-7p-7a_r7562"
+    },
+    {
+      "company": "Capri",
+      "ats": "workday",
+      "slug": "capri:1:jimmychoocareers/job/london/crm-data-and-customer-analyst_r_785633"
+    },
+    {
+      "company": "Zoll",
+      "ats": "workday",
+      "slug": "zoll:5:en-us/zollmedicalcorp/job/chelmsford-ma/system-level-debug-technician_r19759"
+    },
+    {
+      "company": "Brinks",
+      "ats": "workday",
+      "slug": "brinks:5:brinkscareersus/job/cincinnati-ohtl140/workshop-technician_r72685"
+    },
+    {
+      "company": "Wgu",
+      "ats": "workday",
+      "slug": "wgu:5:external/job/salt-lake-city-ut/salesforce-engineer-i_jr-025457"
+    },
+    {
+      "company": "Bdx",
+      "ats": "workday",
+      "slug": "bdx:1:external_career_site_usa/job/usa-nj---franklin-lakes/commercial-analytics-engineer-business-decision-intelligence_r-548945-1"
+    },
+    {
+      "company": "Gresearch",
+      "ats": "workday",
+      "slug": "gresearch:103:g-research/job/london-uk/quant-research-internship_r3691"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-ma-tewksbury-tb3--50-apple-hill-dr--concord-bldg-tewksbury-tb3-300-concord/xmlname-2026-raytheon-full-time--software-engineer-i---onsite-_01861434"
+    },
+    {
+      "company": "Jll",
+      "ats": "workday",
+      "slug": "jll:1:jllcareers/job/london-gbr/product-specialist---enterprise-ai_req496960"
+    },
+    {
+      "company": "Group1001Wd",
+      "ats": "workday",
+      "slug": "group1001wd:5:careers/job/stamford-connecticut/quantitative-analysis-intern_r26_0405"
+    },
+    {
+      "company": "Stevens",
+      "ats": "workday",
+      "slug": "stevens:5:external/job/hoboken-nj---main-campus/research-assistant_rq30301"
+    },
+    {
+      "company": "Flextronics",
+      "ats": "workday",
+      "slug": "flextronics:1:careers/job/usa-tx-austin/debug-technician_wd222785-1"
+    },
+    {
+      "company": "Verizon",
+      "ats": "workday",
+      "slug": "verizon:12:verizon-careers/job/temple-terrace-florida/engineer-i---systems-engineering_r-1097946"
+    },
+    {
+      "company": "Ultra",
+      "ats": "workday",
+      "slug": "ultra:3:ultra-careers/job/tampa-fl-united-states/embedded-rust-software-engineer--clearance-required-_req-11962-1"
+    },
+    {
+      "company": "Nvidia",
+      "ats": "workday",
+      "slug": "nvidia:5:nvidiaexternalcareersite/job/us-ca-santa-clara/ai-and-ml-infra-software-engineer--gpu-clusters---new-college-grad-2026_jr2021591"
+    },
+    {
+      "company": "Agiliti",
+      "ats": "workday",
+      "slug": "agiliti:5:careers/job/knoxville---district-site/laser-service-engineer_jr43542"
+    },
+    {
+      "company": "Rbc",
+      "ats": "workday",
+      "slug": "rbc:3:rbcglobal1/job/90-western-pkybedford/associate-director--senior-full-stack-python-c---developer_r-0000161475-1"
+    },
+    {
+      "company": "Rbc",
+      "ats": "workday",
+      "slug": "rbc:3:rbcglobal1/job/charlottetown-prince-edward-island-canada/relationship-manager-commercial-markets-ntern-cfs_r-0000181764-1"
+    },
+    {
+      "company": "Walmart",
+      "ats": "workday",
+      "slug": "walmart:504:walmartexternal/job/bentonville-ar/xmlname--usa--data-engineer-iii_r-2559247"
+    },
+    {
+      "company": "Avav",
+      "ats": "workday",
+      "slug": "avav:1:en-us/avav/job/centreville-va/machine-learning-engineer-ii_8124"
+    },
+    {
+      "company": "Gresearch",
+      "ats": "workday",
+      "slug": "gresearch:103:g-research/job/london-uk/data-science-internship_r3679"
+    },
+    {
+      "company": "Adobe",
+      "ats": "workday",
+      "slug": "adobe:5:external_experienced/job/san-jose/research-scientist_r166368"
+    },
+    {
+      "company": "Thomsonreuters",
+      "ats": "workday",
+      "slug": "thomsonreuters:5:en-us/external_career_site/job/canada-toronto-ontario/senior-software-engineer--ai_jreq194264-1"
+    },
+    {
+      "company": "Motorolasolutions",
+      "ats": "workday",
+      "slug": "motorolasolutions:5:careers/job/london-uk/software-engineer--frontend--typescript-_r65770"
+    },
+    {
+      "company": "Bridger",
+      "ats": "ashby",
+      "slug": "bridger"
+    },
+    {
+      "company": "Ourhrconnect",
+      "ats": "workday",
+      "slug": "ourhrconnect:501:scblues/job/columbia-south-carolina/data-analyst-i_r1051629"
+    },
+    {
+      "company": "Spectrumcontrol",
+      "ats": "workday",
+      "slug": "spectrumcontrol:1:spectrumcontrol/job/fairview-pa/engineering-intern_jr101449"
+    },
+    {
+      "company": "Goldenpetbrands",
+      "ats": "greenhouse",
+      "slug": "goldenpetbrands"
+    },
+    {
+      "company": "Gresearch",
+      "ats": "workday",
+      "slug": "gresearch:103:g-research/job/london-uk/natural-language-processing-internship_r3686"
+    },
+    {
+      "company": "Sanofi",
+      "ats": "workday",
+      "slug": "sanofi:3:sanoficareers/job/morristown-nj/operational-planning---capacity-management-data-analyst---vie-contract_r2864870"
+    },
+    {
+      "company": "Compassion",
+      "ats": "workday",
+      "slug": "compassion:5:compassioncareersprivatelink/job/remote---usa/software-developer-fellow---cvg_r8264"
+    },
+    {
+      "company": "Copart",
+      "ats": "workday",
+      "slug": "copart:12:copart/job/dallas-tx---headquarters/technology-product-analyst-intern_jr110078"
+    },
+    {
+      "company": "Work with us",
+      "ats": "greenhouse",
+      "slug": "gravitonresearchcapital"
+    },
+    {
+      "company": "Senior Software Engineer II (Full Stack), Fieldwork Automation (Remote Pennsylvania) @ Optro",
+      "ats": "ashby",
+      "slug": "optro"
+    },
+    {
+      "company": "Sr. Software Engineer, Platform @ Help Scout",
+      "ats": "ashby",
+      "slug": "helpscout"
+    },
+    {
+      "company": "VTekis Consulting LLP is looking for a Embedded Software Engineer",
+      "ats": "smartrecruiters",
+      "slug": "vtekisconsultingllp"
+    },
+    {
+      "company": "Mirantis is looking for a Full-Stack Software Engineer (Infrastructure)",
+      "ats": "smartrecruiters",
+      "slug": "mirantis"
     }
   ],
   "greenhouse": [
