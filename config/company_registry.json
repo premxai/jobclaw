@@ -164159,6 +164159,351 @@
       "company": "Mirantis is looking for a Full-Stack Software Engineer (Infrastructure)",
       "ats": "smartrecruiters",
       "slug": "mirantis"
+    },
+    {
+      "company": "Citi",
+      "ats": "workday",
+      "slug": "citi:5:2/job/tampa-florida-united-states/functions---quantitative-risk-management--full-time-analyst--tampa---usa--2027_26981350"
+    },
+    {
+      "company": "Vanguard",
+      "ats": "workday",
+      "slug": "vanguard:5:en-us/contractors_restricted/job/charlotte-nc/entry-level-application-engineer----2026-start-date_171145-1"
+    },
+    {
+      "company": "Leidos",
+      "ats": "workday",
+      "slug": "leidos:5:external/job/huntsville-al/software-engineer_r-00187550"
+    },
+    {
+      "company": "Hp",
+      "ats": "workday",
+      "slug": "hp:5:exteu-ac-careersite/job/spring-texas-united-states-of-america/embedded-firmware-and-software-engineer_3161388"
+    },
+    {
+      "company": "Rockwoolgroup",
+      "ats": "workday",
+      "slug": "rockwoolgroup:3:rockwool/job/chicago-illinois/mono---paint---coating-intern_r0035879"
+    },
+    {
+      "company": "Bcidaho",
+      "ats": "workday",
+      "slug": "bcidaho:5:bci/job/meridian---main/ai-engineer-i_r3397"
+    },
+    {
+      "company": "Wk",
+      "ats": "workday",
+      "slug": "wk:3:en-us/external/job/usa---kennesaw-ga/product-software-engineer---full-stack---net---angular-----ai-solutions_r0058841"
+    },
+    {
+      "company": "Homedepot",
+      "ats": "workday",
+      "slug": "homedepot:5:careerdepot/job/store-support-center-atlanta---9090/data-analyst-supply-chain_req187880"
+    },
+    {
+      "company": "Visa",
+      "ats": "workday",
+      "slug": "visa:5:visa/job/us---foster-city-ca/software-engineer_ref081843w-1"
+    },
+    {
+      "company": "Globusmedical",
+      "ats": "workday",
+      "slug": "globusmedical:5:gmed_careers/job/audubon-pa/associate-product-manager_jr107337"
+    },
+    {
+      "company": "Lbg",
+      "ats": "workday",
+      "slug": "lbg:3:lbg_careers/job/edinburgh/data-engineer---compliance-engineering_158781-1"
+    },
+    {
+      "company": "Alegeus",
+      "ats": "workday",
+      "slug": "alegeus:1:en-us/alegeus_external_careers/job/maitland/application-support-engineer_r-101288"
+    },
+    {
+      "company": "Ultra",
+      "ats": "workday",
+      "slug": "ultra:3:uiccareers/job/tampa-fl-united-states/embedded-rust-software-engineer--clearance-required-_req-11962"
+    },
+    {
+      "company": "Leidos",
+      "ats": "workday",
+      "slug": "leidos:5:external/job/arlington-va/electrical-hardware-engineer_r-00188035"
+    },
+    {
+      "company": "Nrf",
+      "ats": "workday",
+      "slug": "nrf:3:external/job/newcastle-upon-tyne-united-kingdom/business-and-data-reporting-analyst--12-month-ftc-_r-4201"
+    },
+    {
+      "company": "Redesigncareers",
+      "ats": "rippling",
+      "slug": "redesigncareers"
+    },
+    {
+      "company": "Deluxe",
+      "ats": "workday",
+      "slug": "deluxe:5:en-us/usa_can/job/atlanta-ga-usa/implementation-specialist-i_260954wd-1"
+    },
+    {
+      "company": "Northwesternmutual",
+      "ats": "workday",
+      "slug": "northwesternmutual:5:corporate-careers/job/milwaukee-wi-corporate/investment-analyst-intern---private-debt---equity--summer-2027_jr-45705"
+    },
+    {
+      "company": "Medtronic",
+      "ats": "workday",
+      "slug": "medtronic:1:redeploymentmedtroniccareers/job/lafayette-colorado-united-states-of-america/software-engineer-i--ai-driven-data-solutions----lafayette--co_r72435"
+    },
+    {
+      "company": "Uva",
+      "ats": "workday",
+      "slug": "uva:1:uvastudentjobs/job/charlottesville-va/data---analytics-assistant--student-wage-_r0085657-1"
+    },
+    {
+      "company": "Gehc",
+      "ats": "workday",
+      "slug": "gehc:5:gehc_externalsite/job/remote/surgery-field-engineer-apprentice_r4043950-1"
+    },
+    {
+      "company": "Capitalone",
+      "ats": "workday",
+      "slug": "capitalone:12:capital_one/job/mclean-va/senior-data-analyst---risk-product-data_r247753-2"
+    },
+    {
+      "company": "Abbott",
+      "ats": "workday",
+      "slug": "abbott:5:abbottcareers/job/united-states---colorado---denver/field-service-engineer--denver--co-_31155413-1"
+    },
+    {
+      "company": "Transunion",
+      "ats": "workday",
+      "slug": "transunion:5:en-us/transunion/job/white-plains-new-york/financial-data-analyst_19041460"
+    },
+    {
+      "company": "Guidehouse",
+      "ats": "workday",
+      "slug": "guidehouse:1:external/job/us---va-chantilly/data-science---analytics-consultant_42515"
+    },
+    {
+      "company": "Utaustin",
+      "ats": "workday",
+      "slug": "utaustin:1:utstudent/job/ut-main-campus/data---insights-graduate-research-assistant_r_00047610"
+    },
+    {
+      "company": "Austintexas",
+      "ats": "workday",
+      "slug": "austintexas:5:coa_careers/job/aus-information-systems-building-is/austin-aviation--it-business-systems-analyst---undergraduate-intern_jr104583"
+    },
+    {
+      "company": "Badgermeter",
+      "ats": "workday",
+      "slug": "badgermeter:5:us_careersite/job/racine-wi/technical-support-analyst_4510"
+    },
+    {
+      "company": "Enbridge",
+      "ats": "workday",
+      "slug": "enbridge:3:enbridge_careers/job/gastonia-nc-usa/analyst-digital-process-automation_72259-1"
+    },
+    {
+      "company": "Hpe",
+      "ats": "workday",
+      "slug": "hpe:5:acjobsite/job/spring-texas-united-states-of-america/electrical-hardware-engineer---xd-server-engineering---early-career_1209599"
+    },
+    {
+      "company": "Ngc",
+      "ats": "workday",
+      "slug": "ngc:1:northrop_grumman_external_site/job/united-states-florida-melbourne/associate-embedded-software-engineer---embedded-software-engineer_r10241869"
+    },
+    {
+      "company": "Fa Etjd Saasfaprod1",
+      "ats": "oracle",
+      "slug": "fa-etjd-saasfaprod1.fa.ocs.oraclecloud.com:firstenergycareers"
+    },
+    {
+      "company": "Capitalone",
+      "ats": "workday",
+      "slug": "capitalone:12:capital_one/job/toronto-on/associate--software-engineer--new-grad-card-expansion_r247335"
+    },
+    {
+      "company": "Cisco",
+      "ats": "workday",
+      "slug": "cisco:5:cisco_careers/job/rtp-north-carolina-us/data-engineer-ii--full-time--united-states_2001849"
+    },
+    {
+      "company": "Iqvia",
+      "ats": "workday",
+      "slug": "iqvia:1:en-us/iqvia/job/ottawa-ontario-canada/associate-data-scientist--privacy-and-de-identification---scientifique-des-donnes-associ--confidentialit-et-dsidentification_r1553526"
+    },
+    {
+      "company": "Nexxen",
+      "ats": "ashby",
+      "slug": "nexxen"
+    },
+    {
+      "company": "Pg",
+      "ats": "workday",
+      "slug": "pg:5:1000/job/mason-bus-and-innovation-ctr/na-oral-care-retail-media-trader_r000154510-1"
+    },
+    {
+      "company": "Citi",
+      "ats": "workday",
+      "slug": "citi:5:2/job/irving-texas-united-states/functions---quantitative-risk-management--full-time-analyst--irving---usa--2027_26981044"
+    },
+    {
+      "company": "Imh",
+      "ats": "workday",
+      "slug": "imh:108:intermountaincareers/job/key-bank-tower/data-analyst-technical-staff-1_r178523"
+    },
+    {
+      "company": "Volarisgroup",
+      "ats": "workday",
+      "slug": "volarisgroup:3:volaris/job/united-states---worcester-ma/software-developer-i--analyst-_r70138-1"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers/job/santa-clara-ca/design-verification-infrastructure-sr-staff-engineer_2603289"
+    },
+    {
+      "company": "Amgen",
+      "ats": "workday",
+      "slug": "amgen:1:careers/job/united-states---remote/sap-principal-architect--transportation-management_r-244752"
+    },
+    {
+      "company": "Gevernova",
+      "ats": "workday",
+      "slug": "gevernova:5:only_confidential_executive_recruiting/job/bellevue/ge-vernova-software-engineer--transmission_r5048311-2"
+    },
+    {
+      "company": "Baldwin",
+      "ats": "workday",
+      "slug": "baldwin:1:msi/job/boston-massachusetts-us/rotational-undergraduate-analyst---msi_jr109868"
+    },
+    {
+      "company": "Wvumedicine",
+      "ats": "workday",
+      "slug": "wvumedicine:1:wvuh/job/information-technology-center/associate-systems-analyst---health-plan_jr26-41005"
+    },
+    {
+      "company": "Amat",
+      "ats": "workday",
+      "slug": "amat:1:external/job/gloucesterma/manufacturing-technician-i_r2624785"
+    },
+    {
+      "company": "Vanguard",
+      "ats": "workday",
+      "slug": "vanguard:5:en-us/vanguard_external/job/malvern-pa/application-engineer_180729-1"
+    },
+    {
+      "company": "Rb",
+      "ats": "workday",
+      "slug": "rb:5:en-us/frs/job/richmond-va/fall-2026-business-survey-intern_r-0000032532"
+    },
+    {
+      "company": "Nvidia",
+      "ats": "workday",
+      "slug": "nvidia:5:nvidiaexternalcareersite/job/us-ma-westford/gpu-verification-engineer---new-college-grad-2026_jr2022102"
+    },
+    {
+      "company": "Pru",
+      "ats": "workday",
+      "slug": "pru:5:pgim_careers/job/newark-nj-usa/pgim--2027-private-credit--investment-analyst-program_r-124650-1"
+    },
+    {
+      "company": "Theirc",
+      "ats": "workday",
+      "slug": "theirc:1:en-us/external_careers/job/san-diego-ca-usa/fall-2026--data-integration---reporting-intern--unpaid-_jr00004327"
+    },
+    {
+      "company": "Amgen",
+      "ats": "workday",
+      "slug": "amgen:1:careers/job/us---california---thousand-oaks/cd-a-data-scientist--obesity---senior-associate_r-242773-1"
+    },
+    {
+      "company": "Amgen",
+      "ats": "workday",
+      "slug": "amgen:1:careers/job/united-states---remote/principal-anaplan-architect_r-244761"
+    },
+    {
+      "company": "Thermofisher",
+      "ats": "workday",
+      "slug": "thermofisher:5:thermofishercareers/job/remote-kansas-usa/field-service-engineer--electron-microscopy-_r-01334329"
+    },
+    {
+      "company": "Bah",
+      "ats": "workday",
+      "slug": "bah:1:bah_jobs/job/arlington-va/power-platform-developer--mid_r0245301"
+    },
+    {
+      "company": "Bmo",
+      "ats": "workday",
+      "slug": "bmo:3:external/job/toronto-on-can/market-risk-analyst--fall-2026--co-op-internship----4-months_r260022055"
+    },
+    {
+      "company": "Psu",
+      "ats": "workday",
+      "slug": "psu:1:psu_staff/job/penn-state-university-park/software-engineer_req_0000077212-2"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-md-aberdeen-apg--6260-guardian-gtwy--apg/electrical-engineer-ii--asic-fpga--onsite-_01862047"
+    },
+    {
+      "company": "Gevernova",
+      "ats": "workday",
+      "slug": "gevernova:5:vernova_externalsite/job/bellevue/ge-vernova-software-engineer--transmission_r5048311-3"
+    },
+    {
+      "company": "Fifththird",
+      "ats": "workday",
+      "slug": "fifththird:5:en-us/53careers/job/new-york-ny/fixed-income-trading-analyst_r71008"
+    },
+    {
+      "company": "Jll",
+      "ats": "workday",
+      "slug": "jll:1:jllcareers/job/norfolk-gbr/specialist--mobile-engineering-services_req524271"
+    },
+    {
+      "company": "Manulife",
+      "ats": "workday",
+      "slug": "manulife:3:en-us/mfcjh_adminjobs/job/toronto-ontario/fall-co-op-2026---canada-retirement-investment-product-analysis_jr26060715-1"
+    },
+    {
+      "company": "Starfish",
+      "ats": "workday",
+      "slug": "starfish:501:careers/job/huntsville-al/entry-level-engineer-analyst_r1444"
+    },
+    {
+      "company": "Td",
+      "ats": "workday",
+      "slug": "td:3:td_bank_careers/job/toronto-ontario/software-engineer-i_r_1501250"
+    },
+    {
+      "company": "AI & Data Engineer @ Reactive Markets",
+      "ats": "ashby",
+      "slug": "reactivemarkets"
+    },
+    {
+      "company": "Senior Data Engineer @ Moovx",
+      "ats": "ashby",
+      "slug": "moovx"
+    },
+    {
+      "company": "Derex Technologies Inc is looking for a Software Engineer .Net in Parsippany-Troy Hills, NJ, USA",
+      "ats": "smartrecruiters",
+      "slug": "derextechnologiesinc"
+    },
+    {
+      "company": "Nagarro is looking for a Staff Engineer",
+      "ats": "smartrecruiters",
+      "slug": "nagarro1"
+    },
+    {
+      "company": "Data Scientist",
+      "ats": "smartrecruiters",
+      "slug": "cint"
     }
   ],
   "greenhouse": [
