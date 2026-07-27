@@ -164589,6 +164589,61 @@
             "company": "Vumc",
             "ats": "workday",
             "slug": "vumc:1:en-us/vumccareers/job/nashville-tn/c----angular-associate-application-developer--local---hybrid-_r-63031-1"
+        },
+        {
+            "company": "Asda",
+            "ats": "workday",
+            "slug": "asda:103:asdajobs/job/asda-house/edi-analyst_r-101455"
+        },
+        {
+            "company": "American",
+            "ats": "workday",
+            "slug": "american:1:au/job/main-campus-washington-dc/audiovisual-services-assistant--student-_r4496"
+        },
+        {
+            "company": "Nvidia",
+            "ats": "workday",
+            "slug": "nvidia:5:nvidiaexternalcareersite/job/germany-remote/systems-software-engineer--kubernetes-scale---dgx-cloud_jr2020236"
+        },
+        {
+            "company": "Dgrsystems",
+            "ats": "rippling",
+            "slug": "dgrsystems"
+        },
+        {
+            "company": "Leidos",
+            "ats": "workday",
+            "slug": "leidos:5:external/job/huntsville-al/cybersecurity-product-engineer_r-00187602"
+        },
+        {
+            "company": "Talentmanagementsolution",
+            "ats": "workday",
+            "slug": "talentmanagementsolution:3:jonassoftwareusa/job/remote---usa/implementation-specialist-i_r51653"
+        },
+        {
+            "company": "Gehc",
+            "ats": "workday",
+            "slug": "gehc:5:gehc_externalsite/job/remote/asset-tracking-technician---connecticut_r4043891"
+        },
+        {
+            "company": "Sonyglobal",
+            "ats": "workday",
+            "slug": "sonyglobal:1:sony_europe_careers/job/basingstoke/associate-software-engineer_jr-119414-1"
+        },
+        {
+            "company": "Comcast",
+            "ats": "workday",
+            "slug": "comcast:5:comcast_careers/job/ny---new-york-1407-broadway-floor-12/supply-curation-associate_r441301"
+        },
+        {
+            "company": "Ucar",
+            "ats": "workday",
+            "slug": "ucar:5:ucar_careers/job/boulder-co/climate---global-change-postdoctoral-fellowship_req-2026-119"
+        },
+        {
+            "company": "Sonyglobal",
+            "ats": "workday",
+            "slug": "sonyglobal:1:sonyglobalcareers/job/basingstoke/associate-software-engineer_jr-119414-2"
         }
     ],
     "greenhouse": [
