@@ -165039,6 +165039,711 @@
       "company": "Etihad Airways is looking for a Data Scientist in Abu Dhabi, United Arab Emirates",
       "ats": "smartrecruiters",
       "slug": "etihadairways5"
+    },
+    {
+      "company": "Texas Sports Academy Main",
+      "ats": "workable",
+      "slug": "texas-sports-academy-main"
+    },
+    {
+      "company": "Intel",
+      "ats": "workday",
+      "slug": "intel:1:en-us/external/job/us-texas-austin/junior-cpu-verification-engineer_jr0285875"
+    },
+    {
+      "company": "Procore",
+      "ats": "workday",
+      "slug": "procore:12:procore_external_careers/job/us---texas---austin/product-manager--notifications_r0018309"
+    },
+    {
+      "company": "Sensata",
+      "ats": "workday",
+      "slug": "sensata:1:en-us/sensata-careers/job/antrim-united-kingdom/electronics-software-engineer_irc97935-1"
+    },
+    {
+      "company": "Dentsuaegis",
+      "ats": "workday",
+      "slug": "dentsuaegis:3:dan_global/job/manchester---bonded-warehouse/development-junior-associate_r1125875"
+    },
+    {
+      "company": "Rsm",
+      "ats": "workday",
+      "slug": "rsm:1:rsmcareers/job/chicago/business-intelligence-consulting-associate---fall-2027_jr117342"
+    },
+    {
+      "company": "Okgov",
+      "ats": "workday",
+      "slug": "okgov:1:okgovjobs/job/oklahoma-city---440-ne-39th-street/criminal-intelligence-analyst-i_jr63103"
+    },
+    {
+      "company": "23Andme",
+      "ats": "workday",
+      "slug": "23andme:5:23/job/palo-alto-hq/associate-product-manager---product-manager--member-experience_2026037"
+    },
+    {
+      "company": "Hcsc",
+      "ats": "workday",
+      "slug": "hcsc:1:en-us/hcsc_external/job/il---chicago/lead-data-science-engineer_r0048547-1"
+    },
+    {
+      "company": "Vibrant",
+      "ats": "workday",
+      "slug": "vibrant:5:veh_external_career_site/job/remote-usa/salesforce-engineer-i_jr100169-1"
+    },
+    {
+      "company": "Rsm",
+      "ats": "workday",
+      "slug": "rsm:1:rsmcareers/job/des-moines/business-intelligence-consulting-associate---fall-2027_jr117346"
+    },
+    {
+      "company": "Jj",
+      "ats": "workday",
+      "slug": "jj:5:jj/job/raritan-new-jersey-united-states-of-america/senior-data-analyst-snp-biosurgery_r-089461-1"
+    },
+    {
+      "company": "Mmc",
+      "ats": "workday",
+      "slug": "mmc:1:mmc/job/new-york---1166/oliver-wyman---regional-ai-product-enablement-analyst_r_359871-1"
+    },
+    {
+      "company": "Mmc",
+      "ats": "workday",
+      "slug": "mmc:1:mmc/job/london---tower-place-west/software-asset-associate-analyst_r_357195"
+    },
+    {
+      "company": "Intel",
+      "ats": "workday",
+      "slug": "intel:1:en-us/external/job/us-texas-austin/cpu-physical-design-engineer_jr0284354"
+    },
+    {
+      "company": "Relx",
+      "ats": "workday",
+      "slug": "relx:3:en-us/risksolutions/job/alpharetta-ga/data-scientist-i--dsap-_r116014"
+    },
+    {
+      "company": "Brunswick",
+      "ats": "workday",
+      "slug": "brunswick:1:en-us/search/job/champaign-il/software-engineer-intern_jr-050991"
+    },
+    {
+      "company": "Micron",
+      "ats": "workday",
+      "slug": "micron:1:external/job/boise-id---main-site/new-college-grad---eda-cad-engineer_jr103201"
+    },
+    {
+      "company": "Bestbuycanada",
+      "ats": "workday",
+      "slug": "bestbuycanada:3:bestbuyca_career/job/40001-langley-distribution-centre/product-tester-i---ii_r-51973"
+    },
+    {
+      "company": "Amgen",
+      "ats": "workday",
+      "slug": "amgen:1:careers/job/us---michigan---detroit/engineer-i_r-251566"
+    },
+    {
+      "company": "Boeing",
+      "ats": "workday",
+      "slug": "boeing:1:external_careers/job/usa---el-segundo-ca/entry-level-software-engineer-developers_jr2026518452-1"
+    },
+    {
+      "company": "Pcmi",
+      "ats": "rippling",
+      "slug": "pcmi"
+    },
+    {
+      "company": "Massgeneralbrigham",
+      "ats": "workday",
+      "slug": "massgeneralbrigham:1:mgbexternal/job/somerville-ma/applications-analyst-i_rq4071746-1"
+    },
+    {
+      "company": "Pnc",
+      "ats": "workday",
+      "slug": "pnc:5:external/job/two-pnc-plaza-pa374/software-engineer-associate_r230944-1"
+    },
+    {
+      "company": "Motorolasolutions",
+      "ats": "workday",
+      "slug": "motorolasolutions:5:careers/job/texas-remote-work/systems-engineer--co-op-program-_r66970"
+    },
+    {
+      "company": "Rbc",
+      "ats": "workday",
+      "slug": "rbc:3:rbcglobal1/job/bathurst-new-brunswick-canada/relationship-manager-business-markets--intern_r-0000182302"
+    },
+    {
+      "company": "Generalmotors",
+      "ats": "workday",
+      "slug": "generalmotors:5:en-ca/careers_gm/job/warren-michigan-united-states-of-america/ai-ml-senior-researcher_jr-202614302-1"
+    },
+    {
+      "company": "Uchicago",
+      "ats": "workday",
+      "slug": "uchicago:5:external/job/chicago-il/temporary-research-assistant_jr34601"
+    },
+    {
+      "company": "Micron",
+      "ats": "workday",
+      "slug": "micron:1:external/job/boise-id---main-site/new-college-grad---eda-cad-engineer_jr103200"
+    },
+    {
+      "company": "Bmo",
+      "ats": "workday",
+      "slug": "bmo:3:campus/job/toronto-on-can/data-and-ai-operations-analyst--cloud---fall-2026--co-op-internship----8-months_r260021724-2"
+    },
+    {
+      "company": "Fticonsulting",
+      "ats": "workday",
+      "slug": "fticonsulting:108:fticonsultingcareers/job/united-states/xmlname-2027-intern---technology_jr260339-1"
+    },
+    {
+      "company": "Fticonsulting",
+      "ats": "workday",
+      "slug": "fticonsulting:108:fticonsultingcareersprivate/job/united-states/xmlname-2027-intern---technology_jr260339"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ca-el-segundo-e01--2000-e-el-segundo-blvd--bldg-e01/software-engineer-i--onsite-_01862140"
+    },
+    {
+      "company": "Richemont",
+      "ats": "workday",
+      "slug": "richemont:3:richemont/job/bellevue/business-analytics-intern_jr124478-1"
+    },
+    {
+      "company": "Axiscapital",
+      "ats": "workday",
+      "slug": "axiscapital:1:axiscareers/job/london---scalpel/renewable-energy-engineering-intern_req06664-1"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-ca-el-segundo-e01--2000-e-el-segundo-blvd--bldg-e01/software-engineer-i--onsite-_01862658"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-tx-mckinney-513wd--2501-w-university-dr--wing-d-bldg/software-engineer-i--on-site-_01862497"
+    },
+    {
+      "company": "Vizient",
+      "ats": "workday",
+      "slug": "vizient:1:vizient_careers/job/chicago-il-60607/data-science-fellow_34535r"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-va-dulles-710--22110-pacific-blvd--bldg-10/software-engineer-i--on-site--_01862276"
+    },
+    {
+      "company": "Td",
+      "ats": "workday",
+      "slug": "td:3:td_bank_careers/job/toronto-ontario/software-engineer-i_r_1501242"
+    },
+    {
+      "company": "Ngc",
+      "ats": "workday",
+      "slug": "ngc:1:northrop_grumman_external_site/job/united-states-florida-melbourne/xmlname-2026-associate-systems-modeling---simulation-engineer-systems-modeling---simulation-engineer_r10242731"
+    },
+    {
+      "company": "Cubic",
+      "ats": "workday",
+      "slug": "cubic:1:cubic_usa_careers/job/ashburn-virginia/software-engineer-i---unified-video-sustainment_req_49558"
+    },
+    {
+      "company": "Genpt",
+      "ats": "workday",
+      "slug": "genpt:1:careers/job/gbr-aag---aal-rotherham/assistant-product-manager_r26_0000023743"
+    },
+    {
+      "company": "Jj",
+      "ats": "workday",
+      "slug": "jj:5:jj/job/raynham-massachusetts-united-states-of-america/professional--service---repair_r-087038"
+    },
+    {
+      "company": "Kla",
+      "ats": "workday",
+      "slug": "kla:1:annarbor/job/ann-arbor-mi/senior-instrumentation-software-engineer_2635655-1"
+    },
+    {
+      "company": "Novartis",
+      "ats": "workday",
+      "slug": "novartis:3:novartis_careers/job/cambridge-usa/data-science---ai-innovation-postdoctoral-fellow_req-10084589-1"
+    },
+    {
+      "company": "Eliza",
+      "ats": "ashby",
+      "slug": "eliza"
+    },
+    {
+      "company": "Bankeasy",
+      "ats": "workday",
+      "slug": "bankeasy:5:bank-easy-job-openings/job/brookings-sd-east/sharepoint-power-platform-intern_r-100780"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ma-woburn-wb1--235-presidential-way--spencer-bldg/software-engineer-i--on-site-_01862626"
+    },
+    {
+      "company": "Ngc",
+      "ats": "workday",
+      "slug": "ngc:1:northrop_grumman_external_site/job/united-states-utah-roy/sentinel-associate---software-engineer----19232_r10242757"
+    },
+    {
+      "company": "Assurant",
+      "ats": "workday",
+      "slug": "assurant:1:external_limited_posting/job/atlanta-ga/digital---ai-transformation-intern_r-114103-3"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ct-east-hartford-etc--400-main-st--bldg-etc/methods-engineer-i--summer-2027-_01862159"
+    },
+    {
+      "company": "Fanaticscollectibles",
+      "ats": "greenhouse",
+      "slug": "fanaticscollectibles"
+    },
+    {
+      "company": "Wustl",
+      "ats": "workday",
+      "slug": "wustl:1:external/job/washington-university-danforth-campus/postdoctoral-research-associate---engineering_jr96129"
+    },
+    {
+      "company": "Usul",
+      "ats": "ashby",
+      "slug": "usul"
+    },
+    {
+      "company": "Qualifacts",
+      "ats": "workday",
+      "slug": "qualifacts:5:qualifacts_external_careers/job/ontario---remote/software-engineer-i--p1-_r-102648"
+    },
+    {
+      "company": "Kla",
+      "ats": "workday",
+      "slug": "kla:1:annarbor/job/ann-arbor-mi/product-engineer_2635404-2"
+    },
+    {
+      "company": "Nrel",
+      "ats": "workday",
+      "slug": "nrel:5:nlr/job/golden-co/graduate--year-round--intern---industrial-and-fuel-supply-optimization-modeling-analysis_r14426"
+    },
+    {
+      "company": "Alta Ares",
+      "ats": "ashby",
+      "slug": "alta-ares"
+    },
+    {
+      "company": "Verdantas",
+      "ats": "workday",
+      "slug": "verdantas:108:verdantas/job/san-ramon-ca/data-analyst-i_r-100842"
+    },
+    {
+      "company": "Blueorigin",
+      "ats": "workday",
+      "slug": "blueorigin:5:blueorigin/job/greater-seattle-area/avionics-hardware-engineer---lunar-permanence_r65710"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-ny-binghamton-288--31-lewis-rd--lewis/assoc-software-engineer---simulation_01853132"
+    },
+    {
+      "company": "Ontic",
+      "ats": "workday",
+      "slug": "ontic:103:onticcareers/job/creedmoor-north-carolina/electronics-repair-technician--manufacturing_r5996"
+    },
+    {
+      "company": "Motorolasolutions",
+      "ats": "workday",
+      "slug": "motorolasolutions:5:careers/job/glasgow-uk-zuk118/software-engineer_r66979"
+    },
+    {
+      "company": "Alliance",
+      "ats": "workday",
+      "slug": "alliance:3:nissanjobs/job/santa-clara-california---united-states-of-america/researcher-ii--battery-systems---agentic-ai_r00211845"
+    },
+    {
+      "company": "Ciena",
+      "ats": "workday",
+      "slug": "ciena:5:careers/job/ottawa/software-liquid-spectrum-applications-intern--fall-2026-_r031412"
+    },
+    {
+      "company": "Jll",
+      "ats": "workday",
+      "slug": "jll:1:jllcareers/job/charlotte-nc/debt-management-system-analyst---quality---data_req521188"
+    },
+    {
+      "company": "Walmart",
+      "ats": "workday",
+      "slug": "walmart:504:walmartexternal/job/bentonville-ar/data-scientist-iii_r-2478690"
+    },
+    {
+      "company": "Adobe",
+      "ats": "workday",
+      "slug": "adobe:5:external_experienced/job/los-angeles/professional-services-consultant_r164857-1"
+    },
+    {
+      "company": "Psu",
+      "ats": "workday",
+      "slug": "psu:1:psu_staff/job/penn-state-university-park/software-research-and-development-engineer_req_0000073411-2"
+    },
+    {
+      "company": "Sbasite",
+      "ats": "workday",
+      "slug": "sbasite:5:sba_communications_careers/job/boca-raton-fl-corporate-office/junior-analyst_jr102494-1"
+    },
+    {
+      "company": "Ontic",
+      "ats": "workday",
+      "slug": "ontic:103:onticcareers/job/creedmoor-north-carolina/electro-mechanical-technician_r5707"
+    },
+    {
+      "company": "Cat",
+      "ats": "workday",
+      "slug": "cat:5:caterpillarcareers/job/chicago-illinois/business-intelligence-analyst_r0000385342"
+    },
+    {
+      "company": "Hcsc",
+      "ats": "workday",
+      "slug": "hcsc:1:en-us/hcsc_external/job/tn---nashville/provider-data-analyst---work-from-home_r0054990-2"
+    },
+    {
+      "company": "Manulife",
+      "ats": "workday",
+      "slug": "manulife:3:en-us/mfcjh_jobs/job/waterloo-ontario/associate-full-stack-software-engineer_jr26071165-1"
+    },
+    {
+      "company": "Ngc",
+      "ats": "workday",
+      "slug": "ngc:1:northrop_grumman_external_site/job/united-states-california-northridge/software-engineer-level-2--aht-_r10242698"
+    },
+    {
+      "company": "Geaerospace",
+      "ats": "workday",
+      "slug": "geaerospace:5:ge_externalsite/job/grand-rapids/electronic-analyzer---tester---2nd-shift_r5031644-1"
+    },
+    {
+      "company": "Scanhealthplan",
+      "ats": "workday",
+      "slug": "scanhealthplan:108:scancareers/job/long-beach-ca/product-owner-i---omnichannel_jr3151"
+    },
+    {
+      "company": "Walmart",
+      "ats": "workday",
+      "slug": "walmart:504:walmartexternal/job/usa-crossman-respect-building-ca-sunnyvale-home-office/xmlname--usa--software-engineer-iii_r-2559900-1"
+    },
+    {
+      "company": "Psu",
+      "ats": "workday",
+      "slug": "psu:1:psu_academic/job/penn-state-erie-the-behrend-college/postdoctoral-scholar-position---autonomous-polymer-processing-and-interface-engineering_req_0000078902-1"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers2/job/westlake-village-ca/hardware-and-silicon-validation_2600895-2"
+    },
+    {
+      "company": "Mimecast",
+      "ats": "workday",
+      "slug": "mimecast:5:mimecast-careers/job/great-britain---london/associate-software-engineer_r6594-1"
+    },
+    {
+      "company": "Relx",
+      "ats": "workday",
+      "slug": "relx:3:en-us/relx/job/alpharetta-ga/data-scientist-i--dsap-_r116014-1"
+    },
+    {
+      "company": "Freddiemac",
+      "ats": "workday",
+      "slug": "freddiemac:5:external/job/mclean-va/capital-markets-analyst---quantitative_jr17437"
+    },
+    {
+      "company": "Bmo",
+      "ats": "workday",
+      "slug": "bmo:3:external/job/toronto-on-can/data-and-ai-operations-analyst--cloud---fall-2026--co-op-internship----8-months_r260021724-1"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-in-ft-wayne-150a--1010-production-rd--bldg-150a/software-engineer-ii--onsite-_01855746"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ny-binghamton-288--31-lewis-rd--lewis/software-engineer-i--onsite-_01861373"
+    },
+    {
+      "company": "Nidec",
+      "ats": "workday",
+      "slug": "nidec:1:nidec/job/north-americausacaliforniarancho-cordova-ca/software-engineer_r0012452"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-ma-tewksbury-tb3--50-apple-hill-dr--concord-bldg-tewksbury-tb3-300-concord/systems-engineer-i---tactical-missile-system-simulation--unreal-engine-_01862202"
+    },
+    {
+      "company": "Boeing",
+      "ats": "workday",
+      "slug": "boeing:1:external_subsidiary/job/usa---el-segundo-ca/entry-level-software-engineer-developers_jr2026518452"
+    },
+    {
+      "company": "Rogersbh",
+      "ats": "workday",
+      "slug": "rogersbh:1:rbhcareer/job/madison-clinic-madison-wi/therapist---php-iop_r8160"
+    },
+    {
+      "company": "Absurdventures",
+      "ats": "greenhouse",
+      "slug": "absurdventures"
+    },
+    {
+      "company": "Absherconstruction",
+      "ats": "greenhouse",
+      "slug": "absherconstruction"
+    },
+    {
+      "company": "Airnorth",
+      "ats": "greenhouse",
+      "slug": "airnorth"
+    },
+    {
+      "company": "Ahrefsjobs",
+      "ats": "greenhouse",
+      "slug": "ahrefsjobs"
+    },
+    {
+      "company": "Aceable",
+      "ats": "greenhouse",
+      "slug": "aceable"
+    },
+    {
+      "company": "Airsculpt",
+      "ats": "greenhouse",
+      "slug": "airsculpt"
+    },
+    {
+      "company": "0X",
+      "ats": "greenhouse",
+      "slug": "0x"
+    },
+    {
+      "company": "98Point6",
+      "ats": "greenhouse",
+      "slug": "98point6"
+    },
+    {
+      "company": "Adroll",
+      "ats": "greenhouse",
+      "slug": "adroll"
+    },
+    {
+      "company": "Airbase",
+      "ats": "greenhouse",
+      "slug": "airbase"
+    },
+    {
+      "company": "Advocateconstruction",
+      "ats": "greenhouse",
+      "slug": "advocateconstruction"
+    },
+    {
+      "company": "5Minlab",
+      "ats": "greenhouse",
+      "slug": "5minlab"
+    },
+    {
+      "company": "204951305985924",
+      "ats": "greenhouse",
+      "slug": "204951305985924"
+    },
+    {
+      "company": "86Repairs",
+      "ats": "greenhouse",
+      "slug": "86repairs"
+    },
+    {
+      "company": "Accesshealthca",
+      "ats": "greenhouse",
+      "slug": "accesshealthca"
+    },
+    {
+      "company": "Airtamejobs",
+      "ats": "greenhouse",
+      "slug": "airtamejobs"
+    },
+    {
+      "company": "Agilesix",
+      "ats": "greenhouse",
+      "slug": "agilesix"
+    },
+    {
+      "company": "Acceleronfusion",
+      "ats": "greenhouse",
+      "slug": "acceleronfusion"
+    },
+    {
+      "company": "Absolutesecurityintl",
+      "ats": "greenhouse",
+      "slug": "absolutesecurityintl"
+    },
+    {
+      "company": "Ableto",
+      "ats": "greenhouse",
+      "slug": "ableto"
+    },
+    {
+      "company": "Action",
+      "ats": "greenhouse",
+      "slug": "action"
+    },
+    {
+      "company": "A",
+      "ats": "greenhouse",
+      "slug": "a"
+    },
+    {
+      "company": "Adelphiresearch",
+      "ats": "greenhouse",
+      "slug": "adelphiresearch"
+    },
+    {
+      "company": "Www",
+      "ats": "oracle",
+      "slug": "www.oraclecloud.com:CX_1"
+    },
+    {
+      "company": "10Up",
+      "ats": "greenhouse",
+      "slug": "10up"
+    },
+    {
+      "company": "Aacpnw",
+      "ats": "greenhouse",
+      "slug": "aacpnw"
+    },
+    {
+      "company": "100Thieves",
+      "ats": "greenhouse",
+      "slug": "100thieves"
+    },
+    {
+      "company": "Airwave",
+      "ats": "greenhouse",
+      "slug": "airwave"
+    },
+    {
+      "company": "Acutechgroupinc",
+      "ats": "greenhouse",
+      "slug": "acutechgroupinc"
+    },
+    {
+      "company": "Admios",
+      "ats": "greenhouse",
+      "slug": "admios"
+    },
+    {
+      "company": "Admarketplaceinc",
+      "ats": "greenhouse",
+      "slug": "admarketplaceinc"
+    },
+    {
+      "company": "Advocatesforchildrenofnewyork",
+      "ats": "greenhouse",
+      "slug": "advocatesforchildrenofnewyork"
+    },
+    {
+      "company": "Activate",
+      "ats": "greenhouse",
+      "slug": "activate"
+    },
+    {
+      "company": "Air",
+      "ats": "greenhouse",
+      "slug": "air"
+    },
+    {
+      "company": "A16Z",
+      "ats": "greenhouse",
+      "slug": "a16z"
+    },
+    {
+      "company": "Agibank",
+      "ats": "greenhouse",
+      "slug": "agibank"
+    },
+    {
+      "company": "Acentria",
+      "ats": "greenhouse",
+      "slug": "acentria"
+    },
+    {
+      "company": "Acrolinx",
+      "ats": "greenhouse",
+      "slug": "acrolinx"
+    },
+    {
+      "company": "1456754456Yhgbhfg",
+      "ats": "greenhouse",
+      "slug": "1456754456yhgbhfg"
+    },
+    {
+      "company": "Abacusfinancegroup",
+      "ats": "greenhouse",
+      "slug": "abacusfinancegroup"
+    },
+    {
+      "company": "Abrightbeginningsmerrillville",
+      "ats": "greenhouse",
+      "slug": "abrightbeginningsmerrillville"
+    },
+    {
+      "company": "Adjustjobs",
+      "ats": "greenhouse",
+      "slug": "adjustjobs"
+    },
+    {
+      "company": "Oraclecloud",
+      "ats": "oracle",
+      "slug": "oraclecloud.com:CX_1"
+    },
+    {
+      "company": "2Kearlycareers",
+      "ats": "greenhouse",
+      "slug": "2kearlycareers"
+    },
+    {
+      "company": "Adapter",
+      "ats": "greenhouse",
+      "slug": "adapter"
+    },
+    {
+      "company": "Abilitypath",
+      "ats": "greenhouse",
+      "slug": "abilitypath"
+    },
+    {
+      "company": "Ageoflearninginc",
+      "ats": "greenhouse",
+      "slug": "ageoflearninginc"
+    },
+    {
+      "company": "Adelphigrouplimited",
+      "ats": "greenhouse",
+      "slug": "adelphigrouplimited"
+    },
+    {
+      "company": "Software Engineer",
+      "ats": "rippling",
+      "slug": "logicbroker-inc"
+    },
+    {
+      "company": "Sr Backend Engineer",
+      "ats": "rippling",
+      "slug": "slangai"
     }
   ],
   "greenhouse": [
