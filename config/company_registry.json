@@ -167439,6 +167439,506 @@
             "company": "Chartermfg",
             "ats": "workday",
             "slug": "chartermfg:5:charter_careers/job/charter-manufacturing-company-inc---mequon-wi/digital-rotational-analyst---december-2026-grads_r07950-1"
+        },
+        {
+            "company": "Statestreet",
+            "ats": "workday",
+            "slug": "statestreet:1:global/job/boston-massachusetts/quantitative-analyst--assistant-vice-president_r-790888-1"
+        },
+        {
+            "company": "Conocophillips",
+            "ats": "workday",
+            "slug": "conocophillips:1:external/job/bartlesville-ok/gis-intern--corporate-land-2027_req-006208"
+        },
+        {
+            "company": "Lumentum",
+            "ats": "workday",
+            "slug": "lumentum:5:lite/job/united-kingdom---towcester-northamptonshire/senior-laser-laboratory-engineer_2026960"
+        },
+        {
+            "company": "Icf",
+            "ats": "workday",
+            "slug": "icf:5:icfexternal_career_site/job/arlington-va-va31/chemical-and-environmental-researcher--arlington--va-or-new-york--ny-_r2602483"
+        },
+        {
+            "company": "Ciena",
+            "ats": "workday",
+            "slug": "ciena:5:careers/job/ottawa/wavelogic-software---intern_r031443"
+        },
+        {
+            "company": "Okgov",
+            "ats": "workday",
+            "slug": "okgov:1:okgovjobs/job/oklahoma-county/oil-and-gas-specialist-i_jr63061"
+        },
+        {
+            "company": "Nordstrom",
+            "ats": "workday",
+            "slug": "nordstrom:501:nordstrom_careers/job/seattle-wa/nordstrom-made---assistant-product-developer---non-apparel---hybrid--seattle--wa-_r-861721"
+        },
+        {
+            "company": "Northeastern",
+            "ats": "workday",
+            "slug": "northeastern:1:careers/job/burlington-ma/temporary-r-d-software-engineer_r123231"
+        },
+        {
+            "company": "Mcgill",
+            "ats": "workday",
+            "slug": "mcgill:3:mcgill_careers/job/bronfman-building/research-assistant---prof-goldman_jr0000077191"
+        },
+        {
+            "company": "Cadence",
+            "ats": "workday",
+            "slug": "cadence:1:external_careers/job/san-jose/applied-ml---functional-verification-engineer_r53573"
+        },
+        {
+            "company": "Calibercollision",
+            "ats": "workday",
+            "slug": "calibercollision:1:protech/job/pt-tampa/automotive-adas-calibration-technician-apprentice_r0217941"
+        },
+        {
+            "company": "Globalhr",
+            "ats": "workday",
+            "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-ma-cambridge-bbn01--10--50-moulton-st--moulton-b2/sotware-engineer-ii_01852180-1"
+        },
+        {
+            "company": "Bmo",
+            "ats": "workday",
+            "slug": "bmo:3:external/job/irving-tx-usa/software-developer---early-career---15_r260021450"
+        },
+        {
+            "company": "Chenmed",
+            "ats": "workday",
+            "slug": "chenmed:1:chenmed/job/corporate-office/associate-forward-deployed-engineer_r0049128"
+        },
+        {
+            "company": "Harriscomputer",
+            "ats": "workday",
+            "slug": "harriscomputer:3:1/job/montreal-quebec/stagiaire-en-dveloppement-de-logiciels---software-development-intern_r0044820-1"
+        },
+        {
+            "company": "Visa",
+            "ats": "workday",
+            "slug": "visa:5:visa/job/us---ashburn-va/systems-engineer--linux-and-ai_ref077273w"
+        },
+        {
+            "company": "Psu",
+            "ats": "workday",
+            "slug": "psu:1:psu_staff/job/penn-state-university-park/part-time-research-support---hickey-group---materials-science-and-engineering_req_0000080064-2"
+        },
+        {
+            "company": "Hendrick",
+            "ats": "workday",
+            "slug": "hendrick:5:hmscareers/job/hendrick-motorsports/project-and-race-support-engineer-spring-2027---internship_r-81647"
+        },
+        {
+            "company": "Motorolasolutions",
+            "ats": "workday",
+            "slug": "motorolasolutions:5:careers/job/glasgow-uk-zuk118/frontend-software-engineer_r62283"
+        },
+        {
+            "company": "Lsu",
+            "ats": "workday",
+            "slug": "lsu:1:lsuwaiver/job/0307-madison-b-sturgis-new-agronomy-bldg/contingent-worker---visiting_r00115792"
+        },
+        {
+            "company": "Onedigital",
+            "ats": "workday",
+            "slug": "onedigital:5:onedigital/job/atlanta-ga/data-engineer_r9062"
+        },
+        {
+            "company": "Nationwidechildrens",
+            "ats": "workday",
+            "slug": "nationwidechildrens:5:en-us/nchcareers/job/main-campus-columbus-oh/research-intern_r-25571"
+        },
+        {
+            "company": "Stryker",
+            "ats": "workday",
+            "slug": "stryker:1:strykercareers/job/minnesota-minneapolis-virtual-address/associate-installation-technician---minneapolis--mn_r564901"
+        },
+        {
+            "company": "Intel",
+            "ats": "workday",
+            "slug": "intel:1:en-us/external/job/us-oregon-hillsboro/cad-eda-tools-automation-engineer_jr0284432-1"
+        },
+        {
+            "company": "Harriscomputer",
+            "ats": "workday",
+            "slug": "harriscomputer:3:1/job/office---springhill-medical-center-mobile-al/support-consultant--h_r0044638-1"
+        },
+        {
+            "company": "Medtronic",
+            "ats": "workday",
+            "slug": "medtronic:1:redeploymentmedtroniccareers/job/fridley-minnesota-united-states-of-america/software-engineering-intern---summer-2027_r73630"
+        },
+        {
+            "company": "Amainc",
+            "ats": "workday",
+            "slug": "amainc:12:ama_careers/job/hampton-va/research-engineer_r-100720"
+        },
+        {
+            "company": "Xylem",
+            "ats": "workday",
+            "slug": "xylem:5:en-us/xylem-careers/job/oromocto/application-engineer-ii_r49123"
+        },
+        {
+            "company": "Psu",
+            "ats": "workday",
+            "slug": "psu:1:psu_staff/job/penn-state-university-park/electronic-materials-and-devices-engineering-intern_req_0000053210"
+        },
+        {
+            "company": "Nory Co",
+            "ats": "ashby",
+            "slug": "nory-co"
+        },
+        {
+            "company": "Trimedx",
+            "ats": "workday",
+            "slug": "trimedx:1:tmx/job/winchester-va/career-growth-opportunity---entry-level-imaging-engineer_r14541"
+        },
+        {
+            "company": "Fr",
+            "ats": "ashby",
+            "slug": "fr"
+        },
+        {
+            "company": "Intel",
+            "ats": "workday",
+            "slug": "intel:1:en-us/external/job/us-texas-austin/rtl-design-engineer_jr0281763"
+        },
+        {
+            "company": "Dome Systems Inc",
+            "ats": "ashby",
+            "slug": "dome-systems-inc"
+        },
+        {
+            "company": "Spaitial",
+            "ats": "ashby",
+            "slug": "spaitial"
+        },
+        {
+            "company": "Nrel",
+            "ats": "workday",
+            "slug": "nrel:5:nlr/job/golden-co/iii-v-processing-intern_r14383"
+        },
+        {
+            "company": "Tmx",
+            "ats": "workday",
+            "slug": "tmx:3:tmx_careers/job/toronto---100-adelaide-st-w/analyst--market-insights--student-intern_r-6125"
+        },
+        {
+            "company": "Bmo",
+            "ats": "workday",
+            "slug": "bmo:3:campus/job/irving-tx-usa/software-developer---early-career---15_r260021450-1"
+        },
+        {
+            "company": "Asml",
+            "ats": "workday",
+            "slug": "asml:3:asmlext1/job/chandler-az-usa/upgrade-install-and-relocation-engineer_j-00347326-1"
+        },
+        {
+            "company": "Cadence",
+            "ats": "workday",
+            "slug": "cadence:1:external_careers/job/irvine/computational-aeroelasticity-developer_r55697"
+        },
+        {
+            "company": "Cadence",
+            "ats": "workday",
+            "slug": "cadence:1:external_careers/job/austin/sr-application-engineer_r55578"
+        },
+        {
+            "company": "Greenheckgroup",
+            "ats": "workday",
+            "slug": "greenheckgroup:5:external/job/tulsa-ok/application-engineer-i-ii-sr_jr104029"
+        },
+        {
+            "company": "Wpi",
+            "ats": "workday",
+            "slug": "wpi:5:wpi_external_career_site/job/worcester/researcher-for-robotic-dexterous-picking_r0003568"
+        },
+        {
+            "company": "Rochester",
+            "ats": "workday",
+            "slug": "rochester:5:ur_staff/job/rochester---ny/co-op-research-student-i--electronics-shop-_r273409"
+        },
+        {
+            "company": "Onto",
+            "ats": "workday",
+            "slug": "onto:1:onto_careers/job/wilmington-ma-upton/applications-engineer-3_r-6214"
+        },
+        {
+            "company": "Avav",
+            "ats": "workday",
+            "slug": "avav:1:en-us/avav/job/7540-metropolitan-dr-san-diego-ca/software-engineer-ii--applications-_8150-1"
+        },
+        {
+            "company": "Spe",
+            "ats": "workday",
+            "slug": "spe:1:en-us/sonypicturesentertainment/job/culver-city-california/graduate-intern--advanced-technologies_jr113816"
+        },
+        {
+            "company": "Onto",
+            "ats": "workday",
+            "slug": "onto:1:onto_careers/job/wilmington-ma-upton/applications-engineer-3_r-6213"
+        },
+        {
+            "company": "Austintexas",
+            "ats": "workday",
+            "slug": "austintexas:5:coa_careers/job/fire-headquarters/research-analyst-internship_jr104634"
+        },
+        {
+            "company": "Marmon",
+            "ats": "workday",
+            "slug": "marmon:501:marmon_careers/job/milwaukee-wi/digital-production-engineering-intern-or-student-co-op_jr0000037451-2"
+        },
+        {
+            "company": "Atominvest",
+            "ats": "ashby",
+            "slug": "atominvest"
+        },
+        {
+            "company": "Uva",
+            "ats": "workday",
+            "slug": "uva:1:uvastudentjobs/job/charlottesville-va/undergraduate-researcher--student-wage-_r0085242"
+        },
+        {
+            "company": "Psu",
+            "ats": "workday",
+            "slug": "psu:1:psu_staff/job/penn-state-university-park/undergraduate-research-assistants--van-meter_req_0000055890-1"
+        },
+        {
+            "company": "Att",
+            "ats": "workday",
+            "slug": "att:1:attgeneral/job/usatxplano--w-plano-pkwy---adm--dat2900-w-plano-pkwy/sr-specialist-member-of-technical-staff---process-automation---ai-solutions_r-116042"
+        },
+        {
+            "company": "Onto",
+            "ats": "workday",
+            "slug": "onto:1:onto_careers/job/wilmington-ma-upton/applications-engineer-3_r-6212"
+        },
+        {
+            "company": "Haier",
+            "ats": "workday",
+            "slug": "haier:3:ge_appliances/job/usa-louisville-ky/edison-engineering-development-program--eedp----electrical-january-2027_req-25804"
+        },
+        {
+            "company": "Nc",
+            "ats": "workday",
+            "slug": "nc:108:nc_careers/job/wake-county-nc/meteorologist_jr-120113"
+        },
+        {
+            "company": "Ebi",
+            "ats": "workday",
+            "slug": "ebi:5:ebicareers/job/simsbury-ct/electrical-development-engineer_req107160-1"
+        },
+        {
+            "company": "Psu",
+            "ats": "workday",
+            "slug": "psu:1:psu_staff/job/penn-state-university-park/rei-research-assistant_req_0000079460"
+        },
+        {
+            "company": "Conocophillips",
+            "ats": "workday",
+            "slug": "conocophillips:1:external/job/houston-tx/intern--geosciences-2027_req-006385"
+        },
+        {
+            "company": "Comcast",
+            "ats": "workday",
+            "slug": "comcast:5:comcast_careers/job/pa---philadelphia-3601-s-broad-st/freelancer_r441378"
+        },
+        {
+            "company": "Upenn",
+            "ats": "workday",
+            "slug": "upenn:1:careers-at-penn/job/med-sch-richards-building---5th-floor/neuroimaging-data-analyst-junior_jr00121050-1"
+        },
+        {
+            "company": "Motorolasolutions",
+            "ats": "workday",
+            "slug": "motorolasolutions:5:careers/job/reston-va--va58/junior-field-applications-engineer_r64415"
+        },
+        {
+            "company": "Tamus",
+            "ats": "workday",
+            "slug": "tamus:1:tamiu_student_employment/job/laredo-tx/student-research-assistant--qep-_r-094827"
+        },
+        {
+            "company": "Tamus",
+            "ats": "workday",
+            "slug": "tamus:1:pvamu_external/job/prairie-view-tx/research-assistant--energy---environmental-sustainability-_r-095226-1"
+        },
+        {
+            "company": "Stryker",
+            "ats": "workday",
+            "slug": "stryker:1:strykercareers/job/dallas-texas/associate-installation-technician---dfw---oklahoma-city_r569474-1"
+        },
+        {
+            "company": "Trendmicro",
+            "ats": "workday",
+            "slug": "trendmicro:3:external/job/toronto/malware-research-intern_r0009997"
+        },
+        {
+            "company": "Cadence",
+            "ats": "workday",
+            "slug": "cadence:1:univ_careers/job/mount-royal-montreal/analog-mixed-signal-ic-design-co-op-intern---summer-2026----stage-co-op-en-conception-de-ci-analogiques-signal-mixte--t--2026-_r53993"
+        },
+        {
+            "company": "Pacificlife",
+            "ats": "workday",
+            "slug": "pacificlife:1:en-us/pacificlifecareers/job/newport-beach-ca-700/investments-operational-support-analyst---document-data-management_r17254"
+        },
+        {
+            "company": "Nshe",
+            "ats": "workday",
+            "slug": "nshe:1:unr-external/job/university-of-nevada-reno---main-campus/student-worker---web-development-intern--marketing---communications_r0152288"
+        },
+        {
+            "company": "Psu",
+            "ats": "workday",
+            "slug": "psu:1:psu_staff/job/penn-state-university-park/part-time-research-associate_req_0000066766-1"
+        },
+        {
+            "company": "Xenergy",
+            "ats": "workday",
+            "slug": "xenergy:5:x-energyus/job/rockville-md/engineer-i-iii--nuclear-safety-analysis_r101089"
+        },
+        {
+            "company": "Globalfoundries",
+            "ats": "workday",
+            "slug": "globalfoundries:1:external/job/essex-junction/principal-packaging-integration-engineer_jr-2602835"
+        },
+        {
+            "company": "Amat",
+            "ats": "workday",
+            "slug": "amat:1:external/job/santa-claraca/cv-ml-dl-algorithm-developer_r2622877-1"
+        },
+        {
+            "company": "Spgi",
+            "ats": "workday",
+            "slug": "spgi:5:en-us/spgi_careers/job/new-york-ny/custom-index-manager_330057-1"
+        },
+        {
+            "company": "Gartner",
+            "ats": "workday",
+            "slug": "gartner:5:ext/job/irving-tx/digital-product-analyst_111681"
+        },
+        {
+            "company": "Kastle",
+            "ats": "ashby",
+            "slug": "kastle"
+        },
+        {
+            "company": "Bestbuycanada",
+            "ats": "workday",
+            "slug": "bestbuycanada:3:bestbuyca_career/job/11902-westhills-calgary/field-technical-service-representative--full-time-_r-51997"
+        },
+        {
+            "company": "Cadence",
+            "ats": "workday",
+            "slug": "cadence:1:external_careers/job/nottingham-01/lead-software-engineer_r55693"
+        },
+        {
+            "company": "Ag",
+            "ats": "workday",
+            "slug": "ag:3:airbus/job/montreal-area/assembleur-se--lectrique-d-avions---alternance-travail-tudes--ate----airbus-canada_jr10425810"
+        },
+        {
+            "company": "Kbr",
+            "ats": "workday",
+            "slug": "kbr:5:kbr_careers/job/colorado-springs-colorado/junior-software-engineer_r2126608"
+        },
+        {
+            "company": "Synechron",
+            "ats": "workday",
+            "slug": "synechron:1:en-us/synechroncareers/job/mdc--montreal/jr-dveloppeur-java--developer-_jr1041887-1"
+        },
+        {
+            "company": "E Source",
+            "ats": "ashby",
+            "slug": "e-source"
+        },
+        {
+            "company": "Globalhr",
+            "ats": "workday",
+            "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-al-huntsville-315--315-bob-heath-dr--bob-heath/fpga-engineer-i_01863350-1"
+        },
+        {
+            "company": "Globalfoundries",
+            "ats": "workday",
+            "slug": "globalfoundries:1:external/job/essex-junction/principal-packaging-design-integration-engineer_jr-2602838"
+        },
+        {
+            "company": "Asmglobal",
+            "ats": "workday",
+            "slug": "asmglobal:1:careers/job/west-conshohocken-pa/digital-workplace-experience-intern_r100122151"
+        },
+        {
+            "company": "Ffive",
+            "ats": "workday",
+            "slug": "ffive:5:en-us/f5jobs/job/seattle/ai-sales-intelligence-analyst_rp1037459"
+        },
+        {
+            "company": "Cboe",
+            "ats": "workday",
+            "slug": "cboe:1:external_career_cboe/job/kansas-city-mo/technical-content-engineer_r-4455"
+        },
+        {
+            "company": "Psu",
+            "ats": "workday",
+            "slug": "psu:1:psu_staff/job/penn-state-university-park/part-time-research-associate_req_0000066751-1"
+        },
+        {
+            "company": "Psu",
+            "ats": "workday",
+            "slug": "psu:1:psu_staff/job/penn-state-university-park/summer-research-associate_req_0000067968-1"
+        },
+        {
+            "company": "Tencent",
+            "ats": "workday",
+            "slug": "tencent:1:oa_huoshui_platform/job/united-kingdom-london/data-product-intern_r107644"
+        },
+        {
+            "company": "Riotinto",
+            "ats": "workday",
+            "slug": "riotinto:3:riotinto_careers/job/boron/engineer---mining_r61350"
+        },
+        {
+            "company": "Cmu",
+            "ats": "workday",
+            "slug": "cmu:5:cmu/job/pittsburgh-pa/innovation-engineer---office-of-the-vice-president-for-research_2023697"
+        },
+        {
+            "company": "Comcast",
+            "ats": "workday",
+            "slug": "comcast:5:comcast_careers/job/la---shreveport-6529-quilen-rd/residential-installation---service-technician_r442208"
+        },
+        {
+            "company": "Invesco",
+            "ats": "workday",
+            "slug": "invesco:1:en-us/ivz/job/atlanta-georgia/engineer--sip_r-13716-1"
+        },
+        {
+            "company": "Psu",
+            "ats": "workday",
+            "slug": "psu:1:psu_staff/job/reston-va/devsecops-research-computing-software--engineer_req_0000079293-2"
+        },
+        {
+            "company": "Interpublic",
+            "ats": "workday",
+            "slug": "interpublic:5:omc/job/new-york-new-york-united-states-of-america/associate--investment_12036-sl"
+        },
+        {
+            "company": "Centerstone",
+            "ats": "workday",
+            "slug": "centerstone:5:centerstonecareers/job/bloomington-indiana/bachelor-level-intern-late-fall-semester_jr-032217"
+        },
+        {
+            "company": "Howard",
+            "ats": "workday",
+            "slug": "howard:1:hu/job/alain-locke-hall/student-research-assistant_jr108204-1"
+        },
+        {
+            "company": "Marvell",
+            "ats": "workday",
+            "slug": "marvell:1:marvellcareers/job/santa-clara-ca/design-verification-engineer---early-career_2601538"
         }
     ],
     "greenhouse": [
