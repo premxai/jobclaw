@@ -170724,6 +170724,31 @@
             "company": "Uchicago",
             "ats": "workday",
             "slug": "uchicago:5:external/job/chicago-il/research-professional_jr34816"
+        },
+        {
+            "company": "Flir",
+            "ats": "workday",
+            "slug": "flir:1:flircareers/job/us---woodridge-il/electronics--electro-mech-assembler_req36028"
+        },
+        {
+            "company": "Ngc",
+            "ats": "workday",
+            "slug": "ngc:1:northrop_grumman_external_site/job/united-states-new-york-buffalo/electronics-technician_r10244652"
+        },
+        {
+            "company": "Hntb",
+            "ats": "workday",
+            "slug": "hntb:5:hntb_university_careers/job/tallahassee-fl/strategic-technology-intern---summer-2027--sed-division--for-current-former-hntb-interns-only-_r-31092"
+        },
+        {
+            "company": "Hntb",
+            "ats": "workday",
+            "slug": "hntb:5:hntb_careers/job/tallahassee-fl/strategic-technology-intern---summer-2027--sed-division--for-current-former-hntb-interns-only-_r-31092-1"
+        },
+        {
+            "company": "Ngc",
+            "ats": "workday",
+            "slug": "ngc:1:northrop_grumman_external_site/job/united-states-new-york-buffalo/electronics-technician_r10244659"
         }
     ],
     "greenhouse": [
