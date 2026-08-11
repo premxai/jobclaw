@@ -170749,6 +170749,556 @@
             "company": "Ngc",
             "ats": "workday",
             "slug": "ngc:1:northrop_grumman_external_site/job/united-states-new-york-buffalo/electronics-technician_r10244659"
+        },
+        {
+            "company": "Truist",
+            "ats": "workday",
+            "slug": "truist:1:en-us/careers/job/atlanta-ga/xmlname-2027-truist-securities---equity-research--sales--trading---research----analyst-program--intern-conversion-_r0117762-1"
+        },
+        {
+            "company": "Asml",
+            "ats": "workday",
+            "slug": "asml:3:asmlext1/job/chandler-az-usa/field-service-engineer---hmi_j-00345227-1"
+        },
+        {
+            "company": "Lovey",
+            "ats": "workable",
+            "slug": "lovey"
+        },
+        {
+            "company": "Viewline Ventures",
+            "ats": "workable",
+            "slug": "viewline-ventures"
+        },
+        {
+            "company": "Regions",
+            "ats": "workday",
+            "slug": "regions:5:regions_careers/job/hoover-al---riverchase-operations-center-birmingham-al/xmlname-2027-etp-analyst--technology--operations--digital--and-data_r105087"
+        },
+        {
+            "company": "2020Companies",
+            "ats": "workday",
+            "slug": "2020companies:1:external_careers/job/bonita-ca/android-sales-expert_req_110256"
+        },
+        {
+            "company": "Responsiveads Inc",
+            "ats": "workable",
+            "slug": "responsiveads-inc"
+        },
+        {
+            "company": "Pru",
+            "ats": "workday",
+            "slug": "pru:5:pgim_careers/job/150-north-riverside-chicago-il/pgim---investment-analyst--private-credit-_r-124727"
+        },
+        {
+            "company": "Nova Talent",
+            "ats": "ashby",
+            "slug": "nova-talent"
+        },
+        {
+            "company": "Blueorigin",
+            "ats": "workday",
+            "slug": "blueorigin:5:blueorigin/job/greater-seattle-area/software-development-engineer-i---early-career--2026-starts-_r70051"
+        },
+        {
+            "company": "Caci",
+            "ats": "workday",
+            "slug": "caci:1:external/job/fort-collins-co-us/gis-geospatial-maritime-analyst---digitizer---collections-analyst_330221"
+        },
+        {
+            "company": "Rockwellautomation",
+            "ats": "workday",
+            "slug": "rockwellautomation:1:external_rockwell_automation/job/mayfield-heights-ohio-united-states/spring-2027-co-op--embedded-software-engineer--january-2027---august-2027-_r26-3473-1"
+        },
+        {
+            "company": "Iko",
+            "ats": "workday",
+            "slug": "iko:3:iko_careers/job/mississauga-on/data-engineer-co-op_req-13629"
+        },
+        {
+            "company": "Argonne",
+            "ats": "workday",
+            "slug": "argonne:1:argonne_careers/job/lemont-il-usa/postbaccalaureate-appointee----machine-learning-for-viral-glycosylation-prediction_423245"
+        },
+        {
+            "company": "Truist",
+            "ats": "workday",
+            "slug": "truist:1:en-us/careers/job/charlotte-nc/xmlname-2027-technology--data--and-operations-internship---intern-conversion-_r0117276"
+        },
+        {
+            "company": "Nvent",
+            "ats": "workday",
+            "slug": "nvent:5:en-us/nvent/job/oregon-wi-us/electrical-assembler_r23051"
+        },
+        {
+            "company": "Mckesson",
+            "ats": "workday",
+            "slug": "mckesson:3:external_careers/job/can-qc-montreal-ville-saint-laurent/stagiaire-en-dveloppement-logiciel---automne-2026---software-developer-intern---fall-2026_jr0151997"
+        },
+        {
+            "company": "Rbc",
+            "ats": "workday",
+            "slug": "rbc:3:rbcglobal1/job/toronto-ontario-canada/manager---analytics-engineering_r-0000183481"
+        },
+        {
+            "company": "Esgusa",
+            "ats": "workable",
+            "slug": "esgusa"
+        },
+        {
+            "company": "Murphy Research",
+            "ats": "workable",
+            "slug": "murphy-research"
+        },
+        {
+            "company": "Blueorigin",
+            "ats": "workday",
+            "slug": "blueorigin:5:blueorigin/job/greater-seattle-area/avionics---embedded-software-engineer-i---early-career--2026-starts-_r70055"
+        },
+        {
+            "company": "Swoon Editions",
+            "ats": "workable",
+            "slug": "swoon-editions"
+        },
+        {
+            "company": "Leidos",
+            "ats": "workday",
+            "slug": "leidos:5:external/job/huntsville-al/electro-mechanical-assembly-technician_r-00189222"
+        },
+        {
+            "company": "Mindrobotics",
+            "ats": "ashby",
+            "slug": "mindrobotics"
+        },
+        {
+            "company": "Globalhr",
+            "ats": "workday",
+            "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ma-woburn-wb1--235-presidential-way--spencer-bldg/software-engineering-intern--summer-2027-_01864764"
+        },
+        {
+            "company": "Cwill Us",
+            "ats": "workable",
+            "slug": "cwill-us"
+        },
+        {
+            "company": "Mmc",
+            "ats": "workday",
+            "slug": "mmc:1:mmc/job/norwich---willow/entry-level-data-analyst--excel--powerbi-_r_357855"
+        },
+        {
+            "company": "Miele",
+            "ats": "workday",
+            "slug": "miele:3:en-us/miele-jobs/job/abingdon/domestic-field-service-technician_r2782-1"
+        },
+        {
+            "company": "Mastercard",
+            "ats": "workday",
+            "slug": "mastercard:1:corporatecareers/job/ofallon-missouri/software-engineer-i_r-280783"
+        },
+        {
+            "company": "Mustard Systems",
+            "ats": "workable",
+            "slug": "mustard-systems"
+        },
+        {
+            "company": "Thermofisher",
+            "ats": "workday",
+            "slug": "thermofisher:5:thermofishercareers/job/remote-north-carolina-usa/field-service-engineer-i_r-01364037"
+        },
+        {
+            "company": "Oceancomm",
+            "ats": "workable",
+            "slug": "oceancomm"
+        },
+        {
+            "company": "Micron",
+            "ats": "workday",
+            "slug": "micron:1:external/job/boise-id---id1/new-college-grad---it-software-support-engineer_jr108465"
+        },
+        {
+            "company": "Medtronic",
+            "ats": "workday",
+            "slug": "medtronic:1:redeploymentmedtroniccareers/job/fridley-minnesota-united-states-of-america/technician-i_r74148"
+        },
+        {
+            "company": "Jcrew",
+            "ats": "workday",
+            "slug": "jcrew:1:jcrewcareers/job/new-york-ny-usa-headquarters/analyst---design-sourcing-systems_125809"
+        },
+        {
+            "company": "The Anywhere Company",
+            "ats": "workable",
+            "slug": "the-anywhere-company"
+        },
+        {
+            "company": "Baxter",
+            "ats": "workday",
+            "slug": "baxter:1:en-us/baxter/job/tualatin-oregon/field-service-technician-i---tualatin--or--2nd-shift-_jr-206711-1"
+        },
+        {
+            "company": "Micron",
+            "ats": "workday",
+            "slug": "micron:1:external/job/richardson-tx/memory-design-engineer--hbm_jr108043"
+        },
+        {
+            "company": "Mckesson",
+            "ats": "workday",
+            "slug": "mckesson:3:sourcer_on_req/job/usa-oh-columbus/cmm-technology-intern---summer-2027_jr0151979"
+        },
+        {
+            "company": "Fsh",
+            "ats": "ashby",
+            "slug": "fsh"
+        },
+        {
+            "company": "Truist",
+            "ats": "workday",
+            "slug": "truist:1:en-us/careers/job/charlotte-nc/associate-software-engineer_r0117651"
+        },
+        {
+            "company": "Generation West Virginia 1",
+            "ats": "workable",
+            "slug": "generation-west-virginia-1"
+        },
+        {
+            "company": "Globalhr",
+            "ats": "workday",
+            "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ma-marlborough-ma2--1001-boston-post-rd--bldg-2/software-engineering-intern--summer-2027-_01865158"
+        },
+        {
+            "company": "2020Companies",
+            "ats": "workday",
+            "slug": "2020companies:1:external_careers/job/reading-pa/retail-display-installer--technology_req_110238"
+        },
+        {
+            "company": "Thales",
+            "ats": "workday",
+            "slug": "thales:3:en-us/careers/job/glasgow/manufacturing-technician_r0334267"
+        },
+        {
+            "company": "Ohio",
+            "ats": "greenhouse",
+            "slug": "ohio"
+        },
+        {
+            "company": "Capitalone",
+            "ats": "workday",
+            "slug": "capitalone:12:capital_one/job/mclean-va/mba-product-manager---2027_r244814-2"
+        },
+        {
+            "company": "Citi",
+            "ats": "workday",
+            "slug": "citi:5:2/job/new-york-new-york-united-states/services--full-time-analyst--new-york-city---us--2027_26979922"
+        },
+        {
+            "company": "Massgeneralbrigham",
+            "ats": "workday",
+            "slug": "massgeneralbrigham:1:mgbexternal/job/risk-score-data-analyst_rq4075475"
+        },
+        {
+            "company": "Homedepot",
+            "ats": "workday",
+            "slug": "homedepot:5:careerdepot/job/store-support-center-atlanta---9090/associate-data-scientist--tools---automation_req189666"
+        },
+        {
+            "company": "Globalhr",
+            "ats": "workday",
+            "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ia-cedar-rapids-182--1100-cimmie-ave-ne--bldg-182/software-engineer-i--onsite-_01863755"
+        },
+        {
+            "company": "Micron",
+            "ats": "workday",
+            "slug": "micron:1:external/job/boise-id---main-site/intern---dram-ip-circuits-design-engineer_jr108471"
+        },
+        {
+            "company": "Nationwidechildrens",
+            "ats": "workday",
+            "slug": "nationwidechildrens:5:en-us/nchcareers/job/main-campus-columbus-oh/igm-research-intern---ri-miller_r-27400-1"
+        },
+        {
+            "company": "Bah",
+            "ats": "workday",
+            "slug": "bah:1:bah_jobs/job/mclean-va/ai-ran-telecommunications-engineer-intern_r0246415"
+        },
+        {
+            "company": "Chamberlain",
+            "ats": "workday",
+            "slug": "chamberlain:1:chamberlain_group/job/oak-brook-il/intern--community-product-management--summer-2026-_jr31309"
+        },
+        {
+            "company": "Leidos",
+            "ats": "workday",
+            "slug": "leidos:5:external/job/huntsville-al/cable-assembly-technician-weekend-shift_r-00189192"
+        },
+        {
+            "company": "Pru",
+            "ats": "workday",
+            "slug": "pru:5:careers/job/150-north-riverside-chicago-il/pgim---investment-analyst--private-credit-_r-124727-1"
+        },
+        {
+            "company": "Lplfinancial",
+            "ats": "workday",
+            "slug": "lplfinancial:1:university/job/fort-millcharlotte/summer-intern-2027---data_r-052914"
+        },
+        {
+            "company": "Texaspsf",
+            "ats": "workday",
+            "slug": "texaspsf:501:texaspsfcareers/job/innovation-tower/equity-capital-markets-intern_jr100108"
+        },
+        {
+            "company": "Lplfinancial",
+            "ats": "workday",
+            "slug": "lplfinancial:1:university/job/fort-millcharlotte/summer-intern-2027--software-engineer_r-052921"
+        },
+        {
+            "company": "Globalhr",
+            "ats": "workday",
+            "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-fl-largo-382sr--7887-bryan-dairy-rd--bldg-600/software-engineer-intern--summer-2027-_01864811-1"
+        },
+        {
+            "company": "Cisco",
+            "ats": "workday",
+            "slug": "cisco:5:cisco_careers/job/milpitas-california-us/software-engineer-iii--full-time----united-states-eng-cpo-wtg-etr_2022055"
+        },
+        {
+            "company": "Investpsp",
+            "ats": "workday",
+            "slug": "investpsp:3:psp_careers/job/montreal/intern--ai-solutions-for-external-manager-selection---monitoring--may---august-2027-_r4933"
+        },
+        {
+            "company": "Trycaddi",
+            "ats": "workable",
+            "slug": "trycaddi"
+        },
+        {
+            "company": "Cox",
+            "ats": "workday",
+            "slug": "cox:1:cox_external_career_site_1/job/carmel-in/entry-level-software-engineer-carmel--in_r202680859"
+        },
+        {
+            "company": "Fragile",
+            "ats": "rippling",
+            "slug": "fragile"
+        },
+        {
+            "company": "Peak6Group",
+            "ats": "workday",
+            "slug": "peak6group:1:capman/job/chicago-il/trading-bootcamp-micro-internship---summer-2027_jr105057"
+        },
+        {
+            "company": "Globalhr",
+            "ats": "workday",
+            "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-va-sterling-291--22640-davis-dr--davis/software-engineer-i---onsite-_01864802"
+        },
+        {
+            "company": "Rrhs",
+            "ats": "workday",
+            "slug": "rrhs:5:rrh/job/riedman---remote/rit-co-op--web-applications_req_233332"
+        },
+        {
+            "company": "Moog",
+            "ats": "workday",
+            "slug": "moog:5:moog_external_career_site/job/buffalo-ny/intern--product-engineering_r-26-19224"
+        },
+        {
+            "company": "Arch Aerial Llc",
+            "ats": "workable",
+            "slug": "arch-aerial-llc"
+        },
+        {
+            "company": "Peak6Group",
+            "ats": "workday",
+            "slug": "peak6group:1:capman/job/chicago-il/trading-internship-for-women-_jr105061"
+        },
+        {
+            "company": "Clearesult",
+            "ats": "workday",
+            "slug": "clearesult:1:clearesult_external_careers/job/remote---canada---bc/energy-efficiency-co-op_r0017820"
+        },
+        {
+            "company": "Ing",
+            "ats": "workday",
+            "slug": "ing:3:icsgblcor/job/new-york/summer-2027-internship---tech--innovation-_req-10119619"
+        },
+        {
+            "company": "Lplfinancial",
+            "ats": "workday",
+            "slug": "lplfinancial:1:university/job/fort-millcharlotte/summer-intern-2027--product_r-052918"
+        },
+        {
+            "company": "Godirect",
+            "ats": "workday",
+            "slug": "godirect:5:voya_jobs/job/new-york-ny/avp-quantitative-research-analyst_jr0031863"
+        },
+        {
+            "company": "Oclc",
+            "ats": "workday",
+            "slug": "oclc:1:en-us/oclc_careers/job/dublin-oh--hybrid/associate-data--metadata-analyst_r0003901-1"
+        },
+        {
+            "company": "Lplfinancial",
+            "ats": "workday",
+            "slug": "lplfinancial:1:university/job/fort-millcharlotte/new-grad---2027---data-engineering_r-052493-1"
+        },
+        {
+            "company": "Truist",
+            "ats": "workday",
+            "slug": "truist:1:en-us/careers/job/new-york-ny/xmlname-2027-truist-securities---equity-s-t--sales--trading---research----analyst-program--intern-conversion-_r0117763-1"
+        },
+        {
+            "company": "Leidos",
+            "ats": "workday",
+            "slug": "leidos:5:external/job/huntsville-al/electrical-mechanical-technician-2nd-shift_r-00189215"
+        },
+        {
+            "company": "Micron",
+            "ats": "workday",
+            "slug": "micron:1:external/job/boise-id---main-site/intern---dram-design-engineer_jr108448"
+        },
+        {
+            "company": "Micron",
+            "ats": "workday",
+            "slug": "micron:1:external/job/boise-id---id1/rda-application-engineer_jr107745"
+        },
+        {
+            "company": "Uofl",
+            "ats": "workday",
+            "slug": "uofl:1:uoflcareersite/job/belknap-campus/institutional-research-analyst-i_r109041"
+        },
+        {
+            "company": "Teserac Inc",
+            "ats": "workable",
+            "slug": "teserac-inc"
+        },
+        {
+            "company": "Globalhr",
+            "ats": "workday",
+            "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-ct-east-hartford-etc--400-main-st--bldg-etc/digital-finance---co-op--hybrid-_01863764"
+        },
+        {
+            "company": "Truist",
+            "ats": "workday",
+            "slug": "truist:1:en-us/careers/job/new-york-ny/xmlname-2027-truist-securities---fixed-income-loans-s-t--sales--trading---research----analyst-program--intern-conversion-_r0117765-1"
+        },
+        {
+            "company": "Hubinternational",
+            "ats": "workday",
+            "slug": "hubinternational:1:en-us/hubinternational/job/norwell-ma/business-intelligence-associate_r0037970"
+        },
+        {
+            "company": "Bmo",
+            "ats": "workday",
+            "slug": "bmo:3:privileged/job/toronto-on-can/investment-intern--winter-2027--co-op-internship----4-months_r260023223"
+        },
+        {
+            "company": "Saintleo",
+            "ats": "workday",
+            "slug": "saintleo:503:slu/job/university-campus/xmlname-2026-2027-fws-student-worker--institutional-research_r4728"
+        },
+        {
+            "company": "Globalhr",
+            "ats": "workday",
+            "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ma-tewksbury-tb1--50-apple-hill-dr--assabet-bldg/rdc-engineer-ii_01865317"
+        },
+        {
+            "company": "Globalhr",
+            "ats": "workday",
+            "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ma-marlborough-ma2--1001-boston-post-rd--bldg-2/software-engineer-i--onsite-_01865154"
+        },
+        {
+            "company": "Boseallaboutme",
+            "ats": "workday",
+            "slug": "boseallaboutme:503:bose_careers/job/us-ny---binghamton/electronics-assembler--glass-panel-assembly_r29018"
+        },
+        {
+            "company": "Geaerospace",
+            "ats": "workday",
+            "slug": "geaerospace:5:ge_externalsite/job/niskayuna/union-electronic-device-fabricator--edf----1st-shift_r5038505"
+        },
+        {
+            "company": "Novartis",
+            "ats": "workday",
+            "slug": "novartis:3:novartis_careers/job/san-diego/data-science---ai-innovation-postdoctoral-fellow_req-10085085-1"
+        },
+        {
+            "company": "Radiancetech",
+            "ats": "workday",
+            "slug": "radiancetech:12:radiance_external/job/ruston-la/entry-level-microelectronics-r-d-engineer_hr102341"
+        },
+        {
+            "company": "Fmr",
+            "ats": "workday",
+            "slug": "fmr:1:fidelitycareers/job/covington-ky/associate-analyst--defined-benefit---early-career_2133744"
+        },
+        {
+            "company": "Lplfinancial",
+            "ats": "workday",
+            "slug": "lplfinancial:1:university/job/fort-millcharlotte/new-grad---2027---product_r-052468-1"
+        },
+        {
+            "company": "Hpinc",
+            "ats": "workday",
+            "slug": "hpinc:5:hpinc/job/tulsa-ok-usa/wellbore-positioning-engineer_req-2815"
+        },
+        {
+            "company": "Thingtrax",
+            "ats": "workable",
+            "slug": "thingtrax"
+        },
+        {
+            "company": "Globalhr",
+            "ats": "workday",
+            "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-ma-woburn-wb1--235-presidential-way--spencer-bldg/systems-engineer-i--radar-analyst_01865798"
+        },
+        {
+            "company": "Micron",
+            "ats": "workday",
+            "slug": "micron:1:external/job/boise-id---main-site/new-college-grad---dram-design-engineer_jr107861"
+        },
+        {
+            "company": "Rockwellautomation",
+            "ats": "workday",
+            "slug": "rockwellautomation:1:external-rockwell-automation-early-careers/job/mayfield-heights-ohio-united-states/spring-2027-co-op--embedded-software-engineer--january-2027---august-2027-_r26-3473"
+        },
+        {
+            "company": "Micron",
+            "ats": "workday",
+            "slug": "micron:1:external/job/boise-id---main-site/intern---dram-design-engineer_jr108468"
+        },
+        {
+            "company": "Baxter",
+            "ats": "workday",
+            "slug": "baxter:1:en-us/baxter/job/parsippany-troy-hills-new-jersey/field-service-technician-ii_jr-207624-1"
+        },
+        {
+            "company": "Flir",
+            "ats": "workday",
+            "slug": "flir:1:flircareers/job/us---huntsville-al/jr-software-engineer_req36188"
+        },
+        {
+            "company": "Kla",
+            "ats": "workday",
+            "slug": "kla:1:search/job/milpitas-ca/applications-development-engineer---broadband-plasma-division-_2639355-1"
+        },
+        {
+            "company": "Guidehouse",
+            "ats": "workday",
+            "slug": "guidehouse:1:external/job/us---tx-san-antonio/data-engineer_42995"
+        },
+        {
+            "company": "Global",
+            "ats": "workday",
+            "slug": "global:1:globalpartnerscareers/job/newton-office/advanced-analytics-intern_r0031779"
+        },
+        {
+            "company": "Lplfinancial",
+            "ats": "workday",
+            "slug": "lplfinancial:1:university/job/fort-millcharlotte/new-grad-2027---software-engineering_r-052475"
+        },
+        {
+            "company": "Sunlife",
+            "ats": "workday",
+            "slug": "sunlife:3:en-us/campus/job/toronto-ontario/student--digital-analytics--summer-2027-summer-2028--_jr00126578"
         }
     ],
     "greenhouse": [
