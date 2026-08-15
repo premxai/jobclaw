@@ -172529,6 +172529,481 @@
       "company": "Software Engineer",
       "ats": "rippling",
       "slug": "rbw"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ut-west-valley-city-338--1127--1128-w-2400-s--bldg-338/software-engineering-intern--summer-2027-_01865952"
+    },
+    {
+      "company": "Dutchbros",
+      "ats": "workday",
+      "slug": "dutchbros:1:en-us/dbshops/job/1930-w-rio-salado-pkwy-tempe-az-85281/associate-endpoint-engineer_req-19765-1"
+    },
+    {
+      "company": "Hypercubic",
+      "ats": "ashby",
+      "slug": "hypercubic"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ia-cedar-rapids-105--400-collins-rd-ne--bldg-105/software-engineer-i--onsite-_01867125"
+    },
+    {
+      "company": "Fmr",
+      "ats": "workday",
+      "slug": "fmr:1:targeted/job/westlake-tx/april-2027---leap-software-engineer_2133870"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ia-cedar-rapids-105--400-collins-rd-ne--bldg-105/software-engineering-intern--summer-2027-_01867129"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-fl-melbourne-307--1100-w-hibiscus-blvd--bldg-307/software-engineer-i--onsite-_01866124"
+    },
+    {
+      "company": "Globalfoundries",
+      "ats": "workday",
+      "slug": "globalfoundries:1:external/job/usa---new-york---malta/advanced-manufacturing-equipment-engineer--2027-new-college-graduate-_jr-2604760"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ca-el-segundo-e04--2006-e-el-segundo-blvd--bldg-e04/software-engineer-i--onsite-_01866621"
+    },
+    {
+      "company": "Motorolasolutions",
+      "ats": "workday",
+      "slug": "motorolasolutions:5:careers/job/plantation-fl/android-platform-software-engineering-intern---summer-2027_r67362-1"
+    },
+    {
+      "company": "Astrazeneca",
+      "ats": "workday",
+      "slug": "astrazeneca:3:en-us/careers/job/uk---london/senior-applied-ai---ml-engineer---evinova_r-257950-1"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ca-fullerton-676--1801-hughes-dr--bldg-676/software-engineer-i--onsite-_01867438"
+    },
+    {
+      "company": "Bah",
+      "ats": "workday",
+      "slug": "bah:1:bah_jobs/job/arlington-va/data-engineer_r0245613"
+    },
+    {
+      "company": "Archildrens",
+      "ats": "workday",
+      "slug": "archildrens:1:external_career_site/job/little-rock/systems-analyst-i_r0024269"
+    },
+    {
+      "company": "Crowe",
+      "ats": "workday",
+      "slug": "crowe:12:en-us/external_careers/job/chicago-il-usa/machine-learning-intern_r-71005"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ia-cedar-rapids-131--5450-c-ave-ne--bldg-131/software-engineering-intern--summer-2027-_01866136"
+    },
+    {
+      "company": "Smithnephew",
+      "ats": "workday",
+      "slug": "smithnephew:5:external/job/pittsburgh-pa/quality-engineer---data-science_r91792"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ct-east-hartford-etc--400-main-st--bldg-etc/software-engineering-intern--summer-2027-_01865808"
+    },
+    {
+      "company": "Globalfoundries",
+      "ats": "workday",
+      "slug": "globalfoundries:1:external/job/usa---new-york---malta/advanced-manufacturing-equipment-engineer--2027-new-college-graduate-_jr-2604707"
+    },
+    {
+      "company": "Micron",
+      "ats": "workday",
+      "slug": "micron:1:external/job/san-jose-ca/new-college-grad---ai-innovation-research-engineer_jr108594"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-az-tucson-m02--1151-e-hermans-rd--bldg-m02/eap-engineering-ecad-intern--summer-2027-_01866716-1"
+    },
+    {
+      "company": "Globalfoundries",
+      "ats": "workday",
+      "slug": "globalfoundries:1:external/job/usa---vermont---essex-junction/principal-engineer-technology-development--2027-new-college-graduate-_jr-2604426"
+    },
+    {
+      "company": "Mii",
+      "ats": "workday",
+      "slug": "mii:5:mitek/job/greenwood-village-co-usa/software-engineer_r06590-1"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-nc-winston-salem-175--175-oak-plaza-blvd--bldg-175/software-engineer-i--onsite-_01866721"
+    },
+    {
+      "company": "Wgl",
+      "ats": "workday",
+      "slug": "wgl:5:altagas/job/calgary-ab/data-science-and-analytics-co-op-student_r7171"
+    },
+    {
+      "company": "Aristocrat",
+      "ats": "workday",
+      "slug": "aristocrat:3:aristocratexternalcareerssite/job/tulsa-ok-us/field-service-technician_r0022162-1"
+    },
+    {
+      "company": "Litellm",
+      "ats": "ashby",
+      "slug": "litellm"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-mn-burnsville-north--2900-county-rd-42-w--north-bldg/software-engineer-i--onsite-_01866686"
+    },
+    {
+      "company": "Cenovus",
+      "ats": "workday",
+      "slug": "cenovus:3:careers/job/ca-ab-calgary/student--workforce-analytics---strategic-planning_r-411016"
+    },
+    {
+      "company": "Pru",
+      "ats": "workday",
+      "slug": "pru:5:careers/job/newark-nj-usa/pgim--2027-public-credit--summer-investment-analyst-program--portfolio-analysis-group-_r-124835-2"
+    },
+    {
+      "company": "Pru",
+      "ats": "workday",
+      "slug": "pru:5:pgim_careers/job/newark-nj-usa/pgim--2027-public-credit--summer-investment-analyst-program--portfolio-analysis-group-_r-124835"
+    },
+    {
+      "company": "Generac",
+      "ats": "workday",
+      "slug": "generac:5:en-us/external/job/reno-nv---usa/intern-firmware-engineering_jr16149"
+    },
+    {
+      "company": "Inherent",
+      "ats": "ashby",
+      "slug": "inherent"
+    },
+    {
+      "company": "Tamus",
+      "ats": "workday",
+      "slug": "tamus:1:en-us/tti_external/job/bryan-tx/assistant-transportation-researcher_r-096230-1"
+    },
+    {
+      "company": "Amainc",
+      "ats": "workday",
+      "slug": "amainc:12:ama_careers/job/hampton-va/computer-science-engineering-intern---computer-vision-applications_r-100731"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ca-san-jose-826--200-holger-way--bldg-826/software-engineer-ii--onsite-_01860540"
+    },
+    {
+      "company": "Intel",
+      "ats": "workday",
+      "slug": "intel:1:en-us/external/job/us-california-folsom/physical-design-engineering-graduate-intern_jr0283509"
+    },
+    {
+      "company": "Crowe",
+      "ats": "workday",
+      "slug": "crowe:12:en-us/external_careers/job/chicago-il-usa/data-consultant-intern_r-71042"
+    },
+    {
+      "company": "Fmr",
+      "ats": "workday",
+      "slug": "fmr:1:targeted/job/westlake-tx/july-2027---leap-software-engineer_2133877"
+    },
+    {
+      "company": "Wavestone1",
+      "ats": "smartrecruiters",
+      "slug": "wavestone1"
+    },
+    {
+      "company": "Amat",
+      "ats": "workday",
+      "slug": "amat:1:external/job/santa-claraca/software-engineer-ii_r2619362"
+    },
+    {
+      "company": "Capitalhealth",
+      "ats": "workday",
+      "slug": "capitalhealth:1:capitalhealthcareers/job/pennington-nj/it-product-engineer-i_jr110768"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ia-cedar-rapids-131--5450-c-ave-ne--bldg-131/software-engineer-i--onsite-_01863513"
+    },
+    {
+      "company": "Oneok",
+      "ats": "workday",
+      "slug": "oneok:1:oneok_early_careers/job/tulsa-ok/engineering-intern---tulsa--ok_r8155"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ca-fullerton-676--1801-hughes-dr--bldg-676/software-engineering-intern--summer-2027-_01867439"
+    },
+    {
+      "company": "Ucar",
+      "ats": "workday",
+      "slug": "ucar:5:ucar_careers/job/boulder-co/cesm-software-engineer-i_req-2026-117-1"
+    },
+    {
+      "company": "Prysmiangroup",
+      "ats": "workday",
+      "slug": "prysmiangroup:3:careers/job/mckinney---encore/i-c-cable-design-specialist_r-35623-2"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-az-tucson-805--1151-e-hermans-rd--bldg-805/software-engineer-i--onsite-_01866775"
+    },
+    {
+      "company": "Insperity",
+      "ats": "workday",
+      "slug": "insperity:12:nsp/job/kingwood-tx/artificial-intelligence-engineer-i_jr103100"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ma-tewksbury-tb1--50-apple-hill-dr--assabet-bldg/radar-digital-products-engineering-intern--summer-2027-_01866243"
+    },
+    {
+      "company": "Crowe",
+      "ats": "workday",
+      "slug": "crowe:12:en-us/external_careers/job/chicago-il-usa/machine-learning-intern_r-71013"
+    },
+    {
+      "company": "Fmr",
+      "ats": "workday",
+      "slug": "fmr:1:targeted/job/westlake-tx/january-2027---leap-software-engineer_2133859"
+    },
+    {
+      "company": "Crowe",
+      "ats": "workday",
+      "slug": "crowe:12:en-us/external_careers/job/chicago-il-usa/netsuite-implementation-intern_r-71040"
+    },
+    {
+      "company": "Factset",
+      "ats": "workday",
+      "slug": "factset:108:factsetcareers/job/london-gbr/software-engineer-i--infrastructure_r32300"
+    },
+    {
+      "company": "Bpinternational",
+      "ats": "workday",
+      "slug": "bpinternational:3:bpprivateexternalcareerssite/job/united-states-of-america---texas---houston/one-subsurface-program---upstream-geoscientist---houston--tx_rq114817"
+    },
+    {
+      "company": "Dedalus Labs",
+      "ats": "ashby",
+      "slug": "dedalus-labs"
+    },
+    {
+      "company": "Nvidia",
+      "ats": "workday",
+      "slug": "nvidia:5:nvidiaexternalcareersite/job/us-ca-santa-clara/software-engineer--deep-learning-libraries---new-college-graduate-2026_jr2023252"
+    },
+    {
+      "company": "Bpinternational",
+      "ats": "workday",
+      "slug": "bpinternational:3:bpearlycareers/job/united-states-of-america---texas---houston/summer-intern---geoscientist---houston-tx_rq114816"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ca-el-segundo-e04--2006-e-el-segundo-blvd--bldg-e04/software-engineering-intern--summer-2027-_01866619"
+    },
+    {
+      "company": "Crowe",
+      "ats": "workday",
+      "slug": "crowe:12:en-us/external_careers/job/chicago-il-usa/data-analytics-developer-intern_r-71041"
+    },
+    {
+      "company": "Interdigital",
+      "ats": "workday",
+      "slug": "interdigital:5:interdigital_career/job/conshohocken-pa/phd-intern--6g-wireless-systems---sept-2026_req26-1135-1"
+    },
+    {
+      "company": "Dallascollege",
+      "ats": "workday",
+      "slug": "dallascollege:1:dallas_college_careers/job/el-centro-campus-r-building/sas-intern_r13709"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-md-annapolis-906--2551-riva-rd--bldg-906/software-engineer-i--onsite-_01867023"
+    },
+    {
+      "company": "Tamus",
+      "ats": "workday",
+      "slug": "tamus:1:system-wide_external/job/bryan-tx/assistant-transportation-researcher_r-096230"
+    },
+    {
+      "company": "Lennar",
+      "ats": "workday",
+      "slug": "lennar:1:lennar_jobs/job/miami-fl-job-posting-location/software-engineer-i_r26_0000003608"
+    },
+    {
+      "company": "Baxter",
+      "ats": "workday",
+      "slug": "baxter:1:en-us/baxter/job/auburn-washington/field-service-technician-i---auburn--wa_jr-206505-2"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-mn-burnsville-north--2900-county-rd-42-w--north-bldg/software-engineering-intern--summer-2027-_01866681"
+    },
+    {
+      "company": "Fmr",
+      "ats": "workday",
+      "slug": "fmr:1:targeted/job/westlake-tx/april-2027---leap-systems-analyst_2133876"
+    },
+    {
+      "company": "Crowe",
+      "ats": "workday",
+      "slug": "crowe:12:en-us/external_careers/job/chicago-il-usa/d365-erp-technical-intern_r-71039"
+    },
+    {
+      "company": "Selinc",
+      "ats": "workday",
+      "slug": "selinc:1:sel/job/washington---pullman/engineering-intern_2026-22411"
+    },
+    {
+      "company": "Firstam",
+      "ats": "workday",
+      "slug": "firstam:1:firstamericancareers/job/usa-california-remote/software-engineering-intern_r058260"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ca-san-jose-826--200-holger-way--bldg-826/software-engineer-i--onsite-_01867385"
+    },
+    {
+      "company": "Globalfoundries",
+      "ats": "workday",
+      "slug": "globalfoundries:1:external/job/usa---vermont---essex-junction/tapeout---mask-operations-engineer--2027-new-college-graduate-_jr-2604936"
+    },
+    {
+      "company": "Globalfoundries",
+      "ats": "workday",
+      "slug": "globalfoundries:1:external/job/usa---new-york---malta/advanced-manufacturing-equipment-engineer--2027-new-college-graduate-_jr-2604703"
+    },
+    {
+      "company": "Bakerhughes",
+      "ats": "workday",
+      "slug": "bakerhughes:5:bakerhughes/job/gb-ac-aberdeen-baker-hughes-building/intern---benefit-tool-developer--12-month-fixed-term-contract-_r168066"
+    },
+    {
+      "company": "Oneok",
+      "ats": "workday",
+      "slug": "oneok:1:oneok_early_careers/job/sidney-mt/engineering-intern---sidney--mt_r8601"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-az-tucson-805--1151-e-hermans-rd--bldg-805/software-engineering-intern--summer-2027-_01866777"
+    },
+    {
+      "company": "Neogen",
+      "ats": "workday",
+      "slug": "neogen:5:neogencareers/job/lincoln-ne/data-analyst-i_req-10958"
+    },
+    {
+      "company": "Sunlife",
+      "ats": "workday",
+      "slug": "sunlife:3:en-us/experienced-jobs/job/north-york-ontario/associate-software-engineer_jr00126945-1"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ct-east-hartford-j--400-main-st--bldg-j/software-engineer-i--onsite-_01865467"
+    },
+    {
+      "company": "Globalfoundries",
+      "ats": "workday",
+      "slug": "globalfoundries:1:external/job/usa---new-york---malta/advanced-manufacturing-equipment-engineer--2027-new-college-graduate-_jr-2604704"
+    },
+    {
+      "company": "Crowe",
+      "ats": "workday",
+      "slug": "crowe:12:en-us/external_careers/job/chicago-il-usa/servicenow-implementation-intern_r-71036"
+    },
+    {
+      "company": "Valeo",
+      "ats": "workday",
+      "slug": "valeo:3:en-us/valeo_jobs/job/troy-mi/software-engineer-intern_req2026076575"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ca-san-jose-826--200-holger-way--bldg-826/software-engineering-intern--summer-2027-_01867392"
+    },
+    {
+      "company": "Interdigital",
+      "ats": "workday",
+      "slug": "interdigital:5:interdigital_intern/job/conshohocken-pa/phd-intern--6g-wireless-systems---sept-2026_req26-1135"
+    },
+    {
+      "company": "Intel",
+      "ats": "workday",
+      "slug": "intel:1:en-us/external/job/us-arizona-phoenix/ocotillo-failure-analysis-engineer---tem-autotem-engineer_jr0286343"
+    },
+    {
+      "company": "Wfscorp",
+      "ats": "workday",
+      "slug": "wfscorp:5:wfscareers/job/miami-fl-remote/data-analyst_r22467"
+    },
+    {
+      "company": "Epianeuro",
+      "ats": "ashby",
+      "slug": "epianeuro"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ct-windsor-locks-b1--1-hamilton-rd--bldg-1/software-engineer-ii--onsite-_01866058"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ia-cedar-rapids-105--400-collins-rd-ne--bldg-105/software-engineer-i--onsite-_01866531"
+    },
+    {
+      "company": "Cvshealth",
+      "ats": "workday",
+      "slug": "cvshealth:1:cvs_health_careers/job/tx---farmers-branch/associate-software-development-engineer_r1006749"
+    },
+    {
+      "company": "Globalfoundries",
+      "ats": "workday",
+      "slug": "globalfoundries:1:external/job/usa---new-york---malta/advanced-manufacturing-equipment-engineer--2027-new-college-graduate-_jr-2604706"
+    },
+    {
+      "company": "Fmr",
+      "ats": "workday",
+      "slug": "fmr:1:targeted/job/westlake-tx/july-2027---leap-systems-analyst_2133879"
+    },
+    {
+      "company": "Oneok",
+      "ats": "workday",
+      "slug": "oneok:1:oneok_early_careers/job/dallas-tx/engineering-intern---dallas--tx_r8156"
+    },
+    {
+      "company": "Staff Software Engineer (SF/NY) @ Ode with Anthropic",
+      "ats": "ashby",
+      "slug": "odewithanthropic"
     }
   ],
   "greenhouse": [
