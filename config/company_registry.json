@@ -175709,6 +175709,41 @@
       "company": "Junior Software Engineer",
       "ats": "rippling",
       "slug": "benchmark-construction-technology"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/ca-qc-longueuil-j01--1000-blvd-marie-victorin--j01-bldg/stage---hiver-2027---industrialisation----internship---winter-2027---industrialization-production-readiness_01867520"
+    },
+    {
+      "company": "Globalfoundries",
+      "ats": "workday",
+      "slug": "globalfoundries:1:external/job/usa---california---santa-clara/technology-architecture-and-competitiveness-engineer--2027-new-college-graduate-_jr-2604319"
+    },
+    {
+      "company": "Ebay",
+      "ats": "workday",
+      "slug": "ebay:5:apply/job/toronto/sr-data-engineer-manager_r0076353"
+    },
+    {
+      "company": "Intel",
+      "ats": "workday",
+      "slug": "intel:1:en-us/external/job/us-oregon-hillsboro/rtl-design-engineer_jr0286568"
+    },
+    {
+      "company": "Auxia jobs",
+      "ats": "lever",
+      "slug": "auxia"
+    },
+    {
+      "company": "Data Engineer @ Ohr",
+      "ats": "ashby",
+      "slug": "ohr"
+    },
+    {
+      "company": "Staff Data Scientist @ Pivotal Health",
+      "ats": "ashby",
+      "slug": "pivotal-health"
     }
   ],
   "greenhouse": [
