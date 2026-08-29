@@ -179569,6 +179569,236 @@
             "company": "Aeyeinc",
             "ats": "greenhouse",
             "slug": "aeyeinc"
+        },
+        {
+            "company": "Brunswick",
+            "ats": "workday",
+            "slug": "brunswick:1:en-us/search/job/menomonee-falls-wi/software-engineer-intern_jr-051426-1"
+        },
+        {
+            "company": "Bah",
+            "ats": "workday",
+            "slug": "bah:1:bah_jobs/job/rome-ny/university--2027-summer-games-software-developer-intern_r0248141"
+        },
+        {
+            "company": "Tcenergy",
+            "ats": "workday",
+            "slug": "tcenergy:3:career_site_tc/job/thompsons-station-tennessee/iotx-data-analyst_jr-10660"
+        },
+        {
+            "company": "Caci",
+            "ats": "workday",
+            "slug": "caci:1:external/job/ypsilanti-mi-us/software-engineer_331191-1"
+        },
+        {
+            "company": "Disney",
+            "ats": "workday",
+            "slug": "disney:5:disneycareer/job/orlando-fl-usa/software-engineering-intern--spring-2027_10158599"
+        },
+        {
+            "company": "Broadcom",
+            "ats": "workday",
+            "slug": "broadcom:1:external_career/job/usa-ca-irvine-alton-parkway-bldg-2/r-d-ic-design-engineer_r024631"
+        },
+        {
+            "company": "Vermeer",
+            "ats": "workday",
+            "slug": "vermeer:5:externalcareersite/job/usa---remote/it-developer_req-21962"
+        },
+        {
+            "company": "Bah",
+            "ats": "workday",
+            "slug": "bah:1:bah_jobs/job/san-diego-ca/ai-software-developer-intern_r0248115"
+        },
+        {
+            "company": "Ncr",
+            "ats": "workday",
+            "slug": "ncr:1:ext_us/job/atlanta-ga-usa/senior-principal-it-architect_r0158013"
+        },
+        {
+            "company": "Invesco",
+            "ats": "workday",
+            "slug": "invesco:1:en-us/ivz/job/downers-grove-illinois/etf-quantitative-developer_r-14868-2"
+        },
+        {
+            "company": "Selinc",
+            "ats": "workday",
+            "slug": "selinc:1:sel/job/washington---pullman/engineering-intern_2025-18137"
+        },
+        {
+            "company": "Bah",
+            "ats": "workday",
+            "slug": "bah:1:bah_jobs/job/charleston-sc/university---2027-summer-games-software-developer-intern_r0248134"
+        },
+        {
+            "company": "Relx",
+            "ats": "workday",
+            "slug": "relx:3:en-us/risksolutions/job/duluth-ga/product-operations-coordinator_r117678"
+        },
+        {
+            "company": "Caci",
+            "ats": "workday",
+            "slug": "caci:1:external/job/ypsilanti-mi-us/software-engineer_331185-1"
+        },
+        {
+            "company": "Mastercard",
+            "ats": "workday",
+            "slug": "mastercard:1:campus/job/ofallon-missouri/data-scientist-intern--summer-2027---st-louis--mo--us_r-284869"
+        },
+        {
+            "company": "Jabil",
+            "ats": "workday",
+            "slug": "jabil:5:jabil_careers/job/st-petersburgtampa-fl/supply-chain-data-analyst-intern_j2462080"
+        },
+        {
+            "company": "Sglottery",
+            "ats": "workday",
+            "slug": "sglottery:5:scientificgamesexternalcareers/job/dayton-oh/field-service-technician--springfield-dayton-region_r505281"
+        },
+        {
+            "company": "Iberdrola",
+            "ats": "workday",
+            "slug": "iberdrola:3:iberdrola/job/united-states-of-america-connecticut-orange/xmlname-2027-local-graduate-rotational-program--technology--digital---analytics_r-33041"
+        },
+        {
+            "company": "Kla",
+            "ats": "workday",
+            "slug": "kla:1:search/job/milpitas-ca/algorithm-engineer_2640167-1"
+        },
+        {
+            "company": "Cspire Telapex",
+            "ats": "workday",
+            "slug": "cspire-telapex:12:external-careers/job/troy-al/technician--home-services_r0001127"
+        },
+        {
+            "company": "Leidos",
+            "ats": "workday",
+            "slug": "leidos:5:external/job/san-diego-ca/data-science-intern_r-00190740"
+        },
+        {
+            "company": "Relx",
+            "ats": "workday",
+            "slug": "relx:3:en-us/relx/job/duluth-ga/product-operations-coordinator_r117678-1"
+        },
+        {
+            "company": "Mpc",
+            "ats": "workday",
+            "slug": "mpc:1:en-us/mpccareers/job/findlay-ohio/operations-research-engineer-1_00022581"
+        },
+        {
+            "company": "Sutherland",
+            "ats": "smartrecruiters",
+            "slug": "sutherland"
+        },
+        {
+            "company": "Bah",
+            "ats": "workday",
+            "slug": "bah:1:bah_jobs/job/rome-ny/university--2027-summer-games-data-scientist-intern_r0248143"
+        },
+        {
+            "company": "Tiaa",
+            "ats": "workday",
+            "slug": "tiaa:1:search/job/new-york-ny-usa/churchill-summer-internship--investment-infrastructure---technology--iit-_r260800515-1"
+        },
+        {
+            "company": "Brunswick",
+            "ats": "workday",
+            "slug": "brunswick:1:en-us/search/job/champaign-il/software-engineering-intern_jr-051449"
+        },
+        {
+            "company": "Barrywehmiller",
+            "ats": "workday",
+            "slug": "barrywehmiller:1:bwconfidential/job/dallas-tx/entry-level-software-engineer_r022649"
+        },
+        {
+            "company": "Abb",
+            "ats": "workday",
+            "slug": "abb:3:external_career_page/job/new-berlin-wisconsin-united-states-of-america/service-repair-technician_jr00045589"
+        },
+        {
+            "company": "Disney",
+            "ats": "workday",
+            "slug": "disney:5:disneycareerdc/job/orlando-fl-usa/software-engineering-intern--spring-2027_10158599-1"
+        },
+        {
+            "company": "Bpinternational",
+            "ats": "workday",
+            "slug": "bpinternational:3:bpprivateexternalcareerssite/job/united-states-of-america---texas---houston/graduate---reservoir-engineer---houston--tx_rq114818"
+        },
+        {
+            "company": "Viavisolutions",
+            "ats": "workday",
+            "slug": "viavisolutions:1:careers/job/minnetonka-mn-usa/rotational-program-development-engineer_260004990-2"
+        },
+        {
+            "company": "Philips",
+            "ats": "workday",
+            "slug": "philips:3:jobs-and-careers/job/plymouth-minnesota-united-states/intern---data-ai-ml-engineering---plymouth--mn---summer-2027_590404"
+        },
+        {
+            "company": "Disney",
+            "ats": "workday",
+            "slug": "disney:5:disneycareer/job/orlando-fl-usa/system-app-dev---sustainment-intern_10159463"
+        },
+        {
+            "company": "Aero",
+            "ats": "workday",
+            "slug": "aero:5:external/job/el-segundo-ca/xmlname-2026-real-time-launch-operations-software-and-data-engineer_r016306"
+        },
+        {
+            "company": "Disney",
+            "ats": "workday",
+            "slug": "disney:5:disneycareerdc/job/orlando-fl-usa/system-app-dev---sustainment-intern_10159463-1"
+        },
+        {
+            "company": "Nvidia",
+            "ats": "workday",
+            "slug": "nvidia:5:nvidiaexternalcareersite/job/us-ca-santa-clara/gpu-pcie-and-boot-architect---new-college-grad-2026_jr2021768"
+        },
+        {
+            "company": "Bah",
+            "ats": "workday",
+            "slug": "bah:1:bah_jobs/job/colorado-springs-co/university--2027-summer-games-software-developer-intern_r0248130"
+        },
+        {
+            "company": "Bah",
+            "ats": "workday",
+            "slug": "bah:1:bah_jobs/job/colorado-springs-co/university--2027-summer-games-data-scientist-intern_r0248132"
+        },
+        {
+            "company": "Bah",
+            "ats": "workday",
+            "slug": "bah:1:bah_jobs/job/atlanta-ga/university---2027-summer-games-software-developer-intern---atlanta--ga_r0248138"
+        },
+        {
+            "company": "Barr",
+            "ats": "workday",
+            "slug": "barr:1:barrcareers/job/edina-mn/air-quality-scientist-engineer---emissions-monitoring-focus---entry-level--hybrid-_r-102288-1"
+        },
+        {
+            "company": "Mastercard",
+            "ats": "workday",
+            "slug": "mastercard:1:campus/job/ofallon-missouri/data-engineering-intern--summer-2027---st-louis--mo--us_r-284901"
+        },
+        {
+            "company": "Newrez",
+            "ats": "workday",
+            "slug": "newrez:1:nrz/job/pa-fort-washington/trail-rising-leaders-program---data---analytics_r10369"
+        },
+        {
+            "company": "Caci",
+            "ats": "workday",
+            "slug": "caci:1:external/job/ypsilanti-mi-us/software-engineer_331197-1"
+        },
+        {
+            "company": "Bah",
+            "ats": "workday",
+            "slug": "bah:1:bah_jobs/job/charleston-sc/university---2027-summer-games-data-scientist-intern_r0248137"
+        },
+        {
+            "company": "Bah",
+            "ats": "workday",
+            "slug": "bah:1:bah_jobs/job/atlanta-ga/university--2027-summer-games-data-scientist-intern_r0248140"
         }
     ],
     "greenhouse": [
