@@ -185299,6 +185299,576 @@
       "company": "Data Engineer (VP)",
       "ats": "workday",
       "slug": "wd102"
+    },
+    {
+      "company": "Gevernova",
+      "ats": "workday",
+      "slug": "gevernova:5:only_confidential_executive_recruiting/job/bellevue/ge-vernova---project-engineer-intern---summer-2027_r5050026-1"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers2/job/morrisville-nc/design-for-test-intern--bs---summer-2027_2604511-1"
+    },
+    {
+      "company": "Ingredion",
+      "ats": "workday",
+      "slug": "ingredion:1:ingredioncareers/job/westchester-il/ai---data-scientist-intern_req-40220"
+    },
+    {
+      "company": "Amat",
+      "ats": "workday",
+      "slug": "amat:1:external/job/albanyny/summer-2027-global-technical-learning-center-data-analyst-intern--bachelor-s-master-s--albany--ny-_r2627551"
+    },
+    {
+      "company": "Rbc",
+      "ats": "workday",
+      "slug": "rbc:3:externalprivatepostingstudents/job/toronto-ontario-canada/xmlname-2027-global-asset-management--winter-developer---it-specialist--4-8-months-_r-0000186669"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers/job/santa-clara-ca/design-verification-intern--ms---summer-2027_2604506-1"
+    },
+    {
+      "company": "Aspendental",
+      "ats": "workday",
+      "slug": "aspendental:1:careers_aspen_dental/job/topsham-maine/patient-coordinator_r2026-011122"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers2/job/westborough-ma/functional-validation-intern--bs---summer-2027_2604514"
+    },
+    {
+      "company": "Bakerhughes",
+      "ats": "workday",
+      "slug": "bakerhughes:5:bakerhughes/job/gb-nu-cramlington-atley-way-north-nelson-industrial-estate/intern--digitisation---cramlington--united-kingdom---2026_r168749"
+    },
+    {
+      "company": "Canadiantirecorporation",
+      "ats": "workday",
+      "slug": "canadiantirecorporation:3:enterprise_external_careers_site/job/quarry-park/new-graduate-program---2027-data-science-associate--finance-rotational-program_jr164990"
+    },
+    {
+      "company": "Modernatx",
+      "ats": "workday",
+      "slug": "modernatx:1:en-us/m_tx/job/norwood-massachusetts/intern--applied-technologies--summer-2027-_r19734"
+    },
+    {
+      "company": "Portmandentex",
+      "ats": "smartrecruiters",
+      "slug": "portmandentex"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers/job/westborough-ma/functional-validation-intern--bs---summer-2027_2604514-1"
+    },
+    {
+      "company": "Alliedsolutions",
+      "ats": "workday",
+      "slug": "alliedsolutions:501:allied_external/job/carmel-in/sales-analytics-intern_r-011098"
+    },
+    {
+      "company": "Thisisglobal",
+      "ats": "workday",
+      "slug": "thisisglobal:3:global/job/holborn---london/senior-analytics-engineer_r0009733"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/ca-qc-longueuil-j01--1000-blvd-marie-victorin--j01-bldg/stage---hiver-2027---transformation-numerique-de-la-fabrication-aeronautique---internship---winter-2027---digital-transformation-of-aeronautic-manufacturing_01865735"
+    },
+    {
+      "company": "Canadiantirecorporation",
+      "ats": "workday",
+      "slug": "canadiantirecorporation:3:enterprise_external_careers_site/job/toronto-on/new-graduate-program---2027-data-science-associate--finance-rotational-program_jr164983"
+    },
+    {
+      "company": "Disney",
+      "ats": "workday",
+      "slug": "disney:5:disneycareerdc/job/san-francisco-ca-usa/coordinator--advertiser-insights_10159409"
+    },
+    {
+      "company": "Topgolf",
+      "ats": "workday",
+      "slug": "topgolf:501:topgolfcareers/job/chattanooga-tennessee/service-support_jr2023-22713"
+    },
+    {
+      "company": "Barclays",
+      "ats": "workday",
+      "slug": "barclays:3:external_career_site_barclays/job/new-york-745-7th-avenue/xmlname-2027-quantitative-analytics-analyst-graduate-program-new-york_jr-0000131452"
+    },
+    {
+      "company": "Hl",
+      "ats": "workday",
+      "slug": "hl:1:campus/job/atlanta-ga-usa/ai-business-development-analyst_r3556-1"
+    },
+    {
+      "company": "Zrsmanagement",
+      "ats": "workday",
+      "slug": "zrsmanagement:5:zrs_careers/job/austin-tx-78721/housekeeper_r-108236"
+    },
+    {
+      "company": "Barclays",
+      "ats": "workday",
+      "slug": "barclays:3:external_career_site_barclays/job/building-400-whippany-campus-jefferson-park/xmlname-2027-technology-developer-summer-internship-program-whippany_jr-0000123234"
+    },
+    {
+      "company": "Directv",
+      "ats": "workday",
+      "slug": "directv:1:careers/job/el-segundo-ca/directv-for-business--operational-analytics-intern_r260282"
+    },
+    {
+      "company": "Hyvee",
+      "ats": "workday",
+      "slug": "hyvee:1:hyveecareers/job/corporate-office-westown-pkwy-west-des-moines-ia/digital-software-engineering-intern---summer-2027_r250133"
+    },
+    {
+      "company": "Simon",
+      "ats": "workday",
+      "slug": "simon:1:simon/job/indianapolis-in/intern---data-engineering--data-analytics--information-sciences--computer-science-majors-_r13976"
+    },
+    {
+      "company": "Cibc",
+      "ats": "workday",
+      "slug": "cibc:3:campus/job/chicago-il/xmlname-2027-summer-intern---software-engineering_2618322"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers2/job/santa-clara-ca/design-verification-intern--ms---summer-2027_2604506"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers/job/santa-clara-ca/design-verification-intern--bs---summer-2027_2604505-1"
+    },
+    {
+      "company": "Micron",
+      "ats": "workday",
+      "slug": "micron:1:external/job/boise-id---main-site/intern---photomask-yield-enhancement_jr110636"
+    },
+    {
+      "company": "Disney",
+      "ats": "workday",
+      "slug": "disney:5:disneycareerdc/job/celebration-fl-usa/commercial-data-science-intern--spring-2027_10158063-1"
+    },
+    {
+      "company": "Amgen",
+      "ats": "workday",
+      "slug": "amgen:1:careers/job/us---california---thousand-oaks/operations-graduate-program---summer-2027-internship_r-254659"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers/job/santa-clara-ca/firmware-engineer-intern--ms---summer-2027_2604513"
+    },
+    {
+      "company": "Greenheckgroup",
+      "ats": "workday",
+      "slug": "greenheckgroup:5:external/job/tulsa-ok/engineering-co-op-opportunities--ok-_jr104348"
+    },
+    {
+      "company": "Barclays",
+      "ats": "workday",
+      "slug": "barclays:3:external_career_site_barclays/job/canary-wharf-1-churchill-place/quantitative-finance-associate-off-cycle-internship-programme-2027-london_jr-0000124685"
+    },
+    {
+      "company": "Barclays",
+      "ats": "workday",
+      "slug": "barclays:3:external_career_site_barclays/job/wilmington-125-south-west-street/xmlname-2027-technology-developer-summer-internship-program-wilmington_jr-0000123236"
+    },
+    {
+      "company": "Bmo",
+      "ats": "workday",
+      "slug": "bmo:3:privileged/job/toronto-on-can/junior-software-developer--winter-2027---co-op-internship---4-months_r260026089"
+    },
+    {
+      "company": "Mastercard",
+      "ats": "workday",
+      "slug": "mastercard:1:corporatecareers/job/ofallon-missouri/associate-product-specialist--product-management_r-277014"
+    },
+    {
+      "company": "Cox",
+      "ats": "workday",
+      "slug": "cox:1:cox_external_career_site_1/job/long-island-ny/software-engineering-intern---summer-2027--north-hills--ny-_r202682171-1"
+    },
+    {
+      "company": "Rbc",
+      "ats": "workday",
+      "slug": "rbc:3:rbcearlytalent1/job/brookfield-place-fka-3-world-financial-center-200-vesey-streetnew-york/xmlname-2027-global-investment-banking--aidenedge-program-winter-analyst--4-months-_r-0000186588"
+    },
+    {
+      "company": "Hyvee",
+      "ats": "workday",
+      "slug": "hyvee:1:hyveecareers/job/corporate-office-westown-pkwy-west-des-moines-ia/data-integration-intern---summer-2027_r250148"
+    },
+    {
+      "company": "Doterra",
+      "ats": "workday",
+      "slug": "doterra:1:doterracareers/job/pleasant-grove-ut/ai-solutions-analyst_jr2605"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers/job/santa-clara-ca/physical-design-engineer-intern--ms---summer-2027_2604518-1"
+    },
+    {
+      "company": "Motorolasolutions",
+      "ats": "workday",
+      "slug": "motorolasolutions:5:careers/job/greater-chicago-area/test-engineering-internship-2027_r68059"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers/job/santa-clara-ca/analog-design-intern--ms---summer-2027_2604510-1"
+    },
+    {
+      "company": "Hitachi",
+      "ats": "workday",
+      "slug": "hitachi:1:hitachi/job/remote---texas-united-states/i3x-intern_r0143621"
+    },
+    {
+      "company": "Pg",
+      "ats": "workday",
+      "slug": "pg:5:1000/job/toronto-go/it-warehouse-systems-solution-expert_r000156588"
+    },
+    {
+      "company": "Avav",
+      "ats": "workday",
+      "slug": "avav:1:en-us/avav/job/albuquerque-nm/firmware-engineer-for-phased-array-communication-ground-systems_8663"
+    },
+    {
+      "company": "Cna",
+      "ats": "workday",
+      "slug": "cna:1:cna_careers/job/chicago-il-usa/technology-internship-program--software-engineering-_r-8107"
+    },
+    {
+      "company": "Bmo",
+      "ats": "workday",
+      "slug": "bmo:3:privileged/job/toronto-on-can/junior-software-developer--winter-2027---co-op-internship---4-months_r260026093"
+    },
+    {
+      "company": "Barclays",
+      "ats": "workday",
+      "slug": "barclays:3:external_career_site_barclays/job/canary-wharf-1-churchill-place/quantitative-analytics-associate-graduate-programme-2027-london_jr-0000124678"
+    },
+    {
+      "company": "Nationwide",
+      "ats": "workday",
+      "slug": "nationwide:1:nationwide_career/job/ohio---columbus-metro/summer-2027-generative-ai-internship_100231"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers2/job/santa-clara-ca/analog-design-intern--ms---summer-2027_2604510"
+    },
+    {
+      "company": "Barclays",
+      "ats": "workday",
+      "slug": "barclays:3:external_career_site_barclays/job/xmlname-2027-technology-developer-graduate-program-whippany_jr-0000123244"
+    },
+    {
+      "company": "Freseniusmedicalcare",
+      "ats": "workday",
+      "slug": "freseniusmedicalcare:3:fme/job/norristown-pa/patient-care-technician--training-provided_r0268334"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers2/job/santa-clara-ca/ic-validation-engineer-intern--ms---summer-2027_2604515"
+    },
+    {
+      "company": "Globalfoundries",
+      "ats": "workday",
+      "slug": "globalfoundries:1:external/job/usa---california---santa-clara/software-engineer--cloud-platform--2027-new-college-graduate-_jr-2604056"
+    },
+    {
+      "company": "Tti",
+      "ats": "workday",
+      "slug": "tti:1:tti_pe/job/anderson-sc/tool-integration-electrical-engineer-i-ii_r77485"
+    },
+    {
+      "company": "Tsc",
+      "ats": "workday",
+      "slug": "tsc:12:en-us/tsc-careers/job/huntsville-al/firmware-design-engineer_jr2781"
+    },
+    {
+      "company": "Dutchbros",
+      "ats": "workday",
+      "slug": "dutchbros:1:en-us/dbshops/job/11350-s-fortuna-rd-yuma-az-85367/broista---yuma--az_req-20022"
+    },
+    {
+      "company": "Directv",
+      "ats": "workday",
+      "slug": "directv:1:careers/job/el-segundo-ca/customer-operations-intern_r260273"
+    },
+    {
+      "company": "Ngc",
+      "ats": "workday",
+      "slug": "ngc:1:northrop_grumman_external_site/job/united-states-florida-melbourne/xmlname-2027-associate-systems-engineer_r10249344"
+    },
+    {
+      "company": "Clarios",
+      "ats": "workday",
+      "slug": "clarios:5:clarioscareers/job/united-states-wisconsin-milwaukee/category-analyst-intern--summer-2027-_wd50036"
+    },
+    {
+      "company": "Nationwide",
+      "ats": "workday",
+      "slug": "nationwide:1:nationwide_career/job/ohio---columbus-metro/summer-2027-feature-engineer-internship_100233"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers2/job/santa-clara-ca/physical-design-engineer-intern--ms---summer-2027_2604518"
+    },
+    {
+      "company": "Invesco",
+      "ats": "workday",
+      "slug": "invesco:1:en-us/ivz/job/atlanta-georgia/early-career-intern---corporate-functions-data-office_r-15350-1"
+    },
+    {
+      "company": "Directv",
+      "ats": "workday",
+      "slug": "directv:1:careers/job/clarksburg-md/directv-for-business-product-development-intern_r260276"
+    },
+    {
+      "company": "Tjx",
+      "ats": "workday",
+      "slug": "tjx:1:tjx_external/job/marlborough-ma-01752/it-engineer-internship---summer-2027_req153160"
+    },
+    {
+      "company": "Barclays",
+      "ats": "workday",
+      "slug": "barclays:3:external_career_site_barclays/job/xmlname-2027-technology-developer-expert-graduate-program-wilmington_jr-0000123440"
+    },
+    {
+      "company": "Jabil",
+      "ats": "workday",
+      "slug": "jabil:5:jabil_careers/job/ottawa/lead-firmware-engineer_j2460092"
+    },
+    {
+      "company": "Jci",
+      "ats": "workday",
+      "slug": "jci:5:jci/job/milwaukee-wisconsin-united-states-of-america/early-careers-development-programs--multiple-disciplines-_wd30279150"
+    },
+    {
+      "company": "Halma",
+      "ats": "workday",
+      "slug": "halma:3:halma/job/scottsdale/product-manager_jr26_001013"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers/job/santa-clara-ca/ic-validation-engineer-intern--ms---summer-2027_2604515-1"
+    },
+    {
+      "company": "Cvshealth",
+      "ats": "workday",
+      "slug": "cvshealth:1:cvs_health_careers/job/ri---woonsocket/assistant-product-development-manager_r1011648"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers/job/santa-clara-ca/phd-intern---analog--mixed-signal---circuit-design_2604142"
+    },
+    {
+      "company": "Massgeneralbrigham",
+      "ats": "workday",
+      "slug": "massgeneralbrigham:1:mgbexternal/job/somerville-ma/data-analyst-i_rq4078299"
+    },
+    {
+      "company": "Jci",
+      "ats": "workday",
+      "slug": "jci:5:jci/job/salem-virginia-united-states-of-america/software-controls-engineering-grad-intern_wd30278205-1"
+    },
+    {
+      "company": "Nationwide",
+      "ats": "workday",
+      "slug": "nationwide:1:nationwide_career/job/ohio---columbus-metro/summer-2027-analytic-consulting-advisor-internship_100235"
+    },
+    {
+      "company": "Abbott",
+      "ats": "workday",
+      "slug": "abbott:5:abbottcareers/job/united-states---illinois---abbott-park/senior-master-data-analyst_31160329"
+    },
+    {
+      "company": "Bhs",
+      "ats": "workday",
+      "slug": "bhs:1:careers/job/louisville-ky/scheduling-coordinator_r26106321"
+    },
+    {
+      "company": "Ingredion",
+      "ats": "workday",
+      "slug": "ingredion:1:ingredioncareers/job/westchester-il/ai-solutions---value-mba-intern_req-40221-1"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers/job/morrisville-nc/design-for-test-intern--bs---summer-2027_2604511"
+    },
+    {
+      "company": "Caci",
+      "ats": "workday",
+      "slug": "caci:1:external/job/ypsilanti-mi-us/software-engineer-intern---summer-2027_331648"
+    },
+    {
+      "company": "Pg",
+      "ats": "workday",
+      "slug": "pg:5:1000/job/toronto-go/digital-technologies-internship-co-op---stage-ou-programme-coopratif-en-en-technologies-digitales_r000158595"
+    },
+    {
+      "company": "Cna",
+      "ats": "workday",
+      "slug": "cna:1:cna_careers/job/chicago-il-usa/technology-internship-program--agile-product-design-_r-8125"
+    },
+    {
+      "company": "Rbc",
+      "ats": "workday",
+      "slug": "rbc:3:rbcearlytalent1/job/brookfield-place-fka-3-world-financial-center-200-vesey-streetnew-york/xmlname-2027-capital-markets--aidenedge-program-winter-analyst--4-months-_r-0000186586"
+    },
+    {
+      "company": "Gevernova",
+      "ats": "workday",
+      "slug": "gevernova:5:only_confidential_executive_recruiting/job/atlanta/ge-vernova-hdnu-global-operations---ai-digitization-co-op---spring-summer-2027_r5049275-1"
+    },
+    {
+      "company": "Ecolab",
+      "ats": "workday",
+      "slug": "ecolab:1:ecolab_external/job/usa---minnesota---eagan/research-and-development-intern_r00304540"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers/job/santa-clara-ca/physical-design-engineer-intern--bs---summer-2027_2604517-1"
+    },
+    {
+      "company": "Fnbcorp",
+      "ats": "workday",
+      "slug": "fnbcorp:501:fnbcorp/job/pittsburgh-pa/ai---digital-development-program---pittsburgh--pa_2026-02192"
+    },
+    {
+      "company": "Gevernova",
+      "ats": "workday",
+      "slug": "gevernova:5:vernova_externalsite/job/bellevue/ge-vernova---project-engineer-intern---summer-2027_r5050026-2"
+    },
+    {
+      "company": "Freseniusmedicalcare",
+      "ats": "workday",
+      "slug": "freseniusmedicalcare:3:fme/job/ottawa-oh-usa/patient-care-technician---pct_r0266770-1"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers2/job/santa-clara-ca/design-verification-intern--bs---summer-2027_2604505"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers/job/santa-clara-ca/firmware-engineer-intern--bs---summer-2027_2604461"
+    },
+    {
+      "company": "Cibc",
+      "ats": "workday",
+      "slug": "cibc:3:search/job/chicago-il/xmlname-2027-summer-intern---software-engineering_2618322-1"
+    },
+    {
+      "company": "Bmo",
+      "ats": "workday",
+      "slug": "bmo:3:privileged/job/toronto-on-can/investment-intern---gam--summer-2027--co-op-internship----4-months_r260026067"
+    },
+    {
+      "company": "Hyvee",
+      "ats": "workday",
+      "slug": "hyvee:1:hyveecareers/job/corporate-office-westown-pkwy-west-des-moines-ia/data-analytics-intern---summer-2027_r250146"
+    },
+    {
+      "company": "Abbott",
+      "ats": "workday",
+      "slug": "abbott:5:abbottcareers2/job/united-states---illinois---abbott-park/senior-master-data-analyst_31160329-2"
+    },
+    {
+      "company": "Cna",
+      "ats": "workday",
+      "slug": "cna:1:cna_careers/job/chicago-il-usa/technology-internship-program--data-engineering-_r-8129"
+    },
+    {
+      "company": "Simon",
+      "ats": "workday",
+      "slug": "simon:1:simon/job/indianapolis-in/intern---front-end-developer--computer-science--web-development--or-information-sciences-majors-_r13975"
+    },
+    {
+      "company": "Pg",
+      "ats": "workday",
+      "slug": "pg:5:1000/job/toronto-go/analytics---insights-internship-co-op-summer-2027--stage-ou-programme-coopratif-en-analyse-et-veille-stratgique-t-2027_r000158592"
+    },
+    {
+      "company": "Aspendental",
+      "ats": "workday",
+      "slug": "aspendental:1:careers_aspen_dental/job/evansville-indiana/dental-assistant_r2026-011124-1"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers2/job/santa-clara-ca/physical-design-engineer-intern--bs---summer-2027_2604517"
+    },
+    {
+      "company": "Intel",
+      "ats": "workday",
+      "slug": "intel:1:en-us/external/job/us-oregon-hillsboro/cad-eda-tools-automation-engineer_jr0286757"
+    },
+    {
+      "company": "Hitachi",
+      "ats": "workday",
+      "slug": "hitachi:1:hitachi/job/remote---texas-united-states/i3x-intern_r0143620"
+    },
+    {
+      "company": "Tysonfoods",
+      "ats": "workday",
+      "slug": "tysonfoods:5:tsn/job/corporate---springdale-arkansas/customer-category-analyst---costco_r0483651-1"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/ca-qc-longueuil-j01--1000-blvd-marie-victorin--j01-bldg/stage---hiver-2027--supervision-proactive-de-la-performance-des-moteurs---dphm-proactive---internship---winter-2027---proactive-engine-performance-monitoring---proactive-dphm_01871323"
+    },
+    {
+      "company": "Saabusa",
+      "ats": "workday",
+      "slug": "saabusa:1:saab_careers/job/east-syracuse-ny-collamer/software-engineering-co-op--spring---summer-2027-_r-03240-1"
+    },
+    {
+      "company": "Gevernova",
+      "ats": "workday",
+      "slug": "gevernova:5:vernova_externalsite/job/atlanta/ge-vernova-hdnu-global-operations---ai-digitization-co-op---spring-summer-2027_r5049275-2"
+    },
+    {
+      "company": "Stryker",
+      "ats": "workday",
+      "slug": "stryker:1:strykercareers/job/cary-illinois/customer-one-intern--data-analyst----cary--il_r572734"
+    },
+    {
+      "company": "Disney",
+      "ats": "workday",
+      "slug": "disney:5:disneycareer/job/celebration-fl-usa/commercial-data-science-intern--spring-2027_10158063"
+    },
+    {
+      "company": "Fnbcorp",
+      "ats": "workday",
+      "slug": "fnbcorp:501:fnbcorp/job/pittsburgh-pa/ai---digital-development-program---pittsburgh--pa_2026-02191"
+    },
+    {
+      "company": "Senior Data Analyst",
+      "ats": "ashby",
+      "slug": "cuesta-partners"
+    },
+    {
+      "company": "Henry Ford Health is looking for a Associate Data Scientist in Detroit, Michigan, United States",
+      "ats": "smartrecruiters",
+      "slug": "henryfordhealth1"
     }
   ],
   "greenhouse": [
