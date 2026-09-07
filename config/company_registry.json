@@ -185904,6 +185904,406 @@
             "company": "Geaerospace",
             "ats": "workday",
             "slug": "geaerospace:5:ge_externalsite/job/cheltenham/ge-aerospace-software-engineering---12-month-placement_r5039374-2"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/entry-level-digital-validation-engineer_r-10065559"
+        },
+        {
+            "company": "Ag",
+            "ats": "workday",
+            "slug": "ag:3:airbus/job/stevenage/space-software-engineering-placement--12-months-_jr10425567"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-ed-bluestein-office/fab-device-engineer-intern---summer-2027_r-10064583"
+        },
+        {
+            "company": "Blackstone",
+            "ats": "workday",
+            "slug": "blackstone:1:zh-cn/blackstone_campus_careers/job/london/xmlname-2027-blackstone-technology---innovations---software-engineer-summer-analyst_45358"
+        },
+        {
+            "company": "Ciena",
+            "ats": "workday",
+            "slug": "ciena:5:careers/job/ottawa/mcp-applications-co-op-ui-or-be-co-op--fall-2026--8--months-_r030895"
+        },
+        {
+            "company": "Mmc",
+            "ats": "workday",
+            "slug": "mmc:1:mmc/job/newcastle---bank/data---analytics-industrial-placement-2027--12-months----newcastle-upon-tyne_r_364970-1"
+        },
+        {
+            "company": "Mmc",
+            "ats": "workday",
+            "slug": "mmc:1:mmc/job/newcastle---bank/oliver-wyman---data---analytics-summer-internship-2027---newcastle_r_364984-1"
+        },
+        {
+            "company": "Ag",
+            "ats": "workday",
+            "slug": "ag:3:airbus/job/bristol-area/landing-gear-engineering---ai---data-analytics-placement--125-months-_jr10430647"
+        },
+        {
+            "company": "Ag",
+            "ats": "workday",
+            "slug": "ag:3:airbus/job/filton/airframe-data-scientist-placement--125-months-_jr10427455"
+        },
+        {
+            "company": "Xcelenergy",
+            "ats": "workday",
+            "slug": "xcelenergy:1:external/job/henderson-co-80640/asset-strategy---budget-integration-intern--co_jr115564-1"
+        },
+        {
+            "company": "Xcelenergy",
+            "ats": "workday",
+            "slug": "xcelenergy:1:external/job/minneapolis-mn-55418/reporting-and-compliance-analyst-intern---mn_jr115608-1"
+        },
+        {
+            "company": "Ag",
+            "ats": "workday",
+            "slug": "ag:3:airbus/job/filton/artificial-intelligence-placement--125-months-_jr10424830"
+        },
+        {
+            "company": "Ag",
+            "ats": "workday",
+            "slug": "ag:3:airbus/job/portsmouth/software-developer--full-stack--placement--13-months-_jr10426667"
+        },
+        {
+            "company": "Xcelenergy",
+            "ats": "workday",
+            "slug": "xcelenergy:1:external/job/denver-co-80205/resource-planning-intern--co_jr115820-1"
+        },
+        {
+            "company": "Xcelenergy",
+            "ats": "workday",
+            "slug": "xcelenergy:1:external/job/minneapolis-mn-55401/gis-intern---mn_jr115658"
+        },
+        {
+            "company": "Tel",
+            "ats": "workday",
+            "slug": "tel:3:tel-careers/job/austin-riversouth/data-platforms-engineer-summer-2027-intern_r26-01498"
+        },
+        {
+            "company": "Bmo",
+            "ats": "workday",
+            "slug": "bmo:3:campus/job/toronto-on-can/data-science-risk-analyst--winter-2027--co-op-internship----4-months_r260024735-2"
+        },
+        {
+            "company": "Xcelenergy",
+            "ats": "workday",
+            "slug": "xcelenergy:1:external/job/denver-co-80205/data-science-intern-co--mn_jr116327-1"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/entry-level-digital-verification-engineer_r-10065543"
+        },
+        {
+            "company": "Walmart",
+            "ats": "workday",
+            "slug": "walmart:504:walmartexternal/job/terrebonne-qc/associ-au-comptoir-du-service--la-clientle_r-2637223"
+        },
+        {
+            "company": "Rbc",
+            "ats": "workday",
+            "slug": "rbc:3:rbcearlytalent1/job/toronto-ontario-canada/data-engineer--rbc-amplify-2027--toronto_r-0000187113-1"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/digital-design-intern---spring-2027_r-10065548"
+        },
+        {
+            "company": "Bmo",
+            "ats": "workday",
+            "slug": "bmo:3:campus/job/toronto-on-can/climate-risk-reporting-analyst--winter-2027--co-op-internship----4-months_r260024768-2"
+        },
+        {
+            "company": "Ag",
+            "ats": "workday",
+            "slug": "ag:3:airbus/job/stevenage/software-developer-placement--13-months-_jr10425651"
+        },
+        {
+            "company": "Icf",
+            "ats": "workday",
+            "slug": "icf:5:icfexternal_career_site/job/reston-va/xmlname-2027-summer-intern--software-developer--reston--va-_r2603002"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/digital-verification-intern---summer-2027_r-10065552"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/entry-level-digital-physical-design-engineer_r-10065547"
+        },
+        {
+            "company": "Rbc",
+            "ats": "workday",
+            "slug": "rbc:3:rbcearlytalent1/job/halifax-nova-scotia-canada/developer--rbc-amplify-2027--halifax_r-0000187119-1"
+        },
+        {
+            "company": "Rbc",
+            "ats": "workday",
+            "slug": "rbc:3:externalprivatepostingstudents/job/toronto-ontario-canada/product-engineer--new-grad-_r-0000187092"
+        },
+        {
+            "company": "Tel",
+            "ats": "workday",
+            "slug": "tel:3:tel-careers/job/austin-riversouth/automation-developer-analyst-intern_r26-01497"
+        },
+        {
+            "company": "Rbc",
+            "ats": "workday",
+            "slug": "rbc:3:rbcearlytalent1/job/halifax-nova-scotia-canada/data-engineer--rbc-amplify-2027--halifax_r-0000187117-1"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/analog-validation-intern---summer-2027_r-10065558"
+        },
+        {
+            "company": "Bmo",
+            "ats": "workday",
+            "slug": "bmo:3:campus/job/toronto-on-can/data-science-analyst---audit-ai---analytics--winter-2027--co-op-internship----4-months_r260024761-2"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/digital-design-intern---summer-2027_r-10065550"
+        },
+        {
+            "company": "Xcelenergy",
+            "ats": "workday",
+            "slug": "xcelenergy:1:external/job/denver-co-80205/renewable-and-demand-response-intern--co_jr115433-1"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/digital-validation-intern---summer-2027_r-10065557"
+        },
+        {
+            "company": "Bmo",
+            "ats": "workday",
+            "slug": "bmo:3:external/job/toronto-on-can/data-science-risk-analyst--winter-2027--co-op-internship----4-months_r260024735-1"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/entry-level-digital-design-engineer_r-10065542"
+        },
+        {
+            "company": "Bmo",
+            "ats": "workday",
+            "slug": "bmo:3:external/job/toronto-on-can/business-analyst--data-and-change-management---winter-2027--co-op-internship----4-months_r260024737-2"
+        },
+        {
+            "company": "Tel",
+            "ats": "workday",
+            "slug": "tel:3:tel-careers/job/austin-riversouth/business-intelligence-analyst-summer-2027-intern_r26-01504"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/digital-physical-design-intern---spring-2027_r-10065545"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/chandler-office/device-engineering-intern---summer-2027_r-10064586"
+        },
+        {
+            "company": "Xcelenergy",
+            "ats": "workday",
+            "slug": "xcelenergy:1:external/job/denver-co-80223/reliability-data-analyst-intern--co_jr115833"
+        },
+        {
+            "company": "Ag",
+            "ats": "workday",
+            "slug": "ag:3:airbus/job/bristol-area/digital-wing-engineering-placement--125-months-_jr10423984"
+        },
+        {
+            "company": "Xcelenergy",
+            "ats": "workday",
+            "slug": "xcelenergy:1:external/job/minneapolis-mn-55418/grid-data-intern---mn_jr115742-1"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/entry-level-digital-design-engineer_r-10065555"
+        },
+        {
+            "company": "Xcelenergy",
+            "ats": "workday",
+            "slug": "xcelenergy:1:external/job/denver-co-80205/ai---automation-intern--co_jr115739-1"
+        },
+        {
+            "company": "Ag",
+            "ats": "workday",
+            "slug": "ag:3:airbus/job/filton/software-engineering-placement--125-months-_jr10429196"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/data-analytics-engineer-intern---summer-2027_r-10065538"
+        },
+        {
+            "company": "Rbc",
+            "ats": "workday",
+            "slug": "rbc:3:rbcglobal1/job/toronto-ontario-canada/data-engineer--rbc-amplify-2027--toronto_r-0000187113"
+        },
+        {
+            "company": "Bmo",
+            "ats": "workday",
+            "slug": "bmo:3:campus/job/toronto-on-can/business-analyst--data-and-change-management---winter-2027--co-op-internship----4-months_r260024737-1"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-ed-bluestein-office/data-science---structured-problem-solving-intern---summer-2027_r-10065037"
+        },
+        {
+            "company": "Xcelenergy",
+            "ats": "workday",
+            "slug": "xcelenergy:1:external/job/minneapolis-mn-55418/energy-supply-renewable-intern---mn_jr115609-1"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/digital-design-intern---spring-2027_r-10065537"
+        },
+        {
+            "company": "Ag",
+            "ats": "workday",
+            "slug": "ag:3:airbus/job/filton/flight-physics-data-science-engineer-placement--125-months-_jr10430147"
+        },
+        {
+            "company": "Xcelenergy",
+            "ats": "workday",
+            "slug": "xcelenergy:1:external/job/golden-co-80401/renewable-operation-center-intern--co_jr115736-1"
+        },
+        {
+            "company": "Micron",
+            "ats": "workday",
+            "slug": "micron:1:external/job/boise-id---main-site/intern---dram-test-structure-design-and-layout-engineering_jr110341"
+        },
+        {
+            "company": "Xcelenergy",
+            "ats": "workday",
+            "slug": "xcelenergy:1:external/job/minneapolis-mn-55401/data-scientist-intern---mn--co_jr115668-1"
+        },
+        {
+            "company": "Xcelenergy",
+            "ats": "workday",
+            "slug": "xcelenergy:1:external/job/denver-co-80205/ai-solutions-development-intern-co--mn_jr116329-1"
+        },
+        {
+            "company": "Rbc",
+            "ats": "workday",
+            "slug": "rbc:3:rbcglobal1/job/halifax-nova-scotia-canada/data-engineer--rbc-amplify-2027--halifax_r-0000187117"
+        },
+        {
+            "company": "Rbc",
+            "ats": "workday",
+            "slug": "rbc:3:rbcearlytalent1/job/toronto-ontario-canada/developer--rbc-amplify-2026--toronto_r-0000140792"
+        },
+        {
+            "company": "Xcelenergy",
+            "ats": "workday",
+            "slug": "xcelenergy:1:external/job/denver-co-80205/wildfire-analyst-intern--co_jr115413-1"
+        },
+        {
+            "company": "Omers",
+            "ats": "workday",
+            "slug": "omers:3:omers_external/job/toronto-ontario/student--ai-ml-engineer--winter-2027--8-months-_jr-8403"
+        },
+        {
+            "company": "Nasdaq",
+            "ats": "workday",
+            "slug": "nasdaq:1:global_external_site/job/canada---st-johns---newfoundland--labrador/verafin---software-development-student--january-2027-_r0026898"
+        },
+        {
+            "company": "Xcelenergy",
+            "ats": "workday",
+            "slug": "xcelenergy:1:external/job/denver-co-80223/gas-data-intern--co_jr116314-1"
+        },
+        {
+            "company": "Xcelenergy",
+            "ats": "workday",
+            "slug": "xcelenergy:1:external/job/henderson-co-80640/power-generation-analytics-intern--co_jr115734-2"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/san-diego-treena-st/ai-ml-asic-design-and-implementation-automation-intern---summer-2027_r-10065562"
+        },
+        {
+            "company": "Omers",
+            "ats": "workday",
+            "slug": "omers:3:omers_external/job/toronto-ontario/student--portfolio-analytics--winter-2027--4-months-_jr-8402"
+        },
+        {
+            "company": "Rbc",
+            "ats": "workday",
+            "slug": "rbc:3:rbcglobal1/job/toronto-ontario-canada/developer--rbc-amplify-2026--toronto_r-0000140792-2"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/digital-design-intern---spring-2027_r-10065549"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/microcontrollers-system-engineering-intern---summer-2027_r-10066400-1"
+        },
+        {
+            "company": "Bmo",
+            "ats": "workday",
+            "slug": "bmo:3:external/job/toronto-on-can/climate-risk-reporting-analyst--winter-2027--co-op-internship----4-months_r260024768-1"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/san-jose-holger-way/embedded-machine-learning---radar-processing-intern---summer-2027_r-10065534"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/digital-physical-design-intern---summer-2027_r-10065546"
+        },
+        {
+            "company": "Ag",
+            "ats": "workday",
+            "slug": "ag:3:airbus/job/bristol-area/optical-and-satellite-communications-software-engineering-placement--125-months-_jr10430473"
+        },
+        {
+            "company": "Bmo",
+            "ats": "workday",
+            "slug": "bmo:3:external/job/toronto-on-can/data-science-analyst---audit-ai---analytics--winter-2027--co-op-internship----4-months_r260024761-1"
+        },
+        {
+            "company": "Rbc",
+            "ats": "workday",
+            "slug": "rbc:3:rbcglobal1/job/halifax-nova-scotia-canada/developer--rbc-amplify-2027--halifax_r-0000187119"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/digital-design-intern---summer-2027_r-10065551"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/functional-safety-intern---spring-2027_r-10066483"
+        },
+        {
+            "company": "Nxp",
+            "ats": "workday",
+            "slug": "nxp:3:en-us/careers/job/austin-oakhill-office/entry-level-digital-design-engineer_r-10065554"
         }
     ],
     "greenhouse": [
