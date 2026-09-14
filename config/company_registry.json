@@ -189399,6 +189399,226 @@
             "company": "Bcbsaz",
             "ats": "workday",
             "slug": "bcbsaz:1:en-us/bcbsazcareers/job/az-blue-phoenix-az-85021/edi-technical-analyst--claims----hybrid_r6244-1"
+        },
+        {
+            "company": "Lseg",
+            "ats": "workday",
+            "slug": "lseg:3:graduate_careers/job/engineering-graduate-programme_r0123391"
+        },
+        {
+            "company": "Ameriprise",
+            "ats": "workday",
+            "slug": "ameriprise:5:en-us/ameriprise/job/boston-massachusetts/quantitative-investment-research-co-op--equities-_r26_3532"
+        },
+        {
+            "company": "Autostore",
+            "ats": "workday",
+            "slug": "autostore:3:autostore/job/atlanta-ga-usa/co-op---software-engineering_jr102692"
+        },
+        {
+            "company": "Guardianlife",
+            "ats": "workday",
+            "slug": "guardianlife:5:guardian-life-careers/job/new-york/xmlname-2027-guardian-summer-intern--digital---technology---application-development_r000110209"
+        },
+        {
+            "company": "Viavisolutions",
+            "ats": "workday",
+            "slug": "viavisolutions:1:careers/job/germantown-md-usa/software-engineering-co-op_260005140-1"
+        },
+        {
+            "company": "Jj",
+            "ats": "workday",
+            "slug": "jj:5:jj/job/beerse-antwerp-belgium/postdoctoral-scientist---ai-ml_r-098519"
+        },
+        {
+            "company": "Oshkoshcorporation",
+            "ats": "workday",
+            "slug": "oshkoshcorporation:5:oshkosh/job/huntersville-north-carolina-united-states/software-engineer-intern---summer-2027_r50321"
+        },
+        {
+            "company": "Viavisolutions",
+            "ats": "workday",
+            "slug": "viavisolutions:1:careers/job/germantown-md-usa/hardware-engineering-co-op_260005139-2"
+        },
+        {
+            "company": "Guardianlife",
+            "ats": "workday",
+            "slug": "guardianlife:5:guardian-life-careers/job/new-york/xmlname-2027-guardian-summer-intern--digital---technology---data-engineering_r000110202"
+        },
+        {
+            "company": "Awepeople",
+            "ats": "workday",
+            "slug": "awepeople:3:grad_careers/job/reading-area/year-in-industry--data-scientist_r30359"
+        },
+        {
+            "company": "Awepeople",
+            "ats": "workday",
+            "slug": "awepeople:3:grad_careers/job/reading-area/year-in-industry--computer-scientist_r30358"
+        },
+        {
+            "company": "Lseg",
+            "ats": "workday",
+            "slug": "lseg:3:en-us/careers/job/gbr-london-5-canada-square/engineering-graduate-programme--fullstack-_r0123395-1"
+        },
+        {
+            "company": "Capitalone",
+            "ats": "workday",
+            "slug": "capitalone:12:capital_one/job/mclean-va/technology-development-program-associate---august-2027_r244385-1"
+        },
+        {
+            "company": "Nvidia",
+            "ats": "workday",
+            "slug": "nvidia:5:nvidiaexternalcareersite/job/us-ca-santa-clara/phd-research-intern--autonomous-systems-and-physical-ai-research---2027_jr2024171"
+        },
+        {
+            "company": "Ciena",
+            "ats": "workday",
+            "slug": "ciena:5:careers/job/ottawa/software-engineering--optical-transport-and-ip-networking-intern_r031631"
+        },
+        {
+            "company": "Mimecast",
+            "ats": "workday",
+            "slug": "mimecast:5:mimecast-careers/job/united-states-of-america-minnesota--minneapolis/software-engineer-i_r6708-1"
+        },
+        {
+            "company": "Aero",
+            "ats": "workday",
+            "slug": "aero:5:external/job/el-segundo-ca/xmlname-2027-rpo-software-developer-analyst_r016457"
+        },
+        {
+            "company": "Costar",
+            "ats": "workday",
+            "slug": "costar:1:costar_campus/job/us-va-richmond---costar-tower/technology-intern---richmond--va--summer-2027-_r39665"
+        },
+        {
+            "company": "Aksteel",
+            "ats": "workday",
+            "slug": "aksteel:1:careers/job/rockport-works/computer-science-engineering-intern_r13553"
+        },
+        {
+            "company": "Oshkoshcorporation",
+            "ats": "workday",
+            "slug": "oshkoshcorporation:5:oshkosh/job/new-hudson-michigan-united-states/electronics---controls-intern---summer-2027_r50319"
+        },
+        {
+            "company": "Costar",
+            "ats": "workday",
+            "slug": "costar:1:costar_campus/job/us-tn-nashville/technology-intern---nashville--tn--summer-2027-_r39670"
+        },
+        {
+            "company": "Td",
+            "ats": "workday",
+            "slug": "td:3:td_bank_careers/job/mount-laurel-new-jersey/xmlname-2027-summer-internship-program---global-technology---solutions---software-engineer--swe-_r_1510796-1"
+        },
+        {
+            "company": "Lseg",
+            "ats": "workday",
+            "slug": "lseg:3:graduate_careers/job/london-united-kingdom/engineering-summer-internship-programme_r0123389"
+        },
+        {
+            "company": "Bmo",
+            "ats": "workday",
+            "slug": "bmo:3:external/job/toronto-on-can/senior-analyst--data-analytics---automation-solutions_r260026408"
+        },
+        {
+            "company": "Autostore",
+            "ats": "workday",
+            "slug": "autostore:3:autostore/job/atlanta-ga-usa/entry-level-software-engineer_jr102691"
+        },
+        {
+            "company": "Costar",
+            "ats": "workday",
+            "slug": "costar:1:costar_campus/job/us-va-arlington/associate-software-engineer---arlington--va_r39668"
+        },
+        {
+            "company": "Bpinternational",
+            "ats": "workday",
+            "slug": "bpinternational:3:bpprivateexternalcareerssite/job/united-states-of-america---new-york---new-york/data-strategist-programme_rq115837"
+        },
+        {
+            "company": "Costar",
+            "ats": "workday",
+            "slug": "costar:1:costar_campus/job/us-va-arlington/technology-intern---arlington--va--summer-2027-_r39666"
+        },
+        {
+            "company": "Lseg",
+            "ats": "workday",
+            "slug": "lseg:3:graduate_careers/job/gbr-london-5-canada-square/engineering-graduate-programme--backend-_r0123403"
+        },
+        {
+            "company": "Stbancorp",
+            "ats": "workday",
+            "slug": "stbancorp:5:st_bank_careers/job/main-office/data---analytics-associate-analyst_r-1580"
+        },
+        {
+            "company": "Lseg",
+            "ats": "workday",
+            "slug": "lseg:3:en-us/careers/job/engineering-graduate-programme_r0123391-1"
+        },
+        {
+            "company": "Lseg",
+            "ats": "workday",
+            "slug": "lseg:3:graduate_careers/job/gbr-london-5-canada-square/engineering-graduate-programme--fullstack-_r0123395"
+        },
+        {
+            "company": "Fmr",
+            "ats": "workday",
+            "slug": "fmr:1:targeted/job/boston-ma/co-op--alternative-data-operations_2135327"
+        },
+        {
+            "company": "Globalhr",
+            "ats": "workday",
+            "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ct-remote/engineer-i--ai-engineer_01874267"
+        },
+        {
+            "company": "Lseg",
+            "ats": "workday",
+            "slug": "lseg:3:en-us/careers/job/london-united-kingdom/engineering-summer-internship-programme_r0123389-1"
+        },
+        {
+            "company": "Oshkoshcorporation",
+            "ats": "workday",
+            "slug": "oshkoshcorporation:5:oshkosh/job/new-hudson-michigan-united-states/autonomy-intern---summer-2027_r50320"
+        },
+        {
+            "company": "Philips",
+            "ats": "workday",
+            "slug": "philips:3:jobs-and-careers/job/plymouth-minnesota-united-states/intern---software-engineering---plymouth--mn---summer-2027_590403"
+        },
+        {
+            "company": "Td",
+            "ats": "workday",
+            "slug": "td:3:td_bank_careers/job/mount-laurel-new-jersey/xmlname-2027-summer-internship-program---global-technology---solutions---data-analyst_r_1510800"
+        },
+        {
+            "company": "Oshkoshcorporation",
+            "ats": "workday",
+            "slug": "oshkoshcorporation:5:oshkosh/job/new-hudson-michigan-united-states/product-intern---summer-2027_r50276"
+        },
+        {
+            "company": "Costar",
+            "ats": "workday",
+            "slug": "costar:1:costar_campus/job/us-va-richmond---costar-tower/associate-software-engineer---richmond--va_r39667"
+        },
+        {
+            "company": "Guardianlife",
+            "ats": "workday",
+            "slug": "guardianlife:5:guardian-life-careers/job/new-york/xmlname-2027-guardian-summer-intern--digital---technology---ai---machine-learning_r000110205"
+        },
+        {
+            "company": "Td",
+            "ats": "workday",
+            "slug": "td:3:td_bank_careers/job/mount-laurel-new-jersey/xmlname-2027-summer-internship-program---global-technology---solutions---data-engineer_r_1510797"
+        },
+        {
+            "company": "Intel",
+            "ats": "workday",
+            "slug": "intel:1:en-us/external/job/us-oregon-hillsboro/system-technology-research-engineer_jr0286792"
+        },
+        {
+            "company": "Lseg",
+            "ats": "workday",
+            "slug": "lseg:3:en-us/careers/job/gbr-london-5-canada-square/engineering-graduate-programme--backend-_r0123403-1"
         }
     ],
     "greenhouse": [
