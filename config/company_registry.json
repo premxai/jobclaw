@@ -204824,6 +204824,451 @@
       "company": "Senior Data Engineer @ Vultr",
       "ats": "ashby",
       "slug": "vultr"
+    },
+    {
+      "company": "Hpe",
+      "ats": "workday",
+      "slug": "hpe:5:jobsathpe/job/bristol-avon-united-kingdom/software-engineer---block-storage-uk_1214489-3"
+    },
+    {
+      "company": "Avisbudget",
+      "ats": "workday",
+      "slug": "avisbudget:1:abg_careers/job/avis-budget-house-hq/graduate-hr-analyst_r0191440"
+    },
+    {
+      "company": "Cigna",
+      "ats": "workday",
+      "slug": "cigna:5:cignacareers/job/morris-plains-nj/healthcare-analytics-summer-intern---morris-plains--nj---start-date--may-24--2027_26009483"
+    },
+    {
+      "company": "Amat",
+      "ats": "workday",
+      "slug": "amat:1:external/job/santa-claraca/software-engineer-iii_r2631234"
+    },
+    {
+      "company": "Leidos",
+      "ats": "workday",
+      "slug": "leidos:5:external/job/6314-remoteteleworker-us/performance-enablement-ai-ml-intern_r-00194656"
+    },
+    {
+      "company": "Spscommerce",
+      "ats": "workday",
+      "slug": "spscommerce:108:sps/job/ca-on-brampton-office/software-engineer-intern_r-001353"
+    },
+    {
+      "company": "Jj",
+      "ats": "workday",
+      "slug": "jj:5:jj/job/cambridge-massachusetts-united-states-of-america/summer-intern--digital-signal--imaging-ai_r-103933"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---basildon/industrial-placement-software-engineer_r0034283"
+    },
+    {
+      "company": "Kla",
+      "ats": "workday",
+      "slug": "kla:1:ur/job/ann-arbor-mi/research-scientist-intern---coating-characterization_2642033"
+    },
+    {
+      "company": "Gevernova",
+      "ats": "workday",
+      "slug": "gevernova:5:vernova_externalsite/job/roanoke-us-va-3/firmware-engineer---early-career_r5055842-2"
+    },
+    {
+      "company": "Rockwoolgroup",
+      "ats": "workday",
+      "slug": "rockwoolgroup:3:rockwool/job/chicago-illinois/associate-product-management-intern_r0036805-2"
+    },
+    {
+      "company": "Amfam",
+      "ats": "workday",
+      "slug": "amfam:1:en-us/careers/job/wi-madison/enterprise-data-intern_r39527"
+    },
+    {
+      "company": "Hpe",
+      "ats": "workday",
+      "slug": "hpe:5:acjobsite/job/bristol-avon-united-kingdom/software-engineer---block-storage-uk_1214489-1"
+    },
+    {
+      "company": "Vrtx",
+      "ats": "workday",
+      "slug": "vrtx:501:vertex_careers/job/boston-ma/spring-co-op-2027--commercial-analytics--market-access_req-31008-1"
+    },
+    {
+      "company": "Leidos",
+      "ats": "workday",
+      "slug": "leidos:5:external/job/10606-raleigh-nc-home-office/gis-technician_r-00194660"
+    },
+    {
+      "company": "Danaher",
+      "ats": "workday",
+      "slug": "danaher:1:danaherjobs/job/logan-utah-united-states/ccm-data-governance---intern-summer-2027_r1318977"
+    },
+    {
+      "company": "Nrel",
+      "ats": "workday",
+      "slug": "nrel:5:nlr/job/golden-co/graduate--10-12-weeks--intern---ai-ml-for-cybersecurity_r14563"
+    },
+    {
+      "company": "Caci",
+      "ats": "workday",
+      "slug": "caci:1:external/job/ashburn-va-us/dashboard-administrator--junior-_333487"
+    },
+    {
+      "company": "Jj",
+      "ats": "workday",
+      "slug": "jj:5:jj/job/raritan-new-jersey-united-states-of-america/technology-off-cycle-co-op_r-099204"
+    },
+    {
+      "company": "Bah",
+      "ats": "workday",
+      "slug": "bah:1:bah_jobs/job/wharton-nj/software-engineer--mid_r0251705"
+    },
+    {
+      "company": "Ciena",
+      "ats": "workday",
+      "slug": "ciena:5:careers/job/ottawa/wavelogic-embedded-software-developer-intern--winter-2027-_r031890"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---southampton/electronics-engineering-degree-apprentice_r0034218"
+    },
+    {
+      "company": "Luminai",
+      "ats": "ashby",
+      "slug": "luminai"
+    },
+    {
+      "company": "Generalmotors",
+      "ats": "workday",
+      "slug": "generalmotors:5:careers_gm/job/sunnyvale-california-united-states-of-america/xmlname-2027-summer-intern---data-scaling--embodied-ai--masters-_jr-202622540"
+    },
+    {
+      "company": "Generalmotors",
+      "ats": "workday",
+      "slug": "generalmotors:5:careers_gm/job/warren-michigan-united-states-of-america/xmlname-2027-summer-intern--ai-ml-engineer--mapping--masters-_jr-202622539"
+    },
+    {
+      "company": "Jj",
+      "ats": "workday",
+      "slug": "jj:5:jj/job/somerset-new-jersey-united-states-of-america/data-operations---analytics-spring-co-op_r-104450"
+    },
+    {
+      "company": "Cvshealth",
+      "ats": "workday",
+      "slug": "cvshealth:1:private_postings_intern_conversion_only/job/ct---work-from-home/analyst--software-development-engineer--conversion-_r1059972"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-fl-melbourne-307--1100-w-hibiscus-blvd--bldg-307/reliability-analyst---test-engineer-1--onsite-_01881446"
+    },
+    {
+      "company": "Amfam",
+      "ats": "workday",
+      "slug": "amfam:1:en-us/careers/job/wi-madison/enterprise-data-intern_r39510"
+    },
+    {
+      "company": "Statestreet",
+      "ats": "workday",
+      "slug": "statestreet:1:global/job/boston-massachusetts/quantitative-analyst--officer_r-799704"
+    },
+    {
+      "company": "Altera",
+      "ats": "workday",
+      "slug": "altera:1:altera/job/toronto-ontario-canada/fpga-ip-design-engineer----intern_r03324"
+    },
+    {
+      "company": "Carrier",
+      "ats": "workday",
+      "slug": "carrier:5:jobs/job/canhq-ccs-hq---syracuse-6304-carrier-parkway-east-syracuse-ny-13057-usa/software-engineering-intern---summer_30220161"
+    },
+    {
+      "company": "Psu",
+      "ats": "workday",
+      "slug": "psu:1:psu_staff/job/key-west-fl/r-d-engineer-intern_req_0000083331"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-va-sterling-291--22640-davis-dr--davis/software-engineering-intern--summer-2027-_01882317"
+    },
+    {
+      "company": "Livenation",
+      "ats": "workday",
+      "slug": "livenation:503:lnexternalsite/job/chicago-il-usa/venue-analytics-intern_jr-93773-2"
+    },
+    {
+      "company": "Usnh",
+      "ats": "workday",
+      "slug": "usnh:5:careers/job/university-of-new-hampshire--main-campus/adjunct-intern_jr10246-1"
+    },
+    {
+      "company": "Swib",
+      "ats": "workday",
+      "slug": "swib:12:en-us/ext/job/madison-wisconsin/liquidity-optimization-intern_r-001346"
+    },
+    {
+      "company": "Generalmotors",
+      "ats": "workday",
+      "slug": "generalmotors:5:careers_gm/job/sunnyvale-california-united-states-of-america/xmlname-2027-summer-intern--onboard-autonomy--embodied-ai--masters-_jr-202622543"
+    },
+    {
+      "company": "Ardian",
+      "ats": "workday",
+      "slug": "ardian:103:ardiancareers/job/new-york/data-scientist-intern---february-2027---nyc_jr1002271"
+    },
+    {
+      "company": "Oshkoshcorporation",
+      "ats": "workday",
+      "slug": "oshkoshcorporation:5:oshkosh/job/oshkosh-wisconsin-united-states/engineer---software_r50694"
+    },
+    {
+      "company": "Aba",
+      "ats": "workday",
+      "slug": "aba:1:aba/job/us-dc-main-office/intern--banking-policy-and-economic-research_r625"
+    },
+    {
+      "company": "Mckesson",
+      "ats": "workday",
+      "slug": "mckesson:3:en-us/covermymeds_external_careers/job/usa-oh-columbus/cmm-technology-intern---summer-2027_jr0151979-2"
+    },
+    {
+      "company": "Tmobile",
+      "ats": "workday",
+      "slug": "tmobile:1:external/job/bellevue-washington/summer-2027-software-engineering-intern_req368322"
+    },
+    {
+      "company": "Hpe",
+      "ats": "workday",
+      "slug": "hpe:5:jobsathpe/job/westford-massachusetts-united-states-of-america/electrical-hardware-engineer-i---0t1011_1214975"
+    },
+    {
+      "company": "Q2Ebanking",
+      "ats": "workday",
+      "slug": "q2ebanking:5:q2/job/austin-texas/xmlname-2027-summer-internship---product-operations_req-12904-1"
+    },
+    {
+      "company": "Leidos",
+      "ats": "workday",
+      "slug": "leidos:5:external/job/shiloh-il/data-engineering---analytics-intern_r-00194635"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---basildon/electronics-degree-apprentice_r0034266"
+    },
+    {
+      "company": "Snc",
+      "ats": "workday",
+      "slug": "snc:1:snc_external_career_site/job/lone-tree-co/software-engineer-intern---summer-2027--for-snc-summer-2026-interns-only-_r0031098"
+    },
+    {
+      "company": "Ciena",
+      "ats": "workday",
+      "slug": "ciena:5:careers/job/ottawa/analog-and-mixed-signal-modelling-architect--masters-or-phd-new-grad-_r031915"
+    },
+    {
+      "company": "Nvidia",
+      "ats": "workday",
+      "slug": "nvidia:5:nvidiaexternalcareersite/job/us-ca-santa-clara/product-management-mba-intern--laptop---summer-2027_jr2025905"
+    },
+    {
+      "company": "Hilbgroup",
+      "ats": "workday",
+      "slug": "hilbgroup:5:hg-careers/job/hunt-valley-md/benefits-analytics-intern_jr100866"
+    },
+    {
+      "company": "Blueorigin",
+      "ats": "workday",
+      "slug": "blueorigin:5:blueorigin/job/kent-wa/summer-2027-terawave-product-management-internship---mba_r74200"
+    },
+    {
+      "company": "Gevernova",
+      "ats": "workday",
+      "slug": "gevernova:5:only_confidential_executive_recruiting/job/roanoke-us-va-3/firmware-engineer---early-career_r5055842-1"
+    },
+    {
+      "company": "Ngc",
+      "ats": "workday",
+      "slug": "ngc:1:northrop_grumman_external_site/job/united-states-virginia-dulles/xmlname-2027--associate--embedded-software-engineer---dulles-va_r10256217"
+    },
+    {
+      "company": "Centene",
+      "ats": "workday",
+      "slug": "centene:5:centene_external/job/remote-mo/ai-software-developer-intern--undergraduate---summer-2027-_1667710"
+    },
+    {
+      "company": "Kla",
+      "ats": "workday",
+      "slug": "kla:1:search/job/ann-arbor-mi/research-scientist-intern---coating-characterization_2642033-2"
+    },
+    {
+      "company": "Intel",
+      "ats": "workday",
+      "slug": "intel:1:en-us/external/job/canada-toronto/compiler-engineering-intern_jr0287934"
+    },
+    {
+      "company": "Smucker",
+      "ats": "workday",
+      "slug": "smucker:5:us_external_careers/job/orrville-oh/revenue-growth-management-intern--summer-2027_116012"
+    },
+    {
+      "company": "Costar",
+      "ats": "workday",
+      "slug": "costar:1:en-us/costarcareers/job/us-ca-san-francisco/software-engineer-i---bizbuysell---san-francisco--ca_r40158-1"
+    },
+    {
+      "company": "Leidos",
+      "ats": "workday",
+      "slug": "leidos:5:external/job/huntsville-al/electrical-hardware-design-engineering-intern_r-00193394"
+    },
+    {
+      "company": "Michelinhr",
+      "ats": "workday",
+      "slug": "michelinhr:3:michelin/job/woodburn-in/data-scientist_r-2026029871-1"
+    },
+    {
+      "company": "Analogdevices",
+      "ats": "workday",
+      "slug": "analogdevices:1:external/job/us-ma-wilmington/design-evaluation-engineer_r265970"
+    },
+    {
+      "company": "Northwesternmutual",
+      "ats": "workday",
+      "slug": "northwesternmutual:5:corporate-careers/job/milwaukee-wi-corporate/underwriting-research-intern--summer-2027_jr-46209"
+    },
+    {
+      "company": "Generalmotors",
+      "ats": "workday",
+      "slug": "generalmotors:5:careers_gm/job/sunnyvale-california-united-states-of-america/xmlname-2027-summer-intern--seam--embodied-ai--masters-_jr-202622537"
+    },
+    {
+      "company": "Alliance",
+      "ats": "workday",
+      "slug": "alliance:3:en-us/nissanjobs/job/franklin-tennessee---united-states-of-america/cross-car-line-feature-strategy-intern---summer-2027---franklin--tn_r00214296"
+    },
+    {
+      "company": "Centrica",
+      "ats": "workday",
+      "slug": "centrica:3:centrica/job/greater-london/graduate-commodity-trading-analyst_r0091040"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-tx-mckinney-513wd--2501-w-university-dr--wing-d-bldg/software-engineer-i--onsite-_01882675"
+    },
+    {
+      "company": "Hpe",
+      "ats": "workday",
+      "slug": "hpe:5:jobsathpe/job/spring-texas-united-states-of-america/ai---hpc-performance-engineering-intern_1213397"
+    },
+    {
+      "company": "Psu",
+      "ats": "workday",
+      "slug": "psu:1:psu_staff/job/penn-state-university-park/engineering-technologist-intern_req_0000077694-1"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-ia-cedar-rapids-130--5350-c-ave-ne--bldg-130/software-engineering-co-op--spring-summer-2027-_01881996"
+    },
+    {
+      "company": "Gevernova",
+      "ats": "workday",
+      "slug": "gevernova:5:vernova_externalsite/job/roanoke-us-va-3/firmware-engineer---early-career_r5055844-2"
+    },
+    {
+      "company": "Amat",
+      "ats": "workday",
+      "slug": "amat:1:external/job/santa-claraca/product-management-ii-new-college-grad--master-s--santa-clara--ca-_r2629882"
+    },
+    {
+      "company": "Smucker",
+      "ats": "workday",
+      "slug": "smucker:5:us_external_careers/job/orrville-oh/finance-technology-intern--spring-2027_116016"
+    },
+    {
+      "company": "Micron",
+      "ats": "workday",
+      "slug": "micron:1:external/job/boise-id---main-site/new-college-grad---computer-engineer--central-engineering_jr115116-1"
+    },
+    {
+      "company": "Gevernova",
+      "ats": "workday",
+      "slug": "gevernova:5:only_confidential_executive_recruiting/job/roanoke-us-va-3/firmware-engineer---early-career_r5055844-1"
+    },
+    {
+      "company": "Cisco",
+      "ats": "workday",
+      "slug": "cisco:5:cisco_careers/job/milpitas-california-us/software-engineer_2023271"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-ia-cedar-rapids-130--5350-c-ave-ne--bldg-130/software-engineering-co-op--summer-fall-2027-_01882414"
+    },
+    {
+      "company": "Axiomspace",
+      "ats": "workday",
+      "slug": "axiomspace:5:external_career_site/job/houston/software-engineering-intern--summer-2027-_jr100767"
+    },
+    {
+      "company": "Nrel",
+      "ats": "workday",
+      "slug": "nrel:5:nlr/job/golden-co/graduate-intern---connected-vehicle--v2x--communications-modeling-and-traffic-simulation_r14564"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---basildon/software-engineering-degree-apprentice_r0034281"
+    },
+    {
+      "company": "Visa",
+      "ats": "workday",
+      "slug": "visa:5:visa/job/us---austin-tx/sw-engineer_ref088588w"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-ma-marlborough-ma1--1001-boston-post-rd--bldg-1/electrical-engineering-intern--summer-2027--onsite-_01882705"
+    },
+    {
+      "company": "Kla",
+      "ats": "workday",
+      "slug": "kla:1:annarbor/job/ann-arbor-mi/research-scientist-intern---coating-characterization_2642033-1"
+    },
+    {
+      "company": "Intel",
+      "ats": "workday",
+      "slug": "intel:1:en-us/external/job/us-california-santa-clara/microarchitecture-and-design-engineer---ai-soc_jr0287996"
+    },
+    {
+      "company": "Generalmotors",
+      "ats": "workday",
+      "slug": "generalmotors:5:careers_gm/job/sunnyvale-california-united-states-of-america/xmlname-2027-summer-intern--ai-research--embodied-ai--masters-_jr-202622535"
+    },
+    {
+      "company": "Ngc",
+      "ats": "workday",
+      "slug": "ngc:1:northrop_grumman_external_site/job/united-states-virginia-dulles/xmlname-2027-software-engineer-dulles-va_r10256306"
+    },
+    {
+      "company": "Job Application for Backend Engineer, Platform at LeafLink",
+      "ats": "greenhouse",
+      "slug": "leaflink"
+    },
+    {
+      "company": "Software Engineer",
+      "ats": "ashby",
+      "slug": "easysoft"
+    },
+    {
+      "company": "Software Engineer (PHP)",
+      "ats": "rippling",
+      "slug": "nexigendigital"
     }
   ],
   "greenhouse": [
