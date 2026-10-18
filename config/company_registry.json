@@ -205579,6 +205579,166 @@
       "company": "Data Analyst @ Benchmark Analytics",
       "ats": "ashby",
       "slug": "benchmark"
+    },
+    {
+      "company": "Hcsc",
+      "ats": "workday",
+      "slug": "hcsc:1:en-us/hcsc_external/job/il---chicago/early-careers---finance-data---analytics-developer-intern_r0059478"
+    },
+    {
+      "company": "Ngc",
+      "ats": "workday",
+      "slug": "ngc:1:northrop_grumman_external_site/job/united-states-arizona-chandler/xmlname--skillbridge----engineering-technician---electrical-ground-support-equipment_r10256530"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---luton---cap-green-300/test-engineering-degree-apprentice_r0034143"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---newcastle/graduate-software-engineer_r0033863"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---luton---cap-green-300/graduate-firmware-engineer_r0032900"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---luton---cap-green-300/industrial-placement-firmware-engineer_r0032906"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---newcastle/industrial-placement-software-engineer_r0033876"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---bristol---coldharbour-lane/industrial-placement-electronics_r0034212"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---edinburgh/industrial-placement-test-systems-engineer_r0034207"
+    },
+    {
+      "company": "Tjx",
+      "ats": "workday",
+      "slug": "tjx:1:tjx_external/job/watford-her-wd17-1tx/it-engineer-graduate_req156568-1"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---edinburgh/graduate-software-engineer_r0033861"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---southampton/graduate-electronics-engineer_r0034208-1"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---southampton/industrial-placement-electronics_r0034216"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---edinburgh/summer-placement-software-engineer_r0033869-1"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---edinburgh/summer-placement-test-systems-engineer_r0034211"
+    },
+    {
+      "company": "Hcsc",
+      "ats": "workday",
+      "slug": "hcsc:1:en-us/hcsc_external/job/il---chicago/early-careers---finance-application-developer-intern_r0059477"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---basildon/summer-placement-software-engineer_r0034282"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---edinburgh/industrial-placement-software-engineer_r0033875"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---basildon/graduate-electronics-engineer_r0034140"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---luton---cap-green-300/software-engineering-degree-apprentice_r0034102"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---edinburgh/graduate-test-systems-engineer_r0033992"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---edinburgh/software-engineer-graduate-apprenticeship_r0034176"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---edinburgh/industrial-placement-test-software-engineer_r0034205"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---basildon/electronics-summer-placement_r0034217"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---basildon/industrial-placement-electronics_r0034210"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---luton---cap-green-300/graduate-hardware-engineer_r0032902"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---luton---cap-green-300/industrial-placement-hardware-engineer_r0032911"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---edinburgh/graduate-test-software-engineer_r0034203-1"
+    },
+    {
+      "company": "Leonardocompany",
+      "ats": "workday",
+      "slug": "leonardocompany:3:leonardocareersite/job/gb---newcastle/summer-placement-software-engineer_r0033874"
+    },
+    {
+      "company": "Data Engineer @ LeoVegas Mobile Gaming Group",
+      "ats": "ashby",
+      "slug": "leovegasgroup"
+    },
+    {
+      "company": "Backend / Data Engineer @ Affiniti",
+      "ats": "ashby",
+      "slug": "affiniti"
+    },
+    {
+      "company": "Esolvit Inc is looking for a #1885 Data Scientist \u2013 Big Data in Austin, TX",
+      "ats": "smartrecruiters",
+      "slug": "esolvitinc"
     }
   ],
   "greenhouse": [
