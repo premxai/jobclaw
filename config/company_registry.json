@@ -215299,6 +215299,351 @@
       "company": "Senior Supplier Development Engineer",
       "ats": "rippling",
       "slug": "electric-era-technologies-inc"
+    },
+    {
+      "company": "Arrowstreetcapital",
+      "ats": "workday",
+      "slug": "arrowstreetcapital:5:campus_careers/job/boston/software-engineer-intern--summer-2027_r1561"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-fl-jupiter-adr--17900-beeline-hwy--adr-bldg/intern--summer-2027---control-diagnostic-software--onsite-_01883840"
+    },
+    {
+      "company": "Sunlife",
+      "ats": "workday",
+      "slug": "sunlife:3:en-us/experienced-jobs/job/sun-life-wellesley/business-operations-software-engineer-2027-co-op_jr00128863-3"
+    },
+    {
+      "company": "Flir",
+      "ats": "workday",
+      "slug": "flir:1:flircareers/job/canada---montreal-qc-tdy/stagiaire-en-tests-thermiques--thermal-test-co-op_req37169"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers2/job/santa-clara-ca/hardware-signal-integrity-intern--ms---summer-2027_2603877"
+    },
+    {
+      "company": "Ciena",
+      "ats": "workday",
+      "slug": "ciena:5:careers/job/quebec/stagiaire-en-dveloppement-logiciel---software-developer-intern-co-op_r032046"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers/job/santa-clara-ca/hardware-signal-integrity-intern--ms---summer-2027_2603877-1"
+    },
+    {
+      "company": "Arlo",
+      "ats": "workday",
+      "slug": "arlo:12:external_careers/job/richmond-bc-canada/hardware-engineer-co-op_jr100446"
+    },
+    {
+      "company": "Archgroup",
+      "ats": "workday",
+      "slug": "archgroup:1:careers/job/greensboro-nc-united-states-of-america/originations-portal-it-intern_r26_1135"
+    },
+    {
+      "company": "Rbc",
+      "ats": "workday",
+      "slug": "rbc:3:externalprivatepostingstudents/job/toronto-ontario-canada/xmlname-2027-winter---grm--data-analyst-intern--4-months-_r-0000188376"
+    },
+    {
+      "company": "Zebra",
+      "ats": "workday",
+      "slug": "zebra:501:zebra_careers/job/holtsville-new-york/xmlname-2027-summer-internship--us----software-engineer_jr103638"
+    },
+    {
+      "company": "Ngc",
+      "ats": "workday",
+      "slug": "ngc:1:northrop_grumman_external_site/job/united-states-california-redondo-beach/xmlname-2027-ground-software-engineer-intern---redondo-beach-ca_r10259057"
+    },
+    {
+      "company": "Highmarkhealth",
+      "ats": "workday",
+      "slug": "highmarkhealth:1:highmark/job/pa-working-at-home---pennsylvania/summer-2027-ai-services-and-platforms-software-engineer-graduate-intern_j288322"
+    },
+    {
+      "company": "Hp",
+      "ats": "workday",
+      "slug": "hp:5:externalcareersite/job/san-francisco-california-united-states-of-america/software-engineering-intern--aiml-platform---hp-iq_uni4800-1"
+    },
+    {
+      "company": "Bb",
+      "ats": "workday",
+      "slug": "bb:3:student/job/ottawa-ontario/software-development-student_20260343"
+    },
+    {
+      "company": "Highmarkhealth",
+      "ats": "workday",
+      "slug": "highmarkhealth:1:highmark/job/pa-working-at-home---pennsylvania/summer-2027-healthcare-analytics-data-science-graduate-intern_j288345"
+    },
+    {
+      "company": "Vizient",
+      "ats": "workday",
+      "slug": "vizient:1:vizient_careers/job/chicago-il-60607/xmlname-2027-summer-internship---digital-collaboration---data-insights_35969r"
+    },
+    {
+      "company": "Zebra",
+      "ats": "workday",
+      "slug": "zebra:501:zebra_careers/job/germantown-maryland/xmlname-2027-summer-internship--us----systems-engineer_jr103659"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-ut-west-valley-city-338--1127--1128-w-2400-s--bldg-338/software-engineering-intern--summer-2027-_01886446"
+    },
+    {
+      "company": "Trustage",
+      "ats": "workday",
+      "slug": "trustage:1:trustage/job/madison-wi/it---innovation---ai-technology-internship--hybrid-_r-012293"
+    },
+    {
+      "company": "Tmobile",
+      "ats": "workday",
+      "slug": "tmobile:1:external/job/philadelphia-pennsylvania/summer-2027-t-ads-software-engineering-internship_req381234"
+    },
+    {
+      "company": "Trimble",
+      "ats": "workday",
+      "slug": "trimble:1:en-us/trimblecareers/job/us---oh-dayton/ai-developer-intern_r58195"
+    },
+    {
+      "company": "Hpe",
+      "ats": "workday",
+      "slug": "hpe:5:jobsathpe/job/westford-massachusetts-united-states-of-america/hardware-engineering-intern_1214170"
+    },
+    {
+      "company": "Jmfamily",
+      "ats": "workday",
+      "slug": "jmfamily:1:jmfamily_external/job/florida---deerfield-beach/ai-center-of-excellence--coe--delivery-team-intern_jr105176"
+    },
+    {
+      "company": "Caresource",
+      "ats": "workday",
+      "slug": "caresource:1:caresource/job/remote/xmlname-2027-summer-internship-program---data-science-intern_r14306"
+    },
+    {
+      "company": "Boseallaboutme",
+      "ats": "workday",
+      "slug": "boseallaboutme:503:bose_careers/job/us-ma---framingham/electrical-engineering-co-op---fpga-and-audio-research-platforms_r29366"
+    },
+    {
+      "company": "Hp",
+      "ats": "workday",
+      "slug": "hp:5:externalcareersite/job/san-francisco-california-united-states-of-america/software-quality-assurance-intern_uni4803-1"
+    },
+    {
+      "company": "Sunlife",
+      "ats": "workday",
+      "slug": "sunlife:3:en-us/campus/job/sun-life-wellesley/business-operations-software-engineer-2027-co-op_jr00128863"
+    },
+    {
+      "company": "Arlo",
+      "ats": "workday",
+      "slug": "arlo:12:external_careers/job/richmond-bc-canada/firmware-developer-co-op_jr100445"
+    },
+    {
+      "company": "Zebra",
+      "ats": "workday",
+      "slug": "zebra:501:zebra_careers/job/holtsville-new-york/xmlname-2027-summer-internship--us----software-engineer_jr103645"
+    },
+    {
+      "company": "Tmobile",
+      "ats": "workday",
+      "slug": "tmobile:1:external/job/atlanta-georgia/summer-2027-software-engineering-internship_req380652"
+    },
+    {
+      "company": "Parsons",
+      "ats": "workday",
+      "slug": "parsons:5:en-us/search/job/us---va-centreville/ai-ml-engineering-intern-summer-2027_r188194"
+    },
+    {
+      "company": "Ngc",
+      "ats": "workday",
+      "slug": "ngc:1:northrop_grumman_external_site/job/united-states-maryland-sykesville/xmlname-2027-s-w-embedded-engineering-intern---sykesville-md_r10258553"
+    },
+    {
+      "company": "Apacheip",
+      "ats": "workday",
+      "slug": "apacheip:1:apache_careers/job/houston-headquarters/ai-implementation-intern_r115430"
+    },
+    {
+      "company": "Sunlife",
+      "ats": "workday",
+      "slug": "sunlife:3:en-us/experienced-jobs/job/milwaukee-wisconsin/business-operations-software-engineer---2027-co-op_jr00128846"
+    },
+    {
+      "company": "Boseallaboutme",
+      "ats": "workday",
+      "slug": "boseallaboutme:503:bose_careers/job/us-ma---framingham/software-dsp-research-engineer-co-op_r29369"
+    },
+    {
+      "company": "Hp",
+      "ats": "workday",
+      "slug": "hp:5:exteu-ac-careersite/job/san-francisco-california-united-states-of-america/software-quality-assurance-intern_uni4803"
+    },
+    {
+      "company": "Ngc",
+      "ats": "workday",
+      "slug": "ngc:1:northrop_grumman_external_site/job/united-states-utah-roy/xmlname-2027-software-engineering-intern---roy-ut_r10259181"
+    },
+    {
+      "company": "Modernatx",
+      "ats": "workday",
+      "slug": "modernatx:1:en-us/m_tx/job/cambridge-massachusetts/xmlname-2027-co-op--mrna-design-engineering_r20128"
+    },
+    {
+      "company": "Itron",
+      "ats": "workday",
+      "slug": "itron:5:itron/job/united-states-of-america-washington-liberty-lake/intern---data-analytics-and-automation--finance_jr103020-1"
+    },
+    {
+      "company": "Gaig",
+      "ats": "workday",
+      "slug": "gaig:1:gaig_external/job/cincinnati-oh-usa/business-intelligence--power-bi--intern---summer-2027_r9843"
+    },
+    {
+      "company": "Pg",
+      "ats": "workday",
+      "slug": "pg:5:1000/job/cincinnati-general-offices/intern--talent-analytics---assessment-science_r000162095"
+    },
+    {
+      "company": "Elkay",
+      "ats": "workday",
+      "slug": "elkay:1:elkay_external/job/downers-grove-il/electrical---electronics-engineering-intern--summer-2027-_req-020097"
+    },
+    {
+      "company": "Itron",
+      "ats": "workday",
+      "slug": "itron:5:early_careers/job/united-states-of-america-washington-liberty-lake/intern---data-analytics-and-automation--finance_jr103020"
+    },
+    {
+      "company": "Jmfamily",
+      "ats": "workday",
+      "slug": "jmfamily:1:jmfamily_external/job/florida---deerfield-beach/ai---decision-science-intern_jr105095"
+    },
+    {
+      "company": "Bb",
+      "ats": "workday",
+      "slug": "bb:3:student/job/ottawa-ontario/software-developer-student_20260342"
+    },
+    {
+      "company": "Ciena",
+      "ats": "workday",
+      "slug": "ciena:5:careers/job/ottawa/hardware-engineering-co-op--winter-2027-_r032054"
+    },
+    {
+      "company": "Hp",
+      "ats": "workday",
+      "slug": "hp:5:exteu-ac-careersite/job/san-francisco-california-united-states-of-america/software-engineering-intern--aiml-platform---hp-iq_uni4800"
+    },
+    {
+      "company": "Ngc",
+      "ats": "workday",
+      "slug": "ngc:1:northrop_grumman_external_site/job/united-states-california-manhattan-beach/xmlname-2027-flight-software-engineer-intern---redondo-beach-ca_r10259032"
+    },
+    {
+      "company": "Trimble",
+      "ats": "workday",
+      "slug": "trimble:1:en-us/trimblecareers/job/us---co-westminster/ai-developer-intern_r58194"
+    },
+    {
+      "company": "Zebra",
+      "ats": "workday",
+      "slug": "zebra:501:zebra_careers/job/kennesaw-georgia/xmlname-2027-summer-internship--us----software-engineer--ai-features---product-convergence--zebra-task-manager_jr103636"
+    },
+    {
+      "company": "Rbc",
+      "ats": "workday",
+      "slug": "rbc:3:rbcglobal1/job/toronto-ontario-canada/xmlname-2027-capital-markets--global-equities--ai-engineer--16-months--co-op-_r-0000187401-2"
+    },
+    {
+      "company": "Sunlife",
+      "ats": "workday",
+      "slug": "sunlife:3:en-us/campus/job/milwaukee-wisconsin/business-operations-software-engineer---2027-co-op_jr00128846-1"
+    },
+    {
+      "company": "Rgare",
+      "ats": "workday",
+      "slug": "rgare:1:en-us/careers/job/united-states-chesterfield-mo-rga-hq/summer-intern---data-analyst_j29309"
+    },
+    {
+      "company": "Shadowdragon",
+      "ats": "rippling",
+      "slug": "shadowdragon"
+    },
+    {
+      "company": "Relx",
+      "ats": "workday",
+      "slug": "relx:3:en-us/risksolutions/job/alpharetta-ga/tech-accelerate-graduate-program_r120836"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-ca-goleta-h01--6380-hollister-ave--bldg-h01/software-engineer-l---embedded--onsite_01886765"
+    },
+    {
+      "company": "Relx",
+      "ats": "workday",
+      "slug": "relx:3:en-us/relx/job/alpharetta-ga/tech-accelerate-graduate-program_r120836-1"
+    },
+    {
+      "company": "Job Application for Senior Backend Engineer",
+      "ats": "greenhouse",
+      "slug": "henrymeds"
+    },
+    {
+      "company": "Sphere Laboratories, Inc.",
+      "ats": "lever",
+      "slug": "sphere-laboratories"
+    },
+    {
+      "company": "Blue Coding",
+      "ats": "lever",
+      "slug": "bluecoding"
+    },
+    {
+      "company": "Alloy.ai",
+      "ats": "lever",
+      "slug": "alloy"
+    },
+    {
+      "company": "Senior Software Engineer",
+      "ats": "ashby",
+      "slug": "temporal"
+    },
+    {
+      "company": "Senior Software Engineer, Backend Platform",
+      "ats": "workable",
+      "slug": "jacobian"
+    },
+    {
+      "company": "Senior Software Engineer",
+      "ats": "workable",
+      "slug": "sharetec"
+    },
+    {
+      "company": "Senior Software Engineer",
+      "ats": "workable",
+      "slug": "faro"
+    },
+    {
+      "company": "Mechanical Engineer",
+      "ats": "rippling",
+      "slug": "standard-bent-glass"
+    },
+    {
+      "company": "Platform Engineer (Early Career)",
+      "ats": "rippling",
+      "slug": "expo"
+    },
+    {
+      "company": "Alpha Data is looking for a Expert Data Sciences in Dubai, United Arab Emirates",
+      "ats": "smartrecruiters",
+      "slug": "alphadata"
     }
   ],
   "greenhouse": [
