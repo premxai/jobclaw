@@ -216619,6 +216619,396 @@
       "company": "Software Engineer II",
       "ats": "rippling",
       "slug": "limble-solutions"
+    },
+    {
+      "company": "Uchicago",
+      "ats": "workday",
+      "slug": "uchicago:5:external/job/chicago-il/research-professional_jr35802"
+    },
+    {
+      "company": "Moog",
+      "ats": "workday",
+      "slug": "moog:5:moog_external_career_site/job/torrance-ca/intern--electrical-engineering_r-26-19824"
+    },
+    {
+      "company": "Tmobile",
+      "ats": "workday",
+      "slug": "tmobile:1:external/job/bellevue-washington/summer-2027-software-engineering-internship_req380917"
+    },
+    {
+      "company": "Tmobile",
+      "ats": "workday",
+      "slug": "tmobile:1:external/job/frisco-texas/summer-2027-data-engineering-internship_req380754"
+    },
+    {
+      "company": "Sec",
+      "ats": "workday",
+      "slug": "sec:3:samsung_careers/job/6625-excellence-way-plano-tx-usa/business-intelligence---data-analytics-intern_r121949"
+    },
+    {
+      "company": "Abbott",
+      "ats": "workday",
+      "slug": "abbott:5:abbottcareers/job/united-states---texas---plano/electrical-engineer-i_31166976"
+    },
+    {
+      "company": "Abbott",
+      "ats": "workday",
+      "slug": "abbott:5:abbottcareers2/job/united-states---texas---plano/electrical-engineer-i-neuromodulation_31166976"
+    },
+    {
+      "company": "Tmobile",
+      "ats": "workday",
+      "slug": "tmobile:1:external/job/bellevue-washington/summer-2027-ai-engineering-internship_req381194"
+    },
+    {
+      "company": "Neiu",
+      "ats": "workday",
+      "slug": "neiu:1:neiu/job/chicago-illinois/institutional-research-data-specialist_jr100822"
+    },
+    {
+      "company": "Genesys",
+      "ats": "workday",
+      "slug": "genesys:1:en-us/genesys/job/toronto-flexible/associate-software-developer_jr112811"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:fr-ca/private_posting_no_tmp/job/us-ia-cedar-rapids-137--855-35th-st-ne--bldg-137/software-security-engineer-1--onsite-_01887029"
+    },
+    {
+      "company": "Llbean",
+      "ats": "workday",
+      "slug": "llbean:1:llbean_careers/job/freeport-me/business--data-analyst-intern--summer-2027-_jr11275"
+    },
+    {
+      "company": "Ovative",
+      "ats": "workday",
+      "slug": "ovative:12:en-us/ovative/job/minneapolis/analyst--data---software-engineer_jr100342"
+    },
+    {
+      "company": "Salesforce",
+      "ats": "workday",
+      "slug": "salesforce:12:external_career_site/job/illinois---chicago/ai-product-associate-analyst--early-talent_jr367622-2"
+    },
+    {
+      "company": "Datarobot",
+      "ats": "workday",
+      "slug": "datarobot:1:en-us/datarobot_external_careers/job/boston-massachusetts-us/software-design-engineer-intern_r-102764"
+    },
+    {
+      "company": "Hpe",
+      "ats": "workday",
+      "slug": "hpe:5:jobsathpe/job/roseville-california/campus-switching-product-manager-graduate_1214267-1"
+    },
+    {
+      "company": "Keyfactorinc",
+      "ats": "greenhouse",
+      "slug": "keyfactorinc"
+    },
+    {
+      "company": "Tmobile",
+      "ats": "workday",
+      "slug": "tmobile:1:external/job/bellevue-washington/summer-2027-software-engineer-hr-data-products-internship_req380766"
+    },
+    {
+      "company": "Lumentum",
+      "ats": "workday",
+      "slug": "lumentum:5:lite/job/canada---ottawa-bill-leathem/process-automation-software-engineer---mems_20261527"
+    },
+    {
+      "company": "Caci",
+      "ats": "workday",
+      "slug": "caci:1:external/job/norco-ca-us/data-engineering-analytics-support_334800"
+    },
+    {
+      "company": "Tmobile",
+      "ats": "workday",
+      "slug": "tmobile:1:external/job/bellevue-washington/summer-2027-ai-engineering-internship_req381198"
+    },
+    {
+      "company": "Analogdevices",
+      "ats": "workday",
+      "slug": "analogdevices:1:external/job/us-ca-san-jose-rio-robles/design-evaluation-engineering-intern_r267479"
+    },
+    {
+      "company": "Invesco",
+      "ats": "workday",
+      "slug": "invesco:1:ivzearlycareers/job/dallas-texas/early-career-intern---real-estate--data-science-_r-15091"
+    },
+    {
+      "company": "Tmobile",
+      "ats": "workday",
+      "slug": "tmobile:1:external/job/bellevue-washington/summer-2027-ai-engineering-internship_req380765"
+    },
+    {
+      "company": "Caci",
+      "ats": "workday",
+      "slug": "caci:1:external/job/norco-ca-us/data-engineering-analytics-support_334801"
+    },
+    {
+      "company": "Psu",
+      "ats": "workday",
+      "slug": "psu:1:psu_staff/job/penn-state-university-park/autonomous-processing-research---development-internship_req_0000084114-1"
+    },
+    {
+      "company": "Moog",
+      "ats": "workday",
+      "slug": "moog:5:moog_external_career_site/job/buffalo-ny/associate-software-engineer_r-26-21135"
+    },
+    {
+      "company": "Globalfoundries",
+      "ats": "workday",
+      "slug": "globalfoundries:1:external/job/usa---new-york---malta/device-engineering-intern--silicon-photonics--summer-2027-_jr-2604264"
+    },
+    {
+      "company": "Gaig",
+      "ats": "workday",
+      "slug": "gaig:1:gaig_external/job/cincinnati-oh-usa/claims-technical-intern---summer-2027_r9873-1"
+    },
+    {
+      "company": "Hp",
+      "ats": "greenhouse",
+      "slug": "hp"
+    },
+    {
+      "company": "Ccf",
+      "ats": "workday",
+      "slug": "ccf:1:clevelandcliniccareers/job/cleveland-clinic-main-campus/postdoctoral-fellow---amani-fawzi-lab_352379"
+    },
+    {
+      "company": "Helical",
+      "ats": "workable",
+      "slug": "helical"
+    },
+    {
+      "company": "Invesco",
+      "ats": "workday",
+      "slug": "invesco:1:en-us/ivz/job/dallas-texas/early-career-intern---real-estate--data-science-_r-15091-1"
+    },
+    {
+      "company": "Tmobile",
+      "ats": "workday",
+      "slug": "tmobile:1:external/job/frisco-texas/summer-2027-data-engineering-internship_req380755"
+    },
+    {
+      "company": "Leidos",
+      "ats": "workday",
+      "slug": "leidos:5:external/job/6314-remoteteleworker-us/ai-automation-development-intern---assessment---authorization_r-00195319"
+    },
+    {
+      "company": "Petronascanada",
+      "ats": "workday",
+      "slug": "petronascanada:3:petronascanada/job/calgary/summer-student--technical-assurance-and-pipeline-engineering_r0001879"
+    },
+    {
+      "company": "Deeplocal",
+      "ats": "greenhouse",
+      "slug": "deeplocal"
+    },
+    {
+      "company": "Hcmportal",
+      "ats": "workday",
+      "slug": "hcmportal:5:en-us/search/job/us---middleburg-heights-ohmid/xmlname-2027-summer-engineering-intern---cleveland-oh_r26039950"
+    },
+    {
+      "company": "Isu",
+      "ats": "workday",
+      "slug": "isu:1:iowastatejobs/job/ames-ia/software-developer-i_r20057"
+    },
+    {
+      "company": "Danaher",
+      "ats": "workday",
+      "slug": "danaher:1:danaherjobs/job/indianapolis-indiana-united-states/firmware-engineer-co-op_r1321509"
+    },
+    {
+      "company": "Petronascanada",
+      "ats": "workday",
+      "slug": "petronascanada:3:petronascanada/job/calgary/summer-student--operation-advancement_r0001881"
+    },
+    {
+      "company": "Salesforce",
+      "ats": "workday",
+      "slug": "salesforce:12:external_career_site/job/california---san-francisco/summer-2027-intern---product-management_jr367659-1"
+    },
+    {
+      "company": "Salesforce",
+      "ats": "workday",
+      "slug": "salesforce:12:futureforce_internships/job/california---san-francisco/summer-2027-intern---product-management_jr367659"
+    },
+    {
+      "company": "Hpe",
+      "ats": "workday",
+      "slug": "hpe:5:acjobsite/job/roseville-california/campus-switching-product-manager-graduate_1214267"
+    },
+    {
+      "company": "Ciena",
+      "ats": "workday",
+      "slug": "ciena:5:careers/job/ottawa/embedded-security-software-developer---new-grad_r032066"
+    },
+    {
+      "company": "Olg",
+      "ats": "workday",
+      "slug": "olg:3:careers-students/job/toronto-ontario-canada/analytics-engineering---measurement-student_r26_00700"
+    },
+    {
+      "company": "Asml",
+      "ats": "workday",
+      "slug": "asml:3:asmlext1/job/san-jose-ca-usa/internship--computational-imaging-and-metrology-summer_j-00355102"
+    },
+    {
+      "company": "Tmobile",
+      "ats": "workday",
+      "slug": "tmobile:1:external/job/bellevue-washington/summer-2027-ai-strategist-internship_req381279"
+    },
+    {
+      "company": "Hootsuite",
+      "ats": "greenhouse",
+      "slug": "hootsuite"
+    },
+    {
+      "company": "Intel",
+      "ats": "workday",
+      "slug": "intel:1:en-us/external/job/us-oregon-hillsboro/software-performance-engineer_jr0288983"
+    },
+    {
+      "company": "Machinacognita",
+      "ats": "ashby",
+      "slug": "machinacognita"
+    },
+    {
+      "company": "Llbean",
+      "ats": "workday",
+      "slug": "llbean:1:llbean_careers/job/freeport-me/software-developer-intern--summer-2027-_jr11274-1"
+    },
+    {
+      "company": "Salesforce",
+      "ats": "workday",
+      "slug": "salesforce:12:futureforce_newgradroles/job/illinois---chicago/ai-product-associate-analyst--early-talent_jr367622-1"
+    },
+    {
+      "company": "Kla",
+      "ats": "workday",
+      "slug": "kla:1:search/job/milpitas-ca/software-intern_2642954-1"
+    },
+    {
+      "company": "Tmobile",
+      "ats": "workday",
+      "slug": "tmobile:1:external/job/bellevue-washington/summer-2027-software-engineer-hr-data-products-internship_req380916"
+    },
+    {
+      "company": "Elevation Autism Center",
+      "ats": "workable",
+      "slug": "elevation-autism-center"
+    },
+    {
+      "company": "Jabil",
+      "ats": "workday",
+      "slug": "jabil:5:jabil_careers/job/florence-ky/cvg200-conversions-diagnostic-technician-ii---404_j2470930"
+    },
+    {
+      "company": "Tmobile",
+      "ats": "workday",
+      "slug": "tmobile:1:external/job/bellevue-washington/summer-2027-software-engineering-internship_req380768"
+    },
+    {
+      "company": "Category Labs",
+      "ats": "ashby",
+      "slug": "category-labs"
+    },
+    {
+      "company": "Icf",
+      "ats": "workday",
+      "slug": "icf:5:icfexternal_career_site/job/richmond-va/software-developer_r2603769"
+    },
+    {
+      "company": "Kla",
+      "ats": "workday",
+      "slug": "kla:1:ur/job/milpitas-ca/software-intern_2642954"
+    },
+    {
+      "company": "Orbital",
+      "ats": "ashby",
+      "slug": "orbital"
+    },
+    {
+      "company": "Bmo",
+      "ats": "workday",
+      "slug": "bmo:3:privileged/job/toronto-on-can/technology-research-associate--winter-2027--co-op-internship----4-months_r260024978"
+    },
+    {
+      "company": "Bmo",
+      "ats": "workday",
+      "slug": "bmo:3:external/job/toronto-on-can/quantitative-analyst--summer-2027--co-op-internship----4-months_r260031097"
+    },
+    {
+      "company": "Rb",
+      "ats": "workday",
+      "slug": "rb:5:en-us/frs/job/atlanta-ga/xmlname-2027-summer-internship-program---statistics-intern_r-0000033876"
+    },
+    {
+      "company": "Sec",
+      "ats": "workday",
+      "slug": "sec:3:samsung_careers/job/6625-excellence-way-plano-tx-usa/samsung-care-ai-data-analytic-intern_r121971-1"
+    },
+    {
+      "company": "Zeissgroup",
+      "ats": "workday",
+      "slug": "zeissgroup:3:external/job/dublin-ca/associate-test-engineer-lvl-1-cw_jr_1054482"
+    },
+    {
+      "company": "Caci",
+      "ats": "workday",
+      "slug": "caci:1:external/job/norco-ca-us/data-engineering-analytics-support_334802"
+    },
+    {
+      "company": "Trimble",
+      "ats": "workday",
+      "slug": "trimble:1:en-us/trimblecareers/job/us---oh-dayton/ai-automation-intern_r58148"
+    },
+    {
+      "company": "Subsense",
+      "ats": "lever",
+      "slug": "subsense"
+    },
+    {
+      "company": "Bmo",
+      "ats": "workday",
+      "slug": "bmo:3:campus/job/toronto-on-can/quantitative-analyst--summer-2027--co-op-internship----4-months_r260031097-1"
+    },
+    {
+      "company": "Nwis",
+      "ats": "workday",
+      "slug": "nwis:12:nw/job/al600--600-boulevard-south-ste-301-huntsville-al-35802/software-developer-i--system-security-_jr102225"
+    },
+    {
+      "company": "Vizient",
+      "ats": "workday",
+      "slug": "vizient:1:vizient_careers/job/irving-tx-75062-vizient-corporate-hq/xmlname-2027-summer-internship---revenue-intelligence_36048r-1"
+    },
+    {
+      "company": "UATX jobs",
+      "ats": "lever",
+      "slug": "uaustin"
+    },
+    {
+      "company": "Software Engineer",
+      "ats": "workable",
+      "slug": "valis-insights-1"
+    },
+    {
+      "company": "Senior Software Engineer",
+      "ats": "workable",
+      "slug": "hyperion360-1"
+    },
+    {
+      "company": "Marketing Data Engineer",
+      "ats": "workable",
+      "slug": "virtuhire"
+    },
+    {
+      "company": "Actifio is looking for a Senior Software Engineer",
+      "ats": "smartrecruiters",
+      "slug": "actifio1"
     }
   ],
   "greenhouse": [
