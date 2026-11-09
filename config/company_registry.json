@@ -217019,6 +217019,126 @@
       "company": "Senior Data Developer @ MaintainX (An Autodesk Company)",
       "ats": "ashby",
       "slug": "maintainx"
+    },
+    {
+      "company": "Newday",
+      "ats": "workday",
+      "slug": "newday:3:newday/job/leeds/associate-business-analytics-analyst_jr0726"
+    },
+    {
+      "company": "Citi",
+      "ats": "workday",
+      "slug": "citi:5:2/job/london--united-kingdom/technology--application-development--full-time-analyst--united-kingdom---london--2027--2026-summer-intern-converts-only-_261006358"
+    },
+    {
+      "company": "Globalhr",
+      "ats": "workday",
+      "slug": "globalhr:5:rec_rtx_ext_gateway/job/us-va-sterling-291--22640-davis-dr--davis/software-engineering-intern--e2d-in-1-_01888020"
+    },
+    {
+      "company": "Hpe",
+      "ats": "workday",
+      "slug": "hpe:5:jobsathpe/job/sunnyvale-california-united-states-of-america/electrical-hardware-engineer-intern_1214992"
+    },
+    {
+      "company": "Mtb",
+      "ats": "workday",
+      "slug": "mtb:5:campus/job/buffalo-ny/xmlname-2027-technology-development-program---software-engineering--data---api-engineering-_r92036"
+    },
+    {
+      "company": "Mtb",
+      "ats": "workday",
+      "slug": "mtb:5:campus/job/buffalo-ny/xmlname-2027-technology-development-program---software-engineering--enterprise---wealth-application-development-_r92035"
+    },
+    {
+      "company": "Apacheip",
+      "ats": "workday",
+      "slug": "apacheip:1:apache_careers/job/houston-headquarters/ai-implementation-intern_r115510"
+    },
+    {
+      "company": "Netholabs",
+      "ats": "ashby",
+      "slug": "netholabs"
+    },
+    {
+      "company": "Citi",
+      "ats": "workday",
+      "slug": "citi:5:2/job/london--united-kingdom/technology---application-development--summer-analyst--united-kingdom---london--2027_261007037"
+    },
+    {
+      "company": "Abbott",
+      "ats": "workday",
+      "slug": "abbott:5:abbottcareers/job/united-kingdom---witney/senior-software-developer_31167234"
+    },
+    {
+      "company": "Carmax",
+      "ats": "workday",
+      "slug": "carmax:1:external/job/corporate---richmond/technology-rotation-program_jr-189585"
+    },
+    {
+      "company": "Atriumhospitality",
+      "ats": "workday",
+      "slug": "atriumhospitality:5:atriumhospitality/job/alpharetta-ga/ai---automation-intern_r50811"
+    },
+    {
+      "company": "Sec",
+      "ats": "workday",
+      "slug": "sec:3:samsung_careers/job/6625-excellence-way-plano-tx-usa/epro-business---data-analyst-intern_r121996"
+    },
+    {
+      "company": "Badgermeter",
+      "ats": "workday",
+      "slug": "badgermeter:5:us_careersite/job/us---wi---milwaukee-hq/product-management-intern_4676"
+    },
+    {
+      "company": "Cibc",
+      "ats": "workday",
+      "slug": "cibc:3:search/job/toronto-on/associate-technology-leadership-advancement-program---summer-2027_2623078-1"
+    },
+    {
+      "company": "Job Application for Data Scientist II at Vectra",
+      "ats": "greenhouse",
+      "slug": "vectranetworks"
+    },
+    {
+      "company": "Job Application for Data Scientist",
+      "ats": "greenhouse",
+      "slug": "arteriaai"
+    },
+    {
+      "company": "CrowdHealth",
+      "ats": "lever",
+      "slug": "crowdhealth"
+    },
+    {
+      "company": "Kestrel Intelligence",
+      "ats": "lever",
+      "slug": "kestrel-intelligence"
+    },
+    {
+      "company": "Potloc jobs",
+      "ats": "lever",
+      "slug": "potloc"
+    },
+    {
+      "company": "Data Engineer",
+      "ats": "workable",
+      "slug": "epicfrog"
+    },
+    {
+      "company": "Software Engineer",
+      "ats": "rippling",
+      "slug": "iconic"
+    },
+    {
+      "company": "Careers at Hilbert",
+      "ats": "rippling",
+      "slug": "hilbert"
+    },
+    {
+      "company": "QAD, Inc. is looking for a Software Engineer, Full Stack (Python & Golang backend + Frontend) in Pune, Maharashtra, India",
+      "ats": "smartrecruiters",
+      "slug": "qadinc"
     }
   ],
   "greenhouse": [
