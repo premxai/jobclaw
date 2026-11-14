@@ -219099,6 +219099,271 @@
       "company": "Senior Software Engineer @ Tekion",
       "ats": "ashby",
       "slug": "tekion"
+    },
+    {
+      "company": "Vrtx",
+      "ats": "workday",
+      "slug": "vrtx:501:vertex_careers/job/boston-ma/summer-intern-2027--osd-process-data-analytics_req-31312"
+    },
+    {
+      "company": "Cmu",
+      "ats": "workday",
+      "slug": "cmu:115:sei/job/pittsburgh-pa/advanced-computing-lab-intern---summer-2027-_2025336-1"
+    },
+    {
+      "company": "Bah",
+      "ats": "workday",
+      "slug": "bah:1:bah_jobs/job/beavercreek-oh/systems-engineer_r0253553"
+    },
+    {
+      "company": "Psu",
+      "ats": "workday",
+      "slug": "psu:1:psu_staff/job/penn-state-university-park/part-time-energy-savings-program-intern_req_0000084318-1"
+    },
+    {
+      "company": "Integratedbiosciencesinc",
+      "ats": "greenhouse",
+      "slug": "integratedbiosciencesinc"
+    },
+    {
+      "company": "Canadiantirecorporation",
+      "ats": "workday",
+      "slug": "canadiantirecorporation:3:enterprise_external_careers_site/job/mississauga-on/programmer-analyst-intern--12-months----winter-2027_jr167748"
+    },
+    {
+      "company": "Postman",
+      "ats": "workday",
+      "slug": "postman:108:careers/job/san-francisco-ca-us/ai-engineer--intern_jr1000055"
+    },
+    {
+      "company": "Campingworld",
+      "ats": "workday",
+      "slug": "campingworld:5:en-us/jobs/job/chicago-il/data-engineering-intern_26_09297"
+    },
+    {
+      "company": "Marvell",
+      "ats": "workday",
+      "slug": "marvell:1:marvellcareers/job/toronto-canada/analog-layout-intern---bs-ms---2027-co-op_2604789"
+    },
+    {
+      "company": "Campingworld",
+      "ats": "workday",
+      "slug": "campingworld:5:en-us/jobs/job/chicago-il/data-analyst-intern_26_09300"
+    },
+    {
+      "company": "Reliable Robotics",
+      "ats": "ashby",
+      "slug": "reliable-robotics"
+    },
+    {
+      "company": "Bah",
+      "ats": "workday",
+      "slug": "bah:1:bah_jobs/job/honolulu-hi/data-scientist_r0253537"
+    },
+    {
+      "company": "Analogdevices",
+      "ats": "workday",
+      "slug": "analogdevices:1:external/job/us-ca-san-jose-rio-robles/design-evaluation-engineer---summer-2027_r266633"
+    },
+    {
+      "company": "Martinmarietta",
+      "ats": "workday",
+      "slug": "martinmarietta:5:martin_marietta_careers/job/raleigh-nc/intern--software-data-integration-engineer_jr024146"
+    },
+    {
+      "company": "Everestre",
+      "ats": "workday",
+      "slug": "everestre:5:careers/job/warren-nj/xmlname-2026-underwriting-rotational-development-program_r6900"
+    },
+    {
+      "company": "Cmu",
+      "ats": "workday",
+      "slug": "cmu:115:sei/job/pittsburgh-pa/cyber-ai-engineering-intern--spring-2027-_2025346-2"
+    },
+    {
+      "company": "Memorialhermann",
+      "ats": "workday",
+      "slug": "memorialhermann:5:external/job/medical-plaza-north/application-programmer-analyst_100189268"
+    },
+    {
+      "company": "Asml",
+      "ats": "workday",
+      "slug": "asml:3:asmlext1/job/austin-tx-usa/internship---euv-data-science-and-analytics_j-00357717"
+    },
+    {
+      "company": "Aaregional",
+      "ats": "workday",
+      "slug": "aaregional:503:search/job/charlotte-nc/safety-data-analytics-intern_r1014590"
+    },
+    {
+      "company": "Cmu",
+      "ats": "workday",
+      "slug": "cmu:115:sei/job/pittsburgh-pa/full-stack-software-development-intern_2025287-2"
+    },
+    {
+      "company": "Micron",
+      "ats": "workday",
+      "slug": "micron:1:external/job/boise-id---main-site/intern---enterprise-ssd-architecture_jr114108"
+    },
+    {
+      "company": "Ciena",
+      "ats": "workday",
+      "slug": "ciena:5:careers/job/ottawa/technical-solution-engineer--intern---se-i_r032114"
+    },
+    {
+      "company": "Wattswater",
+      "ats": "workday",
+      "slug": "wattswater:5:external/job/menomonee-falls-wi/product-management-co-op--jan-june-2027_10017702-1"
+    },
+    {
+      "company": "Bah",
+      "ats": "workday",
+      "slug": "bah:1:bah_jobs/job/beavercreek-oh/systems-engineer_r0253552"
+    },
+    {
+      "company": "Micron",
+      "ats": "workday",
+      "slug": "micron:1:external/job/san-jose-ca/new-college-grad---design-engineer_jr117605"
+    },
+    {
+      "company": "Fidus",
+      "ats": "workable",
+      "slug": "fidus"
+    },
+    {
+      "company": "Frasersgroup",
+      "ats": "smartrecruiters",
+      "slug": "frasersgroup"
+    },
+    {
+      "company": "Manulife",
+      "ats": "workday",
+      "slug": "manulife:3:en-us/mfcjh_adminjobs/job/boston-massachusetts/spring-co-op-2027---software-engineering-intern_jr26110405"
+    },
+    {
+      "company": "Dtna",
+      "ats": "workday",
+      "slug": "dtna:5:dtna_affiliate/job/mount-holly-nc-us/it-developer-analyst-intern_dt-20681-1"
+    },
+    {
+      "company": "Amgen",
+      "ats": "workday",
+      "slug": "amgen:1:careers/job/united-states---remote/grad-intern---knowledge-graph-applications--summer-2027-_r-260625"
+    },
+    {
+      "company": "Cmu",
+      "ats": "workday",
+      "slug": "cmu:115:sei/job/pittsburgh-pa/agentic-development-intern_2025292-1"
+    },
+    {
+      "company": "Capgroup",
+      "ats": "workday",
+      "slug": "capgroup:1:en-us/capitalgroupcareers/job/irvine/campus-global-technology-summer-associate--2027-_jr7798"
+    },
+    {
+      "company": "Campingworld",
+      "ats": "workday",
+      "slug": "campingworld:5:en-us/jobs/job/lincolnshire-il/software-engineering-intern_26_09080"
+    },
+    {
+      "company": "Lthc",
+      "ats": "workday",
+      "slug": "lthc:1:cdphpcareers/job/rochester/software-engineer---etl_jr104172"
+    },
+    {
+      "company": "Martinmarietta",
+      "ats": "workday",
+      "slug": "martinmarietta:5:martin_marietta_careers/job/raleigh-nc/intern--data-scientist_jr024144-1"
+    },
+    {
+      "company": "Lthc",
+      "ats": "workday",
+      "slug": "lthc:1:cdphpcareers/job/rochester/ai-engineer-i-ii_jr103556"
+    },
+    {
+      "company": "Boeing",
+      "ats": "workday",
+      "slug": "boeing:1:external_subsidiary/job/usa---oklahoma-city-ok/c-17-design-and-analysis-engineer--entry-level-or-associate-_jr2026525656-1"
+    },
+    {
+      "company": "Nwis",
+      "ats": "workday",
+      "slug": "nwis:12:nw/job/al600-600-boulevard-south-huntsville-al/software-developer-ii--system-security-_jr102207"
+    },
+    {
+      "company": "Boeing",
+      "ats": "workday",
+      "slug": "boeing:1:external_careers/job/usa---oklahoma-city-ok/c-17-design-and-analysis-engineer--entry-level-or-associate-_jr2026525656-2"
+    },
+    {
+      "company": "Nexus Cognitive",
+      "ats": "ashby",
+      "slug": "nexus-cognitive"
+    },
+    {
+      "company": "Snc",
+      "ats": "workday",
+      "slug": "snc:1:snc_external_career_site/job/lone-tree-co/software-engineer-i_r0031292"
+    },
+    {
+      "company": "Ksb",
+      "ats": "workday",
+      "slug": "ksb:3:ksb_externalcareersite/job/grovetown-ga/machine-learning-engineer_jr_30052-1"
+    },
+    {
+      "company": "Icf",
+      "ats": "workday",
+      "slug": "icf:5:icfexternal_career_site/job/reston-va/data-scientist---remote-usa_r2603453"
+    },
+    {
+      "company": "Osv Cci",
+      "ats": "workday",
+      "slug": "osv-cci:1:en-us/ccicareers/job/london-uk/commodities-trading-analyst-programme--rolling-application-for-0-3-years-experience-_r1419"
+    },
+    {
+      "company": "Uva",
+      "ats": "workday",
+      "slug": "uva:1:uvastudentjobs/job/charlottesville-va/darden-research-assistant-in-healthcare-data-management--student-wage---remote-_r0089172"
+    },
+    {
+      "company": "Cmu",
+      "ats": "workday",
+      "slug": "cmu:115:sei/job/pittsburgh-pa/enabling-mission-capability-at-scale-intern---summer-2027_2025300-1"
+    },
+    {
+      "company": "Mcmaster Carr Systems",
+      "ats": "greenhouse",
+      "slug": "mcmaster-carr-systems"
+    },
+    {
+      "company": "Tcenergy",
+      "ats": "workday",
+      "slug": "tcenergy:3:career_site_tc/job/spokane-washington/intern--intelligent-operations-technology_jr-10919"
+    },
+    {
+      "company": "Fortbendcountytx",
+      "ats": "workday",
+      "slug": "fortbendcountytx:5:externalcareers/job/richmond-tx/temporary-position---web-development---information-technology_jr1694-11-26"
+    },
+    {
+      "company": "Sandvik",
+      "ats": "workday",
+      "slug": "sandvik:3:sandvik-jobs/job/usa-nv-elko/remote-monitoring-analyst--elko--nv_r0099613"
+    },
+    {
+      "company": "Vrtx",
+      "ats": "workday",
+      "slug": "vrtx:501:vertex_intern/job/boston-ma/summer-intern-2027--osd-process-data-analytics_req-31312-2"
+    },
+    {
+      "company": "ROH jobs",
+      "ats": "lever",
+      "slug": "roh"
+    },
+    {
+      "company": "Data Engineer",
+      "ats": "workable",
+      "slug": "experts-plus"
     }
   ],
   "greenhouse": [
