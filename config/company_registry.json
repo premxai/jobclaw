@@ -219804,6 +219804,71 @@
       "company": "Staff Software Engineer",
       "ats": "rippling",
       "slug": "reserv"
+    },
+    {
+      "company": "Makermaker.Ai",
+      "ats": "ashby",
+      "slug": "makermaker.ai"
+    },
+    {
+      "company": "Alliancedata",
+      "ats": "workday",
+      "slug": "alliancedata:5:breadfinancial_us/job/columbus-oh/intern---software-engineering_r1013421"
+    },
+    {
+      "company": "Ilitch",
+      "ats": "workday",
+      "slug": "ilitch:5:lc/job/detroit-mi/intern--portfolio-it_r9716"
+    },
+    {
+      "company": "Boseallaboutme",
+      "ats": "workday",
+      "slug": "boseallaboutme:503:bose_careers/job/us-ma---framingham/software-engineer-co-op_r29387"
+    },
+    {
+      "company": "Williamjessupuniversitybayareacampus",
+      "ats": "smartrecruiters",
+      "slug": "williamjessupuniversitybayareacampus"
+    },
+    {
+      "company": "Aero",
+      "ats": "workday",
+      "slug": "aero:5:external/job/chantilly-va/xmlname-2027-sensor-modeling-and-simulation-undergrad-intern_r016876"
+    },
+    {
+      "company": "Manulife",
+      "ats": "workday",
+      "slug": "manulife:3:en-us/mfcjh_adminjobs/job/toronto-ontario/winter-co-op-2027---technology-enablement-analyst_jr26090774-1"
+    },
+    {
+      "company": "Cmu",
+      "ats": "workday",
+      "slug": "cmu:115:sei/job/pittsburgh-pa/ai-engineer-intern---mission-innovation-lab--summer-2027-_2025364-1"
+    },
+    {
+      "company": "Caci",
+      "ats": "workday",
+      "slug": "caci:1:external/job/annapolis-junction-md-us/software-engineer-skill-level-0_323580"
+    },
+    {
+      "company": "Woodmac",
+      "ats": "workday",
+      "slug": "woodmac:3:woodmaccareers/job/edinburgh-gb/research-associate---upstream_jr3524"
+    },
+    {
+      "company": "Eonnext",
+      "ats": "workday",
+      "slug": "eonnext:3:eon_next_careers/job/wednesbury-depot/technical-development-technician_jr104291-2"
+    },
+    {
+      "company": "Software Engineer 1 (Java Developer) @ Sophos",
+      "ats": "ashby",
+      "slug": "sophos"
+    },
+    {
+      "company": "Entry Level Software Engineer @ BRM",
+      "ats": "ashby",
+      "slug": "brm"
     }
   ],
   "greenhouse": [
