@@ -219954,6 +219954,176 @@
       "company": "Data Engineer",
       "ats": "workable",
       "slug": "a2z-sync"
+    },
+    {
+      "company": "Epwealth",
+      "ats": "lever",
+      "slug": "epwealth"
+    },
+    {
+      "company": "Vhr Genband",
+      "ats": "workday",
+      "slug": "vhr-genband:1:ribboncareers/job/canada-quebec-montreal/software-developer---common-cloud-services--co-op-_req-2026-3079"
+    },
+    {
+      "company": "Centier",
+      "ats": "workday",
+      "slug": "centier:501:centierbankcareers/job/merrillville-in/marketing-analyst-intern_r2999"
+    },
+    {
+      "company": "Cdpq",
+      "ats": "workday",
+      "slug": "cdpq:10:cdpq/job/montreal/analyste--analytique---marchs-boursiers_r05211"
+    },
+    {
+      "company": "Walmart",
+      "ats": "workday",
+      "slug": "walmart:504:walmartexternal/job/usa-vizio-services-denver-co-denver-home-office/xmlname--usa--software-engineer-iii_r-2674054-1"
+    },
+    {
+      "company": "Arienscompany",
+      "ats": "workday",
+      "slug": "arienscompany:5:external/job/wi---brillion/product-management-intern_r-04305"
+    },
+    {
+      "company": "Dsn",
+      "ats": "workable",
+      "slug": "dsn"
+    },
+    {
+      "company": "Firstpremier",
+      "ats": "workday",
+      "slug": "firstpremier:503:premier_careers/job/sioux-falls-sd/premier-analytics-internship_r-507-1"
+    },
+    {
+      "company": "Vertexservicepartners",
+      "ats": "greenhouse",
+      "slug": "vertexservicepartners"
+    },
+    {
+      "company": "Woodward",
+      "ats": "workday",
+      "slug": "woodward:5:woodward/job/fort-collins---lincoln-campus-hq/ai-summer-2027-internship_jr114291"
+    },
+    {
+      "company": "Xboxgaming",
+      "ats": "workday",
+      "slug": "xboxgaming:1:blizzard_external_careers/job/irvine---blizzard---blizzard-way/blizzard-2027-summer-internships---data-platform-engineering_r028358"
+    },
+    {
+      "company": "Toyota",
+      "ats": "workday",
+      "slug": "toyota:503:tmna/job/plano-texas/software-engineer_10340846"
+    },
+    {
+      "company": "Eisneramper",
+      "ats": "workday",
+      "slug": "eisneramper:1:eisneramperearlycareers/job/iselin/xmlname-2026-outsourcing-it-staff-i_req-9694"
+    },
+    {
+      "company": "Firstpremier",
+      "ats": "workday",
+      "slug": "firstpremier:503:premier_careers/job/sioux-falls-sd/premier-digital-innovation---strategy-internship_r-551-1"
+    },
+    {
+      "company": "Secureframe",
+      "ats": "ashby",
+      "slug": "secureframe"
+    },
+    {
+      "company": "Giro",
+      "ats": "workday",
+      "slug": "giro:10:giro/job/montreal-rosemont/hiver-2027---stagiaire-en-dveloppement-web--front-end_r-100000317"
+    },
+    {
+      "company": "Jcrew",
+      "ats": "workday",
+      "slug": "jcrew:1:friendsfamilycareers/job/new-york-ny-usa-headquarters/associate-product-manager_126672"
+    },
+    {
+      "company": "Littelfuse",
+      "ats": "workday",
+      "slug": "littelfuse:1:littelfuse-university-relations/job/rapid-city/r-d-engineering-intern_jr-112833-1"
+    },
+    {
+      "company": "Xboxgaming",
+      "ats": "workday",
+      "slug": "xboxgaming:1:blizzard_external_careers/job/irvine---blizzard---blizzard-way/blizzard-2027-summer-internships---applied-science_r028347"
+    },
+    {
+      "company": "Veoliauki",
+      "ats": "workday",
+      "slug": "veoliauki:3:vescareers/job/london/digital-transformation-graduate_jr33710"
+    },
+    {
+      "company": "Thomsonreuters",
+      "ats": "workday",
+      "slug": "thomsonreuters:5:en-us/external_career_site/job/united-kingdom-london/research-intern---agentic-ai---nlp---ml_jreq205375"
+    },
+    {
+      "company": "Rollsroyce",
+      "ats": "workday",
+      "slug": "rollsroyce:3:intern_graduate/job/glasgow/fpga-summer-internship---glasgow--uk_jr6163435"
+    },
+    {
+      "company": "Walmart",
+      "ats": "workday",
+      "slug": "walmart:504:walmartexternal/job/usa-together-building-ar-bentonville-home-office/summer-2027-mba-intern--apd-product-manager---mba_r-2630166"
+    },
+    {
+      "company": "Rhsc",
+      "ats": "workday",
+      "slug": "rhsc:5:delta_dental_of_michigan/job/okemos-mi/internship--application-development_jr101534"
+    },
+    {
+      "company": "Aimco",
+      "ats": "workday",
+      "slug": "aimco:10:aimcocareers/job/edmonton/co-op--risk-modelling--winter-2027-_jr100957"
+    },
+    {
+      "company": "Mbda",
+      "ats": "workday",
+      "slug": "mbda:3:mbda-uk/job/stevenage/software-work-experience---stevenage-2027_r40714"
+    },
+    {
+      "company": "Cadence",
+      "ats": "workday",
+      "slug": "cadence:1:university_talent_ncg/job/san-jose/software-engineering--verification-ip-team--recent-grad-2026-_r55884"
+    },
+    {
+      "company": "Gorbel",
+      "ats": "workday",
+      "slug": "gorbel:501:gorbelcareers/job/usa-new-york-victor/front-end-web-developer-co-op_req-2026-2375-1"
+    },
+    {
+      "company": "Multiplyai",
+      "ats": "ashby",
+      "slug": "multiplyai"
+    },
+    {
+      "company": "Stvinc",
+      "ats": "workday",
+      "slug": "stvinc:5:stv/job/empire-state-building-new-york-new-york/senior-pmo-specailist_jr6518"
+    },
+    {
+      "company": "Cadence",
+      "ats": "workday",
+      "slug": "cadence:1:univ_careers/job/san-jose/software-engineering-intern---circuit-simulation-infrastructure_r57254"
+    },
+    {
+      "company": "Compassion",
+      "ats": "workday",
+      "slug": "compassion:5:compassioncareers/job/usa---global-ministry-center/xmlname-2027-summer-internship---data-and-software-engineering_r8840"
+    },
+    {
+      "company": "Welocalize",
+      "ats": "workday",
+      "slug": "welocalize:1:welocalize/job/ca-client-field-office-san-fran-bay-area/project-dorado---robotics-teleoperator_r0008071"
+    },
+    {
+      "company": "Myworkdayjobs",
+      "ats": "workday",
+      "slug": "nxp"
     }
   ],
   "greenhouse": [
