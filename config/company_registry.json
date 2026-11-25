@@ -220654,6 +220654,26 @@
       "company": "Software Engineer",
       "ats": "workable",
       "slug": "walaris"
+    },
+    {
+      "company": "Transunion",
+      "ats": "workday",
+      "slug": "transunion:5:en-us/transunion/job/chicago-illinois/data-analysis-internship---summer-2027_19042654"
+    },
+    {
+      "company": "Firstpremier",
+      "ats": "workday",
+      "slug": "firstpremier:503:premier_careers/job/sioux-falls-sd/customer-care-intern_r-514-1"
+    },
+    {
+      "company": "Patientpointinviteonly",
+      "ats": "greenhouse",
+      "slug": "patientpointinviteonly"
+    },
+    {
+      "company": "Senior Data Engineer",
+      "ats": "workable",
+      "slug": "tasq-work"
     }
   ],
   "greenhouse": [
