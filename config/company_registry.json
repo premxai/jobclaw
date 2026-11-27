@@ -220889,6 +220889,36 @@
       "company": "Staff Software Engineer @ TAR",
       "ats": "ashby",
       "slug": "tar"
+    },
+    {
+      "company": "Iconiqhandshake",
+      "ats": "greenhouse",
+      "slug": "iconiqhandshake"
+    },
+    {
+      "company": "Zeit Ai",
+      "ats": "ashby",
+      "slug": "zeit-ai"
+    },
+    {
+      "company": "Starfish",
+      "ats": "workday",
+      "slug": "starfish:501:careers/job/huntsville-al/entry--level-software-engineer_r2227"
+    },
+    {
+      "company": "Toyota",
+      "ats": "workday",
+      "slug": "toyota:503:tmna/job/plano-texas/software-engineer_10332851"
+    },
+    {
+      "company": "Toyota",
+      "ats": "workday",
+      "slug": "toyota:503:tmna/job/plano-texas/software-engineer_10325070"
+    },
+    {
+      "company": "Careers",
+      "ats": "rippling",
+      "slug": "inflection-space"
     }
   ],
   "greenhouse": [
